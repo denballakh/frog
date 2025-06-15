@@ -3,6 +3,10 @@ import os
 from pathlib import Path
 import io
 from typing import TYPE_CHECKING, Any
+import subprocess
+import shlex
+
+import lang
 
 if TYPE_CHECKING:
     from tqdm import tqdm
@@ -18,8 +22,7 @@ else:
 ROOT = Path(__file__).parent
 
 
-def run(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
-    import subprocess
+def run_cmd(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
 
     cmd = subprocess.list2cmdline(cmds)
     print(f'[CMD] {cmd}')
@@ -38,6 +41,26 @@ def run(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
         print(f'[STDERR]:')
         print(err)
     return res.returncode
+
+
+def run_lang(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
+
+    cmd = subprocess.list2cmdline([*args])
+    print(f'[CMD] {cmd}')
+
+    try:
+        lang.main(shlex.split(cmd)[2:])
+    except SystemExit as e:
+        code = e.code
+        match code:
+            case int():
+                return code
+            case str():
+                return 1
+            case None:
+                return 0
+    else:
+        return 0
 
 
 code_examples = [
@@ -165,8 +188,10 @@ for code in tqdm(code_examples):
     with contextlib.redirect_stdout(buf):
         # with contextlib.nullcontext():
         _ = tmp.write_text(code)
+        print('=' * 60)
         print(f'[CODE] {code!r}')
-        res = run('py', src, 'run', tmp)
+        # res = run_cmd('py', src, 'run', tmp)
+        res = run_lang('py', src, 'run', tmp)
         print(f'[EXIT CODE] {res}')
         print()
 _ = out.write_text(buf.getvalue())

@@ -5,6 +5,7 @@ from typing import Any, Never, assert_never, cast, final, override
 from enum import Enum, auto
 from dataclasses import dataclass, field, is_dataclass
 import traceback
+import sys
 
 from sb import StringBuilder
 
@@ -2043,13 +2044,9 @@ def run_file(file: str) -> None:
         raise SystemExit(69)
 
 
-def main() -> None:
-    import sys
-
-    args = sys.argv[1:]
-
+def main(argv: list[str]) -> None:
     def unshift() -> str:
-        res, args[:] = args[0], args[1:]
+        res, argv[:] = argv[0], argv[1:]
         return res
 
     def usage() -> None:
@@ -2061,7 +2058,7 @@ def main() -> None:
 
     file = ''
 
-    if not args:
+    if not argv:
         usage()
         print(f'Error: no subcommand specified')
         sys.exit(1)
@@ -2074,24 +2071,24 @@ def main() -> None:
             sys.exit(0)
 
         case 'run':
-            if not args:
+            if not argv:
                 usage()
                 print(f'Error: no file specified')
                 sys.exit(2)
 
             file = unshift()
-            if args:
+            if argv:
                 usage()
-                print(f'Error: unexpected arguments: {args}')
+                print(f'Error: unexpected arguments: {argv}')
                 sys.exit(2)
 
             run_file(file)
             sys.exit(0)
 
         case 'repl':
-            if args:
+            if argv:
                 usage()
-                print(f'Error: unexpected arguments: {args}')
+                print(f'Error: unexpected arguments: {argv}')
                 sys.exit(2)
 
             repl()
@@ -2105,4 +2102,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
