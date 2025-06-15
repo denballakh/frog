@@ -453,13 +453,32 @@
 
 [EXIT CODE] 0
 
-[CODE] '10 while dup 5 > do 1 - print ? end drop'
+[CODE] '10 while dup 5 > do 1 - dup print ? end drop'
 [CMD] python lang.py run tmp.lang
 [STDOUT]:
-[INFO] tmp.lang:1:30: Stack at compile time:
+[INFO] tmp.lang:1:34: Stack at compile time:
 [NOTE] stack:
-         (empty)
-[ERROR] tmp.lang:1:32: InstructionType.WHILE must not alter the stack state
+           0. INT@tmp.lang:1:22
+[PRINT] INT:9@tmp.lang:1:22
+[INFO] tmp.lang:1:34: Stack at runtime:
+[NOTE] stack:
+           0. INT:9@tmp.lang:1:22
+[PRINT] INT:8@tmp.lang:1:22
+[INFO] tmp.lang:1:34: Stack at runtime:
+[NOTE] stack:
+           0. INT:8@tmp.lang:1:22
+[PRINT] INT:7@tmp.lang:1:22
+[INFO] tmp.lang:1:34: Stack at runtime:
+[NOTE] stack:
+           0. INT:7@tmp.lang:1:22
+[PRINT] INT:6@tmp.lang:1:22
+[INFO] tmp.lang:1:34: Stack at runtime:
+[NOTE] stack:
+           0. INT:6@tmp.lang:1:22
+[PRINT] INT:5@tmp.lang:1:22
+[INFO] tmp.lang:1:34: Stack at runtime:
+[NOTE] stack:
+           0. INT:5@tmp.lang:1:22
 
-[EXIT CODE] 1
+[EXIT CODE] 0
 

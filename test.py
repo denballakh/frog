@@ -2,6 +2,7 @@ import contextlib
 import os
 from pathlib import Path
 import sys
+import io
 
 ROOT = Path(__file__).parent
 
@@ -78,6 +79,7 @@ code_examples = [
     '5 if 1 2 != do drop 7 end print',
     # 
     '10 while dup 5 > do 1 - print ? end drop',
+    '10 while dup 5 > do 1 - dup print ? end drop',
 ]
 
 src = ROOT / 'lang.py'
@@ -87,12 +89,13 @@ tmp = ROOT / 'tmp.lang'
 tmp = tmp.relative_to(Path.cwd())
 
 out = ROOT / 'test_dump.txt'
-with contextlib.redirect_stdout(out.open('wt')):
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
     for code in code_examples:
         tmp.write_text(code)
         print(f'[CODE] {code!r}')
         res = run(sys.orig_argv[0], src, 'run', tmp)
         print(f'[EXIT CODE] {res}')
         print()
-
+out.write_text(buf.getvalue())
 tmp.unlink()
