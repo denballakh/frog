@@ -10,7 +10,7 @@ class _Node:
     next: _Node | None = None
 
     def __iter__(self) -> abc.Iterator[str]:
-        node = self
+        node: _Node | None = self
         while node is not None:
             yield node.val
             node = node.next
