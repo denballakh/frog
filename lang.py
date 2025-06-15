@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any, Never, assert_never, cast, final, override
 from enum import Enum, auto
-from dataclasses import dataclass, is_dataclass
+from dataclasses import dataclass, field, is_dataclass
 import traceback
 
 from sb import StringBuilder
@@ -67,11 +67,12 @@ class InstructionType(Enum):
     INTRINSIC = auto()
 
     PROC = auto()
-    IF = auto()
-    ELSE = auto()
-    WHILE = auto()
-    DO = auto()
-    END = auto()
+    IF = auto()  # cosmetic
+    ELSE = auto()  # jumps unconditionally to the end
+    WHILE = auto()  # cosmetic
+    DO = auto()  # jumps conditionally to the end of loop or to the else branch
+    END = auto()  # jumps unconditionally to the beginning of loop or after the if
+    LABEL = auto()
 
 
 class IntrinsicType(Enum):
@@ -122,6 +123,22 @@ class Instruction:
     tok: Token
     arg1: Any = unused
     arg2: Any = unused
+
+
+@dataclass
+class Procedure:
+    name: str
+    instructions: list[Instruction] = field(default_factory=list)
+
+@dataclass
+class IR:
+    procs: list[Procedure] = field(default_factory=list)
+
+    def get_proc_by_name(self, name: str) -> Procedure | None:
+        for proc in self.procs:
+            if proc.name == name:
+                return proc
+        return None
 
 
 class ValueType(Enum):
@@ -359,9 +376,33 @@ def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
         i += 1
 
 
-def compile(toks: list[Token]) -> list[Instruction]:
-    result: list[Instruction] = []
+def compile(toks: list[Token]) -> IR:
+    ir = IR()
+    cur_proc: Procedure | None = None
 
+    def add_instr(instr: Instruction) -> int:
+        """ returns index of added instruction """
+        nonlocal cur_proc
+        if cur_proc is None:
+            cur_proc = ir.get_proc_by_name('main')
+        if cur_proc is None:
+            cur_proc = Procedure(name='main')
+            ir.procs.append(cur_proc)
+        cur_proc.instructions.append(instr)
+        return len(cur_proc.instructions) - 1
+    
+    # pyright tries to be smart and infer that `cur_proc` is always `None`
+    # trick it into thinking that it might be non-`None`
+    if len('abc') == 4:
+        cur_proc = Procedure(name='lol')
+
+    # _label_cnt = 0
+    # def get_label() -> int:
+    #     nonlocal _label_cnt
+    #     _label_cnt += 1
+    #     return _label_cnt
+
+    
     @dataclass
     class Block:
         type: InstructionType
@@ -376,10 +417,10 @@ def compile(toks: list[Token]) -> list[Instruction]:
         expect_enum_size(TokenType, 6)
         match tok.type:
             case TokenType.INT:
-                result.append(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=tok.value))
+                _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=tok.value))
 
             case TokenType.BOOL:
-                result.append(Instruction(type=InstructionType.PUSH_BOOL, tok=tok, arg1=tok.value))
+                _ = add_instr(Instruction(type=InstructionType.PUSH_BOOL, tok=tok, arg1=tok.value))
 
             case TokenType.CHAR:
                 if len(tok.value) != 1:
@@ -387,7 +428,7 @@ def compile(toks: list[Token]) -> list[Instruction]:
                         tok,
                         f'invalid character literal: {tok.value}, it must contain exactly one character',
                     )
-                result.append(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value)))
+                _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value)))
 
             case TokenType.STR:
                 notimplemented(tok.loc, f'string literals')
@@ -401,9 +442,7 @@ def compile(toks: list[Token]) -> list[Instruction]:
                             InstructionType.IF,
                         )
                         block_stack.append(b)
-                        b.ip1 = len(result)
-
-                        result.append(Instruction(type=InstructionType.IF, tok=tok))
+                        b.ip1 = add_instr(Instruction(type=InstructionType.IF, tok=tok))
 
                     case KeywordType.ELSE:
                         if not block_stack:
@@ -411,30 +450,24 @@ def compile(toks: list[Token]) -> list[Instruction]:
                         b = block_stack[-1]
                         if b.type != InstructionType.IF:
                             error(tok, f'ELSE should follow an IF, not {b.type}')
-                        b.ip3 = len(result)
-
-                        result.append(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+                        b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
 
                     case KeywordType.WHILE:
                         b = Block(
                             InstructionType.WHILE,
                         )
                         block_stack.append(b)
-                        b.ip1 = len(result)
-
-                        result.append(Instruction(type=InstructionType.WHILE, tok=tok))
+                        b.ip1 = add_instr(Instruction(type=InstructionType.WHILE, tok=tok))
 
                     case KeywordType.DO:
                         if not block_stack:
                             error(tok, f'DO should follow an IF or WHILE')
                         b = block_stack[-1]
                         if b.type == InstructionType.WHILE:
-                            b.ip2 = len(result)
-                            result.append(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
+                            b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                         elif b.type == InstructionType.IF:
-                            b.ip2 = len(result)
-                            result.append(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
+                            b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                         else:
                             error(tok, f'DO should follow an IF or WHILE, not {b.type}')
@@ -462,13 +495,15 @@ def compile(toks: list[Token]) -> list[Instruction]:
                                     error(tok, f'if <cond> do <body> [else <body>] end')
 
                                 if b.ip3 == -1:
-                                    b.ip3 = len(result)
-                                    result.append(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+                                    b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
 
-                                b.ip4 = len(result)
-                                result[b.ip2].arg1 = b.ip3
-                                result[b.ip3].arg1 = b.ip4
-                                result.append(Instruction(type=InstructionType.END, tok=tok, arg1=b.ip4 + 1))
+                                assert cur_proc is not None
+                                b.ip4 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=-1))
+                                cur_proc.instructions[-1].arg1 = b.ip4 + 1
+
+                                cur_proc.instructions[b.ip2].arg1 = b.ip3
+                                cur_proc.instructions[b.ip3].arg1 = b.ip4
+                                
 
                             # while // ip1
                             #   <cond>
@@ -484,10 +519,8 @@ def compile(toks: list[Token]) -> list[Instruction]:
                                 if b.ip2 == -1:
                                     error(tok, f'while <cond> do <body> end')
 
-                                b.ip3 = len(result)
-
-                                result[b.ip2].arg1 = b.ip3
-                                result.append(Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1))
+                                assert cur_proc is not None
+                                cur_proc.instructions[b.ip2].arg1 = b.ip3 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1))
 
                             case _:
                                 error(tok, f'END should follow an IF or WHILE, not {b.type}')
@@ -503,73 +536,73 @@ def compile(toks: list[Token]) -> list[Instruction]:
                 match tok.value:
                     # arithmetic:
                     case '+':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ADD))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ADD))
                     case '-':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SUB))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SUB))
                     case '*':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MUL))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MUL))
                     case '/':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIV))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIV))
                     case '%':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MOD))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MOD))
                     case '/%':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIVMOD))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIVMOD))
 
                     case '<<':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHL))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHL))
                     case '>>':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHR))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHR))
 
                     # bitwise:
                     case '&':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BAND))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BAND))
                     case '|':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BOR))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BOR))
                     case '^':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BXOR))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BXOR))
                     case '~':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BNOT))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BNOT))
 
                     # logic:
                     case '&&':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.AND))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.AND))
                     case '||':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.OR))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.OR))
                     case '!':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NOT))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NOT))
 
                     # comparison:
                     case '==':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.EQ))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.EQ))
                     case '!=':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NE))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NE))
                     case '<':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LT))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LT))
                     case '>':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GT))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GT))
                     case '<=':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LE))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LE))
                     case '>=':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GE))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GE))
 
                     # stack manipulation:
                     case 'dup':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DUP))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DUP))
                     case 'drop':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DROP))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DROP))
                     case 'swap':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP))
                     case 'rot':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ROT))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ROT))
 
                     # debugging:
                     case 'print':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.PRINT))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.PRINT))
                     case '?':
-                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DEBUG))
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DEBUG))
 
                     case _:
-                        result.append(Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value))
+                        _ = add_instr(Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value))
 
             case _:
                 assert_never(tok.type)
@@ -581,10 +614,13 @@ def compile(toks: list[Token]) -> list[Instruction]:
             blocks=block_stack,
         )
 
-    return result
+    if not ir.get_proc_by_name('main'):
+        ir.procs.append(Procedure(name='main'))
+
+    return ir
 
 
-def typecheck(instrs: list[Instruction]) -> None:
+def typecheck(ir: IR) -> None:
     @dataclass
     class Block:
         type: InstructionType
@@ -601,6 +637,10 @@ def typecheck(instrs: list[Instruction]) -> None:
                 return False
         return True
 
+    main = ir.get_proc_by_name('main')
+    assert main is not None
+    instrs = main.instructions
+
     block_stack: list[Block] = []
 
     stack: Stack = []
@@ -608,7 +648,7 @@ def typecheck(instrs: list[Instruction]) -> None:
     while ip < len(instrs):
         instr = instrs[ip]
         ip += 1
-        expect_enum_size(InstructionType, 10)
+        expect_enum_size(InstructionType, 11)
         match instr.type:
             case InstructionType.PUSH_INT:
                 stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
@@ -728,6 +768,9 @@ def typecheck(instrs: list[Instruction]) -> None:
 
             case InstructionType.PROC:
                 notimplemented(instr, f'typechecking {InstructionType.PROC}')
+            
+            case InstructionType.LABEL:
+                notimplemented(instr, f'typechecking {InstructionType.LABEL}')
 
             case InstructionType.INTRINSIC:
                 intr_type = cast(IntrinsicType, instr.arg1)
@@ -1049,15 +1092,17 @@ def typecheck(instrs: list[Instruction]) -> None:
         )
 
 
-def interpret(instrs: Iterable[Instruction]) -> None:
-    instrs = list(instrs)
+def interpret(ir: IR) -> None:
+    main = ir.get_proc_by_name('main')
+    assert main is not None
+    instrs = main.instructions
 
     stack: list[StackEntry] = []
     ip = 0
     while ip < len(instrs):
         instr = instrs[ip]
         ip += 1
-        expect_enum_size(InstructionType, 10)
+        expect_enum_size(InstructionType, 11)
         match instr.type:
             case InstructionType.PUSH_INT:
                 stack.append(StackEntry(ValueType.INT, instr.arg1, tok=instr.tok))
@@ -1095,6 +1140,9 @@ def interpret(instrs: Iterable[Instruction]) -> None:
 
             case InstructionType.PROC:
                 notimplemented(instr, 'procedures are not implemented yet')
+            
+            case InstructionType.LABEL:
+                notimplemented(instr, 'labels are not implemented yet')
 
             case InstructionType.INTRINSIC:
                 intr_type = cast(IntrinsicType, instr.arg1)
@@ -1432,7 +1480,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
         typecheck_has_a_bug(None, 'stack not empty after execution')
 
 
-def translate(instrs: list[Instruction]) -> str:
+def translate(ir: IR) -> str:
 
     @dataclass
     class Block:
@@ -1477,6 +1525,10 @@ def translate(instrs: list[Instruction]) -> str:
             else:
                 unreachable(instr)
 
+    main = ir.get_proc_by_name('main')
+    assert main is not None
+    instrs = main.instructions
+
     block_stack: list[Block] = []
     stack: Stack = []
     ip = 0
@@ -1494,7 +1546,7 @@ def translate(instrs: list[Instruction]) -> str:
             block_stack=block_stack,
         )
         ip += 1
-        expect_enum_size(InstructionType, 10)
+        expect_enum_size(InstructionType, 11)
         match instr.type:
             case InstructionType.PUSH_INT:
                 var = get_varname('lit_int')
@@ -1584,6 +1636,9 @@ def translate(instrs: list[Instruction]) -> str:
 
             case InstructionType.PROC:
                 notimplemented(instr, f'translating {InstructionType.PROC}')
+            
+            case InstructionType.LABEL:
+                notimplemented(instr, f'translating {InstructionType.LABEL}')
 
             case InstructionType.INTRINSIC:
                 intr_type = cast(IntrinsicType, instr.arg1)
@@ -1934,7 +1989,7 @@ def repl() -> None:
 
             loc = Loc('<repl>', 0, 0)
             toks = [*tokenize(line, filename='<repl>')]
-            ir = [*compile(toks)]
+            ir = compile(toks)
             trace(
                 loc,
                 'before typechecking and running',
@@ -1958,7 +2013,7 @@ def run_file(file: str) -> None:
 
     loc = Loc(file, 0, 0)
     toks = [*tokenize(text, filename=file)]
-    ir = [*compile(toks)]
+    ir = compile(toks)
     trace(
         loc,
         'before typechecking and running',
@@ -1990,7 +2045,7 @@ def main() -> None:
         return res
 
     def usage() -> None:
-        print(f'Usage: {sys.executable} {sys.argv[0]} SUBCOMMAND [OPTIONS]')
+        print(f'Usage: {sys.executable} {sys.argv[0]} SUBCOMMAND [OPTIONS] <ARGS>')
         print(f'Subcommands:')
         print(f'  help        print this help message')
         print(f'  run FILE    run a file')
