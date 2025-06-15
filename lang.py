@@ -1,21 +1,19 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-import enum
-from pathlib import Path
-import sys
-from typing import Any, Never, assert_never, cast, override
+from typing import Any, Never, assert_never, cast, final, override
 from enum import Enum, auto
 from dataclasses import dataclass, is_dataclass
 import traceback
 
 from sb import StringBuilder
 
-
+@final
 class _sentinel:
     def __init__(self, name: str) -> None:
         self.name = name
 
+    @override
     def __repr__(self) -> str:
         return f'<{self.name}>'
 
@@ -176,7 +174,8 @@ def pp(x: Any) -> str:
         case _:
             res = repr(x)
             if is_dataclass(x):
-                res = res.replace(x.__class__.__qualname__, x.__class__.__name__)
+                cls = type(x)
+                res = res.replace(cls.__qualname__, cls.__name__)
             return res
 
 
@@ -201,6 +200,7 @@ def note(**notes: Any) -> None:
         print(f'[NOTE] {k}:')
         match v:
             case list():
+                v = cast(list[Any], v)
                 if not v:
                     print(f'         (empty)')
                 for i, x in enumerate(v):
@@ -214,6 +214,7 @@ def note(**notes: Any) -> None:
                 for line in pp(v).splitlines():
                     print(f'         {line}')
 
+
 LL_ERROR = 0
 LL_WARN = 1
 LL_INFO = 2
@@ -221,7 +222,8 @@ LL_TRACE = 3
 
 LOG_LEVEL = LL_INFO
 
-def error(loc: _Locatable, msg: str, **notes) -> Never:
+
+def error(loc: _Locatable, msg: str, **notes: Any) -> Never:
     if LOG_LEVEL >= LL_ERROR:
         msg = f'[ERROR] {_locatable_to_loc(loc)}: {msg}'
         print(msg)
@@ -229,25 +231,26 @@ def error(loc: _Locatable, msg: str, **notes) -> Never:
     raise SystemExit(1)
 
 
-def warn(loc: _Locatable, msg: str, **notes) -> None:
+def warn(loc: _Locatable, msg: str, **notes: Any) -> None:
     if LOG_LEVEL >= LL_WARN:
         msg = f'[WARNING] {_locatable_to_loc(loc)}: {msg}'
         print(msg)
         note(**notes)
 
-def info(loc: _Locatable, msg: str, **notes) -> None:
+
+def info(loc: _Locatable, msg: str, **notes: Any) -> None:
     if LOG_LEVEL >= LL_INFO:
         print(f'[INFO] {_locatable_to_loc(loc)}: {msg}')
         note(**notes)
 
 
-def trace(loc: _Locatable, msg: str, **notes) -> None:
+def trace(loc: _Locatable, msg: str, **notes: Any) -> None:
     if LOG_LEVEL >= LL_TRACE:
         print(f'[TRACE] {_locatable_to_loc(loc)}: {msg}')
         note(**notes)
 
 
-def typecheck_has_a_bug(loc: _Locatable, msg: str, **notes) -> Never:
+def typecheck_has_a_bug(loc: _Locatable, msg: str, **notes: Any) -> Never:
     error(
         loc,
         f'this should not happen because this must have been caugth at typecheck time: {msg}',
@@ -255,7 +258,7 @@ def typecheck_has_a_bug(loc: _Locatable, msg: str, **notes) -> Never:
     )
 
 
-def unreachable(loc: _Locatable, msg: str = '<?>', **notes) -> Never:
+def unreachable(loc: _Locatable, msg: str = '<?>', **notes: Any) -> Never:
     error(loc, f'unreachable: {msg}', **notes)
 
 
@@ -384,9 +387,7 @@ def compile(toks: list[Token]) -> list[Instruction]:
                         tok,
                         f'invalid character literal: {tok.value}, it must contain exactly one character',
                     )
-                result.append(
-                    Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value))
-                )
+                result.append(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value)))
 
             case TokenType.STR:
                 notimplemented(tok.loc, f'string literals')
@@ -429,15 +430,11 @@ def compile(toks: list[Token]) -> list[Instruction]:
                         b = block_stack[-1]
                         if b.type == InstructionType.WHILE:
                             b.ip2 = len(result)
-                            result.append(
-                                Instruction(type=InstructionType.DO, tok=tok, arg1=missing)
-                            )
+                            result.append(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                         elif b.type == InstructionType.IF:
                             b.ip2 = len(result)
-                            result.append(
-                                Instruction(type=InstructionType.DO, tok=tok, arg1=missing)
-                            )
+                            result.append(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                         else:
                             error(tok, f'DO should follow an IF or WHILE, not {b.type}')
@@ -466,18 +463,12 @@ def compile(toks: list[Token]) -> list[Instruction]:
 
                                 if b.ip3 == -1:
                                     b.ip3 = len(result)
-                                    result.append(
-                                        Instruction(
-                                            type=InstructionType.ELSE, tok=tok, arg1=missing
-                                        )
-                                    )
+                                    result.append(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
 
                                 b.ip4 = len(result)
                                 result[b.ip2].arg1 = b.ip3
                                 result[b.ip3].arg1 = b.ip4
-                                result.append(
-                                    Instruction(type=InstructionType.END, tok=tok, arg1=b.ip4 + 1)
-                                )
+                                result.append(Instruction(type=InstructionType.END, tok=tok, arg1=b.ip4 + 1))
 
                             # while // ip1
                             #   <cond>
@@ -496,9 +487,7 @@ def compile(toks: list[Token]) -> list[Instruction]:
                                 b.ip3 = len(result)
 
                                 result[b.ip2].arg1 = b.ip3
-                                result.append(
-                                    Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1)
-                                )
+                                result.append(Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1))
 
                             case _:
                                 error(tok, f'END should follow an IF or WHILE, not {b.type}')
@@ -514,183 +503,73 @@ def compile(toks: list[Token]) -> list[Instruction]:
                 match tok.value:
                     # arithmetic:
                     case '+':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ADD
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ADD))
                     case '-':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SUB
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SUB))
                     case '*':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MUL
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MUL))
                     case '/':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIV
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIV))
                     case '%':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MOD
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MOD))
                     case '/%':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIVMOD
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIVMOD))
 
                     case '<<':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHL
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHL))
                     case '>>':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHR
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHR))
 
                     # bitwise:
                     case '&':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BAND
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BAND))
                     case '|':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BOR
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BOR))
                     case '^':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BXOR
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BXOR))
                     case '~':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BNOT
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BNOT))
 
                     # logic:
                     case '&&':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.AND
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.AND))
                     case '||':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.OR
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.OR))
                     case '!':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NOT
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NOT))
 
                     # comparison:
                     case '==':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.EQ
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.EQ))
                     case '!=':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NE
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NE))
                     case '<':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LT
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LT))
                     case '>':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GT
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GT))
                     case '<=':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LE
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LE))
                     case '>=':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GE
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GE))
 
                     # stack manipulation:
                     case 'dup':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DUP
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DUP))
                     case 'drop':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DROP
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DROP))
                     case 'swap':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP))
                     case 'rot':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ROT
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ROT))
 
                     # debugging:
                     case 'print':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.PRINT
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.PRINT))
                     case '?':
-                        result.append(
-                            Instruction(
-                                type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DEBUG
-                            )
-                        )
+                        result.append(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DEBUG))
 
                     case _:
-                        result.append(
-                            Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value)
-                        )
+                        result.append(Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value))
 
             case _:
                 assert_never(tok.type)
@@ -761,9 +640,7 @@ def typecheck(instrs: list[Instruction]) -> None:
                 if block.type == InstructionType.IF:
                     block.stack2 = stack.copy()
                     if block.stack1 is None:
-                        unreachable(
-                            instr, f'{InstructionType.IF} block doesnt have stack1 saved up'
-                        )
+                        unreachable(instr, f'{InstructionType.IF} block doesnt have stack1 saved up')
                     stack = block.stack1
 
                 else:
@@ -773,9 +650,7 @@ def typecheck(instrs: list[Instruction]) -> None:
                 block = block_stack.pop()
                 if block.type == InstructionType.IF:
                     if block.stack2 is None:
-                        unreachable(
-                            instr, f'{InstructionType.IF} block doesnt have stack2 saved up'
-                        )
+                        unreachable(instr, f'{InstructionType.IF} block doesnt have stack2 saved up')
                     if not compare_stacks(block.stack2, stack):
                         error(
                             instr,
@@ -786,9 +661,7 @@ def typecheck(instrs: list[Instruction]) -> None:
 
                 elif block.type == InstructionType.WHILE:
                     if block.stack1 is None:
-                        unreachable(
-                            instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up'
-                        )
+                        unreachable(instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up')
                     if not compare_stacks(block.stack1, stack):
                         error(instr, f'{InstructionType.WHILE} must not alter the stack state')
 
@@ -820,9 +693,7 @@ def typecheck(instrs: list[Instruction]) -> None:
                     block = block_stack[-1]
                     if block.type == InstructionType.IF:
                         if block.stack1 is None:
-                            unreachable(
-                                instr, f'{InstructionType.IF} block doesnt have stack1 saved up'
-                            )
+                            unreachable(instr, f'{InstructionType.IF} block doesnt have stack1 saved up')
                         if not compare_stacks(block.stack1, stack):
                             error(
                                 instr,
@@ -833,9 +704,7 @@ def typecheck(instrs: list[Instruction]) -> None:
 
                     elif block.type == InstructionType.WHILE:
                         if block.stack1 is None:
-                            unreachable(
-                                instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up'
-                            )
+                            unreachable(instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up')
                         if not compare_stacks(block.stack1, stack):
                             error(
                                 instr,
@@ -1197,9 +1066,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                 stack.append(StackEntry(ValueType.BOOL, instr.arg1, tok=instr.tok))
 
             case InstructionType.WORD:
-                notimplemented(
-                    instr, f'arbitrary word handling is not implemented yet: {instr.arg1}'
-                )
+                notimplemented(instr, f'arbitrary word handling is not implemented yet: {instr.arg1}')
 
             case InstructionType.IF:
                 pass
@@ -1245,9 +1112,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val + b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.SUB:
                         # a b -- a-b
@@ -1260,9 +1125,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val - b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.MUL:
                         # a b -- a*b
@@ -1275,9 +1138,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val * b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.DIV:
                         # a b -- a/b
@@ -1292,9 +1153,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val // b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.MOD:
                         # a b -- a%b
@@ -1307,9 +1166,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val % b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.DIVMOD:
                         # a b -- a//b a%b
@@ -1323,9 +1180,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val % b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.SHL:
                         # a b -- a<<b
@@ -1338,9 +1193,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val << b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.SHR:
                         # a b -- a>>b
@@ -1353,9 +1206,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val >> b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.BOR:
                         # a b -- a|b
@@ -1368,9 +1219,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val | b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.BAND:
                         # a b -- a&b
@@ -1383,9 +1232,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val & b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.BXOR:
                         # a b -- a^b
@@ -1398,9 +1245,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.INT, a.val ^ b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.BNOT:
                         # a -- ~a
@@ -1426,9 +1271,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val and b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two BOOLs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two BOOLs, got {a.type} and {b.type}')
 
                     case IntrinsicType.OR:
                         # a b -- (a or b)
@@ -1441,9 +1284,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val or b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two BOOLs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two BOOLs, got {a.type} and {b.type}')
 
                     case IntrinsicType.NOT:
                         # a -- (not a)
@@ -1469,9 +1310,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val == b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.NE:
                         # a b -- (a != b)
@@ -1484,9 +1323,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val != b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.LT:
                         # a b -- (a < b)
@@ -1499,9 +1336,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val < b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.GT:
                         # a b -- (a > b)
@@ -1514,9 +1349,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val > b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.LE:
                         # a b -- (a <= b)
@@ -1529,9 +1362,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val <= b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     case IntrinsicType.GE:
                         # a b -- (a >= b)
@@ -1544,9 +1375,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                             stack.append(StackEntry(ValueType.BOOL, a.val >= b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(
-                                instr, f'expected two INTs, got {a.type} and {b.type}'
-                            )
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
 
                     # stack manipulation:
                     case IntrinsicType.DUP:
@@ -1561,7 +1390,7 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                         # a --
                         if len(stack) < 1:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
-                        stack.pop()
+                        _ = stack.pop()
 
                     case IntrinsicType.SWAP:
                         # a b -- b a
@@ -1725,7 +1554,6 @@ def translate(instrs: list[Instruction]) -> str:
 
                 else:
                     unreachable(instr)
-
 
             case InstructionType.WHILE:
                 block = Block(InstructionType.WHILE)
@@ -2097,14 +1925,13 @@ def translate(instrs: list[Instruction]) -> str:
 
 def repl() -> None:
     import traceback
-    import readline
 
     while True:
         try:
             line = input('> ')
             if line == 'q':
                 break
-            
+
             loc = Loc('<repl>', 0, 0)
             toks = [*tokenize(line, filename='<repl>')]
             ir = [*compile(toks)]
@@ -2128,7 +1955,7 @@ def repl() -> None:
 def run_file(file: str) -> None:
     with open(file, 'rt') as f:
         text = f.read()
-    
+
     loc = Loc(file, 0, 0)
     toks = [*tokenize(text, filename=file)]
     ir = [*compile(toks)]
@@ -2140,7 +1967,7 @@ def run_file(file: str) -> None:
     )
     typecheck(ir)
     gen_code = translate(ir)
-    
+
     trace(
         loc,
         'Generated C code:',
@@ -2211,7 +2038,7 @@ def main() -> None:
             usage()
             sys.exit(2)
 
-    assert_never(0)
+    assert_never(0)  # pyright: ignore[reportUnreachable]
 
 
 if __name__ == '__main__':

@@ -162,10 +162,10 @@ out = ROOT / 'test_dump.txt'
 buf = io.StringIO()
 for code in tqdm(code_examples):
     with contextlib.redirect_stdout(buf):
-        tmp.write_text(code)
+        _ = tmp.write_text(code)
         print(f'[CODE] {code!r}')
         res = run(sys.orig_argv[0], src, 'run', tmp)
         print(f'[EXIT CODE] {res}')
         print()
-out.write_text(buf.getvalue())
+_ = out.write_text(buf.getvalue())
 tmp.unlink()

@@ -17,18 +17,18 @@ class _Node:
 
 
 class StringBuilder:
-    __slots__ = ('_node',)
+    __slots__: tuple[str, ...] = ('_node',)
     _node: _Node
 
     def __init__(self, _node: _Node = _Node('', None)) -> None:
         self._node = _node
 
-    def add(self, s: str) -> t.Self:
+    def add(self, s: str) -> None:
         self._node = _Node(s, self._node)
-        return self
     
     def __iadd__(self, s: str) -> t.Self:
-        return self.add(s)
+        self.add(s)
+        return self
 
     def copy(self) -> t.Self:
         return self.__class__(self._node)
@@ -53,5 +53,6 @@ def example() -> None:
     # fork:
     s2 = s.copy()
     s2 = s[::]
+    _ = s2
     # build:
-    str(s)
+    _ = str(s)
