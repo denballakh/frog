@@ -1519,10 +1519,10 @@ def translate(ir: IR) -> str:
 
             expect_enum_size(ValueType, 2)
             if a.type == b.type == ValueType.INT:
-                sb.add(f'  {b.val} = {a.val};\n')
+                sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
 
             elif a.type == b.type == ValueType.BOOL:
-                sb.add(f'  {b.val} = {a.val};\n')
+                sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
 
             else:
                 unreachable(instr)
@@ -1534,6 +1534,7 @@ def translate(ir: IR) -> str:
     block_stack: list[Block] = []
     stack: Stack = []
     ip = 0
+    indent = 2
 
     sb = StringBuilder()
     sb_vars = StringBuilder()
@@ -1554,13 +1555,13 @@ def translate(ir: IR) -> str:
                 var = get_varname('lit_int')
                 declare_var(var, ValueType.INT)
                 stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                sb += f'  {var} = {instr.tok.value};\n'
+                sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
             case InstructionType.PUSH_BOOL:
                 var = get_varname('lit_bool')
                 declare_var(var, ValueType.BOOL)
                 stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                sb += f'  {var} = {instr.tok.value};\n'
+                sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
             case InstructionType.WORD:
                 notimplemented(
@@ -1583,7 +1584,7 @@ def translate(ir: IR) -> str:
                 stack_copy = stack.copy()
                 stack = block.stack
                 block.stack = stack_copy
-                sb += '  } else {\n'
+                sb += f'{'':{indent}}}} else {{\n'
 
             case InstructionType.END:
                 block = block_stack.pop()
@@ -1594,7 +1595,7 @@ def translate(ir: IR) -> str:
 
                     copy_stacks(stack, block.stack)
                     stack = block.stack
-                    sb += '  }\n'
+                    sb += f'{'':{indent}}}}\n'
 
                 elif block.type == InstructionType.WHILE:
                     trace(instr, 'stack trace in WHILE', stack_cur=stack, stack_prev=block.stack)
@@ -1603,8 +1604,10 @@ def translate(ir: IR) -> str:
 
                     copy_stacks(stack, block.stack)
                     stack = block.stack
-                    sb += '  } else break;\n'
-                    sb += '  }\n'
+                    indent -= 2
+                    sb += f'{'':{indent}}}} else break;\n'
+                    indent -= 2
+                    sb += f'{'':{indent}}}}\n'
 
                 else:
                     unreachable(instr)
@@ -1612,7 +1615,8 @@ def translate(ir: IR) -> str:
             case InstructionType.WHILE:
                 block = Block(InstructionType.WHILE)
                 block_stack.append(block)
-                sb += '  while (true) {\n'
+                sb += f'{'':{indent}}while (true) {{\n'
+                indent += 2
 
             case InstructionType.DO:
                 a = stack.pop()
@@ -1621,12 +1625,14 @@ def translate(ir: IR) -> str:
 
                     block = block_stack[-1]
                     if block.type == InstructionType.IF:
-                        sb += f'  if ({var}) {{\n'
+                        sb += f'{'':{indent}}if ({var}) {{\n'
+                        indent += 2
                         stack_copy = stack.copy()
                         block.stack = stack_copy
 
                     elif block.type == InstructionType.WHILE:
-                        sb += f'  if ({var}) {{\n'
+                        sb += f'{'':{indent}}if ({var}) {{\n'
+                        indent += 2
                         stack_copy = stack.copy()
                         block.stack = stack_copy
 
@@ -1655,7 +1661,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'add')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} + {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} + {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1668,7 +1674,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'sub')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} - {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} - {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1681,7 +1687,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'mul')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} * {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} * {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1694,7 +1700,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'div')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} / {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} / {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1707,7 +1713,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'mod')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} % {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} % {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1723,8 +1729,8 @@ def translate(ir: IR) -> str:
                             declare_var(var2, ValueType.INT)
                             stack.append(StackEntry(ValueType.INT, var1, tok=instr.tok))
                             stack.append(StackEntry(ValueType.INT, var2, tok=instr.tok))
-                            sb += f'  {var1} = {a.val} / {b.val};\n'
-                            sb += f'  {var2} = {a.val} % {b.val};\n'
+                            sb += f'{'':{indent}}{var1} = {a.val} / {b.val};\n'
+                            sb += f'{'':{indent}}{var2} = {a.val} % {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1737,7 +1743,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'shl')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} << {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} << {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1750,7 +1756,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'shr')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} >> {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} >> {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1763,7 +1769,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'bor')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} | {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} | {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1776,7 +1782,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'band')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} & {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} & {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1789,7 +1795,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'bxor')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} ^ {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} ^ {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1802,7 +1808,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'bnot')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'  {var} = ~{a.val};\n'
+                            sb += f'{'':{indent}}{var} = ~{a.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1816,7 +1822,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'and')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} && {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} && {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1829,7 +1835,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'or')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} || {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} || {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1841,7 +1847,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'not')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = !{a.val};\n'
+                            sb += f'{'':{indent}}{var} = !{a.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1855,7 +1861,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'eq')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} == {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} == {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1868,7 +1874,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'ne')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} != {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} != {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1881,7 +1887,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'lt')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} < {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} < {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1894,7 +1900,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'gt')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} > {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} > {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1907,7 +1913,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'le')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} <= {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} <= {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1920,7 +1926,7 @@ def translate(ir: IR) -> str:
                             var = get_varname(f'ge')
                             declare_var(var, a.type)
                             stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'  {var} = {a.val} >= {b.val};\n'
+                            sb += f'{'':{indent}}{var} = {a.val} >= {b.val};\n'
 
                         else:
                             unreachable(instr)
@@ -1934,7 +1940,7 @@ def translate(ir: IR) -> str:
                         var = get_varname(f'dup')
                         declare_var(var, a.type)
                         stack.append(StackEntry(a.type, var, tok=instr.tok))
-                        sb += f'  {var} = {a.val};\n'
+                        sb += f'{'':{indent}}{var} = {a.val};\n'
 
                     case IntrinsicType.DROP:
                         # a --
@@ -1960,7 +1966,7 @@ def translate(ir: IR) -> str:
                     case IntrinsicType.PRINT:
                         # a --
                         a = stack.pop()
-                        sb += f'  printf("%d\\n", {a.val});\n'
+                        sb += f'{'':{indent}}printf("%d\\n", {a.val});\n'
 
                     case IntrinsicType.DEBUG:
                         pass
