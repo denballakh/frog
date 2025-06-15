@@ -175,6 +175,20 @@ code_examples = [
     'proc',
     'somerandomword',
 ]
+cli_examples = [
+    '',
+    '-h',
+    '--help',
+    'run',
+    'run -f p1.lang',
+    'run -l TRACE',
+    'run -l TRACE -f p1.lang',
+    'run -l LOL -f p1.lang',
+    'run -l WARN -f p1.lang',
+    'run -l INFO -f p1.lang',
+    'run -l ERROR -f p1.lang',
+    'run -l DEFAULT -f p1.lang',
+]
 
 src = ROOT / 'lang.py'
 src = src.relative_to(Path.cwd())
@@ -186,7 +200,6 @@ out = ROOT / 'test_dump.txt'
 buf = io.StringIO()
 for code in tqdm(code_examples):
     with contextlib.redirect_stdout(buf):
-        # with contextlib.nullcontext():
         _ = tmp.write_text(code)
         print('=' * 60)
         print(f'[CODE] {code!r}')
@@ -194,5 +207,12 @@ for code in tqdm(code_examples):
         res = run_lang('py', src, 'run', '-f', tmp)
         print(f'[EXIT CODE] {res}')
         print()
+
+for cli in tqdm(cli_examples):
+    with contextlib.redirect_stdout(buf):
+        print('=' * 60)
+        res = run_cmd('py', src, *shlex.split(cli))
+        print(f'[EXIT CODE] {res}')
+
 _ = out.write_text(buf.getvalue())
 tmp.unlink()

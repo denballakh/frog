@@ -1589,7 +1589,9 @@ def translate(ir: IR) -> str:
                     stack_copy = stack.copy()
                     stack = block.stack
                     block.stack = stack_copy
+                    indent -= 2
                     sb += f'{'':{indent}}}} else {{\n'
+                    indent += 2
 
                 case InstructionType.END:
                     block = block_stack.pop()
@@ -1600,6 +1602,7 @@ def translate(ir: IR) -> str:
 
                         copy_stacks(stack, block.stack)
                         stack = block.stack
+                        indent -= 2
                         sb += f'{'':{indent}}}}\n'
 
                     elif block.type == InstructionType.WHILE:
@@ -1988,7 +1991,8 @@ def translate(ir: IR) -> str:
     if block_stack:
         unreachable(None, block_stack=block_stack)
 
-    return str(sb_vars) + str(sb)
+    code = str(sb_vars) + str(sb)
+    return code
 
 
 def repl() -> None:
@@ -2056,7 +2060,7 @@ def main(argv: list[str]) -> None:
         return res
 
     def usage() -> None:
-        print(f'Usage: {sys.executable} {sys.argv[0]} SUBCOMMAND [OPTIONS] <ARGS>')
+        print(f'Usage: py lang.py SUBCOMMAND [OPTIONS] <ARGS>')
         print(f'Subcommands:')
         print(f'  help        print this help message')
         print(f'  run -f FILE    run a file')
@@ -2105,6 +2109,10 @@ def main(argv: list[str]) -> None:
     match subcmd:
         case 'run':
             log_level = cmd_log_level
+            if file == '':
+                usage()
+                print(f'[ERROR] no file specified')
+                sys.exit(2)
             run_file(file)
             sys.exit(0)
 
