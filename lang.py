@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 import enum
+from pathlib import Path
+import sys
 from typing import Any, Never, assert_never, cast, override
 from enum import Enum, auto
 from dataclasses import dataclass, is_dataclass
+import traceback
 
 from sb import StringBuilder
 
@@ -1284,6 +1287,8 @@ def interpret(instrs: Iterable[Instruction]) -> None:
                         a = stack.pop()
                         expect_enum_size(ValueType, 2)
                         if a.type == b.type == ValueType.INT:
+                            if b.val == 0:
+                                error(instr, 'division by zero', a=a, b=b)
                             stack.append(StackEntry(ValueType.INT, a.val // b.val, tok=instr.tok))
 
                         else:
@@ -2141,7 +2146,11 @@ def run_file(file: str) -> None:
         'Generated C code:',
         generated_code=gen_code,
     )
-    interpret(ir)
+    try:
+        interpret(ir)
+    except Exception:
+        traceback.print_exc()
+        raise SystemExit(69)
 
 
 def main() -> None:

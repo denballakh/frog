@@ -159,18 +159,12 @@
 
 [CODE] '2 0 / print'
 [CMD] python lang.py run tmp.lang
-[STDERR]:
-Traceback (most recent call last):
-  File "D:\GitHub\lang\lang.py", line 2206, in <module>
-    main()
-  File "D:\GitHub\lang\lang.py", line 2186, in main
-    run_file(file)
-  File "D:\GitHub\lang\lang.py", line 2141, in run_file
-    interpret(ir)
-  File "D:\GitHub\lang\lang.py", line 1284, in interpret
-    stack.append(StackEntry(ValueType.INT, a.val // b.val, tok=instr.tok))
-                                           ~~~~~~^^~~~~~~
-ZeroDivisionError: integer division or modulo by zero
+[STDOUT]:
+[ERROR] tmp.lang:1:4: division by zero
+[NOTE] a:
+         INT:2@tmp.lang:1:0
+[NOTE] b:
+         INT:0@tmp.lang:1:2
 
 [EXIT CODE] 1
 
@@ -649,7 +643,7 @@ ZeroDivisionError: integer division or modulo by zero
 [STDOUT]:
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-           0. compile.<locals>.Block(type=<InstructionType.IF: 6>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+           0. Block(type=<InstructionType.IF: 6>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
 
 [EXIT CODE] 1
 
@@ -658,7 +652,7 @@ ZeroDivisionError: integer division or modulo by zero
 [STDOUT]:
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-           0. compile.<locals>.Block(type=<InstructionType.IF: 6>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+           0. Block(type=<InstructionType.IF: 6>, ip1=0, ip2=4, ip3=-1, ip4=-1)
 
 [EXIT CODE] 1
 
@@ -667,7 +661,7 @@ ZeroDivisionError: integer division or modulo by zero
 [STDOUT]:
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-           0. compile.<locals>.Block(type=<InstructionType.IF: 6>, ip1=0, ip2=4, ip3=7, ip4=-1)
+           0. Block(type=<InstructionType.IF: 6>, ip1=0, ip2=4, ip3=7, ip4=-1)
 
 [EXIT CODE] 1
 
@@ -789,7 +783,7 @@ ZeroDivisionError: integer division or modulo by zero
 [STDOUT]:
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-           0. compile.<locals>.Block(type=<InstructionType.WHILE: 8>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+           0. Block(type=<InstructionType.WHILE: 8>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
 
 [EXIT CODE] 1
 
@@ -798,7 +792,7 @@ ZeroDivisionError: integer division or modulo by zero
 [STDOUT]:
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-           0. compile.<locals>.Block(type=<InstructionType.WHILE: 8>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+           0. Block(type=<InstructionType.WHILE: 8>, ip1=0, ip2=4, ip3=-1, ip4=-1)
 
 [EXIT CODE] 1
 
@@ -887,26 +881,24 @@ ZeroDivisionError: integer division or modulo by zero
 
 [EXIT CODE] 1
 
-[CODE] "'\n'"
-[CMD] python lang.py run tmp.lang
-[STDOUT]:
-[ERROR] tmp.lang:1:0: unterminated character literal
-
-[EXIT CODE] 1
-
-[CODE] "'\t'"
-[CMD] python lang.py run tmp.lang
-[STDOUT]:
-[ERROR] <?>:0:0: stack is not empty: 1 items are unhandled
-[NOTE] stack:
-           0. INT@tmp.lang:1:0
-
-[EXIT CODE] 1
-
-[CODE] "'''"
+[CODE] "'\\n'"
 [CMD] python lang.py run tmp.lang
 [STDOUT]:
 [ERROR] tmp.lang:1:0: invalid character literal
+
+[EXIT CODE] 1
+
+[CODE] "'\\t'"
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:0: invalid character literal
+
+[EXIT CODE] 1
+
+[CODE] "'\\''"
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:1: unterminated character literal
 
 [EXIT CODE] 1
 
@@ -931,10 +923,10 @@ ZeroDivisionError: integer division or modulo by zero
 
 [EXIT CODE] 1
 
-[CODE] '"abc\n" ?'
+[CODE] '"abc\\n" ?'
 [CMD] python lang.py run tmp.lang
 [STDOUT]:
-[ERROR] tmp.lang:1:0: unterminated string literal
+[ERROR] tmp.lang:1:0: not implemented: string literals
 
 [EXIT CODE] 1
 
@@ -972,68 +964,4 @@ ZeroDivisionError: integer division or modulo by zero
 [ERROR] tmp.lang:1:0: arbitrary word handling is not implemented yet: somerandomword
 
 [EXIT CODE] 1
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
-
-[CODE] ''
-[CMD] python lang.py run tmp.lang
-[EXIT CODE] 0
 

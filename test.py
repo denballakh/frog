@@ -3,6 +3,16 @@ import os
 from pathlib import Path
 import sys
 import io
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from tqdm import tqdm
+else:
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        def tqdm[T](x: T, *_: Any, **__: Any) -> T:
+            return x
 
 ROOT = Path(__file__).parent
 
@@ -150,8 +160,8 @@ tmp = tmp.relative_to(Path.cwd())
 
 out = ROOT / 'test_dump.txt'
 buf = io.StringIO()
-with contextlib.redirect_stdout(buf):
-    for code in code_examples:
+for code in tqdm(code_examples):
+    with contextlib.redirect_stdout(buf):
         tmp.write_text(code)
         print(f'[CODE] {code!r}')
         res = run(sys.orig_argv[0], src, 'run', tmp)
