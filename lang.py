@@ -29,7 +29,7 @@ class Loc:
     col: int
 
     @override
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'{self.file}:{self.line}:{self.col}'
 
 
@@ -78,9 +78,9 @@ class IntrinsicType(Enum):
     ADD = auto()  # a b -- a+b
     SUB = auto()  # a b -- a-b
     MUL = auto()  # a b -- a*b
-    DIV = auto()  # a b -- a//b
+    DIV = auto()  # a b -- a/b
     MOD = auto()  # a b -- a%b
-    DIVMOD = auto()  # a b -- a//b a%b
+    DIVMOD = auto()  # a b -- a/b a%b
 
     SHL = auto()  # a b -- a<<b
     SHR = auto()  # a b -- a>>b
@@ -208,22 +208,37 @@ def note(**notes: Any) -> None:
                 for line in pp(v).splitlines():
                     print(f'         {line}')
 
+LL_ERROR = 0
+LL_WARN = 1
+LL_INFO = 2
+LL_TRACE = 3
+
+LOG_LEVEL = LL_INFO
 
 def error(loc: _Locatable, msg: str, **notes) -> Never:
-    msg = f'[ERROR] {_locatable_to_loc(loc)}: {msg}'
-    print(msg)
-    note(**notes)
-    raise Error(msg)
+    if LOG_LEVEL >= LL_ERROR:
+        msg = f'[ERROR] {_locatable_to_loc(loc)}: {msg}'
+        print(msg)
+        note(**notes)
+    raise SystemExit(1)
 
 
 def warn(loc: _Locatable, msg: str, **notes) -> None:
-    print(f'[WARNING] {_locatable_to_loc(loc)}: {msg}')
-    note(**notes)
-
+    if LOG_LEVEL >= LL_WARN:
+        msg = f'[WARNING] {_locatable_to_loc(loc)}: {msg}'
+        print(msg)
+        note(**notes)
 
 def info(loc: _Locatable, msg: str, **notes) -> None:
-    print(f'[INFO] {_locatable_to_loc(loc)}: {msg}')
-    note(**notes)
+    if LOG_LEVEL >= LL_INFO:
+        print(f'[INFO] {_locatable_to_loc(loc)}: {msg}')
+        note(**notes)
+
+
+def trace(loc: _Locatable, msg: str, **notes) -> None:
+    if LOG_LEVEL >= LL_TRACE:
+        print(f'[TRACE] {_locatable_to_loc(loc)}: {msg}')
+        note(**notes)
 
 
 def typecheck_has_a_bug(loc: _Locatable, msg: str, **notes) -> Never:
@@ -251,6 +266,8 @@ def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
 
     loc_start = Loc(filename, line_no, col_no)
     i_start = 0
+
+    text += '\n'
 
     i = 0
     while i < len(text):
@@ -1632,7 +1649,7 @@ def translate(instrs: list[Instruction]) -> str:
 
     while ip < len(instrs):
         instr = instrs[ip]
-        info(
+        trace(
             instr,
             'stack trace',
             ip=f'{ip}/{len(instrs)}',
@@ -1680,7 +1697,7 @@ def translate(instrs: list[Instruction]) -> str:
             case InstructionType.END:
                 block = block_stack.pop()
                 if block.type == InstructionType.IF:
-                    info(instr, 'stack trace in IF', stack_cur=stack, stack_prev=block.stack)
+                    trace(instr, 'stack trace in IF', stack_cur=stack, stack_prev=block.stack)
                     if block.stack is None:
                         unreachable(instr)
 
@@ -1689,7 +1706,7 @@ def translate(instrs: list[Instruction]) -> str:
                     sb += '  }\n'
 
                 elif block.type == InstructionType.WHILE:
-                    info(instr, 'stack trace in WHILE', stack_cur=stack, stack_prev=block.stack)
+                    trace(instr, 'stack trace in WHILE', stack_cur=stack, stack_prev=block.stack)
                     if block.stack is None:
                         unreachable(instr)
 
@@ -2079,10 +2096,13 @@ def repl() -> None:
             line = input('> ')
             if line == 'q':
                 break
-            line += '\n'
+            
+            loc = Loc('<repl>', 0, 0)
             toks = [*tokenize(line, filename='<repl>')]
             ir = [*compile(toks)]
-            note(
+            trace(
+                loc,
+                'before typechecking and running',
                 Tokens=toks,
                 IR=ir,
             )
@@ -2100,16 +2120,24 @@ def repl() -> None:
 def run_file(file: str) -> None:
     with open(file, 'rt') as f:
         text = f.read()
+    
+    loc = Loc(file, 0, 0)
     toks = [*tokenize(text, filename=file)]
     ir = [*compile(toks)]
-    note(
+    trace(
+        loc,
+        'before typechecking and running',
         Tokens=toks,
         IR=ir,
     )
     typecheck(ir)
     gen_code = translate(ir)
-    print('Generated code:')
-    print(gen_code)
+    
+    trace(
+        loc,
+        'Generated C code:',
+        generated_code=gen_code,
+    )
     interpret(ir)
 
 
