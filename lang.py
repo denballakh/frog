@@ -240,11 +240,20 @@ LL_WARN = 1
 LL_INFO = 2
 LL_TRACE = 3
 
-LOG_LEVEL = LL_INFO
+LL_DEFAULT = LL_INFO
+log_level = LL_INFO
+
+LL = {
+    'ERROR': LL_ERROR,
+    'WARN': LL_WARN,
+    'INFO': LL_INFO,
+    'TRACE': LL_TRACE,
+    'DEFAULT': LL_DEFAULT,
+}
 
 
 def error(loc: _Locatable, msg: str, **notes: Any) -> Never:
-    if LOG_LEVEL >= LL_ERROR:
+    if log_level >= LL_ERROR:
         msg = f'[ERROR] {_locatable_to_loc(loc)}: {msg}'
         print(msg)
         note(**notes)
@@ -252,20 +261,20 @@ def error(loc: _Locatable, msg: str, **notes: Any) -> Never:
 
 
 def warn(loc: _Locatable, msg: str, **notes: Any) -> None:
-    if LOG_LEVEL >= LL_WARN:
-        msg = f'[WARNING] {_locatable_to_loc(loc)}: {msg}'
+    if log_level >= LL_WARN:
+        msg = f'[WARN] {_locatable_to_loc(loc)}: {msg}'
         print(msg)
         note(**notes)
 
 
 def info(loc: _Locatable, msg: str, **notes: Any) -> None:
-    if LOG_LEVEL >= LL_INFO:
+    if log_level >= LL_INFO:
         print(f'[INFO] {_locatable_to_loc(loc)}: {msg}')
         note(**notes)
 
 
 def trace(loc: _Locatable, msg: str, **notes: Any) -> None:
-    if LOG_LEVEL >= LL_TRACE:
+    if log_level >= LL_TRACE:
         print(f'[TRACE] {_locatable_to_loc(loc)}: {msg}')
         note(**notes)
 
@@ -2040,7 +2049,9 @@ def run_file(file: str) -> None:
 
 
 def main(argv: list[str]) -> None:
-    def unshift() -> str:
+    def unshift(msg: str = 'expected arg') -> str:
+        if not argv:
+            error(Loc('<cli>', 1, 0), msg)
         res, argv[:] = argv[0], argv[1:]
         return res
 
@@ -2048,49 +2059,63 @@ def main(argv: list[str]) -> None:
         print(f'Usage: {sys.executable} {sys.argv[0]} SUBCOMMAND [OPTIONS] <ARGS>')
         print(f'Subcommands:')
         print(f'  help        print this help message')
-        print(f'  run FILE    run a file')
+        print(f'  run -f FILE    run a file')
         print(f'  repl        start a Read-Eval-Print-Loop')
+        print(f'OPTIONS:')
+        print(f'  -f <file>   file to run')
+        print(f'  -l <level>  log level: ERROR, WARN, INFO, DEBUG, TRACE')
 
+    subcmd = ''
     file = ''
+    global log_level
+    cmd_log_level = LL_DEFAULT
 
-    if not argv:
-        usage()
-        print(f'Error: no subcommand specified')
-        sys.exit(1)
-
-    arg = unshift()
-
-    match arg:
-        case 'help' | '-h' | '--help':
+    while argv:
+        arg = unshift()
+        if arg in {'-h', '--help'}:
             usage()
             sys.exit(0)
 
+        elif arg == '-l':
+            log_level_str = unshift('expected log level after `-l`')
+            if log_level_str not in LL:
+                error(Loc('<cli>', 1, 0), f'invalid log level: {log_level_str}, expected one of {list(LL)}')
+            cmd_log_level = LL[log_level_str]
+
+        elif arg == '-f':
+            file = unshift('expected file after `-f`')
+
+        elif arg in {'run', 'repl'}:
+            if subcmd:
+                usage()
+                print(f'[ERROR] multiple subcommands specified')
+                sys.exit(2)
+            subcmd = arg
+
+        else:
+            usage()
+            print(f'[ERROR] unknown argument: {arg}')
+            sys.exit(2)
+
+    if subcmd == '':
+        usage()
+        print(f'[ERROR] no subcommand specified')
+        sys.exit(2)
+
+    match subcmd:
         case 'run':
-            if not argv:
-                usage()
-                print(f'Error: no file specified')
-                sys.exit(2)
-
-            file = unshift()
-            if argv:
-                usage()
-                print(f'Error: unexpected arguments: {argv}')
-                sys.exit(2)
-
+            log_level = cmd_log_level
             run_file(file)
             sys.exit(0)
 
         case 'repl':
-            if argv:
-                usage()
-                print(f'Error: unexpected arguments: {argv}')
-                sys.exit(2)
-
+            log_level = cmd_log_level
             repl()
             sys.exit(0)
 
         case _:
             usage()
+            print(f'[ERROR] unknown subcommand: {subcmd}')
             sys.exit(2)
 
     assert_never(0)  # pyright: ignore[reportUnreachable]
