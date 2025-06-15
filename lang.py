@@ -4,7 +4,7 @@ from collections.abc import Iterable
 import enum
 from typing import Any, Never, assert_never, cast, override
 from enum import Enum, auto
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 
 from sb import StringBuilder
 
@@ -171,7 +171,10 @@ def pp(x: Any) -> str:
             return s
 
         case _:
-            return repr(x)
+            res = repr(x)
+            if is_dataclass(x):
+                res = res.replace(x.__class__.__qualname__, x.__class__.__name__)
+            return res
 
 
 def _locatable_to_loc(loc: _Locatable) -> Loc:
@@ -537,7 +540,7 @@ def compile(toks: list[Token]) -> list[Instruction]:
                                 type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MOD
                             )
                         )
-                    case 'divmod':
+                    case '/%':
                         result.append(
                             Instruction(
                                 type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIVMOD
@@ -584,19 +587,19 @@ def compile(toks: list[Token]) -> list[Instruction]:
                         )
 
                     # logic:
-                    case 'and':
+                    case '&&':
                         result.append(
                             Instruction(
                                 type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.AND
                             )
                         )
-                    case 'or':
+                    case '||':
                         result.append(
                             Instruction(
                                 type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.OR
                             )
                         )
-                    case 'not':
+                    case '!':
                         result.append(
                             Instruction(
                                 type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NOT
