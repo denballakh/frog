@@ -1,7 +1,6 @@
 import contextlib
 import os
 from pathlib import Path
-import sys
 import io
 from typing import TYPE_CHECKING, Any
 
@@ -11,8 +10,10 @@ else:
     try:
         from tqdm import tqdm
     except ImportError:
+
         def tqdm[T](x: T, *_: Any, **__: Any) -> T:
             return x
+
 
 ROOT = Path(__file__).parent
 
@@ -118,7 +119,7 @@ code_examples = [
     'if 1 2 3 do end',
     'if 1 2 3 == do end',
     'else',
-    # 
+    #
     '10 while dup 5 > do 1 - print ? end drop',
     '10 while dup 5 > do 1 - dup print ? end drop',
     'while else',
@@ -162,7 +163,7 @@ out = ROOT / 'test_dump.txt'
 buf = io.StringIO()
 for code in tqdm(code_examples):
     with contextlib.redirect_stdout(buf):
-    # with contextlib.nullcontext():
+        # with contextlib.nullcontext():
         _ = tmp.write_text(code)
         print(f'[CODE] {code!r}')
         res = run('py', src, 'run', tmp)

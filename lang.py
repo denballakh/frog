@@ -8,6 +8,7 @@ import traceback
 
 from sb import StringBuilder
 
+
 @final
 class _sentinel:
     def __init__(self, name: str) -> None:
@@ -129,6 +130,7 @@ class Instruction:
 class Procedure:
     name: str
     instructions: list[Instruction] = field(default_factory=list)
+
 
 @dataclass
 class IR:
@@ -381,7 +383,7 @@ def compile(toks: list[Token]) -> IR:
     cur_proc: Procedure | None = None
 
     def add_instr(instr: Instruction) -> int:
-        """ returns index of added instruction """
+        """returns index of added instruction"""
         nonlocal cur_proc
         if cur_proc is None:
             cur_proc = ir.get_proc_by_name('main')
@@ -390,7 +392,7 @@ def compile(toks: list[Token]) -> IR:
             ir.procs.append(cur_proc)
         cur_proc.instructions.append(instr)
         return len(cur_proc.instructions) - 1
-    
+
     # pyright tries to be smart and infer that `cur_proc` is always `None`
     # trick it into thinking that it might be non-`None`
     if len('abc') == 4:
@@ -402,7 +404,6 @@ def compile(toks: list[Token]) -> IR:
     #     _label_cnt += 1
     #     return _label_cnt
 
-    
     @dataclass
     class Block:
         type: InstructionType
@@ -503,7 +504,6 @@ def compile(toks: list[Token]) -> IR:
 
                                 cur_proc.instructions[b.ip2].arg1 = b.ip3
                                 cur_proc.instructions[b.ip3].arg1 = b.ip4
-                                
 
                             # while // ip1
                             #   <cond>
@@ -520,7 +520,9 @@ def compile(toks: list[Token]) -> IR:
                                     error(tok, f'while <cond> do <body> end')
 
                                 assert cur_proc is not None
-                                cur_proc.instructions[b.ip2].arg1 = b.ip3 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1))
+                                cur_proc.instructions[b.ip2].arg1 = b.ip3 = add_instr(
+                                    Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1)
+                                )
 
                             case _:
                                 error(tok, f'END should follow an IF or WHILE, not {b.type}')
@@ -768,7 +770,7 @@ def typecheck(ir: IR) -> None:
 
             case InstructionType.PROC:
                 notimplemented(instr, f'typechecking {InstructionType.PROC}')
-            
+
             case InstructionType.LABEL:
                 notimplemented(instr, f'typechecking {InstructionType.LABEL}')
 
@@ -1140,7 +1142,7 @@ def interpret(ir: IR) -> None:
 
             case InstructionType.PROC:
                 notimplemented(instr, 'procedures are not implemented yet')
-            
+
             case InstructionType.LABEL:
                 notimplemented(instr, 'labels are not implemented yet')
 
@@ -1636,7 +1638,7 @@ def translate(ir: IR) -> str:
 
             case InstructionType.PROC:
                 notimplemented(instr, f'translating {InstructionType.PROC}')
-            
+
             case InstructionType.LABEL:
                 notimplemented(instr, f'translating {InstructionType.LABEL}')
 

@@ -1,12 +1,26 @@
 
-_default:
+@_default:
     just --list
 
-mypy:
-    mypy lang.py
+@_mypy:
+    mypy .
 
-run file: mypy
-    python lang.py run {file}
+@_basedpyright:
+    basedpyright .
 
-repl: mypy
+@_black:
+    black .
+
+typecheck: _mypy _basedpyright
+fmt: _black
+check: typecheck && fmt
+
+run file: check
+    python lang.py run {{file}}
+
+repl: check
     python lang.py repl
+
+test: check
+    python test.py
+

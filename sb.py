@@ -25,7 +25,7 @@ class StringBuilder:
 
     def add(self, s: str) -> None:
         self._node = _Node(s, self._node)
-    
+
     def __iadd__(self, s: str) -> t.Self:
         self.add(s)
         return self
@@ -40,13 +40,14 @@ class StringBuilder:
 
     @t.override
     def __str__(self) -> str:
-        s = ''.join(reversed([*self._node])) # is there a better way?
+        s = ''.join(reversed([*self._node]))  # is there a better way?
         self._node = _Node(s)
         return s
 
+
 def example() -> None:
     # create:
-    s = StringBuilder() 
+    s = StringBuilder()
     # append:
     s += 'chunk'
     s.add('chunk')

@@ -10,6 +10,7 @@ in
     pkgs.git
     pkgs.basedpyright
     pkgs.python313
+    pkgs.python313Packages.types-tqdm
     pkgs.python313Packages.tqdm
     pkgs.python313Packages.mypy
     pkgs.python313Packages.black
