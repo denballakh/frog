@@ -1,4 +1,7 @@
 
+_default:
+    just --list
+
 mypy:
     mypy lang.py
 

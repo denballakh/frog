@@ -24,7 +24,7 @@ def run(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
     print(f'[CMD] {cmd}')
     res = subprocess.run(
         cmds,
-        shell=True,
+        # shell=True,
         capture_output=True,
         universal_newlines=True,
     )
@@ -162,9 +162,10 @@ out = ROOT / 'test_dump.txt'
 buf = io.StringIO()
 for code in tqdm(code_examples):
     with contextlib.redirect_stdout(buf):
+    # with contextlib.nullcontext():
         _ = tmp.write_text(code)
         print(f'[CODE] {code!r}')
-        res = run(sys.orig_argv[0], src, 'run', tmp)
+        res = run('py', src, 'run', tmp)
         print(f'[EXIT CODE] {res}')
         print()
 _ = out.write_text(buf.getvalue())
