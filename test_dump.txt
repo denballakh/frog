@@ -364,3 +364,102 @@
 
 [EXIT CODE] 0
 
+[CODE] '1 2 == if do 5 else 7 end print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:10: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack:
+           0. BOOL@tmp.lang:1:4
+[NOTE] actual_stack:
+         (empty)
+
+[EXIT CODE] 1
+
+[CODE] 'if 1 2 == do 5 else 7 end print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:7@tmp.lang:1:20
+
+[EXIT CODE] 0
+
+[CODE] 'if 1 2 != do 5 else 7 end print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:5@tmp.lang:1:13
+
+[EXIT CODE] 0
+
+[CODE] 'if 1 2 != do 5 else 7 8 end print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:24: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+           0. INT@tmp.lang:1:13
+[NOTE] stack_else:
+           0. INT@tmp.lang:1:20
+           1. INT@tmp.lang:1:22
+
+[EXIT CODE] 1
+
+[CODE] 'if 1 2 != do 5 else 7 end'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] <?>:0:0: stack is not empty: 1 items are unhandled
+[NOTE] stack:
+           0. INT@tmp.lang:1:20
+
+[EXIT CODE] 1
+
+[CODE] 'if 1 2 != do 5 else end'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:20: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+           0. INT@tmp.lang:1:13
+[NOTE] stack_else:
+         (empty)
+
+[EXIT CODE] 1
+
+[CODE] 'if 1 2 != do 5 end'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:15: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+           0. INT@tmp.lang:1:13
+[NOTE] stack_else:
+         (empty)
+
+[EXIT CODE] 1
+
+[CODE] 'if 1 2 != do 5 print end'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:5@tmp.lang:1:13
+
+[EXIT CODE] 0
+
+[CODE] '5 if 1 2 == do drop 7 end print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:5@tmp.lang:1:0
+
+[EXIT CODE] 0
+
+[CODE] '5 if 1 2 != do drop 7 end print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:7@tmp.lang:1:20
+
+[EXIT CODE] 0
+
+[CODE] '10 while dup 5 > do 1 - print ? end drop'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:30: Stack at compile time:
+[NOTE] stack:
+         (empty)
+[ERROR] tmp.lang:1:32: InstructionType.WHILE must not alter the stack state
+
+[EXIT CODE] 1
+
