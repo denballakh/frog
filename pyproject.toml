@@ -1,0 +1,29 @@
+[project]
+name = "langlang"
+description = "LangLang"
+license = "MIT"
+requires-python = ">=3.13"
+authors = [
+  { name = "denball" },
+]
+
+[project.urls]
+Repository = "https://github.com/denballakh/langlang"
+
+[tool.black]
+line-length = 120
+target-version = ['py313']
+skip-string-normalization = true
+include = '\.pyi?$'
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+pythonPlatform = "Linux"
+
+typeCheckingMode = "recommended"
+reportAny = false
+reportExplicitAny = false
+reportCallInDefaultInitializer = false
+
+[tool.mypy]
+python_version = "3.13"
