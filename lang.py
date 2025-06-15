@@ -1490,13 +1490,13 @@ def translate(ir: IR) -> str:
         type: InstructionType
         stack: Stack | None = None
 
-    used_names: set[str] = set()
+    _used_names: set[str] = set()
 
     def get_varname(hint: str) -> str:
         i = 0
-        while f'{hint}_{i}' in used_names:
+        while f'{hint}_{i}' in _used_names:
             i += 1
-        used_names.add(f'{hint}_{i}')
+        _used_names.add(f'{hint}_{i}')
         return f'{hint}_{i}'
 
     def declare_var(var: str, type: ValueType) -> None:
@@ -1528,455 +1528,450 @@ def translate(ir: IR) -> str:
             else:
                 unreachable(instr)
 
-    main = ir.get_proc_by_name('main')
-    assert main is not None
-    instrs = main.instructions
-
     block_stack: list[Block] = []
     stack: Stack = []
-    ip = 0
     indent = 2
 
     sb = StringBuilder()
     sb_vars = StringBuilder()
+    for proc in ir.procs:
+        instrs = proc.instructions
+        for ip, instr in enumerate(instrs):
+            trace(
+                instr,
+                'stack trace',
+                ip=f'{ip}/{len(instrs)}',
+                stack=stack,
+                block_stack=block_stack,
+            )
+            ip += 1
+            expect_enum_size(InstructionType, 11)
+            match instr.type:
+                case InstructionType.PUSH_INT:
+                    var = get_varname('lit_int')
+                    declare_var(var, ValueType.INT)
+                    stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                    sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
-    while ip < len(instrs):
-        instr = instrs[ip]
-        trace(
-            instr,
-            'stack trace',
-            ip=f'{ip}/{len(instrs)}',
-            stack=stack,
-            block_stack=block_stack,
-        )
-        ip += 1
-        expect_enum_size(InstructionType, 11)
-        match instr.type:
-            case InstructionType.PUSH_INT:
-                var = get_varname('lit_int')
-                declare_var(var, ValueType.INT)
-                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
+                case InstructionType.PUSH_BOOL:
+                    var = get_varname('lit_bool')
+                    declare_var(var, ValueType.BOOL)
+                    stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                    sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
-            case InstructionType.PUSH_BOOL:
-                var = get_varname('lit_bool')
-                declare_var(var, ValueType.BOOL)
-                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
+                case InstructionType.WORD:
+                    notimplemented(
+                        instr,
+                        f'arbitrary word handling is not implemented yet: {instr.tok.value}',
+                    )
 
-            case InstructionType.WORD:
-                notimplemented(
-                    instr,
-                    f'arbitrary word handling is not implemented yet: {instr.tok.value}',
-                )
+                case InstructionType.IF:
+                    block = Block(InstructionType.IF)
+                    block_stack.append(block)
 
-            case InstructionType.IF:
-                block = Block(InstructionType.IF)
-                block_stack.append(block)
-
-            case InstructionType.ELSE:
-                block = block_stack[-1]
-                if block.type != InstructionType.IF:
-                    unreachable(instr)
-                if block.stack is None:
-                    unreachable(instr)
-
-                copy_stacks(stack, block.stack)
-                stack_copy = stack.copy()
-                stack = block.stack
-                block.stack = stack_copy
-                sb += f'{'':{indent}}}} else {{\n'
-
-            case InstructionType.END:
-                block = block_stack.pop()
-                if block.type == InstructionType.IF:
-                    trace(instr, 'stack trace in IF', stack_cur=stack, stack_prev=block.stack)
-                    if block.stack is None:
-                        unreachable(instr)
-
-                    copy_stacks(stack, block.stack)
-                    stack = block.stack
-                    sb += f'{'':{indent}}}}\n'
-
-                elif block.type == InstructionType.WHILE:
-                    trace(instr, 'stack trace in WHILE', stack_cur=stack, stack_prev=block.stack)
-                    if block.stack is None:
-                        unreachable(instr)
-
-                    copy_stacks(stack, block.stack)
-                    stack = block.stack
-                    indent -= 2
-                    sb += f'{'':{indent}}}} else break;\n'
-                    indent -= 2
-                    sb += f'{'':{indent}}}}\n'
-
-                else:
-                    unreachable(instr)
-
-            case InstructionType.WHILE:
-                block = Block(InstructionType.WHILE)
-                block_stack.append(block)
-                sb += f'{'':{indent}}while (true) {{\n'
-                indent += 2
-
-            case InstructionType.DO:
-                a = stack.pop()
-                if a.type == ValueType.BOOL:
-                    var = a.val
-
+                case InstructionType.ELSE:
                     block = block_stack[-1]
+                    if block.type != InstructionType.IF:
+                        unreachable(instr)
+                    if block.stack is None:
+                        unreachable(instr)
+
+                    copy_stacks(stack, block.stack)
+                    stack_copy = stack.copy()
+                    stack = block.stack
+                    block.stack = stack_copy
+                    sb += f'{'':{indent}}}} else {{\n'
+
+                case InstructionType.END:
+                    block = block_stack.pop()
                     if block.type == InstructionType.IF:
-                        sb += f'{'':{indent}}if ({var}) {{\n'
-                        indent += 2
-                        stack_copy = stack.copy()
-                        block.stack = stack_copy
+                        trace(instr, 'stack trace in IF', stack_cur=stack, stack_prev=block.stack)
+                        if block.stack is None:
+                            unreachable(instr)
+
+                        copy_stacks(stack, block.stack)
+                        stack = block.stack
+                        sb += f'{'':{indent}}}}\n'
 
                     elif block.type == InstructionType.WHILE:
-                        sb += f'{'':{indent}}if ({var}) {{\n'
-                        indent += 2
-                        stack_copy = stack.copy()
-                        block.stack = stack_copy
+                        trace(instr, 'stack trace in WHILE', stack_cur=stack, stack_prev=block.stack)
+                        if block.stack is None:
+                            unreachable(instr)
+
+                        copy_stacks(stack, block.stack)
+                        stack = block.stack
+                        indent -= 2
+                        sb += f'{'':{indent}}}} else break;\n'
+                        indent -= 2
+                        sb += f'{'':{indent}}}}\n'
 
                     else:
                         unreachable(instr)
 
-                else:
-                    unreachable(instr)
+                case InstructionType.WHILE:
+                    block = Block(InstructionType.WHILE)
+                    block_stack.append(block)
+                    sb += f'{'':{indent}}while (true) {{\n'
+                    indent += 2
 
-            case InstructionType.PROC:
-                notimplemented(instr, f'translating {InstructionType.PROC}')
+                case InstructionType.DO:
+                    a = stack.pop()
+                    if a.type == ValueType.BOOL:
+                        var = a.val
 
-            case InstructionType.LABEL:
-                notimplemented(instr, f'translating {InstructionType.LABEL}')
+                        block = block_stack[-1]
+                        if block.type == InstructionType.IF:
+                            sb += f'{'':{indent}}if ({var}) {{\n'
+                            indent += 2
+                            stack_copy = stack.copy()
+                            block.stack = stack_copy
 
-            case InstructionType.INTRINSIC:
-                intr_type = cast(IntrinsicType, instr.arg1)
-                expect_enum_size(IntrinsicType, 27)
-                match intr_type:
-                    # arithmetic:
-                    case IntrinsicType.ADD:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'add')
+                        elif block.type == InstructionType.WHILE:
+                            sb += f'{'':{indent}}if ({var}) {{\n'
+                            indent += 2
+                            stack_copy = stack.copy()
+                            block.stack = stack_copy
+
+                        else:
+                            unreachable(instr)
+
+                    else:
+                        unreachable(instr)
+
+                case InstructionType.PROC:
+                    notimplemented(instr, f'translating {InstructionType.PROC}')
+
+                case InstructionType.LABEL:
+                    notimplemented(instr, f'translating {InstructionType.LABEL}')
+
+                case InstructionType.INTRINSIC:
+                    intr_type = cast(IntrinsicType, instr.arg1)
+                    expect_enum_size(IntrinsicType, 27)
+                    match intr_type:
+                        # arithmetic:
+                        case IntrinsicType.ADD:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'add')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} + {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.SUB:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'sub')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} - {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.MUL:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'mul')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} * {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.DIV:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'div')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} / {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.MOD:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'mod')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} % {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.DIVMOD:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var1 = get_varname(f'div')
+                                var2 = get_varname(f'mod')
+                                declare_var(var1, ValueType.INT)
+                                declare_var(var2, ValueType.INT)
+                                stack.append(StackEntry(ValueType.INT, var1, tok=instr.tok))
+                                stack.append(StackEntry(ValueType.INT, var2, tok=instr.tok))
+                                sb += f'{'':{indent}}{var1} = {a.val} / {b.val};\n'
+                                sb += f'{'':{indent}}{var2} = {a.val} % {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.SHL:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'shl')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} << {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.SHR:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'shr')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} >> {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.BOR:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'bor')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} | {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.BAND:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'band')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} & {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.BXOR:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'bxor')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} ^ {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.BNOT:
+                            # a -- ~a
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == ValueType.INT:
+                                var = get_varname(f'bnot')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = ~{a.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        # logic:
+                        case IntrinsicType.AND:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.BOOL:
+                                var = get_varname(f'and')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} && {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.OR:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.BOOL:
+                                var = get_varname(f'or')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} || {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.NOT:
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == ValueType.BOOL:
+                                var = get_varname(f'not')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = !{a.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        # comparison:
+                        case IntrinsicType.EQ:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'eq')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} == {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.NE:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'ne')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} != {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.LT:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'lt')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} < {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.GT:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'gt')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} > {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.LE:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'le')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} <= {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.GE:
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueType, 2)
+                            if a.type == b.type == ValueType.INT:
+                                var = get_varname(f'ge')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = {a.val} >= {b.val};\n'
+
+                            else:
+                                unreachable(instr)
+
+                        # stack manipulation:
+                        case IntrinsicType.DUP:
+                            # a -- a a
+                            a = stack.pop()
+                            stack.append(a)
+
+                            var = get_varname(f'dup')
                             declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} + {b.val};\n'
+                            stack.append(StackEntry(a.type, var, tok=instr.tok))
+                            sb += f'{'':{indent}}{var} = {a.val};\n'
 
-                        else:
-                            unreachable(instr)
+                        case IntrinsicType.DROP:
+                            # a --
+                            _ = stack.pop()
 
-                    case IntrinsicType.SUB:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'sub')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} - {b.val};\n'
+                        case IntrinsicType.SWAP:
+                            # a b -- b a
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(b)
+                            stack.append(a)
 
-                        else:
-                            unreachable(instr)
+                        case IntrinsicType.ROT:
+                            # a b c -- b c a
+                            c = stack.pop()
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(b)
+                            stack.append(c)
+                            stack.append(a)
 
-                    case IntrinsicType.MUL:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'mul')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} * {b.val};\n'
+                        # debugging:
+                        case IntrinsicType.PRINT:
+                            # a --
+                            a = stack.pop()
+                            sb += f'{'':{indent}}printf("%d\\n", {a.val});\n'
 
-                        else:
-                            unreachable(instr)
+                        case IntrinsicType.DEBUG:
+                            pass
 
-                    case IntrinsicType.DIV:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'div')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} / {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.MOD:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'mod')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} % {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.DIVMOD:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var1 = get_varname(f'div')
-                            var2 = get_varname(f'mod')
-                            declare_var(var1, ValueType.INT)
-                            declare_var(var2, ValueType.INT)
-                            stack.append(StackEntry(ValueType.INT, var1, tok=instr.tok))
-                            stack.append(StackEntry(ValueType.INT, var2, tok=instr.tok))
-                            sb += f'{'':{indent}}{var1} = {a.val} / {b.val};\n'
-                            sb += f'{'':{indent}}{var2} = {a.val} % {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.SHL:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'shl')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} << {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.SHR:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'shr')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} >> {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.BOR:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'bor')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} | {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.BAND:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'band')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} & {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.BXOR:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'bxor')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} ^ {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.BNOT:
-                        # a -- ~a
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == ValueType.INT:
-                            var = get_varname(f'bnot')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = ~{a.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    # logic:
-                    case IntrinsicType.AND:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.BOOL:
-                            var = get_varname(f'and')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} && {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.OR:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.BOOL:
-                            var = get_varname(f'or')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} || {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.NOT:
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == ValueType.BOOL:
-                            var = get_varname(f'not')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = !{a.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    # comparison:
-                    case IntrinsicType.EQ:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'eq')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} == {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.NE:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'ne')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} != {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.LT:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'lt')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} < {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.GT:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'gt')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} > {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.LE:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'le')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} <= {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    case IntrinsicType.GE:
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            var = get_varname(f'ge')
-                            declare_var(var, a.type)
-                            stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = {a.val} >= {b.val};\n'
-
-                        else:
-                            unreachable(instr)
-
-                    # stack manipulation:
-                    case IntrinsicType.DUP:
-                        # a -- a a
-                        a = stack.pop()
-                        stack.append(a)
-
-                        var = get_varname(f'dup')
-                        declare_var(var, a.type)
-                        stack.append(StackEntry(a.type, var, tok=instr.tok))
-                        sb += f'{'':{indent}}{var} = {a.val};\n'
-
-                    case IntrinsicType.DROP:
-                        # a --
-                        _ = stack.pop()
-
-                    case IntrinsicType.SWAP:
-                        # a b -- b a
-                        b = stack.pop()
-                        a = stack.pop()
-                        stack.append(b)
-                        stack.append(a)
-
-                    case IntrinsicType.ROT:
-                        # a b c -- b c a
-                        c = stack.pop()
-                        b = stack.pop()
-                        a = stack.pop()
-                        stack.append(b)
-                        stack.append(c)
-                        stack.append(a)
-
-                    # debugging:
-                    case IntrinsicType.PRINT:
-                        # a --
-                        a = stack.pop()
-                        sb += f'{'':{indent}}printf("%d\\n", {a.val});\n'
-
-                    case IntrinsicType.DEBUG:
-                        pass
-
-                    case _:
-                        # sb += f'  // {pp(instr)}'
-                        assert_never(intr_type)
-            case _:
-                assert_never(instr.type)
+                        case _:
+                            # sb += f'  // {pp(instr)}'
+                            assert_never(intr_type)
+                case _:
+                    assert_never(instr.type)
 
     if stack:
         unreachable(None, stack=stack)
