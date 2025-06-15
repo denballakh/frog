@@ -1,0 +1,366 @@
+[CODE] '1 2 + print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:3@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 + print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] tmp.lang:1:2: not enough items on stack for IntrinsicType.ADD: it expects two INTs on the stack
+[NOTE] stack:
+           0. INT@tmp.lang:1:0
+
+[EXIT CODE] 1
+
+[CODE] '1 2 +'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[ERROR] <?>:0:0: stack is not empty: 1 items are unhandled
+[NOTE] stack:
+           0. INT@tmp.lang:1:4
+
+[EXIT CODE] 1
+
+[CODE] '? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:0: Stack at compile time:
+[NOTE] stack:
+         (empty)
+[INFO] tmp.lang:1:4: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+[INFO] tmp.lang:1:8: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:6
+[INFO] tmp.lang:1:12: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:6
+           2. INT@tmp.lang:1:10
+[INFO] tmp.lang:1:16: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:6
+           2. INT@tmp.lang:1:10
+           3. INT@tmp.lang:1:14
+[INFO] tmp.lang:1:20: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:6
+           2. INT@tmp.lang:1:18
+[INFO] tmp.lang:1:24: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:22
+[INFO] tmp.lang:1:28: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:26
+[INFO] tmp.lang:1:36: Stack at compile time:
+[NOTE] stack:
+         (empty)
+[INFO] tmp.lang:1:0: Stack at runtime:
+[NOTE] stack:
+         (empty)
+[INFO] tmp.lang:1:4: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:2
+[INFO] tmp.lang:1:8: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:2
+           1. INT:2@tmp.lang:1:6
+[INFO] tmp.lang:1:12: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:2
+           1. INT:2@tmp.lang:1:6
+           2. INT:3@tmp.lang:1:10
+[INFO] tmp.lang:1:16: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:2
+           1. INT:2@tmp.lang:1:6
+           2. INT:3@tmp.lang:1:10
+           3. INT:4@tmp.lang:1:14
+[INFO] tmp.lang:1:20: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:2
+           1. INT:2@tmp.lang:1:6
+           2. INT:7@tmp.lang:1:18
+[INFO] tmp.lang:1:24: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:2
+           1. INT:9@tmp.lang:1:22
+[INFO] tmp.lang:1:28: Stack at runtime:
+[NOTE] stack:
+           0. INT:10@tmp.lang:1:26
+[PRINT] INT:10@tmp.lang:1:26
+[INFO] tmp.lang:1:36: Stack at runtime:
+[NOTE] stack:
+         (empty)
+
+[EXIT CODE] 0
+
+[CODE] '25 7 + print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:32@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 - print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:18@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 * print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:175@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 / print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:3@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 % print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:4@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 divmod ? print print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:12: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:5
+           1. INT@tmp.lang:1:5
+[INFO] tmp.lang:1:12: Stack at runtime:
+[NOTE] stack:
+           0. INT:3@tmp.lang:1:5
+           1. INT:4@tmp.lang:1:5
+[PRINT] INT:4@tmp.lang:1:5
+[PRINT] INT:3@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 << print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:3200@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 >> print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:0@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 | print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:31@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 & print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:1@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 7 ^ print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:30@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] '25 ~ print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] INT:-26@tmp.lang:1:3
+
+[EXIT CODE] 0
+
+[CODE] 'true false and print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:False@tmp.lang:1:11
+
+[EXIT CODE] 0
+
+[CODE] 'true false or print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:True@tmp.lang:1:11
+
+[EXIT CODE] 0
+
+[CODE] 'true not print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:False@tmp.lang:1:5
+
+[EXIT CODE] 0
+
+[CODE] 'false not print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:True@tmp.lang:1:6
+
+[EXIT CODE] 0
+
+[CODE] '1 2 == print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:False@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 2 != print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:True@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 2 < print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:True@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 2 > print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:False@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 2 <= print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:True@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 2 >= print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[PRINT] BOOL:False@tmp.lang:1:4
+
+[EXIT CODE] 0
+
+[CODE] '1 2 ? print print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:4: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:0
+           1. INT@tmp.lang:1:2
+[INFO] tmp.lang:1:4: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:0
+           1. INT:2@tmp.lang:1:2
+[PRINT] INT:2@tmp.lang:1:2
+[PRINT] INT:1@tmp.lang:1:0
+
+[EXIT CODE] 0
+
+[CODE] '1 dup ? print print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:6: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:0
+           1. INT@tmp.lang:1:0
+[INFO] tmp.lang:1:6: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:0
+           1. INT:1@tmp.lang:1:0
+[PRINT] INT:1@tmp.lang:1:0
+[PRINT] INT:1@tmp.lang:1:0
+
+[EXIT CODE] 0
+
+[CODE] '1 2 drop ? print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:9: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:0
+[INFO] tmp.lang:1:9: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:0
+[PRINT] INT:1@tmp.lang:1:0
+
+[EXIT CODE] 0
+
+[CODE] '1 2 swap ? print print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:9: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:0
+[INFO] tmp.lang:1:9: Stack at runtime:
+[NOTE] stack:
+           0. INT:2@tmp.lang:1:2
+           1. INT:1@tmp.lang:1:0
+[PRINT] INT:1@tmp.lang:1:0
+[PRINT] INT:2@tmp.lang:1:2
+
+[EXIT CODE] 0
+
+[CODE] '1 2 3 ? print print print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:6: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:0
+           1. INT@tmp.lang:1:2
+           2. INT@tmp.lang:1:4
+[INFO] tmp.lang:1:6: Stack at runtime:
+[NOTE] stack:
+           0. INT:1@tmp.lang:1:0
+           1. INT:2@tmp.lang:1:2
+           2. INT:3@tmp.lang:1:4
+[PRINT] INT:3@tmp.lang:1:4
+[PRINT] INT:2@tmp.lang:1:2
+[PRINT] INT:1@tmp.lang:1:0
+
+[EXIT CODE] 0
+
+[CODE] '1 2 3 rot ? print print print'
+[CMD] python lang.py run tmp.lang
+[STDOUT]:
+[INFO] tmp.lang:1:10: Stack at compile time:
+[NOTE] stack:
+           0. INT@tmp.lang:1:2
+           1. INT@tmp.lang:1:4
+           2. INT@tmp.lang:1:0
+[INFO] tmp.lang:1:10: Stack at runtime:
+[NOTE] stack:
+           0. INT:2@tmp.lang:1:2
+           1. INT:3@tmp.lang:1:4
+           2. INT:1@tmp.lang:1:0
+[PRINT] INT:1@tmp.lang:1:0
+[PRINT] INT:3@tmp.lang:1:4
+[PRINT] INT:2@tmp.lang:1:2
+
+[EXIT CODE] 0
+
