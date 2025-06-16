@@ -1,6 +1,6 @@
 [project]
-name = "langlang"
-description = "LangLang"
+name = "Froglang"
+description = "FrogLang"
 license = "MIT"
 requires-python = ">=3.13"
 authors = [
@@ -8,7 +8,7 @@ authors = [
 ]
 
 [project.urls]
-Repository = "https://github.com/denballakh/langlang"
+Repository = "https://github.com/denballakh/frog"
 
 [tool.black]
 line-length = 120

@@ -1,5 +1,5 @@
-# LangLang
-LangLang is a programming language:
+# FrogLang
+FrogLang is a programming language:
 - stack based
 - concatenative
 - statically typed
@@ -9,7 +9,7 @@ It is heavily inspired by [Porth](https://gitlab.com/tsoding/porth)
 
 # Usage
 ```sh
-./lang.py --help
+./frog.py --help
 ```
 
 # Examples

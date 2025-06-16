@@ -5,7 +5,7 @@ import io
 from typing import TYPE_CHECKING, Any
 import shlex
 
-import lang
+import frog
 
 if TYPE_CHECKING:
     from tqdm import tqdm
@@ -184,14 +184,14 @@ cli_examples = [
     '-l',
     '-l TRACE',
     '-l TRACE run',
-    '-l TRACE run examples/01_simple.lang',
-    '-l LOL run examples/01_simple.lang',
-    '-l WARN run examples/01_simple.lang',
-    '-l INFO run examples/01_simple.lang',
-    '-l ERROR run examples/01_simple.lang',
+    '-l TRACE run examples/01_simple.frog',
+    '-l LOL run examples/01_simple.frog',
+    '-l WARN run examples/01_simple.frog',
+    '-l INFO run examples/01_simple.frog',
+    '-l ERROR run examples/01_simple.frog',
     #
-    '-l TRACE run examples/02_while.lang',
-    '-l TRACE build -r examples/02_while.lang',
+    '-l TRACE run examples/02_while.frog',
+    '-l TRACE build -r examples/02_while.frog',
 ]
 
 dir_examples = ROOT / 'examples'
@@ -200,15 +200,15 @@ for file_example in dir_examples.iterdir():
     file_example = file_example.relative_to(Path.cwd())
     if not file_example.is_file():
         continue
-    if file_example.suffix != '.lang':
+    if file_example.suffix != '.frog':
         continue
     cli_examples.append(f'run {file_example}')
     cli_examples.append(f'build -r {file_example}')
 
-src = ROOT / 'lang.py'
+src = ROOT / 'frog.py'
 src = src.relative_to(Path.cwd())
 
-tmp = ROOT / 'tmp.lang'
+tmp = ROOT / 'tmp.frog'
 tmp = tmp.relative_to(Path.cwd())
 
 out = ROOT / 'test_dump.txt'
@@ -220,17 +220,17 @@ try:
             print('=' * 60)
             print(f'[CODE] {code!r}')
             # res = run_cmd('py', src, 'run', tmp)
-            res = lang.run_lang('py', src, 'run', tmp)
+            res = frog.run_frog('py', src, 'run', tmp)
             print(f'[EXIT CODE] {res}')
             if res == 0:
-                res = lang.run_lang('py', src, '-l', 'WARN', 'build', '-r', tmp)
+                res = frog.run_frog('py', src, '-l', 'WARN', 'build', '-r', tmp)
                 print(f'[EXIT CODE] {res}')
             print()
 
     for cli in tqdm(cli_examples):
         with contextlib.redirect_stdout(buf):
             print('=' * 60)
-            res = lang.run_cmd('py', src, *shlex.split(cli))
+            res = frog.run_cmd('py', src, *shlex.split(cli))
             print(f'[EXIT CODE] {res}')
 
 except Exception as e:

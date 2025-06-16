@@ -2560,7 +2560,7 @@ def run_cmd(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
     return res.returncode
 
 
-def run_lang(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
+def run_frog(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
 
     cmd = subprocess.list2cmdline([*args])
     print(f'[CMD] {cmd}')
@@ -2582,7 +2582,7 @@ def run_lang(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
 
 def main(argv: list[str]) -> None:
     def usage_short() -> None:
-        print(f'Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>')
+        print(f'Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>')
 
     def usage() -> None:
         usage_short()

@@ -2,6 +2,7 @@
 *.c
 *.exe
 
+scratch.frog
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

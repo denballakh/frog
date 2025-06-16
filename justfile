@@ -16,7 +16,7 @@ fmt: _black
 check: typecheck && fmt
 
 repl:
-    ./lang.py repl
+    ./frog.py repl
 
 test: && check
     ./test.py
