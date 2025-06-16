@@ -188,8 +188,8 @@ def pp(x: Any) -> str:
             sb += 'IR:\n'
             for proc in x.procs:
                 sb += f'proc {proc.name}:\n'
-                for instr in proc.instructions:
-                    sb += f'    {pp(instr)}\n'
+                for i, instr in enumerate(proc.instructions):
+                    sb += f'{i:3}. {pp(instr)}\n'
 
             return str(sb)
 
@@ -387,6 +387,8 @@ def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
                 yield Token(TokenType.INT, int(chunk), loc_start)
             else:
                 match chunk:
+                    case 'proc':
+                        yield Token(TokenType.KEYWORD, KeywordType.PROC, loc_start)
                     case 'if':
                         yield Token(TokenType.KEYWORD, KeywordType.IF, loc_start)
                     case 'else':
@@ -2071,14 +2073,11 @@ def run_file(file: str) -> None:
 
 
 def main(argv: list[str]) -> None:
-    # def unshift(msg: str = 'expected arg') -> str:
-    #     if not argv:
-    #         error(Loc('<cli>', 1, 0), msg)
-    #     res, argv[:] = argv[0], argv[1:]
-    #     return res
+    def usage_short() -> None:
+        print(f'Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>')
 
     def usage() -> None:
-        print(f'Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>')
+        usage_short()
         print(f'Options:')
         print(f'  -h --help       print this help message')
         print(f'  -l <level>      log level: ERROR,WARN,INFO,TRACE')
@@ -2086,9 +2085,6 @@ def main(argv: list[str]) -> None:
         print(f'  run FILE        run a file')
         print(f'    FILE            a file to run')
         print(f'  repl            start a Read-Eval-Print-Loop')
-
-    def usage_short() -> None:
-        print(f'Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>')
 
     global log_level
 

@@ -174,6 +174,16 @@ code_examples = [
     #
     'proc',
     'somerandomword',
+    #
+    '''
+    proc a do
+      2 *
+    end
+
+    proc main do
+      5 a print
+    end
+    ''',
 ]
 cli_examples = [
     '',

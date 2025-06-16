@@ -825,13 +825,19 @@
 ============================================================
 [CODE] 'proc'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:0: arbitrary word handling is not implemented yet: proc
+[ERROR] tmp.lang:1:0: not implemented: `proc` keywords
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'somerandomword'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: arbitrary word handling is not implemented yet: somerandomword
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a do\n      2 *\n    end\n\n    proc main do\n      5 a print\n    end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:2:4: not implemented: `proc` keywords
 [EXIT CODE] 1
 
 ============================================================
@@ -950,44 +956,44 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [NOTE] IR:
     IR:
     proc main:
-        IF
-        PUSH_INT:1
-        PUSH_INT:2
-        INTRINSIC:EQ
-        DO:8
-        PUSH_INT:11
-        PUSH_INT:2
-        INTRINSIC:MUL
-        ELSE:12
-        PUSH_INT:12
-        PUSH_INT:2
-        INTRINSIC:MUL
-        END:13
-        INTRINSIC:PRINT
-        PUSH_INT:10
-        WHILE
-        INTRINSIC:DUP
-        PUSH_INT:5
-        INTRINSIC:GT
-        DO:24
-        INTRINSIC:DUP
-        INTRINSIC:PRINT
-        PUSH_INT:1
-        INTRINSIC:SUB
-        END:15
-        INTRINSIC:DROP
-        PUSH_INT:10
-        WHILE
-        INTRINSIC:DUP
-        PUSH_INT:5
-        INTRINSIC:GT
-        DO:36
-        INTRINSIC:DUP
-        INTRINSIC:PRINT
-        PUSH_INT:1
-        INTRINSIC:SUB
-        END:27
-        INTRINSIC:DROP
+      0. IF
+      1. PUSH_INT:1
+      2. PUSH_INT:2
+      3. INTRINSIC:EQ
+      4. DO:8
+      5. PUSH_INT:11
+      6. PUSH_INT:2
+      7. INTRINSIC:MUL
+      8. ELSE:12
+      9. PUSH_INT:12
+     10. PUSH_INT:2
+     11. INTRINSIC:MUL
+     12. END:13
+     13. INTRINSIC:PRINT
+     14. PUSH_INT:10
+     15. WHILE
+     16. INTRINSIC:DUP
+     17. PUSH_INT:5
+     18. INTRINSIC:GT
+     19. DO:24
+     20. INTRINSIC:DUP
+     21. INTRINSIC:PRINT
+     22. PUSH_INT:1
+     23. INTRINSIC:SUB
+     24. END:15
+     25. INTRINSIC:DROP
+     26. PUSH_INT:10
+     27. WHILE
+     28. INTRINSIC:DUP
+     29. PUSH_INT:5
+     30. INTRINSIC:GT
+     31. DO:36
+     32. INTRINSIC:DUP
+     33. INTRINSIC:PRINT
+     34. PUSH_INT:1
+     35. INTRINSIC:SUB
+     36. END:27
+     37. INTRINSIC:DROP
 [TRACE] p1.lang:5:0: stack trace
 [NOTE] ip: 0/38
 [NOTE] stack: (empty)
