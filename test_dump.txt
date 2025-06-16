@@ -813,7 +813,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 6>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
 [EXIT CODE] 1
 
 ============================================================
@@ -821,7 +821,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 6>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1)
 [EXIT CODE] 1
 
 ============================================================
@@ -829,7 +829,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 6>, ip1=0, ip2=4, ip3=7, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1)
 [EXIT CODE] 1
 
 ============================================================
@@ -947,7 +947,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.WHILE: 8>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
 [EXIT CODE] 1
 
 ============================================================
@@ -955,7 +955,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.WHILE: 8>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1)
 [EXIT CODE] 1
 
 ============================================================
@@ -1212,6 +1212,106 @@ false
 [CMD] ./tmp.exe
 [STDOUT]:
 12
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] '5 int ? cast ? print'
+[CMD] py lang.py run tmp.lang
+[INFO] tmp.lang:1:6: Stack at compile time:
+[NOTE] stack:
+      0. INT@tmp.lang:1:0
+      1. TYPE(INT)@tmp.lang:1:2
+[WARN] tmp.lang:1:8: redundant cast INT to INT
+[INFO] tmp.lang:1:13: Stack at compile time:
+[NOTE] stack:
+      0. INT@tmp.lang:1:8
+[INFO] tmp.lang:1:6: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@tmp.lang:1:0
+      1. TYPE(INT):INT@tmp.lang:1:2
+[WARN] tmp.lang:1:8: redundant cast INT to INT
+[INFO] tmp.lang:1:13: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@tmp.lang:1:8
+[PRINT] INT:5@tmp.lang:1:8
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[WARN] tmp.lang:1:8: redundant cast INT to INT
+[WARN] tmp.lang:1:8: redundant cast INT to INT
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+5
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] '5 bool cast print'
+[CMD] py lang.py run tmp.lang
+[PRINT] BOOL:True@tmp.lang:1:7
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+true
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] '0 bool cast print'
+[CMD] py lang.py run tmp.lang
+[PRINT] BOOL:False@tmp.lang:1:7
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] 'true int cast print'
+[CMD] py lang.py run tmp.lang
+[PRINT] INT:1@tmp.lang:1:9
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] 'false int cast print'
+[CMD] py lang.py run tmp.lang
+[PRINT] INT:0@tmp.lang:1:10
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+0
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] 'false bool cast print'
+[CMD] py lang.py run tmp.lang
+[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
+[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
+[PRINT] BOOL:False@tmp.lang:1:11
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
+[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
 
 [EXIT CODE] 0
 

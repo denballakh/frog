@@ -167,6 +167,13 @@ code_examples = [
     proc a int int -- int do + end
     5 7 a print
     ''',
+    #
+    '5 int ? cast ? print',
+    '5 bool cast print',
+    '0 bool cast print',
+    'true int cast print',
+    'false int cast print',
+    'false bool cast print',
 ]
 cli_examples = [
     '',
