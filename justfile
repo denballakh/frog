@@ -16,11 +16,14 @@ fmt: _black
 check: typecheck && fmt
 
 run file: check
-    python lang.py run {{file}}
+    ./lang.py run {{file}}
 
 repl: check
-    python lang.py repl
+    ./lang.py repl
 
 test: && check
-    python test.py
+    ./test.py
 
+clean:
+    rm *.c
+    rm *.exe
