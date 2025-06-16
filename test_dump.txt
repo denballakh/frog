@@ -1029,15 +1029,8 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [EXIT CODE] 2
 ============================================================
 [CMD] py lang.py -l TRACE run xxx
-[STDERR]:
-Traceback (most recent call last):
-  File "/mnt/d/GitHub/lang/lang.py", line 2511, in <module>
-    main(sys.argv[1:])
-    ~~~~^^^^^^^^^^^^^^
-  File "/mnt/d/GitHub/lang/lang.py", line 2427, in main
-    with open(filename, 'rt') as f:
-         ~~~~^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: 'xxx'
+[STDOUT]:
+[ERROR] file xxx does not exist
 
 [EXIT CODE] 1
 ============================================================
@@ -1642,7 +1635,7 @@ FileNotFoundError: [Errno 2] No such file or directory: 'xxx'
       proc_main();
       return 0;
     }
-[CMD] gcc p1.lang.c -o p1.lang.out
+[CMD] gcc p1.c -o p1.exe
 
 [EXIT CODE] 0
 ============================================================
@@ -1774,7 +1767,7 @@ FileNotFoundError: [Errno 2] No such file or directory: 'xxx'
       proc_main();
       return 0;
     }
-[CMD] gcc p2.lang.c -o p2.lang.out
+[CMD] gcc p2.c -o p2.exe
 
 [EXIT CODE] 0
 ============================================================
@@ -1877,14 +1870,14 @@ FileNotFoundError: [Errno 2] No such file or directory: 'xxx'
       proc_main();
       return 0;
     }
-[CMD] gcc procs.lang.c -o procs.lang.out
+[CMD] gcc procs.c -o procs.exe
 
 [EXIT CODE] 0
 ============================================================
 [CMD] py lang.py build -r p1.lang
 [STDOUT]:
-[CMD] gcc p1.lang.c -o p1.lang.out
-[CMD] ./p1.lang.out
+[CMD] gcc p1.c -o p1.exe
+[CMD] ./p1.exe
 [STDOUT]:
 24
 10
@@ -1903,8 +1896,8 @@ FileNotFoundError: [Errno 2] No such file or directory: 'xxx'
 ============================================================
 [CMD] py lang.py build -r p2.lang
 [STDOUT]:
-[CMD] gcc p2.lang.c -o p2.lang.out
-[CMD] ./p2.lang.out
+[CMD] gcc p2.c -o p2.exe
+[CMD] ./p2.exe
 [STDOUT]:
 1
 5
@@ -1942,8 +1935,8 @@ FileNotFoundError: [Errno 2] No such file or directory: 'xxx'
       0. INT@procs.lang:13:4
 [INFO] procs.lang:16:4: Stack at compile time:
 [NOTE] stack: (empty)
-[CMD] gcc procs.lang.c -o procs.lang.out
-[CMD] ./procs.lang.out
+[CMD] gcc procs.c -o procs.exe
+[CMD] ./procs.exe
 [STDOUT]:
 10
 

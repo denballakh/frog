@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any, Never, assert_never, cast, final, override
 from enum import Enum, auto
 from dataclasses import dataclass, field, is_dataclass
@@ -2417,16 +2418,20 @@ def main(argv: list[str]) -> None:
             print(f'[ERROR] no file specified')
             sys.exit(2)
 
-        filename, *argv = argv
+        file_src = Path(argv[0])
+        argv = argv[1:]
 
         if len(argv) > 0:
             usage_short()
             print(f'[ERROR] unrecognized arguments: {argv}')
             sys.exit(2)
 
-        with open(filename, 'rt') as f:
-            text = f.read()
-        toks = tokenize(text, filename=filename)
+        if not file_src.exists():
+            print(f'[ERROR] file {file_src} does not exist')
+            sys.exit(1)
+
+        text = file_src.read_text()
+        toks = tokenize(text, filename=str(file_src))
         ir = compile(toks)
         typecheck(ir)
 
@@ -2439,7 +2444,7 @@ def main(argv: list[str]) -> None:
         sys.exit(0)
 
     elif subcmd == 'build':
-        file_out = ''
+        file_out: Path | None = None
         should_run = False
 
         while len(argv) > 0:
@@ -2453,7 +2458,8 @@ def main(argv: list[str]) -> None:
                     usage_short()
                     print(f'[ERROR] no output file specified')
                     sys.exit(2)
-                file_out, *argv = argv
+                file_out = Path(argv[0])
+                argv = argv[1:]
 
             elif argv[0] == '-r':
                 should_run = True
@@ -2467,26 +2473,32 @@ def main(argv: list[str]) -> None:
             print(f'[ERROR] no file specified')
             sys.exit(2)
 
-        filename, *argv = argv
-        if file_out == '':
-            file_out = filename + '.out'
+        file_src = Path(argv[0])
+        argv = argv[1:]
+        file_c = file_src.with_suffix('.c')
+
+        if file_out is None:
+            file_out = file_src.with_suffix('.exe')
 
         if len(argv) > 0:
             usage_short()
             print(f'[ERROR] unrecognized arguments: {argv}')
             sys.exit(2)
 
-        with open(filename, 'rt') as f:
-            text = f.read()
-        toks = tokenize(text, filename=filename)
+        if not file_src.exists():
+            print(f'[ERROR] file {file_src} does not exist')
+            sys.exit(1)
+
+        text = file_src.read_text()
+        toks = tokenize(text, filename=str(file_src))
         ir = compile(toks)
         typecheck(ir)
 
         code = translate(ir)
-        with open(filename + '.c', 'wt') as f:
+        with open(file_c, 'wt') as f:
             _ = f.write(code)
 
-        ret = run_cmd('gcc', filename + '.c', '-o', file_out)
+        ret = run_cmd('gcc', file_c, '-o', file_out)
         if ret != 0:
             error(Loc('<cli>', 1, 0), f'gcc failed with exit code {ret}')
 
