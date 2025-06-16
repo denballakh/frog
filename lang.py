@@ -793,7 +793,7 @@ def typecheck(ir: IR) -> None:
                     if len(stack) < len(proc_called.ins):
                         error(
                             instr,
-                            f'stack too small for {instr.arg1}. expected {len(proc_called.ins)} but got {len(stack)}',
+                            f'stack too small for {instr.arg1}: expected {len(proc_called.ins)} but got {len(stack)}',
                             stack=stack,
                             ins=proc_called.ins,
                         )
@@ -802,7 +802,7 @@ def typecheck(ir: IR) -> None:
                         if e1.type != e2:
                             error(
                                 instr,
-                                f'stack doesnt match at {i} for {instr.arg1}. expected {proc_called.ins} but got {stack}',
+                                f'stack doesnt match at {i} for {instr.arg1}: expected {pp(e1.type)} but got {pp(e2)}',
                                 stack=stack,
                                 ins=proc_called.ins,
                             )

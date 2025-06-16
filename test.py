@@ -176,12 +176,61 @@ code_examples = [
     'somerandomword',
     #
     '''
-    proc a do
-      2 *
-    end
+    proc a int -- int do 2 * end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a do 2 * end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a -- do 2 * end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a int -- do 2 * end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a int -- int int do 2 * end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a bool -- int do drop 5 end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a int int -- int do + end
+    proc main -- do 5 a print end
+    ''',
+    '''
+    proc inc int -- int do 1 + end
+    proc dec int -- int do 1 - end
+    proc good int -- bool do 5 > end
+    proc show int -- int do ? dup print end
 
-    proc main do
-      5 a print
+    proc main -- do
+        10
+        while dup good do
+          dec
+          show
+        end
+        drop
+    end
+    ''',
+    '''
+    proc dec int -- int do 1 - end
+    proc fib_step int int -- int int do dup rot + end
+    proc main -- do
+        0 1 15
+        while dup 0 > do
+          rot rot
+          dup print
+          fib_step
+          rot
+          dec
+        end
+        drop drop drop
     end
     ''',
 ]

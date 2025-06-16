@@ -837,10 +837,113 @@
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a do\n      2 *\n    end\n\n    proc main do\n      5 a print\n    end\n    '
+[CODE] '\n    proc a int -- int do 2 * end\n    proc main -- do 5 a print end\n    '
+[CMD] py lang.py run tmp.lang
+[PRINT] INT:10@tmp.lang:2:27
+[EXIT CODE] 0
+
+============================================================
+[CODE] '\n    proc a do 2 * end\n    proc main -- do 5 a print end\n    '
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=tmp.lang:2:11)
 [EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a -- do 2 * end\n    proc main -- do 5 a print end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:2:19: not enough items on stack for IntrinsicType.MUL: it expects two INTs on the stack
+[NOTE] other_stack_items:
+      0. INT@tmp.lang:2:17
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a int -- do 2 * end\n    proc main -- do 5 a print end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:2:25: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT@tmp.lang:2:23
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a int -- int int do 2 * end\n    proc main -- do 5 a print end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:2:33: return type mismatch: expected 2 items on the stack, got 1
+[NOTE] stack:
+      0. INT@tmp.lang:2:31
+[NOTE] outs:
+      0. INT
+      1. INT
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a bool -- int do drop 5 end\n    proc main -- do 5 a print end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:3:22: stack doesnt match at 0 for a: expected INT but got BOOL
+[NOTE] stack:
+      0. INT@tmp.lang:3:20
+[NOTE] ins:
+      0. BOOL
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a int int -- int do + end\n    proc main -- do 5 a print end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:3:22: stack too small for a: expected 2 but got 1
+[NOTE] stack:
+      0. INT@tmp.lang:3:20
+[NOTE] ins:
+      0. INT
+      1. INT
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc inc int -- int do 1 + end\n    proc dec int -- int do 1 - end\n    proc good int -- bool do 5 > end\n    proc show int -- int do ? dup print end\n\n    proc main -- do\n        10\n        while dup good do\n          dec\n          show\n        end\n        drop\n    end\n    '
+[CMD] py lang.py run tmp.lang
+[INFO] tmp.lang:5:28: Stack at compile time:
+[NOTE] stack:
+      0. INT@tmp.lang:5:14
+[INFO] tmp.lang:5:28: Stack at runtime:
+[NOTE] stack:
+      0. INT:9@tmp.lang:3:29
+[PRINT] INT:9@tmp.lang:3:29
+[INFO] tmp.lang:5:28: Stack at runtime:
+[NOTE] stack:
+      0. INT:8@tmp.lang:3:29
+[PRINT] INT:8@tmp.lang:3:29
+[INFO] tmp.lang:5:28: Stack at runtime:
+[NOTE] stack:
+      0. INT:7@tmp.lang:3:29
+[PRINT] INT:7@tmp.lang:3:29
+[INFO] tmp.lang:5:28: Stack at runtime:
+[NOTE] stack:
+      0. INT:6@tmp.lang:3:29
+[PRINT] INT:6@tmp.lang:3:29
+[INFO] tmp.lang:5:28: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@tmp.lang:3:29
+[PRINT] INT:5@tmp.lang:3:29
+[EXIT CODE] 0
+
+============================================================
+[CODE] '\n    proc dec int -- int do 1 - end\n    proc fib_step int int -- int int do dup rot + end\n    proc main -- do\n        0 1 15\n        while dup 0 > do\n          rot rot\n          dup print\n          fib_step\n          rot\n          dec\n        end\n        drop drop drop\n    end\n    '
+[CMD] py lang.py run tmp.lang
+[PRINT] INT:1@tmp.lang:5:10
+[PRINT] INT:1@tmp.lang:3:48
+[PRINT] INT:2@tmp.lang:3:48
+[PRINT] INT:3@tmp.lang:3:48
+[PRINT] INT:5@tmp.lang:3:48
+[PRINT] INT:8@tmp.lang:3:48
+[PRINT] INT:13@tmp.lang:3:48
+[PRINT] INT:21@tmp.lang:3:48
+[PRINT] INT:34@tmp.lang:3:48
+[PRINT] INT:55@tmp.lang:3:48
+[PRINT] INT:89@tmp.lang:3:48
+[PRINT] INT:144@tmp.lang:3:48
+[PRINT] INT:233@tmp.lang:3:48
+[PRINT] INT:377@tmp.lang:3:48
+[PRINT] INT:610@tmp.lang:3:48
+[EXIT CODE] 0
 
 ============================================================
 [CMD] py lang.py
