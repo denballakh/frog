@@ -980,7 +980,46 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      36. p1.lang:25:41:KEYWORD:END
      37. p1.lang:25:45:WORD:'drop'
 [NOTE] IR:
-    IR(procs=[Procedure(name='main', instructions=[Instruction(type=<InstructionType.IF: 6>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.IF: 2>, loc=p1.lang:5:0), arg1=<unused>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=1, loc=p1.lang:6:2), arg1=1, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=2, loc=p1.lang:6:4), arg1=2, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='==', loc=p1.lang:6:6), arg1=<IntrinsicType.EQ: 16>, arg2=<unused>), Instruction(type=<InstructionType.DO: 9>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=p1.lang:7:0), arg1=8, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=11, loc=p1.lang:8:2), arg1=11, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=2, loc=p1.lang:8:5), arg1=2, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='*', loc=p1.lang:8:7), arg1=<IntrinsicType.MUL: 3>, arg2=<unused>), Instruction(type=<InstructionType.ELSE: 7>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.ELSE: 3>, loc=p1.lang:9:0), arg1=12, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=12, loc=p1.lang:10:2), arg1=12, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=2, loc=p1.lang:10:5), arg1=2, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='*', loc=p1.lang:10:7), arg1=<IntrinsicType.MUL: 3>, arg2=<unused>), Instruction(type=<InstructionType.END: 10>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.END: 6>, loc=p1.lang:11:0), arg1=13, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='print', loc=p1.lang:12:0), arg1=<IntrinsicType.PRINT: 26>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:14:0), arg1=10, arg2=<unused>), Instruction(type=<InstructionType.WHILE: 8>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.WHILE: 4>, loc=p1.lang:15:0), arg1=<unused>, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='dup', loc=p1.lang:16:2), arg1=<IntrinsicType.DUP: 22>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=5, loc=p1.lang:16:6), arg1=5, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='>', loc=p1.lang:16:8), arg1=<IntrinsicType.GT: 19>, arg2=<unused>), Instruction(type=<InstructionType.DO: 9>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=p1.lang:17:0), arg1=24, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='dup', loc=p1.lang:18:2), arg1=<IntrinsicType.DUP: 22>, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='print', loc=p1.lang:18:6), arg1=<IntrinsicType.PRINT: 26>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=1, loc=p1.lang:19:2), arg1=1, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='-', loc=p1.lang:19:4), arg1=<IntrinsicType.SUB: 2>, arg2=<unused>), Instruction(type=<InstructionType.END: 10>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.END: 6>, loc=p1.lang:20:0), arg1=15, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='drop', loc=p1.lang:21:0), arg1=<IntrinsicType.DROP: 23>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:25:0), arg1=10, arg2=<unused>), Instruction(type=<InstructionType.WHILE: 8>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.WHILE: 4>, loc=p1.lang:25:3), arg1=<unused>, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='dup', loc=p1.lang:25:12), arg1=<IntrinsicType.DUP: 22>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=5, loc=p1.lang:25:16), arg1=5, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='>', loc=p1.lang:25:18), arg1=<IntrinsicType.GT: 19>, arg2=<unused>), Instruction(type=<InstructionType.DO: 9>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=p1.lang:25:20), arg1=36, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='dup', loc=p1.lang:25:25), arg1=<IntrinsicType.DUP: 22>, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='print', loc=p1.lang:25:29), arg1=<IntrinsicType.PRINT: 26>, arg2=<unused>), Instruction(type=<InstructionType.PUSH_INT: 1>, tok=Token(type=<TokenType.INT: 1>, value=1, loc=p1.lang:25:37), arg1=1, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='-', loc=p1.lang:25:39), arg1=<IntrinsicType.SUB: 2>, arg2=<unused>), Instruction(type=<InstructionType.END: 10>, tok=Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.END: 6>, loc=p1.lang:25:41), arg1=27, arg2=<unused>), Instruction(type=<InstructionType.INTRINSIC: 4>, tok=Token(type=<TokenType.WORD: 5>, value='drop', loc=p1.lang:25:45), arg1=<IntrinsicType.DROP: 23>, arg2=<unused>)])])
+    IR:
+    proc main:
+        IF
+        PUSH_INT:1
+        PUSH_INT:2
+        INTRINSIC:EQ
+        DO:8
+        PUSH_INT:11
+        PUSH_INT:2
+        INTRINSIC:MUL
+        ELSE:12
+        PUSH_INT:12
+        PUSH_INT:2
+        INTRINSIC:MUL
+        END:13
+        INTRINSIC:PRINT
+        PUSH_INT:10
+        WHILE
+        INTRINSIC:DUP
+        PUSH_INT:5
+        INTRINSIC:GT
+        DO:24
+        INTRINSIC:DUP
+        INTRINSIC:PRINT
+        PUSH_INT:1
+        INTRINSIC:SUB
+        END:15
+        INTRINSIC:DROP
+        PUSH_INT:10
+        WHILE
+        INTRINSIC:DUP
+        PUSH_INT:5
+        INTRINSIC:GT
+        DO:36
+        INTRINSIC:DUP
+        INTRINSIC:PRINT
+        PUSH_INT:1
+        INTRINSIC:SUB
+        END:27
+        INTRINSIC:DROP
 [TRACE] p1.lang:5:0: stack trace
 [NOTE] ip:
 0/38

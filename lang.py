@@ -183,6 +183,16 @@ def pp(x: Any) -> str:
         case Token():
             return f'{x.loc}:{pp(x.type)}:{pp(x.value)}'
 
+        case IR():
+            sb = StringBuilder()
+            sb += 'IR:\n'
+            for proc in x.procs:
+                sb += f'proc {proc.name}:\n'
+                for instr in proc.instructions:
+                    sb += f'    {pp(instr)}\n'
+
+            return str(sb)
+
         case Instruction():
             s = f'{x.type.name}'
             if x.arg1 is not unused:
