@@ -2297,6 +2297,11 @@ def translate(ir: IR) -> str:
 def repl() -> None:
     import traceback
 
+    try:
+        import readline  # pyright: ignore[reportUnusedImport]
+    except ImportError:
+        pass
+
     while True:
         try:
             line = input('> ')

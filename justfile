@@ -15,10 +15,7 @@ typecheck: _mypy _basedpyright
 fmt: _black
 check: typecheck && fmt
 
-run file: check
-    ./lang.py run {{file}}
-
-repl: check
+repl:
     ./lang.py repl
 
 test: && check
