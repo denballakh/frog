@@ -209,6 +209,9 @@ try:
             # res = run_cmd('py', src, 'run', tmp)
             res = lang.run_lang('py', src, 'run', tmp)
             print(f'[EXIT CODE] {res}')
+            if res == 0:
+                res = lang.run_lang('py', src, '-l', 'WARN', 'build', '-r', tmp)
+                print(f'[EXIT CODE] {res}')
             print()
 
     for cli in tqdm(cli_examples):

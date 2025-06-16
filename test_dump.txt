@@ -3,6 +3,13 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:3@tmp.lang:1:4
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+3
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 + print'
@@ -94,6 +101,13 @@
 [INFO] tmp.lang:1:36: Stack at runtime:
 [NOTE] stack: (empty)
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+10
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '+'
@@ -121,11 +135,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:32@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+32
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '25 7 - print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:18@tmp.lang:1:5
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+18
+
 [EXIT CODE] 0
 
 ============================================================
@@ -133,11 +161,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:175@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+175
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '25 7 / print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:3@tmp.lang:1:5
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+3
+
 [EXIT CODE] 0
 
 ============================================================
@@ -152,6 +194,13 @@
 [CODE] '25 7 % print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:4@tmp.lang:1:5
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+4
+
 [EXIT CODE] 0
 
 ============================================================
@@ -168,11 +217,26 @@
 [PRINT] INT:4@tmp.lang:1:5
 [PRINT] INT:3@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+4
+3
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '25 7 << print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:3200@tmp.lang:1:5
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+3200
+
 [EXIT CODE] 0
 
 ============================================================
@@ -180,11 +244,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:0@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+0
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '25 7 | print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:31@tmp.lang:1:5
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+31
+
 [EXIT CODE] 0
 
 ============================================================
@@ -192,17 +270,38 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:1@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '25 7 ^ print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:30@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+30
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '25 ~ print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:-26@tmp.lang:1:3
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+-26
+
 [EXIT CODE] 0
 
 ============================================================
@@ -282,11 +381,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:False@tmp.lang:1:11
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] 'true false || print'
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:True@tmp.lang:1:11
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+true
+
 [EXIT CODE] 0
 
 ============================================================
@@ -294,11 +407,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:False@tmp.lang:1:5
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] 'false ! print'
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:True@tmp.lang:1:6
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+true
+
 [EXIT CODE] 0
 
 ============================================================
@@ -306,11 +433,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:False@tmp.lang:1:4
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 2 != print'
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:True@tmp.lang:1:4
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+true
+
 [EXIT CODE] 0
 
 ============================================================
@@ -318,11 +459,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:True@tmp.lang:1:4
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+true
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 2 > print'
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:False@tmp.lang:1:4
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
+
 [EXIT CODE] 0
 
 ============================================================
@@ -330,11 +485,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:True@tmp.lang:1:4
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+true
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 2 >= print'
 [CMD] py lang.py run tmp.lang
 [PRINT] BOOL:False@tmp.lang:1:4
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+false
+
 [EXIT CODE] 0
 
 ============================================================
@@ -351,6 +520,14 @@
 [PRINT] INT:2@tmp.lang:1:2
 [PRINT] INT:1@tmp.lang:1:0
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+2
+1
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 dup ? print print'
@@ -366,6 +543,14 @@
 [PRINT] INT:1@tmp.lang:1:0
 [PRINT] INT:1@tmp.lang:1:0
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+1
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 2 drop ? print'
@@ -377,6 +562,13 @@
 [NOTE] stack:
       0. INT:1@tmp.lang:1:0
 [PRINT] INT:1@tmp.lang:1:0
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+
 [EXIT CODE] 0
 
 ============================================================
@@ -392,6 +584,14 @@
       1. INT:1@tmp.lang:1:0
 [PRINT] INT:1@tmp.lang:1:0
 [PRINT] INT:2@tmp.lang:1:2
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+2
+
 [EXIT CODE] 0
 
 ============================================================
@@ -411,6 +611,15 @@
 [PRINT] INT:2@tmp.lang:1:2
 [PRINT] INT:1@tmp.lang:1:0
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+3
+2
+1
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '1 2 3 rot ? print print print'
@@ -429,6 +638,15 @@
 [PRINT] INT:3@tmp.lang:1:4
 [PRINT] INT:2@tmp.lang:1:2
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+3
+2
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] 'print'
@@ -444,6 +662,10 @@
 [NOTE] stack: (empty)
 [INFO] tmp.lang:1:0: Stack at runtime:
 [NOTE] stack: (empty)
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
 [EXIT CODE] 0
 
 ============================================================
@@ -488,11 +710,25 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:7@tmp.lang:1:20
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+7
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 end print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:5@tmp.lang:1:13
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+5
+
 [EXIT CODE] 0
 
 ============================================================
@@ -538,17 +774,38 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:5@tmp.lang:1:13
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+5
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '5 if 1 2 == do drop 7 end print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:5@tmp.lang:1:0
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+5
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] '5 if 1 2 != do drop 7 end print'
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:7@tmp.lang:1:20
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+7
+
 [EXIT CODE] 0
 
 ============================================================
@@ -661,6 +918,17 @@
 [NOTE] stack:
       0. INT:5@tmp.lang:1:22
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+9
+8
+7
+6
+5
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] 'while else'
@@ -745,6 +1013,10 @@
 [CODE] ''
 [CMD] py lang.py run tmp.lang
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[EXIT CODE] 0
 
 ============================================================
 [CODE] "'"
@@ -823,6 +1095,13 @@
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:1@tmp.lang:1:0
 [EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+1
+
+[EXIT CODE] 0
 
 ============================================================
 [CODE] 'proc'
@@ -840,6 +1119,13 @@
 [CODE] '\n    proc a int -- int do 2 * end\n    proc main -- do 5 a print end\n    '
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:10@tmp.lang:2:27
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+10
+
 [EXIT CODE] 0
 
 ============================================================
