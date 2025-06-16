@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
+import types
 from typing import Any, Never, assert_never, cast, final, override
 from enum import Enum, auto
 from dataclasses import dataclass, field, is_dataclass
@@ -282,6 +283,7 @@ def note(**notes: Any) -> None:
                     for line in v.splitlines():
                         print(f'    {line}')
 
+
 RC_OK = 0
 RC_ERROR = 1
 RC_USAGE = 2
@@ -320,10 +322,10 @@ def get_caller_loc() -> Loc:
     }
     ignored_func_names = {func.__name__ for func in ignored_funcs}
 
-    frame = sys._getframe(0)
+    frame: types.FrameType | None = sys._getframe(0)  # pyright: ignore[reportPrivateUsage]
     while frame and frame.f_code.co_name in ignored_func_names:
         frame = frame.f_back
-    
+
     if frame is None:
         print(f'[FATAL] wtf is that')
         sys.exit(RC_INTERNAL_ERROR)

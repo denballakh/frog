@@ -1064,28 +1064,28 @@ false
 [CODE] '"" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[LOC] lang.py:563:0
+[LOC] lang.py:565:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[LOC] lang.py:563:0
+[LOC] lang.py:565:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[LOC] lang.py:563:0
+[LOC] lang.py:565:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[LOC] lang.py:563:0
+[LOC] lang.py:565:0
 [EXIT CODE] 3
 
 ============================================================
