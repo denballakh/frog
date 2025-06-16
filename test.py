@@ -134,31 +134,38 @@ code_examples = [
     #
     '''
     proc a int -- int do 2 * end
-    proc main -- do 5 a print end
+    5 a print
     ''',
     '''
     proc a do 2 * end
-    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a int do 2 * end
     ''',
     '''
     proc a -- do 2 * end
-    proc main -- do 5 a print end
     ''',
     '''
     proc a int -- do 2 * end
-    proc main -- do 5 a print end
     ''',
     '''
     proc a int -- int int do 2 * end
-    proc main -- do 5 a print end
+    ''',
+    '''
+    proc a int -- int do drop 5 end
+    5 a print
     ''',
     '''
     proc a bool -- int do drop 5 end
-    proc main -- do 5 a print end
+    5 a print
     ''',
     '''
     proc a int int -- int do + end
-    proc main -- do 5 a print end
+    5 a print
+    ''',
+    '''
+    proc a int int -- int do + end
+    5 7 a print
     ''',
 ]
 cli_examples = [

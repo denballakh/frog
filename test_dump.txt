@@ -1116,7 +1116,7 @@ false
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a int -- int do 2 * end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a int -- int do 2 * end\n    5 a print\n    '
 [CMD] py lang.py run tmp.lang
 [PRINT] INT:10@tmp.lang:2:27
 [EXIT CODE] 0
@@ -1129,13 +1129,19 @@ false
 [EXIT CODE] 0
 
 ============================================================
-[CODE] '\n    proc a do 2 * end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a do 2 * end\n    '
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=tmp.lang:2:11)
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a -- do 2 * end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a int do 2 * end\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=tmp.lang:2:15)
+[EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a -- do 2 * end\n    '
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:19: not enough items on stack for IntrinsicType.MUL: it expects two INTs on the stack
 [NOTE] other_stack_items:
@@ -1143,7 +1149,7 @@ false
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a int -- do 2 * end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a int -- do 2 * end\n    '
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:25: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
@@ -1152,7 +1158,7 @@ false
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a int -- int int do 2 * end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a int -- int int do 2 * end\n    '
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:33: return type mismatch: expected 2 items on the stack, got 1
 [NOTE] stack:
@@ -1163,25 +1169,51 @@ false
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a bool -- int do drop 5 end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a int -- int do drop 5 end\n    5 a print\n    '
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:3:22: stack doesnt match at 0 for a: expected INT but got BOOL
+[PRINT] INT:5@tmp.lang:2:30
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+5
+
+[EXIT CODE] 0
+
+============================================================
+[CODE] '\n    proc a bool -- int do drop 5 end\n    5 a print\n    '
+[CMD] py lang.py run tmp.lang
+[ERROR] tmp.lang:3:6: stack doesnt match at 0 for a: expected INT but got BOOL
 [NOTE] stack:
-      0. INT@tmp.lang:3:20
+      0. INT@tmp.lang:3:4
 [NOTE] ins:
       0. BOOL
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc a int int -- int do + end\n    proc main -- do 5 a print end\n    '
+[CODE] '\n    proc a int int -- int do + end\n    5 a print\n    '
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:3:22: stack too small for a: expected 2 but got 1
+[ERROR] tmp.lang:3:6: stack too small for a: expected 2 but got 1
 [NOTE] stack:
-      0. INT@tmp.lang:3:20
+      0. INT@tmp.lang:3:4
 [NOTE] ins:
       0. INT
       1. INT
 [EXIT CODE] 1
+
+============================================================
+[CODE] '\n    proc a int int -- int do + end\n    5 7 a print\n    '
+[CMD] py lang.py run tmp.lang
+[PRINT] INT:12@tmp.lang:2:29
+[EXIT CODE] 0
+[CMD] py lang.py -l WARN build -r tmp.lang
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+12
+
+[EXIT CODE] 0
 
 ============================================================
 [CMD] py lang.py
