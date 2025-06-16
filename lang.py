@@ -201,12 +201,14 @@ def pp(x: Any) -> str:
                 s += f':{pp(x.arg2)}'
             return s
 
-        case _:
+        case _ if is_dataclass(x):
             res = repr(x)
-            if is_dataclass(x):
-                cls = type(x)
-                res = res.replace(cls.__qualname__, cls.__name__)
+            cls = type(x)
+            res = res.replace(cls.__qualname__, cls.__name__)
             return res
+
+        case _:
+            return repr(x)
 
 
 def _locatable_to_loc(loc: _Locatable) -> Loc:
@@ -227,22 +229,28 @@ def _locatable_to_loc(loc: _Locatable) -> Loc:
 
 def note(**notes: Any) -> None:
     for k, v in notes.items():
-        print(f'[NOTE] {k}:')
+        print(f'[NOTE] {k}:', end='')
         match v:
             case list():
                 v = cast(list[Any], v)
                 if not v:
-                    print(f'    (empty)')
-                for i, x in enumerate(v):
-                    print(f'    {i:3}. {pp(x)}')
+                    print(f' (empty)')
 
-            case str():
-                for line in v.splitlines():
-                    print(f'{line}')
+                else:
+                    print()
+                    for i, x in enumerate(v):
+                        print(f'    {i:3}. {pp(x)}')
 
             case _:
-                for line in pp(v).splitlines():
-                    print(f'    {line}')
+                if not isinstance(v, str):
+                    v = pp(v)
+                if '\n' not in v:
+                    print(f' {v}')
+
+                else:
+                    print()
+                    for line in v.splitlines():
+                        print(f'    {line}')
 
 
 LL_ERROR = 0
