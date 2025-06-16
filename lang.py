@@ -222,9 +222,9 @@ def note(**notes: Any) -> None:
             case list():
                 v = cast(list[Any], v)
                 if not v:
-                    print(f'         (empty)')
+                    print(f'    (empty)')
                 for i, x in enumerate(v):
-                    print(f'         {i:3}. {pp(x)}')
+                    print(f'    {i:3}. {pp(x)}')
 
             case str():
                 for line in v.splitlines():
@@ -232,7 +232,7 @@ def note(**notes: Any) -> None:
 
             case _:
                 for line in pp(v).splitlines():
-                    print(f'{line}')
+                    print(f'    {line}')
 
 
 LL_ERROR = 0
