@@ -196,33 +196,31 @@ cli_examples = [
     '-h',
     '--help',
     'run',
-    'run p1.lang',
+    'run xxx',
     '-l',
+    '-l TRACE',
     '-l TRACE run',
-    '-l TRACE run xxx',
-    '-l TRACE run p1.lang',
-    '-l LOL run p1.lang',
-    '-l WARN run p1.lang',
-    '-l INFO run p1.lang',
-    '-l ERROR run p1.lang',
-    '-l DEFAULT run p1.lang',
+    '-l TRACE run examples/01_simple.lang',
+    '-l LOL run examples/01_simple.lang',
+    '-l WARN run examples/01_simple.lang',
+    '-l INFO run examples/01_simple.lang',
+    '-l ERROR run examples/01_simple.lang',
+    '-l DEFAULT run examples/01_simple.lang',
     #
-    '-l TRACE run p1.lang',
-    '-l TRACE run p2.lang',
-    '-l TRACE run procs.lang',
-    #
-    '-l TRACE build p1.lang',
-    '-l TRACE build p2.lang',
-    '-l TRACE build procs.lang',
-    #
-    'build -r p1.lang',
-    'build -r p2.lang',
-    'build -r procs.lang',
-    #
-    'run p1.lang',
-    'run p2.lang',
-    'run procs.lang',
+    '-l TRACE run examples/02_while.lang',
+    '-l TRACE build -r examples/02_while.lang',
 ]
+
+dir_examples = ROOT / 'examples'
+
+for file_example in dir_examples.iterdir():
+    file_example = file_example.relative_to(Path.cwd())
+    if not file_example.is_file():
+        continue
+    if file_example.suffix != '.lang':
+        continue
+    cli_examples.append(f'run {file_example}')
+    cli_examples.append(f'build -r {file_example}')
 
 src = ROOT / 'lang.py'
 src = src.relative_to(Path.cwd())

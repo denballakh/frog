@@ -998,26 +998,23 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py lang.py run p1.lang
+[CMD] py lang.py run xxx
 [STDOUT]:
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+[ERROR] file xxx does not exist
 
-[EXIT CODE] 0
+[EXIT CODE] 1
 ============================================================
 [CMD] py lang.py -l
 [STDOUT]:
 Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no log level specified
+
+[EXIT CODE] 2
+============================================================
+[CMD] py lang.py -l TRACE
+[STDOUT]:
+Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no subcommand specified
 
 [EXIT CODE] 2
 ============================================================
@@ -1028,313 +1025,136 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py lang.py -l TRACE run xxx
+[CMD] py lang.py -l TRACE run examples/01_simple.lang
 [STDOUT]:
-[ERROR] file xxx does not exist
-
-[EXIT CODE] 1
-============================================================
-[CMD] py lang.py -l TRACE run p1.lang
-[STDOUT]:
-[TRACE] <?>:0:0: file: p1.lang
+[TRACE] <?>:0:0: file: examples/01_simple.lang
 [NOTE] Tokens:
-      0. p1.lang:5:0:KEYWORD:IF
-      1. p1.lang:6:2:INT:1
-      2. p1.lang:6:4:INT:2
-      3. p1.lang:6:6:WORD:'=='
-      4. p1.lang:7:0:KEYWORD:DO
-      5. p1.lang:8:2:INT:11
-      6. p1.lang:8:5:INT:2
-      7. p1.lang:8:7:WORD:'*'
-      8. p1.lang:9:0:KEYWORD:ELSE
-      9. p1.lang:10:2:INT:12
-     10. p1.lang:10:5:INT:2
-     11. p1.lang:10:7:WORD:'*'
-     12. p1.lang:11:0:KEYWORD:END
-     13. p1.lang:12:0:WORD:'print'
-     14. p1.lang:14:0:INT:10
-     15. p1.lang:15:0:KEYWORD:WHILE
-     16. p1.lang:16:2:WORD:'dup'
-     17. p1.lang:16:6:INT:5
-     18. p1.lang:16:8:WORD:'>'
-     19. p1.lang:17:0:KEYWORD:DO
-     20. p1.lang:18:2:WORD:'dup'
-     21. p1.lang:18:6:WORD:'print'
-     22. p1.lang:19:2:INT:1
-     23. p1.lang:19:4:WORD:'-'
-     24. p1.lang:20:0:KEYWORD:END
-     25. p1.lang:21:0:WORD:'drop'
-     26. p1.lang:25:0:INT:10
-     27. p1.lang:25:3:KEYWORD:WHILE
-     28. p1.lang:25:12:WORD:'dup'
-     29. p1.lang:25:16:INT:5
-     30. p1.lang:25:18:WORD:'>'
-     31. p1.lang:25:20:KEYWORD:DO
-     32. p1.lang:25:25:WORD:'dup'
-     33. p1.lang:25:29:WORD:'print'
-     34. p1.lang:25:37:INT:1
-     35. p1.lang:25:39:WORD:'-'
-     36. p1.lang:25:41:KEYWORD:END
-     37. p1.lang:25:45:WORD:'drop'
+      0. examples/01_simple.lang:1:0:INT:1
+      1. examples/01_simple.lang:1:2:INT:2
+      2. examples/01_simple.lang:1:4:WORD:'?'
+      3. examples/01_simple.lang:1:6:WORD:'+'
+      4. examples/01_simple.lang:1:8:WORD:'?'
+      5. examples/01_simple.lang:1:10:WORD:'print'
 [TRACE] <?>:0:0: Compiled IR
 [NOTE] IR:
     IR:
     proc main:
-      0. IF
-      1. PUSH_INT:1
-      2. PUSH_INT:2
-      3. INTRINSIC:EQ
-      4. DO:8
-      5. PUSH_INT:11
-      6. PUSH_INT:2
-      7. INTRINSIC:MUL
-      8. ELSE:12
-      9. PUSH_INT:12
-     10. PUSH_INT:2
-     11. INTRINSIC:MUL
-     12. END:13
-     13. INTRINSIC:PRINT
-     14. PUSH_INT:10
-     15. WHILE
-     16. INTRINSIC:DUP
-     17. PUSH_INT:5
-     18. INTRINSIC:GT
-     19. DO:24
-     20. INTRINSIC:DUP
-     21. INTRINSIC:PRINT
-     22. PUSH_INT:1
-     23. INTRINSIC:SUB
-     24. END:15
-     25. INTRINSIC:DROP
-     26. PUSH_INT:10
-     27. WHILE
-     28. INTRINSIC:DUP
-     29. PUSH_INT:5
-     30. INTRINSIC:GT
-     31. DO:36
-     32. INTRINSIC:DUP
-     33. INTRINSIC:PRINT
-     34. PUSH_INT:1
-     35. INTRINSIC:SUB
-     36. END:27
-     37. INTRINSIC:DROP
-     38. RET
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+      0. PUSH_INT:1
+      1. PUSH_INT:2
+      2. INTRINSIC:DEBUG
+      3. INTRINSIC:ADD
+      4. INTRINSIC:DEBUG
+      5. INTRINSIC:PRINT
+      6. RET
+[INFO] examples/01_simple.lang:1:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:0
+      1. INT@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:6
+[INFO] examples/01_simple.lang:1:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:1@examples/01_simple.lang:1:0
+      1. INT:2@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at runtime:
+[NOTE] stack:
+      0. INT:3@examples/01_simple.lang:1:6
+[PRINT] INT:3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py -l LOL run p1.lang
+[CMD] py lang.py -l LOL run examples/01_simple.lang
 [STDOUT]:
 [ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE', 'DEFAULT']
 
 [EXIT CODE] 1
 ============================================================
-[CMD] py lang.py -l WARN run p1.lang
+[CMD] py lang.py -l WARN run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+[PRINT] INT:3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py -l INFO run p1.lang
+[CMD] py lang.py -l INFO run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+[INFO] examples/01_simple.lang:1:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:0
+      1. INT@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:6
+[INFO] examples/01_simple.lang:1:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:1@examples/01_simple.lang:1:0
+      1. INT:2@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at runtime:
+[NOTE] stack:
+      0. INT:3@examples/01_simple.lang:1:6
+[PRINT] INT:3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py -l ERROR run p1.lang
+[CMD] py lang.py -l ERROR run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+[PRINT] INT:3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py -l DEFAULT run p1.lang
+[CMD] py lang.py -l DEFAULT run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+[INFO] examples/01_simple.lang:1:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:0
+      1. INT@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:6
+[INFO] examples/01_simple.lang:1:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:1@examples/01_simple.lang:1:0
+      1. INT:2@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at runtime:
+[NOTE] stack:
+      0. INT:3@examples/01_simple.lang:1:6
+[PRINT] INT:3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py -l TRACE run p1.lang
+[CMD] py lang.py -l TRACE run examples/02_while.lang
 [STDOUT]:
-[TRACE] <?>:0:0: file: p1.lang
+[TRACE] <?>:0:0: file: examples/02_while.lang
 [NOTE] Tokens:
-      0. p1.lang:5:0:KEYWORD:IF
-      1. p1.lang:6:2:INT:1
-      2. p1.lang:6:4:INT:2
-      3. p1.lang:6:6:WORD:'=='
-      4. p1.lang:7:0:KEYWORD:DO
-      5. p1.lang:8:2:INT:11
-      6. p1.lang:8:5:INT:2
-      7. p1.lang:8:7:WORD:'*'
-      8. p1.lang:9:0:KEYWORD:ELSE
-      9. p1.lang:10:2:INT:12
-     10. p1.lang:10:5:INT:2
-     11. p1.lang:10:7:WORD:'*'
-     12. p1.lang:11:0:KEYWORD:END
-     13. p1.lang:12:0:WORD:'print'
-     14. p1.lang:14:0:INT:10
-     15. p1.lang:15:0:KEYWORD:WHILE
-     16. p1.lang:16:2:WORD:'dup'
-     17. p1.lang:16:6:INT:5
-     18. p1.lang:16:8:WORD:'>'
-     19. p1.lang:17:0:KEYWORD:DO
-     20. p1.lang:18:2:WORD:'dup'
-     21. p1.lang:18:6:WORD:'print'
-     22. p1.lang:19:2:INT:1
-     23. p1.lang:19:4:WORD:'-'
-     24. p1.lang:20:0:KEYWORD:END
-     25. p1.lang:21:0:WORD:'drop'
-     26. p1.lang:25:0:INT:10
-     27. p1.lang:25:3:KEYWORD:WHILE
-     28. p1.lang:25:12:WORD:'dup'
-     29. p1.lang:25:16:INT:5
-     30. p1.lang:25:18:WORD:'>'
-     31. p1.lang:25:20:KEYWORD:DO
-     32. p1.lang:25:25:WORD:'dup'
-     33. p1.lang:25:29:WORD:'print'
-     34. p1.lang:25:37:INT:1
-     35. p1.lang:25:39:WORD:'-'
-     36. p1.lang:25:41:KEYWORD:END
-     37. p1.lang:25:45:WORD:'drop'
-[TRACE] <?>:0:0: Compiled IR
-[NOTE] IR:
-    IR:
-    proc main:
-      0. IF
-      1. PUSH_INT:1
-      2. PUSH_INT:2
-      3. INTRINSIC:EQ
-      4. DO:8
-      5. PUSH_INT:11
-      6. PUSH_INT:2
-      7. INTRINSIC:MUL
-      8. ELSE:12
-      9. PUSH_INT:12
-     10. PUSH_INT:2
-     11. INTRINSIC:MUL
-     12. END:13
-     13. INTRINSIC:PRINT
-     14. PUSH_INT:10
-     15. WHILE
-     16. INTRINSIC:DUP
-     17. PUSH_INT:5
-     18. INTRINSIC:GT
-     19. DO:24
-     20. INTRINSIC:DUP
-     21. INTRINSIC:PRINT
-     22. PUSH_INT:1
-     23. INTRINSIC:SUB
-     24. END:15
-     25. INTRINSIC:DROP
-     26. PUSH_INT:10
-     27. WHILE
-     28. INTRINSIC:DUP
-     29. PUSH_INT:5
-     30. INTRINSIC:GT
-     31. DO:36
-     32. INTRINSIC:DUP
-     33. INTRINSIC:PRINT
-     34. PUSH_INT:1
-     35. INTRINSIC:SUB
-     36. END:27
-     37. INTRINSIC:DROP
-     38. RET
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py -l TRACE run p2.lang
-[STDOUT]:
-[TRACE] <?>:0:0: file: p2.lang
-[NOTE] Tokens:
-      0. p2.lang:2:0:INT:1
-      1. p2.lang:3:0:INT:2
-      2. p2.lang:4:0:WORD:'swap'
-      3. p2.lang:5:0:WORD:'dup'
-      4. p2.lang:6:0:WORD:'print'
-      5. p2.lang:7:0:INT:10
-      6. p2.lang:8:0:WORD:'*'
-      7. p2.lang:9:0:WORD:'+'
-      8. p2.lang:10:0:KEYWORD:WHILE
-      9. p2.lang:11:2:WORD:'dup'
-     10. p2.lang:12:2:INT:3
-     11. p2.lang:13:2:WORD:'>'
-     12. p2.lang:14:0:KEYWORD:DO
-     13. p2.lang:15:2:KEYWORD:IF
-     14. p2.lang:16:4:WORD:'dup'
-     15. p2.lang:17:4:INT:2
-     16. p2.lang:18:4:WORD:'%'
-     17. p2.lang:19:4:INT:0
-     18. p2.lang:20:4:WORD:'=='
-     19. p2.lang:21:2:KEYWORD:DO
-     20. p2.lang:22:4:INT:5
-     21. p2.lang:23:2:KEYWORD:ELSE
-     22. p2.lang:24:4:INT:7
-     23. p2.lang:25:2:KEYWORD:END
-     24. p2.lang:27:2:WORD:'print'
-     25. p2.lang:28:2:INT:1
-     26. p2.lang:29:2:WORD:'-'
-     27. p2.lang:30:0:KEYWORD:END
-     28. p2.lang:32:0:WORD:'drop'
+      0. examples/02_while.lang:2:0:INT:1
+      1. examples/02_while.lang:3:0:INT:2
+      2. examples/02_while.lang:4:0:WORD:'swap'
+      3. examples/02_while.lang:5:0:WORD:'dup'
+      4. examples/02_while.lang:6:0:WORD:'print'
+      5. examples/02_while.lang:7:0:INT:10
+      6. examples/02_while.lang:8:0:WORD:'*'
+      7. examples/02_while.lang:9:0:WORD:'+'
+      8. examples/02_while.lang:10:0:KEYWORD:WHILE
+      9. examples/02_while.lang:11:2:WORD:'dup'
+     10. examples/02_while.lang:12:2:INT:3
+     11. examples/02_while.lang:13:2:WORD:'>'
+     12. examples/02_while.lang:14:0:KEYWORD:DO
+     13. examples/02_while.lang:15:2:KEYWORD:IF
+     14. examples/02_while.lang:16:4:WORD:'dup'
+     15. examples/02_while.lang:17:4:INT:2
+     16. examples/02_while.lang:18:4:WORD:'%'
+     17. examples/02_while.lang:19:4:INT:0
+     18. examples/02_while.lang:20:4:WORD:'=='
+     19. examples/02_while.lang:21:2:KEYWORD:DO
+     20. examples/02_while.lang:22:4:INT:5
+     21. examples/02_while.lang:23:2:KEYWORD:ELSE
+     22. examples/02_while.lang:24:4:INT:7
+     23. examples/02_while.lang:25:2:KEYWORD:END
+     24. examples/02_while.lang:27:2:WORD:'print'
+     25. examples/02_while.lang:28:2:INT:1
+     26. examples/02_while.lang:29:2:WORD:'-'
+     27. examples/02_while.lang:30:0:KEYWORD:END
+     28. examples/02_while.lang:32:0:WORD:'drop'
 [TRACE] <?>:0:0: Compiled IR
 [NOTE] IR:
     IR:
@@ -1369,309 +1189,52 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      27. END:8
      28. INTRINSIC:DROP
      29. RET
-[PRINT] INT:1@p2.lang:2:0
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
+[PRINT] INT:1@examples/02_while.lang:2:0
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py -l TRACE run procs.lang
+[CMD] py lang.py -l TRACE build -r examples/02_while.lang
 [STDOUT]:
-[TRACE] <?>:0:0: file: procs.lang
+[TRACE] <?>:0:0: file: examples/02_while.lang
 [NOTE] Tokens:
-      0. procs.lang:1:0:KEYWORD:PROC
-      1. procs.lang:1:5:WORD:'a'
-      2. procs.lang:1:7:WORD:'int'
-      3. procs.lang:1:11:KEYWORD:TYPE_DELIM
-      4. procs.lang:1:14:WORD:'int'
-      5. procs.lang:1:18:KEYWORD:DO
-      6. procs.lang:2:4:WORD:'?'
-      7. procs.lang:3:4:INT:2
-      8. procs.lang:4:4:WORD:'?'
-      9. procs.lang:5:4:WORD:'*'
-     10. procs.lang:6:4:WORD:'?'
-     11. procs.lang:7:0:KEYWORD:END
-     12. procs.lang:9:0:KEYWORD:PROC
-     13. procs.lang:9:5:WORD:'main'
-     14. procs.lang:9:10:KEYWORD:TYPE_DELIM
-     15. procs.lang:9:13:KEYWORD:DO
-     16. procs.lang:10:4:WORD:'?'
-     17. procs.lang:11:4:INT:5
-     18. procs.lang:12:4:WORD:'?'
-     19. procs.lang:13:4:WORD:'a'
-     20. procs.lang:14:4:WORD:'?'
-     21. procs.lang:15:4:WORD:'print'
-     22. procs.lang:16:4:WORD:'?'
-     23. procs.lang:17:0:KEYWORD:END
-[TRACE] <?>:0:0: Compiled IR
-[NOTE] IR:
-    IR:
-    proc a:
-      0. INTRINSIC:DEBUG
-      1. PUSH_INT:2
-      2. INTRINSIC:DEBUG
-      3. INTRINSIC:MUL
-      4. INTRINSIC:DEBUG
-      5. RET
-    proc main:
-      0. INTRINSIC:DEBUG
-      1. PUSH_INT:5
-      2. INTRINSIC:DEBUG
-      3. WORD:'a'
-      4. INTRINSIC:DEBUG
-      5. INTRINSIC:PRINT
-      6. INTRINSIC:DEBUG
-      7. RET
-[INFO] procs.lang:2:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-[INFO] procs.lang:4:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-      1. INT@procs.lang:3:4
-[INFO] procs.lang:6:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:5:4
-[INFO] procs.lang:10:4: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] procs.lang:12:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:11:4
-[INFO] procs.lang:14:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:13:4
-[INFO] procs.lang:16:4: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] procs.lang:10:4: Stack at runtime:
-[NOTE] stack: (empty)
-[INFO] procs.lang:12:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@procs.lang:11:4
-[INFO] procs.lang:2:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@procs.lang:11:4
-[INFO] procs.lang:4:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@procs.lang:11:4
-      1. INT:2@procs.lang:3:4
-[INFO] procs.lang:6:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:10@procs.lang:5:4
-[INFO] procs.lang:14:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:10@procs.lang:5:4
-[PRINT] INT:10@procs.lang:5:4
-[INFO] procs.lang:16:4: Stack at runtime:
-[NOTE] stack: (empty)
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py -l TRACE build p1.lang
-[STDOUT]:
-[TRACE] <?>:0:0: file: p1.lang
-[NOTE] Tokens:
-      0. p1.lang:5:0:KEYWORD:IF
-      1. p1.lang:6:2:INT:1
-      2. p1.lang:6:4:INT:2
-      3. p1.lang:6:6:WORD:'=='
-      4. p1.lang:7:0:KEYWORD:DO
-      5. p1.lang:8:2:INT:11
-      6. p1.lang:8:5:INT:2
-      7. p1.lang:8:7:WORD:'*'
-      8. p1.lang:9:0:KEYWORD:ELSE
-      9. p1.lang:10:2:INT:12
-     10. p1.lang:10:5:INT:2
-     11. p1.lang:10:7:WORD:'*'
-     12. p1.lang:11:0:KEYWORD:END
-     13. p1.lang:12:0:WORD:'print'
-     14. p1.lang:14:0:INT:10
-     15. p1.lang:15:0:KEYWORD:WHILE
-     16. p1.lang:16:2:WORD:'dup'
-     17. p1.lang:16:6:INT:5
-     18. p1.lang:16:8:WORD:'>'
-     19. p1.lang:17:0:KEYWORD:DO
-     20. p1.lang:18:2:WORD:'dup'
-     21. p1.lang:18:6:WORD:'print'
-     22. p1.lang:19:2:INT:1
-     23. p1.lang:19:4:WORD:'-'
-     24. p1.lang:20:0:KEYWORD:END
-     25. p1.lang:21:0:WORD:'drop'
-     26. p1.lang:25:0:INT:10
-     27. p1.lang:25:3:KEYWORD:WHILE
-     28. p1.lang:25:12:WORD:'dup'
-     29. p1.lang:25:16:INT:5
-     30. p1.lang:25:18:WORD:'>'
-     31. p1.lang:25:20:KEYWORD:DO
-     32. p1.lang:25:25:WORD:'dup'
-     33. p1.lang:25:29:WORD:'print'
-     34. p1.lang:25:37:INT:1
-     35. p1.lang:25:39:WORD:'-'
-     36. p1.lang:25:41:KEYWORD:END
-     37. p1.lang:25:45:WORD:'drop'
-[TRACE] <?>:0:0: Compiled IR
-[NOTE] IR:
-    IR:
-    proc main:
-      0. IF
-      1. PUSH_INT:1
-      2. PUSH_INT:2
-      3. INTRINSIC:EQ
-      4. DO:8
-      5. PUSH_INT:11
-      6. PUSH_INT:2
-      7. INTRINSIC:MUL
-      8. ELSE:12
-      9. PUSH_INT:12
-     10. PUSH_INT:2
-     11. INTRINSIC:MUL
-     12. END:13
-     13. INTRINSIC:PRINT
-     14. PUSH_INT:10
-     15. WHILE
-     16. INTRINSIC:DUP
-     17. PUSH_INT:5
-     18. INTRINSIC:GT
-     19. DO:24
-     20. INTRINSIC:DUP
-     21. INTRINSIC:PRINT
-     22. PUSH_INT:1
-     23. INTRINSIC:SUB
-     24. END:15
-     25. INTRINSIC:DROP
-     26. PUSH_INT:10
-     27. WHILE
-     28. INTRINSIC:DUP
-     29. PUSH_INT:5
-     30. INTRINSIC:GT
-     31. DO:36
-     32. INTRINSIC:DUP
-     33. INTRINSIC:PRINT
-     34. PUSH_INT:1
-     35. INTRINSIC:SUB
-     36. END:27
-     37. INTRINSIC:DROP
-     38. RET
-[TRACE] <?>:0:0: Generated C code:
-[NOTE] generated_code:
-    #include <stdio.h>
-    #include <stdbool.h>
-    typedef struct {
-    } ret_main;
-    ret_main proc_main() {
-      int lit_int_0;
-      int lit_int_1;
-      int eq_0;
-      int lit_int_2;
-      int lit_int_3;
-      int mul_0;
-      int lit_int_4;
-      int lit_int_5;
-      int mul_1;
-      int lit_int_6;
-      int dup_0;
-      int lit_int_7;
-      int gt_0;
-      int dup_1;
-      int lit_int_8;
-      int sub_0;
-      int lit_int_9;
-      int dup_2;
-      int lit_int_10;
-      int gt_1;
-      int dup_3;
-      int lit_int_11;
-      int sub_1;
-      lit_int_0 = 1;
-      lit_int_1 = 2;
-      eq_0 = lit_int_0 == lit_int_1;
-      if (eq_0) {
-        lit_int_2 = 11;
-        lit_int_3 = 2;
-        mul_0 = lit_int_2 * lit_int_3;
-      } else {
-        lit_int_4 = 12;
-        lit_int_5 = 2;
-        mul_1 = lit_int_4 * lit_int_5;
-        mul_0 = mul_1;
-      }
-      printf("%d\n", mul_0);
-      lit_int_6 = 10;
-      while (true) {
-        dup_0 = lit_int_6;
-        lit_int_7 = 5;
-        gt_0 = dup_0 > lit_int_7;
-        if (gt_0) {
-          dup_1 = lit_int_6;
-          printf("%d\n", dup_1);
-          lit_int_8 = 1;
-          sub_0 = lit_int_6 - lit_int_8;
-          lit_int_6 = sub_0;
-        } else break;
-      }
-      lit_int_9 = 10;
-      while (true) {
-        dup_2 = lit_int_9;
-        lit_int_10 = 5;
-        gt_1 = dup_2 > lit_int_10;
-        if (gt_1) {
-          dup_3 = lit_int_9;
-          printf("%d\n", dup_3);
-          lit_int_11 = 1;
-          sub_1 = lit_int_9 - lit_int_11;
-          lit_int_9 = sub_1;
-        } else break;
-      }
-      return (ret_main){
-      };
-    }
-    int main() {
-      proc_main();
-      return 0;
-    }
-[CMD] gcc p1.c -o p1.exe
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py -l TRACE build p2.lang
-[STDOUT]:
-[TRACE] <?>:0:0: file: p2.lang
-[NOTE] Tokens:
-      0. p2.lang:2:0:INT:1
-      1. p2.lang:3:0:INT:2
-      2. p2.lang:4:0:WORD:'swap'
-      3. p2.lang:5:0:WORD:'dup'
-      4. p2.lang:6:0:WORD:'print'
-      5. p2.lang:7:0:INT:10
-      6. p2.lang:8:0:WORD:'*'
-      7. p2.lang:9:0:WORD:'+'
-      8. p2.lang:10:0:KEYWORD:WHILE
-      9. p2.lang:11:2:WORD:'dup'
-     10. p2.lang:12:2:INT:3
-     11. p2.lang:13:2:WORD:'>'
-     12. p2.lang:14:0:KEYWORD:DO
-     13. p2.lang:15:2:KEYWORD:IF
-     14. p2.lang:16:4:WORD:'dup'
-     15. p2.lang:17:4:INT:2
-     16. p2.lang:18:4:WORD:'%'
-     17. p2.lang:19:4:INT:0
-     18. p2.lang:20:4:WORD:'=='
-     19. p2.lang:21:2:KEYWORD:DO
-     20. p2.lang:22:4:INT:5
-     21. p2.lang:23:2:KEYWORD:ELSE
-     22. p2.lang:24:4:INT:7
-     23. p2.lang:25:2:KEYWORD:END
-     24. p2.lang:27:2:WORD:'print'
-     25. p2.lang:28:2:INT:1
-     26. p2.lang:29:2:WORD:'-'
-     27. p2.lang:30:0:KEYWORD:END
-     28. p2.lang:32:0:WORD:'drop'
+      0. examples/02_while.lang:2:0:INT:1
+      1. examples/02_while.lang:3:0:INT:2
+      2. examples/02_while.lang:4:0:WORD:'swap'
+      3. examples/02_while.lang:5:0:WORD:'dup'
+      4. examples/02_while.lang:6:0:WORD:'print'
+      5. examples/02_while.lang:7:0:INT:10
+      6. examples/02_while.lang:8:0:WORD:'*'
+      7. examples/02_while.lang:9:0:WORD:'+'
+      8. examples/02_while.lang:10:0:KEYWORD:WHILE
+      9. examples/02_while.lang:11:2:WORD:'dup'
+     10. examples/02_while.lang:12:2:INT:3
+     11. examples/02_while.lang:13:2:WORD:'>'
+     12. examples/02_while.lang:14:0:KEYWORD:DO
+     13. examples/02_while.lang:15:2:KEYWORD:IF
+     14. examples/02_while.lang:16:4:WORD:'dup'
+     15. examples/02_while.lang:17:4:INT:2
+     16. examples/02_while.lang:18:4:WORD:'%'
+     17. examples/02_while.lang:19:4:INT:0
+     18. examples/02_while.lang:20:4:WORD:'=='
+     19. examples/02_while.lang:21:2:KEYWORD:DO
+     20. examples/02_while.lang:22:4:INT:5
+     21. examples/02_while.lang:23:2:KEYWORD:ELSE
+     22. examples/02_while.lang:24:4:INT:7
+     23. examples/02_while.lang:25:2:KEYWORD:END
+     24. examples/02_while.lang:27:2:WORD:'print'
+     25. examples/02_while.lang:28:2:INT:1
+     26. examples/02_while.lang:29:2:WORD:'-'
+     27. examples/02_while.lang:30:0:KEYWORD:END
+     28. examples/02_while.lang:32:0:WORD:'drop'
 [TRACE] <?>:0:0: Compiled IR
 [NOTE] IR:
     IR:
@@ -1767,137 +1330,8 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
       proc_main();
       return 0;
     }
-[CMD] gcc p2.c -o p2.exe
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py -l TRACE build procs.lang
-[STDOUT]:
-[TRACE] <?>:0:0: file: procs.lang
-[NOTE] Tokens:
-      0. procs.lang:1:0:KEYWORD:PROC
-      1. procs.lang:1:5:WORD:'a'
-      2. procs.lang:1:7:WORD:'int'
-      3. procs.lang:1:11:KEYWORD:TYPE_DELIM
-      4. procs.lang:1:14:WORD:'int'
-      5. procs.lang:1:18:KEYWORD:DO
-      6. procs.lang:2:4:WORD:'?'
-      7. procs.lang:3:4:INT:2
-      8. procs.lang:4:4:WORD:'?'
-      9. procs.lang:5:4:WORD:'*'
-     10. procs.lang:6:4:WORD:'?'
-     11. procs.lang:7:0:KEYWORD:END
-     12. procs.lang:9:0:KEYWORD:PROC
-     13. procs.lang:9:5:WORD:'main'
-     14. procs.lang:9:10:KEYWORD:TYPE_DELIM
-     15. procs.lang:9:13:KEYWORD:DO
-     16. procs.lang:10:4:WORD:'?'
-     17. procs.lang:11:4:INT:5
-     18. procs.lang:12:4:WORD:'?'
-     19. procs.lang:13:4:WORD:'a'
-     20. procs.lang:14:4:WORD:'?'
-     21. procs.lang:15:4:WORD:'print'
-     22. procs.lang:16:4:WORD:'?'
-     23. procs.lang:17:0:KEYWORD:END
-[TRACE] <?>:0:0: Compiled IR
-[NOTE] IR:
-    IR:
-    proc a:
-      0. INTRINSIC:DEBUG
-      1. PUSH_INT:2
-      2. INTRINSIC:DEBUG
-      3. INTRINSIC:MUL
-      4. INTRINSIC:DEBUG
-      5. RET
-    proc main:
-      0. INTRINSIC:DEBUG
-      1. PUSH_INT:5
-      2. INTRINSIC:DEBUG
-      3. WORD:'a'
-      4. INTRINSIC:DEBUG
-      5. INTRINSIC:PRINT
-      6. INTRINSIC:DEBUG
-      7. RET
-[INFO] procs.lang:2:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-[INFO] procs.lang:4:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-      1. INT@procs.lang:3:4
-[INFO] procs.lang:6:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:5:4
-[INFO] procs.lang:10:4: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] procs.lang:12:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:11:4
-[INFO] procs.lang:14:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:13:4
-[INFO] procs.lang:16:4: Stack at compile time:
-[NOTE] stack: (empty)
-[TRACE] <?>:0:0: Generated C code:
-[NOTE] generated_code:
-    #include <stdio.h>
-    #include <stdbool.h>
-    typedef struct {
-      int _0;
-    } ret_a;
-    ret_a proc_a(int arg_0) {
-      int lit_int_0;
-      int mul_0;
-      lit_int_0 = 2;
-      mul_0 = arg_0 * lit_int_0;
-      return (ret_a){
-        ._0 = mul_0,
-      };
-    }
-    typedef struct {
-    } ret_main;
-    ret_main proc_main() {
-      int lit_int_1;
-      int res_a_0_0;
-      lit_int_1 = 5;
-      ret_a res_a = proc_a(lit_int_1);
-      res_a_0_0 = res_a._0;
-      printf("%d\n", res_a_0_0);
-      return (ret_main){
-      };
-    }
-    int main() {
-      proc_main();
-      return 0;
-    }
-[CMD] gcc procs.c -o procs.exe
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py build -r p1.lang
-[STDOUT]:
-[CMD] gcc p1.c -o p1.exe
-[CMD] ./p1.exe
-[STDOUT]:
-24
-10
-9
-8
-7
-6
-10
-9
-8
-7
-6
-
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py build -r p2.lang
-[STDOUT]:
-[CMD] gcc p2.c -o p2.exe
-[CMD] ./p2.exe
+[CMD] gcc examples/02_while.c -o examples/02_while.exe
+[CMD] ./examples/02_while.exe
 [STDOUT]:
 1
 5
@@ -1913,109 +1347,83 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py build -r procs.lang
+[CMD] py lang.py run examples/00_empty.lang
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py build -r examples/00_empty.lang
 [STDOUT]:
-[INFO] procs.lang:2:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-[INFO] procs.lang:4:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-      1. INT@procs.lang:3:4
-[INFO] procs.lang:6:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:5:4
-[INFO] procs.lang:10:4: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] procs.lang:12:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:11:4
-[INFO] procs.lang:14:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:13:4
-[INFO] procs.lang:16:4: Stack at compile time:
-[NOTE] stack: (empty)
-[CMD] gcc procs.c -o procs.exe
-[CMD] ./procs.exe
+[CMD] gcc examples/00_empty.c -o examples/00_empty.exe
+[CMD] ./examples/00_empty.exe
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py run examples/01_simple.lang
 [STDOUT]:
-10
+[INFO] examples/01_simple.lang:1:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:0
+      1. INT@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:6
+[INFO] examples/01_simple.lang:1:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:1@examples/01_simple.lang:1:0
+      1. INT:2@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at runtime:
+[NOTE] stack:
+      0. INT:3@examples/01_simple.lang:1:6
+[PRINT] INT:3@examples/01_simple.lang:1:6
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py build -r examples/01_simple.lang
+[STDOUT]:
+[INFO] examples/01_simple.lang:1:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:0
+      1. INT@examples/01_simple.lang:1:2
+[INFO] examples/01_simple.lang:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/01_simple.lang:1:6
+[CMD] gcc examples/01_simple.c -o examples/01_simple.exe
+[CMD] ./examples/01_simple.exe
+[STDOUT]:
+3
 
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py run p1.lang
+[CMD] py lang.py run examples/02_while.lang
 [STDOUT]:
-[PRINT] INT:24@p1.lang:10:7
-[PRINT] INT:10@p1.lang:14:0
-[PRINT] INT:9@p1.lang:19:4
-[PRINT] INT:8@p1.lang:19:4
-[PRINT] INT:7@p1.lang:19:4
-[PRINT] INT:6@p1.lang:19:4
-[PRINT] INT:10@p1.lang:25:0
-[PRINT] INT:9@p1.lang:25:39
-[PRINT] INT:8@p1.lang:25:39
-[PRINT] INT:7@p1.lang:25:39
-[PRINT] INT:6@p1.lang:25:39
+[PRINT] INT:1@examples/02_while.lang:2:0
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT:7@examples/02_while.lang:24:4
+[PRINT] INT:5@examples/02_while.lang:22:4
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py lang.py run p2.lang
+[CMD] py lang.py build -r examples/02_while.lang
 [STDOUT]:
-[PRINT] INT:1@p2.lang:2:0
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
-[PRINT] INT:7@p2.lang:24:4
-[PRINT] INT:5@p2.lang:22:4
+[CMD] gcc examples/02_while.c -o examples/02_while.exe
+[CMD] ./examples/02_while.exe
+[STDOUT]:
+1
+5
+7
+5
+7
+5
+7
+5
+7
+5
 
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py run procs.lang
-[STDOUT]:
-[INFO] procs.lang:2:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-[INFO] procs.lang:4:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:1:7
-      1. INT@procs.lang:3:4
-[INFO] procs.lang:6:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:5:4
-[INFO] procs.lang:10:4: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] procs.lang:12:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:11:4
-[INFO] procs.lang:14:4: Stack at compile time:
-[NOTE] stack:
-      0. INT@procs.lang:13:4
-[INFO] procs.lang:16:4: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] procs.lang:10:4: Stack at runtime:
-[NOTE] stack: (empty)
-[INFO] procs.lang:12:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@procs.lang:11:4
-[INFO] procs.lang:2:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@procs.lang:11:4
-[INFO] procs.lang:4:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@procs.lang:11:4
-      1. INT:2@procs.lang:3:4
-[INFO] procs.lang:6:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:10@procs.lang:5:4
-[INFO] procs.lang:14:4: Stack at runtime:
-[NOTE] stack:
-      0. INT:10@procs.lang:5:4
-[PRINT] INT:10@procs.lang:5:4
-[INFO] procs.lang:16:4: Stack at runtime:
-[NOTE] stack: (empty)
 
 [EXIT CODE] 0
