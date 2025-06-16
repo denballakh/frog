@@ -36,6 +36,9 @@ class Loc:
         return f'{self.file}:{self.line}:{self.col}'
 
 
+loc_unknown = Loc('<?>', 0, 0)
+
+
 class TokenType(Enum):
     INT = auto()
     BOOL = auto()
@@ -45,6 +48,8 @@ class TokenType(Enum):
     WORD = auto()
     KEYWORD = auto()
 
+    IMAGINARY = auto()
+
 
 class KeywordType(Enum):
     PROC = auto()
@@ -53,13 +58,14 @@ class KeywordType(Enum):
     WHILE = auto()
     DO = auto()
     END = auto()
+    TYPE_DELIM = auto()  # --
 
 
 @dataclass
 class Token:
     type: TokenType
     value: Any
-    loc: Loc
+    loc: Loc = field(compare=False)
 
 
 class InstructionType(Enum):
@@ -75,6 +81,7 @@ class InstructionType(Enum):
     DO = auto()  # jumps conditionally to the end of loop or to the else branch
     END = auto()  # jumps unconditionally to the beginning of loop or after the if
     LABEL = auto()
+    RET = auto()
 
 
 class IntrinsicType(Enum):
@@ -122,38 +129,47 @@ class IntrinsicType(Enum):
 @dataclass
 class Instruction:
     type: InstructionType
-    tok: Token
+    tok: Token = field(compare=False)
     arg1: Any = unused
     arg2: Any = unused
 
 
 @dataclass
-class Procedure:
+class Proc:
     name: str
-    instructions: list[Instruction] = field(default_factory=list)
+    ins: list[ValueCls]
+    outs: list[ValueCls]
+    instrs: list[Instruction] = field(default_factory=list)
 
 
 @dataclass
 class IR:
-    procs: list[Procedure] = field(default_factory=list)
+    procs: list[Proc] = field(default_factory=list)
 
-    def get_proc_by_name(self, name: str) -> Procedure | None:
+    def get_proc_by_name(self, name: str) -> Proc | None:
         for proc in self.procs:
             if proc.name == name:
                 return proc
         return None
 
 
-class ValueType(Enum):
+class ValueClsType(Enum):
     INT = auto()
     BOOL = auto()
 
 
 @dataclass
-class StackEntry:
-    type: ValueType
+class ValueCls:
+    type: ValueClsType
     val: Any
-    tok: Token
+    tok: Token = field(compare=False)
+
+
+@dataclass
+class StackEntry:
+    type: ValueCls
+    val: Any
+    tok: Token = field(compare=False)
 
 
 class Error(Exception): ...
@@ -180,6 +196,15 @@ def pp(x: Any) -> str:
                 return f'{pp(x.type)}@{pp(x.tok.loc)}'
             return f'{pp(x.type)}:{pp(x.val)}@{pp(x.tok.loc)}'
 
+        case ValueCls():
+            match x.type:
+                case ValueClsType.INT:
+                    return 'INT'
+                case ValueClsType.BOOL:
+                    return 'BOOL'
+                case _:
+                    assert_never(x.type)
+
         case Token():
             return f'{x.loc}:{pp(x.type)}:{pp(x.value)}'
 
@@ -188,7 +213,7 @@ def pp(x: Any) -> str:
             sb += 'IR:\n'
             for proc in x.procs:
                 sb += f'proc {proc.name}:\n'
-                for i, instr in enumerate(proc.instructions):
+                for i, instr in enumerate(proc.instrs):
                     sb += f'{i:3}. {pp(instr)}\n'
 
             return str(sb)
@@ -222,7 +247,7 @@ def _locatable_to_loc(loc: _Locatable) -> Loc:
         case StackEntry():
             return loc.tok.loc
         case None:
-            return Loc('<?>', 0, 0)
+            return loc_unknown
         case _:
             assert_never(loc)
 
@@ -399,6 +424,8 @@ def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
                         yield Token(TokenType.KEYWORD, KeywordType.WHILE, loc_start)
                     case 'do':
                         yield Token(TokenType.KEYWORD, KeywordType.DO, loc_start)
+                    case '--':
+                        yield Token(TokenType.KEYWORD, KeywordType.TYPE_DELIM, loc_start)
                     case _:
                         yield Token(TokenType.WORD, chunk, loc_start)
 
@@ -410,23 +437,27 @@ def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
 
 def compile(toks: list[Token]) -> IR:
     ir = IR()
-    cur_proc: Procedure | None = None
+
+    implicit_main = False
+    cur_proc: Proc | None = None
 
     def add_instr(instr: Instruction) -> int:
         """returns index of added instruction"""
         nonlocal cur_proc
+        nonlocal implicit_main
         if cur_proc is None:
             cur_proc = ir.get_proc_by_name('main')
+            implicit_main = True
         if cur_proc is None:
-            cur_proc = Procedure(name='main')
+            cur_proc = Proc(name='main', ins=[], outs=[])
             ir.procs.append(cur_proc)
-        cur_proc.instructions.append(instr)
-        return len(cur_proc.instructions) - 1
+        cur_proc.instrs.append(instr)
+        return len(cur_proc.instrs) - 1
 
     # pyright tries to be smart and infer that `cur_proc` is always `None`
     # trick it into thinking that it might be non-`None`
     if len('abc') == 4:
-        cur_proc = Procedure(name='lol')
+        cur_proc = Proc(name='lol', ins=[], outs=[])
 
     # _label_cnt = 0
     # def get_label() -> int:
@@ -444,9 +475,14 @@ def compile(toks: list[Token]) -> IR:
 
     block_stack: list[Block] = []
 
-    for tok in toks:
-        expect_enum_size(TokenType, 6)
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        i += 1
         match tok.type:
+            case TokenType.IMAGINARY:
+                warn(tok, f'encountered imaginary token: {pp(tok)}')
+
             case TokenType.INT:
                 _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=tok.value))
 
@@ -466,7 +502,6 @@ def compile(toks: list[Token]) -> IR:
 
             case TokenType.KEYWORD:
                 kw_type = cast(KeywordType, tok.value)
-                expect_enum_size(KeywordType, 6)
                 match kw_type:
                     case KeywordType.IF:
                         b = Block(
@@ -480,7 +515,7 @@ def compile(toks: list[Token]) -> IR:
                             error(tok, f'ELSE should follow an IF')
                         b = block_stack[-1]
                         if b.type != InstructionType.IF:
-                            error(tok, f'ELSE should follow an IF, not {b.type}')
+                            error(tok, f'ELSE should follow an IF, not {pp(b.type)}')
                         b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
 
                     case KeywordType.WHILE:
@@ -501,7 +536,7 @@ def compile(toks: list[Token]) -> IR:
                             b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                         else:
-                            error(tok, f'DO should follow an IF or WHILE, not {b.type}')
+                            error(tok, f'DO should follow an IF or WHILE, not {pp(b.type)}')
 
                     case KeywordType.END:
                         if not block_stack:
@@ -530,10 +565,10 @@ def compile(toks: list[Token]) -> IR:
 
                                 assert cur_proc is not None
                                 b.ip4 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=-1))
-                                cur_proc.instructions[-1].arg1 = b.ip4 + 1
+                                cur_proc.instrs[-1].arg1 = b.ip4 + 1
 
-                                cur_proc.instructions[b.ip2].arg1 = b.ip3
-                                cur_proc.instructions[b.ip3].arg1 = b.ip4
+                                cur_proc.instrs[b.ip2].arg1 = b.ip3
+                                cur_proc.instrs[b.ip3].arg1 = b.ip4
 
                             # while // ip1
                             #   <cond>
@@ -550,15 +585,71 @@ def compile(toks: list[Token]) -> IR:
                                     error(tok, f'while <cond> do <body> end')
 
                                 assert cur_proc is not None
-                                cur_proc.instructions[b.ip2].arg1 = b.ip3 = add_instr(
+                                cur_proc.instrs[b.ip2].arg1 = b.ip3 = add_instr(
                                     Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1)
                                 )
 
+                            case InstructionType.PROC:
+                                _ = add_instr(Instruction(type=InstructionType.RET, tok=tok))
+                                cur_proc = None
+
                             case _:
-                                error(tok, f'END should follow an IF or WHILE, not {b.type}')
+                                error(tok, f'END should follow an IF or WHILE, not {pp(b.type)}')
+
+                    case KeywordType.TYPE_DELIM:
+                        error(tok, f'{kw_type} should not be used only in proc signatures')
 
                     case KeywordType.PROC:
-                        notimplemented(tok, '`proc` keywords')
+                        if cur_proc is not None:
+                            error(tok, f'PROC should not be inside of another PROC: {cur_proc.name}')
+
+                        if i >= len(toks):
+                            error(tok, f'expected a name after PROC')
+                        tok = toks[i]
+                        if tok.type != TokenType.WORD:
+                            error(tok, f'expected a name after PROC, got {tok.type}')
+                        name = tok.value
+                        i += 1
+
+                        def parse_type(tok: Token) -> ValueCls:
+                            if tok.type != TokenType.WORD:
+                                error(tok, f'expected a type after proc name, got {tok.type}')
+                            match tok.value:
+                                case 'int':
+                                    return ValueCls(type=ValueClsType.INT, val=unused, tok=tok)
+                                case 'bool':
+                                    return ValueCls(type=ValueClsType.BOOL, val=unused, tok=tok)
+                                case _:
+                                    error(tok, f'expected a type after proc name, got {tok.value}')
+
+                        ins: list[ValueCls] = []
+                        while i < len(toks) and toks[i].type == TokenType.WORD:
+                            ins.append(parse_type(toks[i]))
+                            i += 1
+
+                        if i >= len(toks):
+                            error(tok, f'expected a {KeywordType.TYPE_DELIM} after proc args')
+
+                        if toks[i].type != TokenType.KEYWORD or toks[i].value != KeywordType.TYPE_DELIM:
+                            error(tok, f'expected a {KeywordType.TYPE_DELIM} after proc args, got {toks[i]}')
+                        i += 1
+
+                        outs: list[ValueCls] = []
+                        while i < len(toks) and toks[i].type == TokenType.WORD:
+                            outs.append(parse_type(toks[i]))
+                            i += 1
+
+                        if i >= len(toks):
+                            error(tok, f'expected a DO after proc args')
+                        tok = toks[i]
+                        if tok.type != TokenType.KEYWORD or tok.value != KeywordType.DO:
+                            error(tok, f'expected a DO after proc args, got {tok}')
+                        i += 1
+
+                        cur_proc = Proc(name=name, ins=ins, outs=outs)
+                        ir.procs.append(cur_proc)
+                        block = Block(InstructionType.PROC)
+                        block_stack.append(block)
 
                     case _:
                         assert_never(kw_type)
@@ -639,6 +730,9 @@ def compile(toks: list[Token]) -> IR:
             case _:
                 assert_never(tok.type)
 
+    if implicit_main:
+        _ = add_instr(Instruction(type=InstructionType.RET, tok=Token(TokenType.IMAGINARY, '', loc_unknown)))
+
     if block_stack:
         error(
             None,
@@ -647,7 +741,7 @@ def compile(toks: list[Token]) -> IR:
         )
 
     if not ir.get_proc_by_name('main'):
-        ir.procs.append(Procedure(name='main'))
+        ir.procs.append(Proc(name='main', ins=[], outs=[]))
 
     return ir
 
@@ -669,446 +763,504 @@ def typecheck(ir: IR) -> None:
                 return False
         return True
 
+    # TODO
     main = ir.get_proc_by_name('main')
     assert main is not None
-    instrs = main.instructions
-
     block_stack: list[Block] = []
-
     stack: Stack = []
-    ip = 0
-    while ip < len(instrs):
-        instr = instrs[ip]
-        ip += 1
-        expect_enum_size(InstructionType, 11)
-        match instr.type:
-            case InstructionType.PUSH_INT:
-                stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
 
-            case InstructionType.PUSH_BOOL:
-                stack.append(StackEntry(ValueType.BOOL, typechecking, tok=instr.tok))
+    for proc in ir.procs:
+        stack = []
+        for type_in in proc.ins:
+            stack.append(StackEntry(type_in, typechecking, tok=type_in.tok))
+        instrs = proc.instrs
+        for instr in instrs:
+            match instr.type:
+                case InstructionType.PUSH_INT:
+                    stack.append(StackEntry(ValueCls(ValueClsType.INT, unused, instr.tok), typechecking, tok=instr.tok))
 
-            case InstructionType.WORD:
-                error(
-                    instr,
-                    f'arbitrary word handling is not implemented yet: {instr.tok.value}',
-                )
+                case InstructionType.PUSH_BOOL:
+                    stack.append(
+                        StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), typechecking, tok=instr.tok)
+                    )
 
-            # if // s = stack1
-            #   <cond>
-            # then // s bool
-            #   <body>
-            # else // s XS = stack2
-            #   <body>
-            # end // s XS
-            case InstructionType.IF:
-                stack_copy = stack.copy()
-                block = Block(InstructionType.IF)
-                block.stack1 = stack_copy
-                block_stack.append(block)
+                case InstructionType.WORD:
+                    proc_called = ir.get_proc_by_name(instr.arg1)
+                    if proc_called is None:
+                        error(instr, f'unknown word {instr.arg1}')
 
-            case InstructionType.ELSE:
-                block = block_stack[-1]
-                if block.type == InstructionType.IF:
-                    block.stack2 = stack.copy()
-                    if block.stack1 is None:
-                        unreachable(instr, f'{InstructionType.IF} block doesnt have stack1 saved up')
-                    stack = block.stack1
-
-                else:
-                    error(instr, f'{InstructionType.ELSE} must come after {InstructionType.IF}')
-
-            case InstructionType.END:
-                block = block_stack.pop()
-                if block.type == InstructionType.IF:
-                    if block.stack2 is None:
-                        unreachable(instr, f'{InstructionType.IF} block doesnt have stack2 saved up')
-                    if not compare_stacks(block.stack2, stack):
+                    # 1. check that stack and proc_called.ins are the same
+                    if len(stack) < len(proc_called.ins):
                         error(
                             instr,
-                            f'both branches of {InstructionType.IF} must leave the stack in the same state',
-                            stack_then=block.stack2,
-                            stack_else=stack,
+                            f'stack too small for {instr.arg1}. expected {len(proc_called.ins)} but got {len(stack)}',
+                            stack=stack,
+                            ins=proc_called.ins,
                         )
 
-                elif block.type == InstructionType.WHILE:
-                    if block.stack1 is None:
-                        unreachable(instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up')
-                    if not compare_stacks(block.stack1, stack):
-                        error(instr, f'{InstructionType.WHILE} must not alter the stack state')
-
-                else:
-                    error(
-                        instr,
-                        f'{InstructionType.END} must come after {InstructionType.IF} or {InstructionType.WHILE}',
-                    )
-
-            # while // s = stack1
-            #   <cond>
-            # do // s bool
-            #   <body>
-            # end // s
-            case InstructionType.WHILE:
-                stack_copy = stack.copy()
-                block = Block(InstructionType.WHILE)
-                block.stack1 = stack_copy
-                block_stack.append(block)
-
-            case InstructionType.DO:
-                if len(stack) < 1:
-                    error(
-                        instr,
-                        f'not enough items on the stack for {InstructionType.DO}: it expects one BOOL on the stack',
-                    )
-                a = stack.pop()
-                if a.type == ValueType.BOOL:
-                    block = block_stack[-1]
-                    if block.type == InstructionType.IF:
-                        if block.stack1 is None:
-                            unreachable(instr, f'{InstructionType.IF} block doesnt have stack1 saved up')
-                        if not compare_stacks(block.stack1, stack):
+                    for i, (e1, e2) in enumerate(zip(reversed(stack), proc_called.ins)):
+                        if e1.type != e2:
                             error(
                                 instr,
-                                f'condition part of {InstructionType.IF} should put exactly one BOOL on the stack',
-                                expected_stack=block.stack1,
-                                actual_stack=stack,
+                                f'stack doesnt match at {i} for {instr.arg1}. expected {proc_called.ins} but got {stack}',
+                                stack=stack,
+                                ins=proc_called.ins,
+                            )
+
+                    # 2. remove proc_called.ins from stack
+                    for _ in proc_called.ins:
+                        _ = stack.pop()
+
+                    # 3. put proc_called.outs on stack
+                    for out in proc_called.outs:
+                        stack.append(StackEntry(out, typechecking, tok=instr.tok))
+
+                # if // s = stack1
+                #   <cond>
+                # then // s bool
+                #   <body>
+                # else // s XS = stack2
+                #   <body>
+                # end // s XS
+                case InstructionType.IF:
+                    stack_copy = stack.copy()
+                    block = Block(InstructionType.IF)
+                    block.stack1 = stack_copy
+                    block_stack.append(block)
+
+                case InstructionType.ELSE:
+                    block = block_stack[-1]
+                    if block.type == InstructionType.IF:
+                        block.stack2 = stack.copy()
+                        if block.stack1 is None:
+                            unreachable(instr, f'{InstructionType.IF} block doesnt have stack1 saved up')
+                        stack = block.stack1
+
+                    else:
+                        error(instr, f'{InstructionType.ELSE} must come after {InstructionType.IF}')
+
+                case InstructionType.END:
+                    block = block_stack.pop()
+                    if block.type == InstructionType.IF:
+                        if block.stack2 is None:
+                            unreachable(instr, f'{InstructionType.IF} block doesnt have stack2 saved up')
+                        if not compare_stacks(block.stack2, stack):
+                            error(
+                                instr,
+                                f'both branches of {InstructionType.IF} must leave the stack in the same state',
+                                stack_then=block.stack2,
+                                stack_else=stack,
                             )
 
                     elif block.type == InstructionType.WHILE:
                         if block.stack1 is None:
                             unreachable(instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up')
                         if not compare_stacks(block.stack1, stack):
+                            error(instr, f'{InstructionType.WHILE} must not alter the stack state')
+
+                    else:
+                        error(
+                            instr,
+                            f'{InstructionType.END} must come after {InstructionType.IF} or {InstructionType.WHILE}',
+                        )
+
+                # while // s = stack1
+                #   <cond>
+                # do // s bool
+                #   <body>
+                # end // s
+                case InstructionType.WHILE:
+                    stack_copy = stack.copy()
+                    block = Block(InstructionType.WHILE)
+                    block.stack1 = stack_copy
+                    block_stack.append(block)
+
+                case InstructionType.DO:
+                    if len(stack) < 1:
+                        error(
+                            instr,
+                            f'not enough items on the stack for {InstructionType.DO}: it expects one BOOL on the stack',
+                        )
+                    a = stack.pop()
+                    if a.type.type == ValueClsType.BOOL:
+                        block = block_stack[-1]
+                        if block.type == InstructionType.IF:
+                            if block.stack1 is None:
+                                unreachable(instr, f'{InstructionType.IF} block doesnt have stack1 saved up')
+                            if not compare_stacks(block.stack1, stack):
+                                error(
+                                    instr,
+                                    f'condition part of {InstructionType.IF} should put exactly one BOOL on the stack',
+                                    expected_stack=block.stack1,
+                                    actual_stack=stack,
+                                )
+
+                        elif block.type == InstructionType.WHILE:
+                            if block.stack1 is None:
+                                unreachable(instr, f'{InstructionType.WHILE} block doesnt have stack1 saved up')
+                            if not compare_stacks(block.stack1, stack):
+                                error(
+                                    instr,
+                                    f'condition part of {InstructionType.WHILE} should put exactly one BOOL on the stack',
+                                    expected_stack=block.stack1,
+                                    actual_stack=stack,
+                                )
+
+                        else:
                             error(
                                 instr,
-                                f'condition part of {InstructionType.WHILE} should put exactly one BOOL on the stack',
-                                expected_stack=block.stack1,
-                                actual_stack=stack,
+                                f'{InstructionType.DO} must come after {InstructionType.IF} or {InstructionType.WHILE}',
                             )
 
                     else:
                         error(
                             instr,
-                            f'{InstructionType.DO} must come after {InstructionType.IF} or {InstructionType.WHILE}',
+                            f'{InstructionType.DO} expects one BOOL on the stack, but got {pp(a.type)}',
+                            other_stack_items=stack,
                         )
 
-                else:
-                    error(
-                        instr,
-                        f'{InstructionType.DO} expects one BOOL on the stack, but got {a.type}',
-                        other_stack_items=stack,
-                    )
+                case InstructionType.PROC:
+                    notimplemented(instr, f'typechecking {InstructionType.PROC}')
 
-            case InstructionType.PROC:
-                notimplemented(instr, f'typechecking {InstructionType.PROC}')
-
-            case InstructionType.LABEL:
-                notimplemented(instr, f'typechecking {InstructionType.LABEL}')
-
-            case InstructionType.INTRINSIC:
-                intr_type = cast(IntrinsicType, instr.arg1)
-                expect_enum_size(IntrinsicType, 27)
-                match intr_type:
-                    # arithmetic:
-                    case IntrinsicType.ADD | IntrinsicType.SUB:
-                        # a b -- a+b
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot add/subtract {a.type} and {b.type}',
-                                other_stack_items=stack,
-                            )
-
-                    case IntrinsicType.MUL | IntrinsicType.DIV:
-                        # a b -- a*b
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                other_stack_items=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot multiply/divide {a.type} by {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.MOD:
-                        # a b -- a%b
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot modulo {a.type} by {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.DIVMOD:
-                        # a b -- a//b a%b
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot divmod {a.type} by {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.SHL | IntrinsicType.SHR:
-                        # a b -- a@@b
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot shift {a.type} by {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.BOR | IntrinsicType.BAND | IntrinsicType.BXOR:
-                        # a b -- a@b
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot bitwise or/and/xor {a.type} with {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.BNOT:
-                        # a -- ~a
-                        if len(stack) < 1:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects one INT on the stack',
-                                stack=stack,
-                            )
-                        a = stack.pop()
-                        if a.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot bitwise not an {a.type}',
-                                stack=stack,
-                            )
-
-                    # logic:
-                    case IntrinsicType.AND | IntrinsicType.OR:
-                        # a b -- (a op b)
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two BOOLs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        if a.type == b.type == ValueType.BOOL:
-                            stack.append(StackEntry(ValueType.BOOL, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot and/or {a.type} with {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.NOT:
-                        # a -- (not a)
-                        if len(stack) < 1:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects one BOOL on the stack',
-                                stack=stack,
-                            )
-                        a = stack.pop()
-                        if a.type == ValueType.BOOL:
-                            stack.append(StackEntry(ValueType.BOOL, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot not {a.type}',
-                                stack=stack,
-                            )
-
-                    # comparison:
-                    case IntrinsicType.EQ | IntrinsicType.NE:
-                        # a b -- (a op b)
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot compare {a.type} and {b.type}',
-                                stack=stack,
-                            )
-
-                    case IntrinsicType.LT | IntrinsicType.LE | IntrinsicType.GT | IntrinsicType.GE:
-                        # a b -- (a op b)
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, typechecking, tok=instr.tok))
-
-                        else:
-                            error(
-                                instr,
-                                f'cannot compare {a.type} and {b.type}',
-                                stack=stack,
-                            )
-
-                    # stack manipulation:
-                    case IntrinsicType.DUP:
-                        # a -- a a
-                        if len(stack) < 1:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects one item on the stack',
-                                stack=stack,
-                            )
-                        a = stack.pop()
-                        stack.append(a)
-                        stack.append(a)
-
-                    case IntrinsicType.DROP:
-                        # a --
-                        if len(stack) < 1:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects one item on the stack',
-                                stack=stack,
-                            )
-                        _ = stack.pop()
-
-                    case IntrinsicType.SWAP:
-                        # a b -- b a
-                        if len(stack) < 2:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects two items on the stack',
-                                stack=stack,
-                            )
-                        b = stack.pop()
-                        a = stack.pop()
-                        stack.append(b)
-                        stack.append(a)
-
-                    case IntrinsicType.ROT:
-                        # a b c -- b c a
-                        if len(stack) < 3:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects three items on the stack',
-                                stack=stack,
-                            )
-                        c = stack.pop()
-                        b = stack.pop()
-                        a = stack.pop()
-                        stack.append(b)
-                        stack.append(c)
-                        stack.append(a)
-
-                    # debugging:
-                    case IntrinsicType.PRINT:
-                        # a --
-                        if len(stack) < 1:
-                            error(
-                                instr,
-                                f'not enough items on stack for {intr_type}: it expects one item on the stack',
-                                stack=stack,
-                            )
-                        a = stack.pop()
-
-                    case IntrinsicType.DEBUG:
-                        info(
+                case InstructionType.RET:
+                    # check that the stack contains correct return types
+                    # x: ValueCls = stack[i].val
+                    # outs: list[ValueCls]
+                    if len(stack) != len(proc.outs):
+                        error(
                             instr,
-                            'Stack at compile time:',
+                            f'return type mismatch: expected {len(proc.outs)} items on the stack, got {len(stack)}',
                             stack=stack,
+                            outs=proc.outs,
                         )
 
-                    case _:
-                        assert_never(intr_type)
-            case _:
-                assert_never(instr.type)
+                    for i, (item_stack, item_out) in enumerate(zip(stack, proc.outs)):
+                        t1 = item_stack.type
+                        t2 = item_out
+                        if t1 != t2:
+                            error(
+                                instr,
+                                f'return type mismatch at {i}: expected {t2} on the stack, got {t1}',
+                                stack=stack,
+                                outs=proc.outs,
+                            )
+
+                case InstructionType.LABEL:
+                    notimplemented(instr, f'typechecking {InstructionType.LABEL}')
+
+                case InstructionType.INTRINSIC:
+                    intr_type = cast(IntrinsicType, instr.arg1)
+                    expect_enum_size(IntrinsicType, 27)
+                    match intr_type:
+                        # arithmetic:
+                        case IntrinsicType.ADD | IntrinsicType.SUB:
+                            # a b -- a+b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot add/subtract {pp(a.type)} and {pp(b.type)}',
+                                    other_stack_items=stack,
+                                )
+
+                        case IntrinsicType.MUL | IntrinsicType.DIV:
+                            # a b -- a*b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    other_stack_items=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot multiply/divide {pp(a.type)} by {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.MOD:
+                            # a b -- a%b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot modulo {pp(a.type)} by {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.DIVMOD:
+                            # a b -- a//b a%b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot divmod {pp(a.type)} by {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.SHL | IntrinsicType.SHR:
+                            # a b -- a@@b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot shift {pp(a.type)} by {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.BOR | IntrinsicType.BAND | IntrinsicType.BXOR:
+                            # a b -- a@b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot bitwise or/and/xor {pp(a.type)} with {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.BNOT:
+                            # a -- ~a
+                            if len(stack) < 1:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects one INT on the stack',
+                                    stack=stack,
+                                )
+                            a = stack.pop()
+                            if a.type.type == ValueClsType.INT:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot bitwise not an {pp(a.type)}',
+                                    stack=stack,
+                                )
+
+                        # logic:
+                        case IntrinsicType.AND | IntrinsicType.OR:
+                            # a b -- (a op b)
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two BOOLs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            if a.type.type == b.type.type == ValueClsType.BOOL:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot and/or {pp(a.type)} with {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.NOT:
+                            # a -- (not a)
+                            if len(stack) < 1:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects one BOOL on the stack',
+                                    stack=stack,
+                                )
+                            a = stack.pop()
+                            if a.type.type == ValueClsType.BOOL:
+                                stack.append(StackEntry(a.type, typechecking, tok=instr.tok))
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot not {pp(a.type)}',
+                                    stack=stack,
+                                )
+
+                        # comparison:
+                        case IntrinsicType.EQ | IntrinsicType.NE:
+                            # a b -- (a op b)
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(
+                                    StackEntry(
+                                        ValueCls(ValueClsType.BOOL, unused, instr.tok), typechecking, tok=instr.tok
+                                    )
+                                )
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot compare {pp(a.type)} and {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        case IntrinsicType.LT | IntrinsicType.LE | IntrinsicType.GT | IntrinsicType.GE:
+                            # a b -- (a op b)
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two INTs on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
+                                stack.append(
+                                    StackEntry(
+                                        ValueCls(ValueClsType.BOOL, unused, instr.tok), typechecking, tok=instr.tok
+                                    )
+                                )
+
+                            else:
+                                error(
+                                    instr,
+                                    f'cannot compare {pp(a.type)} and {pp(b.type)}',
+                                    stack=stack,
+                                )
+
+                        # stack manipulation:
+                        case IntrinsicType.DUP:
+                            # a -- a a
+                            if len(stack) < 1:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects one item on the stack',
+                                    stack=stack,
+                                )
+                            a = stack.pop()
+                            stack.append(a)
+                            stack.append(a)
+
+                        case IntrinsicType.DROP:
+                            # a --
+                            if len(stack) < 1:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects one item on the stack',
+                                    stack=stack,
+                                )
+                            _ = stack.pop()
+
+                        case IntrinsicType.SWAP:
+                            # a b -- b a
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two items on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(b)
+                            stack.append(a)
+
+                        case IntrinsicType.ROT:
+                            # a b c -- b c a
+                            if len(stack) < 3:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects three items on the stack',
+                                    stack=stack,
+                                )
+                            c = stack.pop()
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(b)
+                            stack.append(c)
+                            stack.append(a)
+
+                        # debugging:
+                        case IntrinsicType.PRINT:
+                            # a --
+                            if len(stack) < 1:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects one item on the stack',
+                                    stack=stack,
+                                )
+                            a = stack.pop()
+
+                        case IntrinsicType.DEBUG:
+                            info(
+                                instr,
+                                'Stack at compile time:',
+                                stack=stack,
+                            )
+
+                        case _:
+                            assert_never(intr_type)
+                case _:
+                    assert_never(instr.type)
 
     if stack:
         error(
@@ -1125,34 +1277,43 @@ def typecheck(ir: IR) -> None:
 
 
 def interpret(ir: IR) -> None:
+
+    @dataclass
+    class Frame:
+        instrs: list[Instruction]
+        ip: int = 0
+
     main = ir.get_proc_by_name('main')
     assert main is not None
-    instrs = main.instructions
 
     stack: list[StackEntry] = []
-    ip = 0
-    while ip < len(instrs):
-        instr = instrs[ip]
-        ip += 1
-        expect_enum_size(InstructionType, 11)
+    frame_stack: list[Frame] = [Frame(main.instrs)]
+
+    while frame_stack and frame_stack[-1].ip < len(frame_stack[-1].instrs):
+        frame = frame_stack[-1]
+        instr = frame.instrs[frame.ip]
+        frame.ip += 1
         match instr.type:
             case InstructionType.PUSH_INT:
-                stack.append(StackEntry(ValueType.INT, instr.arg1, tok=instr.tok))
+                stack.append(StackEntry(ValueCls(ValueClsType.INT, unused, instr.tok), instr.arg1, tok=instr.tok))
 
             case InstructionType.PUSH_BOOL:
-                stack.append(StackEntry(ValueType.BOOL, instr.arg1, tok=instr.tok))
+                stack.append(StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), instr.arg1, tok=instr.tok))
 
             case InstructionType.WORD:
-                notimplemented(instr, f'arbitrary word handling is not implemented yet: {instr.arg1}')
+                proc = ir.get_proc_by_name(instr.arg1)
+                if proc is None:
+                    typecheck_has_a_bug(instr, f'unknown word: {instr.arg1}')
+                frame_stack.append(Frame(proc.instrs))
 
             case InstructionType.IF:
                 pass
 
             case InstructionType.ELSE:
-                ip = instr.arg1
+                frame.ip = instr.arg1
 
             case InstructionType.END:
-                ip = instr.arg1
+                frame.ip = instr.arg1
 
             case InstructionType.WHILE:
                 pass
@@ -1161,17 +1322,20 @@ def interpret(ir: IR) -> None:
                 if len(stack) < 1:
                     typecheck_has_a_bug(instr, 'not enough items on stack')
                 a = stack.pop()
-                if a.type == ValueType.BOOL:
+                if a.type.type == ValueClsType.BOOL:
                     if a.val:
-                        ip = ip
+                        pass
                     else:
-                        ip = instr.arg1 + 1
+                        frame.ip = instr.arg1 + 1
 
                 else:
-                    typecheck_has_a_bug(instr, f'expected BOOL, got {a.type}')
+                    typecheck_has_a_bug(instr, f'expected BOOL, got {pp(a.type)}')
 
             case InstructionType.PROC:
-                notimplemented(instr, 'procedures are not implemented yet')
+                unreachable(instr, 'PROC instructions must not be emitted')
+
+            case InstructionType.RET:
+                _ = frame_stack.pop()
 
             case InstructionType.LABEL:
                 notimplemented(instr, 'labels are not implemented yet')
@@ -1187,12 +1351,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val + b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val + b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.SUB:
                         # a b -- a-b
@@ -1200,12 +1364,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val - b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val - b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.MUL:
                         # a b -- a*b
@@ -1213,12 +1377,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val * b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val * b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.DIV:
                         # a b -- a/b
@@ -1226,14 +1390,14 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
                             if b.val == 0:
                                 error(instr, 'division by zero', a=a, b=b)
-                            stack.append(StackEntry(ValueType.INT, a.val // b.val, tok=instr.tok))
+                            stack.append(StackEntry(a.type, a.val // b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.MOD:
                         # a b -- a%b
@@ -1241,12 +1405,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val % b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val % b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.DIVMOD:
                         # a b -- a//b a%b
@@ -1254,13 +1418,13 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val // b.val, tok=instr.tok))
-                            stack.append(StackEntry(ValueType.INT, a.val % b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val // b.val, tok=instr.tok))
+                            stack.append(StackEntry(a.type, a.val % b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.SHL:
                         # a b -- a<<b
@@ -1268,12 +1432,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val << b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val << b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.SHR:
                         # a b -- a>>b
@@ -1281,12 +1445,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val >> b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val >> b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.BOR:
                         # a b -- a|b
@@ -1294,12 +1458,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val | b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val | b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.BAND:
                         # a b -- a&b
@@ -1307,12 +1471,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val & b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val & b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.BXOR:
                         # a b -- a^b
@@ -1320,24 +1484,24 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, a.val ^ b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, a.val ^ b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.BNOT:
                         # a -- ~a
                         if len(stack) < 1:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.INT, ~a.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == ValueClsType.INT:
+                            stack.append(StackEntry(a.type, ~a.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected an INT, got {a.type}')
+                            typecheck_has_a_bug(instr, f'expected an INT, got {pp(a.type)}')
 
                     # logic:
                     case IntrinsicType.AND:
@@ -1346,12 +1510,12 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.BOOL:
-                            stack.append(StackEntry(ValueType.BOOL, a.val and b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.BOOL:
+                            stack.append(StackEntry(a.type, a.val and b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two BOOLs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two BOOLs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.OR:
                         # a b -- (a or b)
@@ -1359,24 +1523,24 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.BOOL:
-                            stack.append(StackEntry(ValueType.BOOL, a.val or b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.BOOL:
+                            stack.append(StackEntry(a.type, a.val or b.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two BOOLs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two BOOLs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.NOT:
                         # a -- (not a)
                         if len(stack) < 1:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == ValueType.BOOL:
-                            stack.append(StackEntry(ValueType.BOOL, not a.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == ValueClsType.BOOL:
+                            stack.append(StackEntry(a.type, not a.val, tok=instr.tok))
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected a BOOL, got {a.type}')
+                            typecheck_has_a_bug(instr, f'expected a BOOL, got {pp(a.type)}')
 
                     # comparison:
                     case IntrinsicType.EQ:
@@ -1385,12 +1549,16 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, a.val == b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(
+                                StackEntry(
+                                    ValueCls(ValueClsType.BOOL, unused, instr.tok), a.val == b.val, tok=instr.tok
+                                )
+                            )
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.NE:
                         # a b -- (a != b)
@@ -1398,12 +1566,16 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, a.val != b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(
+                                StackEntry(
+                                    ValueCls(ValueClsType.BOOL, unused, instr.tok), a.val != b.val, tok=instr.tok
+                                )
+                            )
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.LT:
                         # a b -- (a < b)
@@ -1411,12 +1583,14 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, a.val < b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(
+                                StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), a.val < b.val, tok=instr.tok)
+                            )
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.GT:
                         # a b -- (a > b)
@@ -1424,12 +1598,14 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, a.val > b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(
+                                StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), a.val > b.val, tok=instr.tok)
+                            )
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.LE:
                         # a b -- (a <= b)
@@ -1437,12 +1613,16 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, a.val <= b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(
+                                StackEntry(
+                                    ValueCls(ValueClsType.BOOL, unused, instr.tok), a.val <= b.val, tok=instr.tok
+                                )
+                            )
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     case IntrinsicType.GE:
                         # a b -- (a >= b)
@@ -1450,12 +1630,16 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         b = stack.pop()
                         a = stack.pop()
-                        expect_enum_size(ValueType, 2)
-                        if a.type == b.type == ValueType.INT:
-                            stack.append(StackEntry(ValueType.BOOL, a.val >= b.val, tok=instr.tok))
+                        expect_enum_size(ValueClsType, 2)
+                        if a.type.type == b.type.type == ValueClsType.INT:
+                            stack.append(
+                                StackEntry(
+                                    ValueCls(ValueClsType.BOOL, unused, instr.tok), a.val >= b.val, tok=instr.tok
+                                )
+                            )
 
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {a.type} and {b.type}')
+                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
 
                     # stack manipulation:
                     case IntrinsicType.DUP:
@@ -1528,15 +1712,15 @@ def translate(ir: IR) -> str:
         _used_names.add(f'{hint}_{i}')
         return f'{hint}_{i}'
 
-    def declare_var(var: str, type: ValueType) -> None:
+    def declare_var(var: str, type: ValueCls) -> None:
         c_type: str
-        match type:
-            case ValueType.INT:
+        match type.type:
+            case ValueClsType.INT:
                 c_type = 'int'
-            case ValueType.BOOL:
+            case ValueClsType.BOOL:
                 c_type = 'bool'
             case _:
-                assert_never(type)
+                assert_never(type.type)
         sb_vars.add(f'  {c_type} {var};\n')
 
     def copy_stacks(src: Stack, dst: Stack) -> None:
@@ -1547,11 +1731,11 @@ def translate(ir: IR) -> str:
             if a.val == b.val:
                 continue
 
-            expect_enum_size(ValueType, 2)
-            if a.type == b.type == ValueType.INT:
+            expect_enum_size(ValueClsType, 2)
+            if a.type.type == b.type.type == ValueClsType.INT:
                 sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
 
-            elif a.type == b.type == ValueType.BOOL:
+            elif a.type.type == b.type.type == ValueClsType.BOOL:
                 sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
 
             else:
@@ -1564,7 +1748,8 @@ def translate(ir: IR) -> str:
     sb = StringBuilder()
     sb_vars = StringBuilder()
     for proc in ir.procs:
-        instrs = proc.instructions
+        block_stack.append(Block(InstructionType.PROC))
+        instrs = proc.instrs
         for ip, instr in enumerate(instrs):
             trace(
                 instr,
@@ -1574,18 +1759,19 @@ def translate(ir: IR) -> str:
                 block_stack=block_stack,
             )
             ip += 1
-            expect_enum_size(InstructionType, 11)
             match instr.type:
                 case InstructionType.PUSH_INT:
                     var = get_varname('lit_int')
-                    declare_var(var, ValueType.INT)
-                    stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                    typ = ValueCls(ValueClsType.INT, unused, instr.tok)
+                    declare_var(var, typ)
+                    stack.append(StackEntry(typ, var, tok=instr.tok))
                     sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
                 case InstructionType.PUSH_BOOL:
                     var = get_varname('lit_bool')
-                    declare_var(var, ValueType.BOOL)
-                    stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                    typ = ValueCls(ValueClsType.BOOL, unused, instr.tok)
+                    declare_var(var, typ)
+                    stack.append(StackEntry(typ, var, tok=instr.tok))
                     sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
                 case InstructionType.WORD:
@@ -1637,6 +1823,10 @@ def translate(ir: IR) -> str:
                         indent -= 2
                         sb += f'{'':{indent}}}}\n'
 
+                    elif block.type == InstructionType.PROC:
+                        indent -= 2
+                        sb += f'{'':{indent}}}}\n'
+
                     else:
                         unreachable(instr)
 
@@ -1648,7 +1838,7 @@ def translate(ir: IR) -> str:
 
                 case InstructionType.DO:
                     a = stack.pop()
-                    if a.type == ValueType.BOOL:
+                    if a.type.type == ValueClsType.BOOL:
                         var = a.val
 
                         block = block_stack[-1]
@@ -1671,7 +1861,12 @@ def translate(ir: IR) -> str:
                         unreachable(instr)
 
                 case InstructionType.PROC:
-                    notimplemented(instr, f'translating {InstructionType.PROC}')
+                    name = instr.arg1
+                    sb += f'{'':{indent}}void {name}() {{\n'
+                    indent += 2
+
+                case InstructionType.RET:
+                    sb += f'{'':{indent}}return;\n'
 
                 case InstructionType.LABEL:
                     notimplemented(instr, f'translating {InstructionType.LABEL}')
@@ -1684,11 +1879,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.ADD:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'add')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} + {b.val};\n'
 
                             else:
@@ -1697,11 +1892,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.SUB:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'sub')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} - {b.val};\n'
 
                             else:
@@ -1710,11 +1905,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.MUL:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'mul')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} * {b.val};\n'
 
                             else:
@@ -1723,11 +1918,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.DIV:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'div')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} / {b.val};\n'
 
                             else:
@@ -1736,11 +1931,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.MOD:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'mod')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} % {b.val};\n'
 
                             else:
@@ -1749,14 +1944,14 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.DIVMOD:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var1 = get_varname(f'div')
                                 var2 = get_varname(f'mod')
-                                declare_var(var1, ValueType.INT)
-                                declare_var(var2, ValueType.INT)
-                                stack.append(StackEntry(ValueType.INT, var1, tok=instr.tok))
-                                stack.append(StackEntry(ValueType.INT, var2, tok=instr.tok))
+                                declare_var(var1, a.type)
+                                declare_var(var2, a.type)
+                                stack.append(StackEntry(a.type, var1, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var2, tok=instr.tok))
                                 sb += f'{'':{indent}}{var1} = {a.val} / {b.val};\n'
                                 sb += f'{'':{indent}}{var2} = {a.val} % {b.val};\n'
 
@@ -1766,11 +1961,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.SHL:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'shl')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} << {b.val};\n'
 
                             else:
@@ -1779,11 +1974,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.SHR:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'shr')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} >> {b.val};\n'
 
                             else:
@@ -1792,11 +1987,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.BOR:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'bor')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} | {b.val};\n'
 
                             else:
@@ -1805,11 +2000,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.BAND:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'band')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} & {b.val};\n'
 
                             else:
@@ -1818,11 +2013,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.BXOR:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'bxor')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} ^ {b.val};\n'
 
                             else:
@@ -1831,11 +2026,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.BNOT:
                             # a -- ~a
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == ValueClsType.INT:
                                 var = get_varname(f'bnot')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.INT, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = ~{a.val};\n'
 
                             else:
@@ -1845,11 +2040,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.AND:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.BOOL:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.BOOL:
                                 var = get_varname(f'and')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} && {b.val};\n'
 
                             else:
@@ -1858,11 +2053,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.OR:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.BOOL:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.BOOL:
                                 var = get_varname(f'or')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} || {b.val};\n'
 
                             else:
@@ -1870,11 +2065,11 @@ def translate(ir: IR) -> str:
 
                         case IntrinsicType.NOT:
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == ValueType.BOOL:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == ValueClsType.BOOL:
                                 var = get_varname(f'not')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = !{a.val};\n'
 
                             else:
@@ -1884,11 +2079,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.EQ:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'eq')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} == {b.val};\n'
 
                             else:
@@ -1897,11 +2092,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.NE:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'ne')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} != {b.val};\n'
 
                             else:
@@ -1910,11 +2105,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.LT:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'lt')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} < {b.val};\n'
 
                             else:
@@ -1923,11 +2118,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.GT:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'gt')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} > {b.val};\n'
 
                             else:
@@ -1936,11 +2131,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.LE:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'le')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} <= {b.val};\n'
 
                             else:
@@ -1949,11 +2144,11 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.GE:
                             b = stack.pop()
                             a = stack.pop()
-                            expect_enum_size(ValueType, 2)
-                            if a.type == b.type == ValueType.INT:
+                            expect_enum_size(ValueClsType, 2)
+                            if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'ge')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(ValueType.BOOL, var, tok=instr.tok))
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} >= {b.val};\n'
 
                             else:
@@ -2050,21 +2245,25 @@ def run_file(file: str) -> None:
 
     loc = Loc(file, 0, 0)
     toks = [*tokenize(text, filename=file)]
+    trace(
+        loc,
+        f'file: {file}',
+        Tokens=toks,
+    )
     ir = compile(toks)
     trace(
         loc,
-        'before typechecking and running',
-        Tokens=toks,
+        f'file: {file}',
         IR=ir,
     )
     typecheck(ir)
-    gen_code = translate(ir)
+    # gen_code = translate(ir)
 
-    trace(
-        loc,
-        'Generated C code:',
-        generated_code=gen_code,
-    )
+    # trace(
+    #     loc,
+    #     'Generated C code:',
+    #     generated_code=gen_code,
+    # )
     try:
         interpret(ir)
     except Exception:

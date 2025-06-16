@@ -199,6 +199,10 @@ cli_examples = [
     '-l INFO run p1.lang',
     '-l ERROR run p1.lang',
     '-l DEFAULT run p1.lang',
+    #
+    '-l TRACE run p1.lang',
+    '-l TRACE run p2.lang',
+    '-l TRACE run procs.lang',
 ]
 
 src = ROOT / 'lang.py'
@@ -209,21 +213,31 @@ tmp = tmp.relative_to(Path.cwd())
 
 out = ROOT / 'test_dump.txt'
 buf = io.StringIO()
-for code in tqdm(code_examples):
-    with contextlib.redirect_stdout(buf):
-        _ = tmp.write_text(code)
-        print('=' * 60)
-        print(f'[CODE] {code!r}')
-        # res = run_cmd('py', src, 'run', tmp)
-        res = run_lang('py', src, 'run', tmp)
-        print(f'[EXIT CODE] {res}')
-        print()
+try:
+    for code in tqdm(code_examples):
+        with contextlib.redirect_stdout(buf):
+            _ = tmp.write_text(code)
+            print('=' * 60)
+            print(f'[CODE] {code!r}')
+            # res = run_cmd('py', src, 'run', tmp)
+            res = run_lang('py', src, 'run', tmp)
+            print(f'[EXIT CODE] {res}')
+            print()
 
-for cli in tqdm(cli_examples):
-    with contextlib.redirect_stdout(buf):
-        print('=' * 60)
-        res = run_cmd('py', src, *shlex.split(cli))
-        print(f'[EXIT CODE] {res}')
+    for cli in tqdm(cli_examples):
+        with contextlib.redirect_stdout(buf):
+            print('=' * 60)
+            res = run_cmd('py', src, *shlex.split(cli))
+            print(f'[EXIT CODE] {res}')
 
-_ = out.write_text(buf.getvalue())
-tmp.unlink()
+except Exception as e:
+    print(buf.getvalue())
+    import traceback
+
+    traceback.print_exc()
+
+else:
+    _ = out.write_text(buf.getvalue())
+
+finally:
+    tmp.unlink()

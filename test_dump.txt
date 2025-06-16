@@ -15,9 +15,10 @@
 ============================================================
 [CODE] '1 2 +'
 [CMD] py lang.py run tmp.lang
-[ERROR] <?>:0:0: stack is not empty: 1 items are unhandled
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
       0. INT@tmp.lang:1:4
+[NOTE] outs: (empty)
 [EXIT CODE] 1
 
 ============================================================
@@ -207,49 +208,49 @@
 ============================================================
 [CODE] 'true 5 + print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot add/subtract ValueType.BOOL and ValueType.INT
+[ERROR] tmp.lang:1:7: cannot add/subtract BOOL and INT
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 * print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot multiply/divide ValueType.BOOL by ValueType.INT
+[ERROR] tmp.lang:1:7: cannot multiply/divide BOOL by INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 % print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot modulo ValueType.BOOL by ValueType.INT
+[ERROR] tmp.lang:1:7: cannot modulo BOOL by INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 | print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot bitwise or/and/xor ValueType.BOOL with ValueType.INT
+[ERROR] tmp.lang:1:7: cannot bitwise or/and/xor BOOL with INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 << print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot shift ValueType.BOOL by ValueType.INT
+[ERROR] tmp.lang:1:7: cannot shift BOOL by INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 && print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot and/or ValueType.BOOL with ValueType.INT
+[ERROR] tmp.lang:1:7: cannot and/or BOOL with INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 ! print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot not ValueType.INT
+[ERROR] tmp.lang:1:7: cannot not INT
 [NOTE] stack:
       0. BOOL@tmp.lang:1:0
 [EXIT CODE] 1
@@ -257,7 +258,7 @@
 ============================================================
 [CODE] 'true 5 swap ~ print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:12: cannot bitwise not an ValueType.BOOL
+[ERROR] tmp.lang:1:12: cannot bitwise not an BOOL
 [NOTE] stack:
       0. INT@tmp.lang:1:5
 [EXIT CODE] 1
@@ -265,14 +266,14 @@
 ============================================================
 [CODE] 'true 5 == print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot compare ValueType.BOOL and ValueType.INT
+[ERROR] tmp.lang:1:7: cannot compare BOOL and INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 < print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot compare ValueType.BOOL and ValueType.INT
+[ERROR] tmp.lang:1:7: cannot compare BOOL and INT
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
@@ -508,9 +509,10 @@
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 end'
 [CMD] py lang.py run tmp.lang
-[ERROR] <?>:0:0: stack is not empty: 1 items are unhandled
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
       0. INT@tmp.lang:1:20
+[NOTE] outs: (empty)
 [EXIT CODE] 1
 
 ============================================================
@@ -588,14 +590,14 @@
 ============================================================
 [CODE] 'if 1 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:5: InstructionType.DO expects one BOOL on the stack, but got ValueType.INT
+[ERROR] tmp.lang:1:5: InstructionType.DO expects one BOOL on the stack, but got INT
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: InstructionType.DO expects one BOOL on the stack, but got ValueType.INT
+[ERROR] tmp.lang:1:7: InstructionType.DO expects one BOOL on the stack, but got INT
 [NOTE] other_stack_items:
       0. INT@tmp.lang:1:3
 [EXIT CODE] 1
@@ -603,7 +605,7 @@
 ============================================================
 [CODE] 'if 1 2 3 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:9: InstructionType.DO expects one BOOL on the stack, but got ValueType.INT
+[ERROR] tmp.lang:1:9: InstructionType.DO expects one BOOL on the stack, but got INT
 [NOTE] other_stack_items:
       0. INT@tmp.lang:1:3
       1. INT@tmp.lang:1:5
@@ -663,7 +665,7 @@
 ============================================================
 [CODE] 'while else'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:6: ELSE should follow an IF, not InstructionType.WHILE
+[ERROR] tmp.lang:1:6: ELSE should follow an IF, not WHILE
 [EXIT CODE] 1
 
 ============================================================
@@ -697,14 +699,14 @@
 ============================================================
 [CODE] 'while 1 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:8: InstructionType.DO expects one BOOL on the stack, but got ValueType.INT
+[ERROR] tmp.lang:1:8: InstructionType.DO expects one BOOL on the stack, but got INT
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:10: InstructionType.DO expects one BOOL on the stack, but got ValueType.INT
+[ERROR] tmp.lang:1:10: InstructionType.DO expects one BOOL on the stack, but got INT
 [NOTE] other_stack_items:
       0. INT@tmp.lang:1:6
 [EXIT CODE] 1
@@ -712,7 +714,7 @@
 ============================================================
 [CODE] 'while 1 2 3 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:12: InstructionType.DO expects one BOOL on the stack, but got ValueType.INT
+[ERROR] tmp.lang:1:12: InstructionType.DO expects one BOOL on the stack, but got INT
 [NOTE] other_stack_items:
       0. INT@tmp.lang:1:6
       1. INT@tmp.lang:1:8
@@ -825,19 +827,19 @@
 ============================================================
 [CODE] 'proc'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:0: not implemented: `proc` keywords
+[ERROR] tmp.lang:1:0: expected a name after PROC
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'somerandomword'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:0: arbitrary word handling is not implemented yet: somerandomword
+[ERROR] tmp.lang:1:0: unknown word somerandomword
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '\n    proc a do\n      2 *\n    end\n\n    proc main do\n      5 a print\n    end\n    '
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:2:4: not implemented: `proc` keywords
+[ERROR] tmp.lang:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=tmp.lang:2:11)
 [EXIT CODE] 1
 
 ============================================================
@@ -913,7 +915,7 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py lang.py -l TRACE run p1.lang
 [STDOUT]:
-[TRACE] p1.lang:0:0: before typechecking and running
+[TRACE] p1.lang:0:0: file: p1.lang
 [NOTE] Tokens:
       0. p1.lang:5:0:KEYWORD:IF
       1. p1.lang:6:2:INT:1
@@ -953,6 +955,7 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      35. p1.lang:25:39:WORD:'-'
      36. p1.lang:25:41:KEYWORD:END
      37. p1.lang:25:45:WORD:'drop'
+[TRACE] p1.lang:0:0: file: p1.lang
 [NOTE] IR:
     IR:
     proc main:
@@ -994,315 +997,7 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      35. INTRINSIC:SUB
      36. END:27
      37. INTRINSIC:DROP
-[TRACE] p1.lang:5:0: stack trace
-[NOTE] ip: 0/38
-[NOTE] stack: (empty)
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:6:2: stack trace
-[NOTE] ip: 1/38
-[NOTE] stack: (empty)
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=None)
-[TRACE] p1.lang:6:4: stack trace
-[NOTE] ip: 2/38
-[NOTE] stack:
-      0. INT:'lit_int_0'@p1.lang:6:2
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=None)
-[TRACE] p1.lang:6:6: stack trace
-[NOTE] ip: 3/38
-[NOTE] stack:
-      0. INT:'lit_int_0'@p1.lang:6:2
-      1. INT:'lit_int_1'@p1.lang:6:4
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=None)
-[TRACE] p1.lang:7:0: stack trace
-[NOTE] ip: 4/38
-[NOTE] stack:
-      0. BOOL:'eq_0'@p1.lang:6:6
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=None)
-[TRACE] p1.lang:8:2: stack trace
-[NOTE] ip: 5/38
-[NOTE] stack: (empty)
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[])
-[TRACE] p1.lang:8:5: stack trace
-[NOTE] ip: 6/38
-[NOTE] stack:
-      0. INT:'lit_int_2'@p1.lang:8:2
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[])
-[TRACE] p1.lang:8:7: stack trace
-[NOTE] ip: 7/38
-[NOTE] stack:
-      0. INT:'lit_int_2'@p1.lang:8:2
-      1. INT:'lit_int_3'@p1.lang:8:5
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[])
-[TRACE] p1.lang:9:0: stack trace
-[NOTE] ip: 8/38
-[NOTE] stack:
-      0. INT:'mul_0'@p1.lang:8:7
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[])
-[TRACE] p1.lang:10:2: stack trace
-[NOTE] ip: 9/38
-[NOTE] stack: (empty)
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[StackEntry(type=<ValueType.INT: 1>, val='mul_0', tok=Token(type=<TokenType.WORD: 5>, value='*', loc=p1.lang:8:7))])
-[TRACE] p1.lang:10:5: stack trace
-[NOTE] ip: 10/38
-[NOTE] stack:
-      0. INT:'lit_int_4'@p1.lang:10:2
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[StackEntry(type=<ValueType.INT: 1>, val='mul_0', tok=Token(type=<TokenType.WORD: 5>, value='*', loc=p1.lang:8:7))])
-[TRACE] p1.lang:10:7: stack trace
-[NOTE] ip: 11/38
-[NOTE] stack:
-      0. INT:'lit_int_4'@p1.lang:10:2
-      1. INT:'lit_int_5'@p1.lang:10:5
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[StackEntry(type=<ValueType.INT: 1>, val='mul_0', tok=Token(type=<TokenType.WORD: 5>, value='*', loc=p1.lang:8:7))])
-[TRACE] p1.lang:11:0: stack trace
-[NOTE] ip: 12/38
-[NOTE] stack:
-      0. INT:'mul_1'@p1.lang:10:7
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.IF: 6>, stack=[StackEntry(type=<ValueType.INT: 1>, val='mul_0', tok=Token(type=<TokenType.WORD: 5>, value='*', loc=p1.lang:8:7))])
-[TRACE] p1.lang:11:0: stack trace in IF
-[NOTE] stack_cur:
-      0. INT:'mul_1'@p1.lang:10:7
-[NOTE] stack_prev:
-      0. INT:'mul_0'@p1.lang:8:7
-[TRACE] p1.lang:12:0: stack trace
-[NOTE] ip: 13/38
-[NOTE] stack:
-      0. INT:'mul_0'@p1.lang:8:7
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:14:0: stack trace
-[NOTE] ip: 14/38
-[NOTE] stack: (empty)
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:15:0: stack trace
-[NOTE] ip: 15/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:16:2: stack trace
-[NOTE] ip: 16/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:16:6: stack trace
-[NOTE] ip: 17/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-      1. INT:'dup_0'@p1.lang:16:2
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:16:8: stack trace
-[NOTE] ip: 18/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-      1. INT:'dup_0'@p1.lang:16:2
-      2. INT:'lit_int_7'@p1.lang:16:6
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:17:0: stack trace
-[NOTE] ip: 19/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-      1. BOOL:'gt_0'@p1.lang:16:8
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:18:2: stack trace
-[NOTE] ip: 20/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_6', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:14:0))])
-[TRACE] p1.lang:18:6: stack trace
-[NOTE] ip: 21/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-      1. INT:'dup_1'@p1.lang:18:2
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_6', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:14:0))])
-[TRACE] p1.lang:19:2: stack trace
-[NOTE] ip: 22/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_6', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:14:0))])
-[TRACE] p1.lang:19:4: stack trace
-[NOTE] ip: 23/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-      1. INT:'lit_int_8'@p1.lang:19:2
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_6', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:14:0))])
-[TRACE] p1.lang:20:0: stack trace
-[NOTE] ip: 24/38
-[NOTE] stack:
-      0. INT:'sub_0'@p1.lang:19:4
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_6', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:14:0))])
-[TRACE] p1.lang:20:0: stack trace in WHILE
-[NOTE] stack_cur:
-      0. INT:'sub_0'@p1.lang:19:4
-[NOTE] stack_prev:
-      0. INT:'lit_int_6'@p1.lang:14:0
-[TRACE] p1.lang:21:0: stack trace
-[NOTE] ip: 25/38
-[NOTE] stack:
-      0. INT:'lit_int_6'@p1.lang:14:0
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:25:0: stack trace
-[NOTE] ip: 26/38
-[NOTE] stack: (empty)
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:25:3: stack trace
-[NOTE] ip: 27/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:25:12: stack trace
-[NOTE] ip: 28/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:25:16: stack trace
-[NOTE] ip: 29/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-      1. INT:'dup_2'@p1.lang:25:12
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:25:18: stack trace
-[NOTE] ip: 30/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-      1. INT:'dup_2'@p1.lang:25:12
-      2. INT:'lit_int_10'@p1.lang:25:16
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:25:20: stack trace
-[NOTE] ip: 31/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-      1. BOOL:'gt_1'@p1.lang:25:18
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=None)
-[TRACE] p1.lang:25:25: stack trace
-[NOTE] ip: 32/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_9', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:25:0))])
-[TRACE] p1.lang:25:29: stack trace
-[NOTE] ip: 33/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-      1. INT:'dup_3'@p1.lang:25:25
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_9', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:25:0))])
-[TRACE] p1.lang:25:37: stack trace
-[NOTE] ip: 34/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_9', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:25:0))])
-[TRACE] p1.lang:25:39: stack trace
-[NOTE] ip: 35/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-      1. INT:'lit_int_11'@p1.lang:25:37
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_9', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:25:0))])
-[TRACE] p1.lang:25:41: stack trace
-[NOTE] ip: 36/38
-[NOTE] stack:
-      0. INT:'sub_1'@p1.lang:25:39
-[NOTE] block_stack:
-      0. Block(type=<InstructionType.WHILE: 8>, stack=[StackEntry(type=<ValueType.INT: 1>, val='lit_int_9', tok=Token(type=<TokenType.INT: 1>, value=10, loc=p1.lang:25:0))])
-[TRACE] p1.lang:25:41: stack trace in WHILE
-[NOTE] stack_cur:
-      0. INT:'sub_1'@p1.lang:25:39
-[NOTE] stack_prev:
-      0. INT:'lit_int_9'@p1.lang:25:0
-[TRACE] p1.lang:25:45: stack trace
-[NOTE] ip: 37/38
-[NOTE] stack:
-      0. INT:'lit_int_9'@p1.lang:25:0
-[NOTE] block_stack: (empty)
-[TRACE] p1.lang:0:0: Generated C code:
-[NOTE] generated_code:
-      int lit_int_0;
-      int lit_int_1;
-      int eq_0;
-      int lit_int_2;
-      int lit_int_3;
-      int mul_0;
-      int lit_int_4;
-      int lit_int_5;
-      int mul_1;
-      int lit_int_6;
-      int dup_0;
-      int lit_int_7;
-      int gt_0;
-      int dup_1;
-      int lit_int_8;
-      int sub_0;
-      int lit_int_9;
-      int dup_2;
-      int lit_int_10;
-      int gt_1;
-      int dup_3;
-      int lit_int_11;
-      int sub_1;
-      lit_int_0 = 1;
-      lit_int_1 = 2;
-      eq_0 = lit_int_0 == lit_int_1;
-      if (eq_0) {
-        lit_int_2 = 11;
-        lit_int_3 = 2;
-        mul_0 = lit_int_2 * lit_int_3;
-      } else {
-        lit_int_4 = 12;
-        lit_int_5 = 2;
-        mul_1 = lit_int_4 * lit_int_5;
-        mul_0 = mul_1;
-      }
-      printf("%d\n", mul_0);
-      lit_int_6 = 10;
-      while (true) {
-        dup_0 = lit_int_6;
-        lit_int_7 = 5;
-        gt_0 = dup_0 > lit_int_7;
-        if (gt_0) {
-          dup_1 = lit_int_6;
-          printf("%d\n", dup_1);
-          lit_int_8 = 1;
-          sub_0 = lit_int_6 - lit_int_8;
-          lit_int_6 = sub_0;
-        } else break;
-      }
-      lit_int_9 = 10;
-      while (true) {
-        dup_2 = lit_int_9;
-        lit_int_10 = 5;
-        gt_1 = dup_2 > lit_int_10;
-        if (gt_1) {
-          dup_3 = lit_int_9;
-          printf("%d\n", dup_3);
-          lit_int_11 = 1;
-          sub_1 = lit_int_9 - lit_int_11;
-          lit_int_9 = sub_1;
-        } else break;
-      }
+     38. RET
 [PRINT] INT:24@p1.lang:10:7
 [PRINT] INT:10@p1.lang:14:0
 [PRINT] INT:9@p1.lang:19:4
@@ -1384,5 +1079,275 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [PRINT] INT:8@p1.lang:25:39
 [PRINT] INT:7@p1.lang:25:39
 [PRINT] INT:6@p1.lang:25:39
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py -l TRACE run p1.lang
+[STDOUT]:
+[TRACE] p1.lang:0:0: file: p1.lang
+[NOTE] Tokens:
+      0. p1.lang:5:0:KEYWORD:IF
+      1. p1.lang:6:2:INT:1
+      2. p1.lang:6:4:INT:2
+      3. p1.lang:6:6:WORD:'=='
+      4. p1.lang:7:0:KEYWORD:DO
+      5. p1.lang:8:2:INT:11
+      6. p1.lang:8:5:INT:2
+      7. p1.lang:8:7:WORD:'*'
+      8. p1.lang:9:0:KEYWORD:ELSE
+      9. p1.lang:10:2:INT:12
+     10. p1.lang:10:5:INT:2
+     11. p1.lang:10:7:WORD:'*'
+     12. p1.lang:11:0:KEYWORD:END
+     13. p1.lang:12:0:WORD:'print'
+     14. p1.lang:14:0:INT:10
+     15. p1.lang:15:0:KEYWORD:WHILE
+     16. p1.lang:16:2:WORD:'dup'
+     17. p1.lang:16:6:INT:5
+     18. p1.lang:16:8:WORD:'>'
+     19. p1.lang:17:0:KEYWORD:DO
+     20. p1.lang:18:2:WORD:'dup'
+     21. p1.lang:18:6:WORD:'print'
+     22. p1.lang:19:2:INT:1
+     23. p1.lang:19:4:WORD:'-'
+     24. p1.lang:20:0:KEYWORD:END
+     25. p1.lang:21:0:WORD:'drop'
+     26. p1.lang:25:0:INT:10
+     27. p1.lang:25:3:KEYWORD:WHILE
+     28. p1.lang:25:12:WORD:'dup'
+     29. p1.lang:25:16:INT:5
+     30. p1.lang:25:18:WORD:'>'
+     31. p1.lang:25:20:KEYWORD:DO
+     32. p1.lang:25:25:WORD:'dup'
+     33. p1.lang:25:29:WORD:'print'
+     34. p1.lang:25:37:INT:1
+     35. p1.lang:25:39:WORD:'-'
+     36. p1.lang:25:41:KEYWORD:END
+     37. p1.lang:25:45:WORD:'drop'
+[TRACE] p1.lang:0:0: file: p1.lang
+[NOTE] IR:
+    IR:
+    proc main:
+      0. IF
+      1. PUSH_INT:1
+      2. PUSH_INT:2
+      3. INTRINSIC:EQ
+      4. DO:8
+      5. PUSH_INT:11
+      6. PUSH_INT:2
+      7. INTRINSIC:MUL
+      8. ELSE:12
+      9. PUSH_INT:12
+     10. PUSH_INT:2
+     11. INTRINSIC:MUL
+     12. END:13
+     13. INTRINSIC:PRINT
+     14. PUSH_INT:10
+     15. WHILE
+     16. INTRINSIC:DUP
+     17. PUSH_INT:5
+     18. INTRINSIC:GT
+     19. DO:24
+     20. INTRINSIC:DUP
+     21. INTRINSIC:PRINT
+     22. PUSH_INT:1
+     23. INTRINSIC:SUB
+     24. END:15
+     25. INTRINSIC:DROP
+     26. PUSH_INT:10
+     27. WHILE
+     28. INTRINSIC:DUP
+     29. PUSH_INT:5
+     30. INTRINSIC:GT
+     31. DO:36
+     32. INTRINSIC:DUP
+     33. INTRINSIC:PRINT
+     34. PUSH_INT:1
+     35. INTRINSIC:SUB
+     36. END:27
+     37. INTRINSIC:DROP
+     38. RET
+[PRINT] INT:24@p1.lang:10:7
+[PRINT] INT:10@p1.lang:14:0
+[PRINT] INT:9@p1.lang:19:4
+[PRINT] INT:8@p1.lang:19:4
+[PRINT] INT:7@p1.lang:19:4
+[PRINT] INT:6@p1.lang:19:4
+[PRINT] INT:10@p1.lang:25:0
+[PRINT] INT:9@p1.lang:25:39
+[PRINT] INT:8@p1.lang:25:39
+[PRINT] INT:7@p1.lang:25:39
+[PRINT] INT:6@p1.lang:25:39
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py -l TRACE run p2.lang
+[STDOUT]:
+[TRACE] p2.lang:0:0: file: p2.lang
+[NOTE] Tokens:
+      0. p2.lang:2:0:INT:1
+      1. p2.lang:3:0:INT:2
+      2. p2.lang:4:0:WORD:'swap'
+      3. p2.lang:5:0:WORD:'dup'
+      4. p2.lang:6:0:WORD:'print'
+      5. p2.lang:7:0:INT:10
+      6. p2.lang:8:0:WORD:'*'
+      7. p2.lang:9:0:WORD:'+'
+      8. p2.lang:10:0:KEYWORD:WHILE
+      9. p2.lang:11:2:WORD:'dup'
+     10. p2.lang:12:2:INT:3
+     11. p2.lang:13:2:WORD:'>'
+     12. p2.lang:14:0:KEYWORD:DO
+     13. p2.lang:15:2:KEYWORD:IF
+     14. p2.lang:16:4:WORD:'dup'
+     15. p2.lang:17:4:INT:2
+     16. p2.lang:18:4:WORD:'%'
+     17. p2.lang:19:4:INT:0
+     18. p2.lang:20:4:WORD:'=='
+     19. p2.lang:21:2:KEYWORD:DO
+     20. p2.lang:22:4:INT:5
+     21. p2.lang:23:2:KEYWORD:ELSE
+     22. p2.lang:24:4:INT:7
+     23. p2.lang:25:2:KEYWORD:END
+     24. p2.lang:27:2:WORD:'print'
+     25. p2.lang:28:2:INT:1
+     26. p2.lang:29:2:WORD:'-'
+     27. p2.lang:30:0:KEYWORD:END
+     28. p2.lang:32:0:WORD:'drop'
+[TRACE] p2.lang:0:0: file: p2.lang
+[NOTE] IR:
+    IR:
+    proc main:
+      0. PUSH_INT:1
+      1. PUSH_INT:2
+      2. INTRINSIC:SWAP
+      3. INTRINSIC:DUP
+      4. INTRINSIC:PRINT
+      5. PUSH_INT:10
+      6. INTRINSIC:MUL
+      7. INTRINSIC:ADD
+      8. WHILE
+      9. INTRINSIC:DUP
+     10. PUSH_INT:3
+     11. INTRINSIC:GT
+     12. DO:27
+     13. IF
+     14. INTRINSIC:DUP
+     15. PUSH_INT:2
+     16. INTRINSIC:MOD
+     17. PUSH_INT:0
+     18. INTRINSIC:EQ
+     19. DO:21
+     20. PUSH_INT:5
+     21. ELSE:23
+     22. PUSH_INT:7
+     23. END:24
+     24. INTRINSIC:PRINT
+     25. PUSH_INT:1
+     26. INTRINSIC:SUB
+     27. END:8
+     28. INTRINSIC:DROP
+     29. RET
+[PRINT] INT:1@p2.lang:2:0
+[PRINT] INT:5@p2.lang:22:4
+[PRINT] INT:7@p2.lang:24:4
+[PRINT] INT:5@p2.lang:22:4
+[PRINT] INT:7@p2.lang:24:4
+[PRINT] INT:5@p2.lang:22:4
+[PRINT] INT:7@p2.lang:24:4
+[PRINT] INT:5@p2.lang:22:4
+[PRINT] INT:7@p2.lang:24:4
+[PRINT] INT:5@p2.lang:22:4
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py -l TRACE run procs.lang
+[STDOUT]:
+[TRACE] procs.lang:0:0: file: procs.lang
+[NOTE] Tokens:
+      0. procs.lang:1:0:KEYWORD:PROC
+      1. procs.lang:1:5:WORD:'a'
+      2. procs.lang:1:7:WORD:'int'
+      3. procs.lang:1:11:KEYWORD:TYPE_DELIM
+      4. procs.lang:1:14:WORD:'int'
+      5. procs.lang:1:18:KEYWORD:DO
+      6. procs.lang:2:4:WORD:'?'
+      7. procs.lang:3:4:INT:2
+      8. procs.lang:4:4:WORD:'?'
+      9. procs.lang:5:4:WORD:'*'
+     10. procs.lang:6:4:WORD:'?'
+     11. procs.lang:7:0:KEYWORD:END
+     12. procs.lang:9:0:KEYWORD:PROC
+     13. procs.lang:9:5:WORD:'main'
+     14. procs.lang:9:10:KEYWORD:TYPE_DELIM
+     15. procs.lang:9:13:KEYWORD:DO
+     16. procs.lang:10:4:WORD:'?'
+     17. procs.lang:11:4:INT:5
+     18. procs.lang:12:4:WORD:'?'
+     19. procs.lang:13:4:WORD:'a'
+     20. procs.lang:14:4:WORD:'?'
+     21. procs.lang:15:4:WORD:'print'
+     22. procs.lang:16:4:WORD:'?'
+     23. procs.lang:17:0:KEYWORD:END
+[TRACE] procs.lang:0:0: file: procs.lang
+[NOTE] IR:
+    IR:
+    proc a:
+      0. INTRINSIC:DEBUG
+      1. PUSH_INT:2
+      2. INTRINSIC:DEBUG
+      3. INTRINSIC:MUL
+      4. INTRINSIC:DEBUG
+      5. RET
+    proc main:
+      0. INTRINSIC:DEBUG
+      1. PUSH_INT:5
+      2. INTRINSIC:DEBUG
+      3. WORD:'a'
+      4. INTRINSIC:DEBUG
+      5. INTRINSIC:PRINT
+      6. INTRINSIC:DEBUG
+      7. RET
+[INFO] procs.lang:2:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@procs.lang:1:7
+[INFO] procs.lang:4:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@procs.lang:1:7
+      1. INT@procs.lang:3:4
+[INFO] procs.lang:6:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@procs.lang:5:4
+[INFO] procs.lang:10:4: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] procs.lang:12:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@procs.lang:11:4
+[INFO] procs.lang:14:4: Stack at compile time:
+[NOTE] stack:
+      0. INT@procs.lang:13:4
+[INFO] procs.lang:16:4: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] procs.lang:10:4: Stack at runtime:
+[NOTE] stack: (empty)
+[INFO] procs.lang:12:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@procs.lang:11:4
+[INFO] procs.lang:2:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@procs.lang:11:4
+[INFO] procs.lang:4:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@procs.lang:11:4
+      1. INT:2@procs.lang:3:4
+[INFO] procs.lang:6:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:10@procs.lang:5:4
+[INFO] procs.lang:14:4: Stack at runtime:
+[NOTE] stack:
+      0. INT:10@procs.lang:5:4
+[PRINT] INT:10@procs.lang:5:4
+[INFO] procs.lang:16:4: Stack at runtime:
+[NOTE] stack: (empty)
 
 [EXIT CODE] 0
