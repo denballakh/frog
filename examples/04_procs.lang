@@ -1,0 +1,13 @@
+proc inc int -- int do 1 + end
+proc dec int -- int do 1 - end
+proc good int -- bool do 5 > end
+proc show int -- int do ? dup print end
+
+proc main -- do
+    10
+    while dup good do
+      dec
+      show
+    end
+    drop
+end

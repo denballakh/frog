@@ -898,54 +898,6 @@
 [EXIT CODE] 1
 
 ============================================================
-[CODE] '\n    proc inc int -- int do 1 + end\n    proc dec int -- int do 1 - end\n    proc good int -- bool do 5 > end\n    proc show int -- int do ? dup print end\n\n    proc main -- do\n        10\n        while dup good do\n          dec\n          show\n        end\n        drop\n    end\n    '
-[CMD] py lang.py run tmp.lang
-[INFO] tmp.lang:5:28: Stack at compile time:
-[NOTE] stack:
-      0. INT@tmp.lang:5:14
-[INFO] tmp.lang:5:28: Stack at runtime:
-[NOTE] stack:
-      0. INT:9@tmp.lang:3:29
-[PRINT] INT:9@tmp.lang:3:29
-[INFO] tmp.lang:5:28: Stack at runtime:
-[NOTE] stack:
-      0. INT:8@tmp.lang:3:29
-[PRINT] INT:8@tmp.lang:3:29
-[INFO] tmp.lang:5:28: Stack at runtime:
-[NOTE] stack:
-      0. INT:7@tmp.lang:3:29
-[PRINT] INT:7@tmp.lang:3:29
-[INFO] tmp.lang:5:28: Stack at runtime:
-[NOTE] stack:
-      0. INT:6@tmp.lang:3:29
-[PRINT] INT:6@tmp.lang:3:29
-[INFO] tmp.lang:5:28: Stack at runtime:
-[NOTE] stack:
-      0. INT:5@tmp.lang:3:29
-[PRINT] INT:5@tmp.lang:3:29
-[EXIT CODE] 0
-
-============================================================
-[CODE] '\n    proc dec int -- int do 1 - end\n    proc fib_step int int -- int int do dup rot + end\n    proc main -- do\n        0 1 15\n        while dup 0 > do\n          rot rot\n          dup print\n          fib_step\n          rot\n          dec\n        end\n        drop drop drop\n    end\n    '
-[CMD] py lang.py run tmp.lang
-[PRINT] INT:1@tmp.lang:5:10
-[PRINT] INT:1@tmp.lang:3:48
-[PRINT] INT:2@tmp.lang:3:48
-[PRINT] INT:3@tmp.lang:3:48
-[PRINT] INT:5@tmp.lang:3:48
-[PRINT] INT:8@tmp.lang:3:48
-[PRINT] INT:13@tmp.lang:3:48
-[PRINT] INT:21@tmp.lang:3:48
-[PRINT] INT:34@tmp.lang:3:48
-[PRINT] INT:55@tmp.lang:3:48
-[PRINT] INT:89@tmp.lang:3:48
-[PRINT] INT:144@tmp.lang:3:48
-[PRINT] INT:233@tmp.lang:3:48
-[PRINT] INT:377@tmp.lang:3:48
-[PRINT] INT:610@tmp.lang:3:48
-[EXIT CODE] 0
-
-============================================================
 [CMD] py lang.py
 [STDOUT]:
 Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
@@ -1423,6 +1375,95 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 7
 5
 7
+5
+
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py run examples/03_fib.lang
+[STDOUT]:
+[PRINT] INT:1@examples/03_fib.lang:4:6
+[PRINT] INT:1@examples/03_fib.lang:2:44
+[PRINT] INT:2@examples/03_fib.lang:2:44
+[PRINT] INT:3@examples/03_fib.lang:2:44
+[PRINT] INT:5@examples/03_fib.lang:2:44
+[PRINT] INT:8@examples/03_fib.lang:2:44
+[PRINT] INT:13@examples/03_fib.lang:2:44
+[PRINT] INT:21@examples/03_fib.lang:2:44
+[PRINT] INT:34@examples/03_fib.lang:2:44
+[PRINT] INT:55@examples/03_fib.lang:2:44
+[PRINT] INT:89@examples/03_fib.lang:2:44
+[PRINT] INT:144@examples/03_fib.lang:2:44
+[PRINT] INT:233@examples/03_fib.lang:2:44
+[PRINT] INT:377@examples/03_fib.lang:2:44
+[PRINT] INT:610@examples/03_fib.lang:2:44
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py build -r examples/03_fib.lang
+[STDOUT]:
+[CMD] gcc examples/03_fib.c -o examples/03_fib.exe
+[CMD] ./examples/03_fib.exe
+[STDOUT]:
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py run examples/04_procs.lang
+[STDOUT]:
+[INFO] examples/04_procs.lang:4:24: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/04_procs.lang:4:10
+[INFO] examples/04_procs.lang:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT:9@examples/04_procs.lang:2:25
+[PRINT] INT:9@examples/04_procs.lang:2:25
+[INFO] examples/04_procs.lang:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT:8@examples/04_procs.lang:2:25
+[PRINT] INT:8@examples/04_procs.lang:2:25
+[INFO] examples/04_procs.lang:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT:7@examples/04_procs.lang:2:25
+[PRINT] INT:7@examples/04_procs.lang:2:25
+[INFO] examples/04_procs.lang:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT:6@examples/04_procs.lang:2:25
+[PRINT] INT:6@examples/04_procs.lang:2:25
+[INFO] examples/04_procs.lang:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT:5@examples/04_procs.lang:2:25
+[PRINT] INT:5@examples/04_procs.lang:2:25
+
+[EXIT CODE] 0
+============================================================
+[CMD] py lang.py build -r examples/04_procs.lang
+[STDOUT]:
+[INFO] examples/04_procs.lang:4:24: Stack at compile time:
+[NOTE] stack:
+      0. INT@examples/04_procs.lang:4:10
+[CMD] gcc examples/04_procs.c -o examples/04_procs.exe
+[CMD] ./examples/04_procs.exe
+[STDOUT]:
+9
+8
+7
+6
 5
 
 

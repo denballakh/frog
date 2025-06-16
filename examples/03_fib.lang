@@ -1,0 +1,13 @@
+proc dec int -- int do 1 - end
+proc fib_step int int -- int int do dup rot + end
+proc main -- do
+    0 1 15
+    while dup 0 > do
+      rot rot
+      dup print
+      fib_step
+      rot
+      dec
+    end
+    drop drop drop
+end
