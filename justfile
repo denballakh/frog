@@ -22,5 +22,7 @@ test: && check
     ./test.py
 
 clean:
-    rm *.c
-    rm *.exe
+    rm *.c || true
+    rm *.exe || true
+    rm examples/*.c || true
+    rm examples/*.exe || true
