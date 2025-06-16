@@ -1101,6 +1101,78 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      36. END:27
      37. INTRINSIC:DROP
      38. RET
+[TRACE] p1.lang:0:0: Generated C code:
+[NOTE] generated_code:
+    #include <stdio.h>
+    struct ret_main {
+    };
+    ret_main main() {
+      int lit_int_0;
+      int lit_int_1;
+      int eq_0;
+      int lit_int_2;
+      int lit_int_3;
+      int mul_0;
+      int lit_int_4;
+      int lit_int_5;
+      int mul_1;
+      int lit_int_6;
+      int dup_0;
+      int lit_int_7;
+      int gt_0;
+      int dup_1;
+      int lit_int_8;
+      int sub_0;
+      int lit_int_9;
+      int dup_2;
+      int lit_int_10;
+      int gt_1;
+      int dup_3;
+      int lit_int_11;
+      int sub_1;
+      lit_int_0 = 1;
+      lit_int_1 = 2;
+      eq_0 = lit_int_0 == lit_int_1;
+      if (eq_0) {
+        lit_int_2 = 11;
+        lit_int_3 = 2;
+        mul_0 = lit_int_2 * lit_int_3;
+      } else {
+        lit_int_4 = 12;
+        lit_int_5 = 2;
+        mul_1 = lit_int_4 * lit_int_5;
+        mul_0 = mul_1;
+      }
+      printf("%d\n", mul_0);
+      lit_int_6 = 10;
+      while (true) {
+        dup_0 = lit_int_6;
+        lit_int_7 = 5;
+        gt_0 = dup_0 > lit_int_7;
+        if (gt_0) {
+          dup_1 = lit_int_6;
+          printf("%d\n", dup_1);
+          lit_int_8 = 1;
+          sub_0 = lit_int_6 - lit_int_8;
+          lit_int_6 = sub_0;
+        } else break;
+      }
+      lit_int_9 = 10;
+      while (true) {
+        dup_2 = lit_int_9;
+        lit_int_10 = 5;
+        gt_1 = dup_2 > lit_int_10;
+        if (gt_1) {
+          dup_3 = lit_int_9;
+          printf("%d\n", dup_3);
+          lit_int_11 = 1;
+          sub_1 = lit_int_9 - lit_int_11;
+          lit_int_9 = sub_1;
+        } else break;
+      }
+      return ret_main {
+      };
+    }
 [PRINT] INT:24@p1.lang:10:7
 [PRINT] INT:10@p1.lang:14:0
 [PRINT] INT:9@p1.lang:19:4
@@ -1270,6 +1342,78 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      36. END:27
      37. INTRINSIC:DROP
      38. RET
+[TRACE] p1.lang:0:0: Generated C code:
+[NOTE] generated_code:
+    #include <stdio.h>
+    struct ret_main {
+    };
+    ret_main main() {
+      int lit_int_0;
+      int lit_int_1;
+      int eq_0;
+      int lit_int_2;
+      int lit_int_3;
+      int mul_0;
+      int lit_int_4;
+      int lit_int_5;
+      int mul_1;
+      int lit_int_6;
+      int dup_0;
+      int lit_int_7;
+      int gt_0;
+      int dup_1;
+      int lit_int_8;
+      int sub_0;
+      int lit_int_9;
+      int dup_2;
+      int lit_int_10;
+      int gt_1;
+      int dup_3;
+      int lit_int_11;
+      int sub_1;
+      lit_int_0 = 1;
+      lit_int_1 = 2;
+      eq_0 = lit_int_0 == lit_int_1;
+      if (eq_0) {
+        lit_int_2 = 11;
+        lit_int_3 = 2;
+        mul_0 = lit_int_2 * lit_int_3;
+      } else {
+        lit_int_4 = 12;
+        lit_int_5 = 2;
+        mul_1 = lit_int_4 * lit_int_5;
+        mul_0 = mul_1;
+      }
+      printf("%d\n", mul_0);
+      lit_int_6 = 10;
+      while (true) {
+        dup_0 = lit_int_6;
+        lit_int_7 = 5;
+        gt_0 = dup_0 > lit_int_7;
+        if (gt_0) {
+          dup_1 = lit_int_6;
+          printf("%d\n", dup_1);
+          lit_int_8 = 1;
+          sub_0 = lit_int_6 - lit_int_8;
+          lit_int_6 = sub_0;
+        } else break;
+      }
+      lit_int_9 = 10;
+      while (true) {
+        dup_2 = lit_int_9;
+        lit_int_10 = 5;
+        gt_1 = dup_2 > lit_int_10;
+        if (gt_1) {
+          dup_3 = lit_int_9;
+          printf("%d\n", dup_3);
+          lit_int_11 = 1;
+          sub_1 = lit_int_9 - lit_int_11;
+          lit_int_9 = sub_1;
+        } else break;
+      }
+      return ret_main {
+      };
+    }
 [PRINT] INT:24@p1.lang:10:7
 [PRINT] INT:10@p1.lang:14:0
 [PRINT] INT:9@p1.lang:19:4
@@ -1351,6 +1495,62 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      27. END:8
      28. INTRINSIC:DROP
      29. RET
+[TRACE] p2.lang:0:0: Generated C code:
+[NOTE] generated_code:
+    #include <stdio.h>
+    struct ret_main {
+    };
+    ret_main main() {
+      int lit_int_0;
+      int lit_int_1;
+      int dup_0;
+      int lit_int_2;
+      int mul_0;
+      int add_0;
+      int dup_1;
+      int lit_int_3;
+      int gt_0;
+      int dup_2;
+      int lit_int_4;
+      int mod_0;
+      int lit_int_5;
+      int eq_0;
+      int lit_int_6;
+      int lit_int_7;
+      int lit_int_8;
+      int sub_0;
+      lit_int_0 = 1;
+      lit_int_1 = 2;
+      dup_0 = lit_int_0;
+      printf("%d\n", dup_0);
+      lit_int_2 = 10;
+      mul_0 = lit_int_0 * lit_int_2;
+      add_0 = lit_int_1 + mul_0;
+      while (true) {
+        dup_1 = add_0;
+        lit_int_3 = 3;
+        gt_0 = dup_1 > lit_int_3;
+        if (gt_0) {
+          dup_2 = add_0;
+          lit_int_4 = 2;
+          mod_0 = dup_2 % lit_int_4;
+          lit_int_5 = 0;
+          eq_0 = mod_0 == lit_int_5;
+          if (eq_0) {
+            lit_int_6 = 5;
+          } else {
+            lit_int_7 = 7;
+            lit_int_6 = lit_int_7;
+          }
+          printf("%d\n", lit_int_6);
+          lit_int_8 = 1;
+          sub_0 = add_0 - lit_int_8;
+          add_0 = sub_0;
+        } else break;
+      }
+      return ret_main {
+      };
+    }
 [PRINT] INT:1@p2.lang:2:0
 [PRINT] INT:5@p2.lang:22:4
 [PRINT] INT:7@p2.lang:24:4
@@ -1431,6 +1631,33 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
       0. INT@procs.lang:13:4
 [INFO] procs.lang:16:4: Stack at compile time:
 [NOTE] stack: (empty)
+[TRACE] procs.lang:0:0: Generated C code:
+[NOTE] generated_code:
+    #include <stdio.h>
+    struct ret_a {
+      int _0;
+    };
+    ret_a a(int arg_0) {
+      int lit_int_0;
+      int mul_0;
+      lit_int_0 = 2;
+      mul_0 = arg_0 * lit_int_0;
+      return ret_a {
+        ._0 = mul_0,
+      };
+    }
+    struct ret_main {
+    };
+    ret_main main() {
+      int lit_int_1;
+      int res_a_0_0;
+      lit_int_1 = 5;
+      ret_a res_a = a(lit_int_1);
+      res_a_0_0 = res_a._0;
+      printf("%d\n", res_a_0_0);
+      return ret_main {
+      };
+    }
 [INFO] procs.lang:10:4: Stack at runtime:
 [NOTE] stack: (empty)
 [INFO] procs.lang:12:4: Stack at runtime:

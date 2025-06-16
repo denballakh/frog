@@ -331,6 +331,7 @@ def typecheck_has_a_bug(loc: _Locatable, msg: str, **notes: Any) -> Never:
 
 
 def unreachable(loc: _Locatable, msg: str = '<?>', **notes: Any) -> Never:
+    traceback.print_stack(file=sys.stdout)
     error(loc, f'unreachable: {msg}', **notes)
 
 
@@ -1712,16 +1713,18 @@ def translate(ir: IR) -> str:
         _used_names.add(f'{hint}_{i}')
         return f'{hint}_{i}'
 
-    def declare_var(var: str, type: ValueCls) -> None:
-        c_type: str
+    def c_type(type: ValueCls) -> str:
         match type.type:
             case ValueClsType.INT:
-                c_type = 'int'
+                return 'int'
             case ValueClsType.BOOL:
-                c_type = 'bool'
+                return 'bool'
             case _:
                 assert_never(type.type)
-        sb_vars.add(f'  {c_type} {var};\n')
+
+    def declare_var(var: str, type: ValueCls) -> None:
+        typ: str = c_type(type)
+        sb_header.add(f'  {typ} {var};\n')
 
     def copy_stacks(src: Stack, dst: Stack) -> None:
         for a, b in zip(src, dst):
@@ -1742,22 +1745,34 @@ def translate(ir: IR) -> str:
                 unreachable(instr)
 
     block_stack: list[Block] = []
-    stack: Stack = []
-    indent = 2
+    sb_global = StringBuilder()
+    sb_global += f'#include <stdio.h>\n'
 
-    sb = StringBuilder()
-    sb_vars = StringBuilder()
     for proc in ir.procs:
-        block_stack.append(Block(InstructionType.PROC))
+        sb = StringBuilder()
+        sb_header = StringBuilder()
+        sb_struct = StringBuilder()
+
         instrs = proc.instrs
+        stack: Stack = []
+
+        ret = f'ret_{proc.name}'
+        sb_header += f'{ret} {proc.name}('
+        for i, t in enumerate(proc.ins):
+            name = get_varname('arg')
+            if i > 0:
+                sb_header += ', '
+            sb_header += f'{c_type(t)} {name}'
+            stack.append(StackEntry(t, name, t.tok))
+        sb_header += ') {\n'
+        sb_struct += f'struct {ret} {{\n'
+        for i, t in enumerate(proc.outs):
+            name = f'_{i}'
+            sb_struct += f'  {c_type(t)} {name};\n'
+        sb_struct += '};\n'
+        indent = 2
+
         for ip, instr in enumerate(instrs):
-            trace(
-                instr,
-                'stack trace',
-                ip=f'{ip}/{len(instrs)}',
-                stack=stack,
-                block_stack=block_stack,
-            )
             ip += 1
             match instr.type:
                 case InstructionType.PUSH_INT:
@@ -1775,10 +1790,28 @@ def translate(ir: IR) -> str:
                     sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
 
                 case InstructionType.WORD:
-                    notimplemented(
-                        instr,
-                        f'arbitrary word handling is not implemented yet: {instr.tok.value}',
-                    )
+                    proc_called = ir.get_proc_by_name(instr.arg1)
+                    if proc_called is None:
+                        unreachable(instr, f'proc {instr.arg1} not found')
+
+                    ret_var = f'res_{proc_called.name}'
+                    ret_type = f'ret_{proc_called.name}'
+                    sb += f'{'':{indent}}{ret_type} {ret_var} = {proc_called.name}('
+                    for i, arg in enumerate(stack[len(stack) - len(proc_called.ins) :]):
+                        if i > 0:
+                            sb += ', '
+                        sb += f'{arg.val}'
+                        _ = stack.pop()
+                    sb += ');\n'
+
+                    for i, out in enumerate(proc_called.outs):
+                        typ = ValueCls(out.type, unused, instr.tok)
+                        var = get_varname(f'res_{proc_called.name}_{i}')
+                        declare_var(var, typ)
+                        stack.append(StackEntry(typ, var, tok=instr.tok))
+                        sb += f'{'':{indent}}{var} = {ret_var}._{i};\n'
+                    # stack.append(StackEntry(typ, var, tok=instr.tok))
+                    # sb += f'{'':{indent}}{var} = {proc_called.name};\n'
 
                 case InstructionType.IF:
                     block = Block(InstructionType.IF)
@@ -1802,7 +1835,6 @@ def translate(ir: IR) -> str:
                 case InstructionType.END:
                     block = block_stack.pop()
                     if block.type == InstructionType.IF:
-                        trace(instr, 'stack trace in IF', stack_cur=stack, stack_prev=block.stack)
                         if block.stack is None:
                             unreachable(instr)
 
@@ -1812,7 +1844,6 @@ def translate(ir: IR) -> str:
                         sb += f'{'':{indent}}}}\n'
 
                     elif block.type == InstructionType.WHILE:
-                        trace(instr, 'stack trace in WHILE', stack_cur=stack, stack_prev=block.stack)
                         if block.stack is None:
                             unreachable(instr)
 
@@ -1858,15 +1889,20 @@ def translate(ir: IR) -> str:
                             unreachable(instr)
 
                     else:
-                        unreachable(instr)
+                        unreachable(instr, stack=stack)
 
                 case InstructionType.PROC:
-                    name = instr.arg1
-                    sb += f'{'':{indent}}void {name}() {{\n'
-                    indent += 2
+                    unreachable(instr, 'proc instrs must not me emitted')
 
                 case InstructionType.RET:
-                    sb += f'{'':{indent}}return;\n'
+                    ret_type = f'ret_{proc.name}'
+                    sb += f'{'':{indent}}return {ret_type} {{\n'
+                    indent += 2
+                    for i, x in enumerate(stack):
+                        sb += f'{'':{indent}}._{i} = {x.val},\n'
+                    indent -= 2
+                    sb += f'{'':{indent}}}};\n'
+                    stack = []
 
                 case InstructionType.LABEL:
                     notimplemented(instr, f'translating {InstructionType.LABEL}')
@@ -2083,7 +2119,9 @@ def translate(ir: IR) -> str:
                             if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'eq')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                stack.append(
+                                    StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), var, tok=instr.tok)
+                                )
                                 sb += f'{'':{indent}}{var} = {a.val} == {b.val};\n'
 
                             else:
@@ -2096,7 +2134,9 @@ def translate(ir: IR) -> str:
                             if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'ne')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                stack.append(
+                                    StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), var, tok=instr.tok)
+                                )
                                 sb += f'{'':{indent}}{var} = {a.val} != {b.val};\n'
 
                             else:
@@ -2109,7 +2149,9 @@ def translate(ir: IR) -> str:
                             if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'lt')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                stack.append(
+                                    StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), var, tok=instr.tok)
+                                )
                                 sb += f'{'':{indent}}{var} = {a.val} < {b.val};\n'
 
                             else:
@@ -2122,7 +2164,9 @@ def translate(ir: IR) -> str:
                             if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'gt')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                stack.append(
+                                    StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), var, tok=instr.tok)
+                                )
                                 sb += f'{'':{indent}}{var} = {a.val} > {b.val};\n'
 
                             else:
@@ -2135,7 +2179,9 @@ def translate(ir: IR) -> str:
                             if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'le')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                stack.append(
+                                    StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), var, tok=instr.tok)
+                                )
                                 sb += f'{'':{indent}}{var} = {a.val} <= {b.val};\n'
 
                             else:
@@ -2148,7 +2194,9 @@ def translate(ir: IR) -> str:
                             if a.type.type == b.type.type == ValueClsType.INT:
                                 var = get_varname(f'ge')
                                 declare_var(var, a.type)
-                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                stack.append(
+                                    StackEntry(ValueCls(ValueClsType.BOOL, unused, instr.tok), var, tok=instr.tok)
+                                )
                                 sb += f'{'':{indent}}{var} = {a.val} >= {b.val};\n'
 
                             else:
@@ -2200,13 +2248,18 @@ def translate(ir: IR) -> str:
                 case _:
                     assert_never(instr.type)
 
-    if stack:
-        unreachable(None, stack=stack)
+        if stack:
+            unreachable(None, stack=stack)
+
+        sb += '}\n'
+        sb_global += str(sb_struct)
+        sb_global += str(sb_header)
+        sb_global += str(sb)
 
     if block_stack:
         unreachable(None, block_stack=block_stack)
 
-    code = str(sb_vars) + str(sb)
+    code = str(sb_global)
     return code
 
 
@@ -2257,13 +2310,13 @@ def run_file(file: str) -> None:
         IR=ir,
     )
     typecheck(ir)
-    # gen_code = translate(ir)
+    gen_code = translate(ir)
 
-    # trace(
-    #     loc,
-    #     'Generated C code:',
-    #     generated_code=gen_code,
-    # )
+    trace(
+        loc,
+        'Generated C code:',
+        generated_code=gen_code,
+    )
     try:
         interpret(ir)
     except Exception:
