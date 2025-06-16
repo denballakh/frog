@@ -1,9 +1,9 @@
 ============================================================
 [CODE] '1 2 + print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():3@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -13,7 +13,7 @@
 
 ============================================================
 [CODE] '1 + print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:2: not enough items on stack for IntrinsicType.ADD: it expects two INTs on the stack
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
@@ -21,7 +21,7 @@
 
 ============================================================
 [CODE] '1 2 +'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
       0. INT()@tmp.frog:1:4
@@ -30,7 +30,7 @@
 
 ============================================================
 [CODE] '? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:0: Stack at compile time:
 [NOTE] stack: (empty)
 [INFO] tmp.frog:1:4: Stack at compile time:
@@ -101,7 +101,7 @@
 [INFO] tmp.frog:1:36: Stack at runtime:
 [NOTE] stack: (empty)
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -111,31 +111,31 @@
 
 ============================================================
 [CODE] '+'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.ADD: it expects two INTs on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '~'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.BNOT: it expects one INT on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '/%'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.DIVMOD: it expects two INTs on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '25 7 + print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():32@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -145,10 +145,10 @@
 
 ============================================================
 [CODE] '25 7 - print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():18@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -158,10 +158,10 @@
 
 ============================================================
 [CODE] '25 7 * print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():175@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -171,10 +171,10 @@
 
 ============================================================
 [CODE] '25 7 / print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():3@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -184,7 +184,7 @@
 
 ============================================================
 [CODE] '2 0 / print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:4: division by zero
 [NOTE] a: INT():2@tmp.frog:1:0
 [NOTE] b: INT():0@tmp.frog:1:2
@@ -192,10 +192,10 @@
 
 ============================================================
 [CODE] '25 7 % print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():4@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -205,7 +205,7 @@
 
 ============================================================
 [CODE] '25 7 /% ? print print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:8: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:5
@@ -217,7 +217,7 @@
 [PRINT] INT():4@tmp.frog:1:5
 [PRINT] INT():3@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -228,10 +228,10 @@
 
 ============================================================
 [CODE] '25 7 << print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():3200@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -241,10 +241,10 @@
 
 ============================================================
 [CODE] '25 7 >> print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():0@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -254,10 +254,10 @@
 
 ============================================================
 [CODE] '25 7 | print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():31@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -267,10 +267,10 @@
 
 ============================================================
 [CODE] '25 7 & print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():1@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -280,10 +280,10 @@
 
 ============================================================
 [CODE] '25 7 ^ print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():30@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -293,10 +293,10 @@
 
 ============================================================
 [CODE] '25 ~ print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():-26@tmp.frog:1:3
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -306,49 +306,49 @@
 
 ============================================================
 [CODE] 'true 5 + print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot add/subtract BOOL() and INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 * print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot multiply/divide BOOL() by INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 % print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot modulo BOOL() by INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 | print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot bitwise or/and/xor BOOL() with INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 << print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot shift BOOL() by INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 && print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot and/or BOOL() with INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 ! print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot not INT()
 [NOTE] stack:
       0. BOOL()@tmp.frog:1:0
@@ -356,7 +356,7 @@
 
 ============================================================
 [CODE] 'true 5 swap ~ print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:12: cannot bitwise not an BOOL()
 [NOTE] stack:
       0. INT()@tmp.frog:1:5
@@ -364,24 +364,24 @@
 
 ============================================================
 [CODE] 'true 5 == print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot compare BOOL() and INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 < print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: cannot compare BOOL() and INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true false && print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():False@tmp.frog:1:11
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -391,10 +391,10 @@ false
 
 ============================================================
 [CODE] 'true false || print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():True@tmp.frog:1:11
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -404,10 +404,10 @@ true
 
 ============================================================
 [CODE] 'true ! print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():False@tmp.frog:1:5
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -417,10 +417,10 @@ false
 
 ============================================================
 [CODE] 'false ! print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():True@tmp.frog:1:6
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -430,10 +430,10 @@ true
 
 ============================================================
 [CODE] '1 2 == print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():False@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -443,10 +443,10 @@ false
 
 ============================================================
 [CODE] '1 2 != print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():True@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -456,10 +456,10 @@ true
 
 ============================================================
 [CODE] '1 2 < print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():True@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -469,10 +469,10 @@ true
 
 ============================================================
 [CODE] '1 2 > print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():False@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -482,10 +482,10 @@ false
 
 ============================================================
 [CODE] '1 2 <= print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():True@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -495,10 +495,10 @@ true
 
 ============================================================
 [CODE] '1 2 >= print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():False@tmp.frog:1:4
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -508,7 +508,7 @@ false
 
 ============================================================
 [CODE] '1 2 ? print print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:4: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
@@ -520,7 +520,7 @@ false
 [PRINT] INT():2@tmp.frog:1:2
 [PRINT] INT():1@tmp.frog:1:0
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -531,7 +531,7 @@ false
 
 ============================================================
 [CODE] '1 dup ? print print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:6: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
@@ -543,7 +543,7 @@ false
 [PRINT] INT():1@tmp.frog:1:0
 [PRINT] INT():1@tmp.frog:1:0
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -554,7 +554,7 @@ false
 
 ============================================================
 [CODE] '1 2 drop ? print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:9: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
@@ -563,7 +563,7 @@ false
       0. INT():1@tmp.frog:1:0
 [PRINT] INT():1@tmp.frog:1:0
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -573,7 +573,7 @@ false
 
 ============================================================
 [CODE] '1 2 swap ? print print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:9: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:2
@@ -585,7 +585,7 @@ false
 [PRINT] INT():1@tmp.frog:1:0
 [PRINT] INT():2@tmp.frog:1:2
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -596,7 +596,7 @@ false
 
 ============================================================
 [CODE] '1 2 3 ? print print print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:6: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
@@ -611,7 +611,7 @@ false
 [PRINT] INT():2@tmp.frog:1:2
 [PRINT] INT():1@tmp.frog:1:0
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -623,7 +623,7 @@ false
 
 ============================================================
 [CODE] '1 2 3 rot ? print print print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:10: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:2
@@ -638,7 +638,7 @@ false
 [PRINT] INT():3@tmp.frog:1:4
 [PRINT] INT():2@tmp.frog:1:2
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -650,55 +650,55 @@ false
 
 ============================================================
 [CODE] 'print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:0: Stack at compile time:
 [NOTE] stack: (empty)
 [INFO] tmp.frog:1:0: Stack at runtime:
 [NOTE] stack: (empty)
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [EXIT CODE] 0
 
 ============================================================
 [CODE] 'dup'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.DUP: it expects one item on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'swap'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.SWAP: it expects two items on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'drop'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.DROP: it expects one item on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'rot'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.ROT: it expects three items on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '1 2 == if do 5 else 7 end print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:10: condition part of InstructionType.IF should put exactly one BOOL on the stack
 [NOTE] expected_stack:
       0. BOOL()@tmp.frog:1:4
@@ -707,10 +707,10 @@ false
 
 ============================================================
 [CODE] 'if 1 2 == do 5 else 7 end print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():7@tmp.frog:1:20
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -720,10 +720,10 @@ false
 
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 end print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():5@tmp.frog:1:13
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -733,7 +733,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 8 end print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:24: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
       0. INT()@tmp.frog:1:13
@@ -744,7 +744,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
       0. INT()@tmp.frog:1:20
@@ -753,7 +753,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 != do 5 else end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:20: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
       0. INT()@tmp.frog:1:13
@@ -762,7 +762,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 != do 5 end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:15: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
       0. INT()@tmp.frog:1:13
@@ -771,10 +771,10 @@ false
 
 ============================================================
 [CODE] 'if 1 2 != do 5 print end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():5@tmp.frog:1:13
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -784,10 +784,10 @@ false
 
 ============================================================
 [CODE] '5 if 1 2 == do drop 7 end print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():5@tmp.frog:1:0
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -797,10 +797,10 @@ false
 
 ============================================================
 [CODE] '5 if 1 2 != do drop 7 end print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():7@tmp.frog:1:20
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -810,7 +810,7 @@ false
 
 ============================================================
 [CODE] 'if'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
       0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
@@ -818,7 +818,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 == do'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
       0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1)
@@ -826,7 +826,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 == do 5 print else'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
       0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1)
@@ -834,26 +834,26 @@ false
 
 ============================================================
 [CODE] 'if 1 2 == else 5 end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:17: if <cond> do <body> [else <body>] end
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:3: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:5: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:7: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
       0. INT()@tmp.frog:1:3
@@ -861,7 +861,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 3 do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
       0. INT()@tmp.frog:1:3
@@ -870,7 +870,7 @@ false
 
 ============================================================
 [CODE] 'if 1 2 3 == do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:12: condition part of InstructionType.IF should put exactly one BOOL on the stack
 [NOTE] expected_stack: (empty)
 [NOTE] actual_stack:
@@ -879,13 +879,13 @@ false
 
 ============================================================
 [CODE] 'else'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: ELSE should follow an IF
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '10 while dup 5 > do 1 - print ? end drop'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:30: Stack at compile time:
 [NOTE] stack: (empty)
 [ERROR] tmp.frog:1:32: InstructionType.WHILE must not alter the stack state
@@ -893,7 +893,7 @@ false
 
 ============================================================
 [CODE] '10 while dup 5 > do 1 - dup print ? end drop'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:34: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:22
@@ -918,7 +918,7 @@ false
 [NOTE] stack:
       0. INT():5@tmp.frog:1:22
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -932,19 +932,19 @@ false
 
 ============================================================
 [CODE] 'while else'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:6: ELSE should follow an IF, not WHILE
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:6: while <cond> do <body> end
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
       0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
@@ -952,7 +952,7 @@ false
 
 ============================================================
 [CODE] 'while 1 2 == do'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
       0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1)
@@ -960,20 +960,20 @@ false
 
 ============================================================
 [CODE] 'while do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:6: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
       0. INT()@tmp.frog:1:6
@@ -981,7 +981,7 @@ false
 
 ============================================================
 [CODE] 'while 1 2 3 do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:12: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
       0. INT()@tmp.frog:1:6
@@ -990,7 +990,7 @@ false
 
 ============================================================
 [CODE] 'while 1 2 3 == do end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:15: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
 [NOTE] expected_stack: (empty)
 [NOTE] actual_stack:
@@ -999,107 +999,107 @@ false
 
 ============================================================
 [CODE] 'do'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: DO should follow an IF or WHILE
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'end'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: END should follow an IF or WHILE
 [EXIT CODE] 1
 
 ============================================================
 [CODE] ''
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [EXIT CODE] 0
 
 ============================================================
 [CODE] "'"
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: unterminated character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "''"
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'aa'"
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'\\n'"
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'\\t'"
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'\\''"
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:1: unterminated character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '"'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: unterminated string literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '"" ?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] frog.py:565:0
+[LOC] __init__.py:209:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] frog.py:565:0
+[LOC] __init__.py:209:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] frog.py:565:0
+[LOC] __init__.py:209:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] frog.py:565:0
+[LOC] __init__.py:209:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\"" ?'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:1: unterminated string literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '1 // comment \n print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():1@tmp.frog:1:0
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1109,22 +1109,22 @@ false
 
 ============================================================
 [CODE] 'proc'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: expected a name after PROC
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'somerandomword'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: unknown word somerandomword
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '\n    proc a int -- int do 2 * end\n    5 a print\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():10@tmp.frog:2:27
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1134,19 +1134,19 @@ false
 
 ============================================================
 [CODE] '\n    proc a do 2 * end\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=tmp.frog:2:11)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '\n    proc a int do 2 * end\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=tmp.frog:2:15)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '\n    proc a -- do 2 * end\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:2:19: not enough items on stack for IntrinsicType.MUL: it expects two INTs on the stack
 [NOTE] other_stack_items:
       0. INT()@tmp.frog:2:17
@@ -1154,7 +1154,7 @@ false
 
 ============================================================
 [CODE] '\n    proc a int -- do 2 * end\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:2:25: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
       0. INT()@tmp.frog:2:23
@@ -1163,7 +1163,7 @@ false
 
 ============================================================
 [CODE] '\n    proc a int -- int int do 2 * end\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:2:33: return type mismatch: expected 2 items on the stack, got 1
 [NOTE] stack:
       0. INT()@tmp.frog:2:31
@@ -1174,10 +1174,10 @@ false
 
 ============================================================
 [CODE] '\n    proc a int -- int do drop 5 end\n    5 a print\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():5@tmp.frog:2:30
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1187,7 +1187,7 @@ false
 
 ============================================================
 [CODE] '\n    proc a bool -- int do drop 5 end\n    5 a print\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:3:6: stack doesnt match at 0 for a: expected INT() but got BOOL()
 [NOTE] stack:
       0. INT()@tmp.frog:3:4
@@ -1197,7 +1197,7 @@ false
 
 ============================================================
 [CODE] '\n    proc a int int -- int do + end\n    5 a print\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:3:6: stack too small for a: expected 2 but got 1
 [NOTE] stack:
       0. INT()@tmp.frog:3:4
@@ -1208,10 +1208,10 @@ false
 
 ============================================================
 [CODE] '\n    proc a int int -- int do + end\n    5 7 a print\n    '
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():12@tmp.frog:2:29
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1221,7 +1221,7 @@ false
 
 ============================================================
 [CODE] '5 int ? cast ? print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [INFO] tmp.frog:1:6: Stack at compile time:
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
@@ -1240,7 +1240,7 @@ false
       0. INT():5@tmp.frog:1:8
 [PRINT] INT():5@tmp.frog:1:8
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [WARN] tmp.frog:1:8: redundant cast INT() to INT()
 [WARN] tmp.frog:1:8: redundant cast INT() to INT()
 [CMD] gcc tmp.c -o tmp.exe
@@ -1252,10 +1252,10 @@ false
 
 ============================================================
 [CODE] '5 bool cast print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():True@tmp.frog:1:7
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1265,10 +1265,10 @@ true
 
 ============================================================
 [CODE] '0 bool cast print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] BOOL():False@tmp.frog:1:7
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1278,10 +1278,10 @@ false
 
 ============================================================
 [CODE] 'true int cast print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():1@tmp.frog:1:9
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1291,10 +1291,10 @@ false
 
 ============================================================
 [CODE] 'false int cast print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [PRINT] INT():0@tmp.frog:1:10
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1304,12 +1304,12 @@ false
 
 ============================================================
 [CODE] 'false bool cast print'
-[CMD] py frog.py run tmp.frog
+[CMD] py -m frog run tmp.frog
 [WARN] tmp.frog:1:11: redundant cast BOOL() to BOOL()
 [WARN] tmp.frog:1:11: redundant cast BOOL() to BOOL()
 [PRINT] BOOL():False@tmp.frog:1:11
 [EXIT CODE] 0
-[CMD] py frog.py -l WARN build -r tmp.frog
+[CMD] py -m frog -l WARN build -r tmp.frog
 [WARN] tmp.frog:1:11: redundant cast BOOL() to BOOL()
 [WARN] tmp.frog:1:11: redundant cast BOOL() to BOOL()
 [CMD] gcc tmp.c -o tmp.exe
@@ -1320,14 +1320,14 @@ false
 [EXIT CODE] 0
 
 ============================================================
-[CMD] py frog.py
+[CMD] py -m frog
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no subcommand specified
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py frog.py -h
+[CMD] py -m frog -h
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 Options:
@@ -1346,7 +1346,7 @@ Subcommands:
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py --help
+[CMD] py -m frog --help
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 Options:
@@ -1365,41 +1365,41 @@ Subcommands:
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py run
+[CMD] py -m frog run
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no file specified
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py frog.py run xxx
+[CMD] py -m frog run xxx
 [STDOUT]:
 [ERROR] file xxx does not exist
 
 [EXIT CODE] 1
 ============================================================
-[CMD] py frog.py -l
+[CMD] py -m frog -l
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no log level specified
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py frog.py -l TRACE
+[CMD] py -m frog -l TRACE
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no subcommand specified
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py frog.py -l TRACE run
+[CMD] py -m frog -l TRACE run
 [STDOUT]:
 Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no file specified
 
 [EXIT CODE] 2
 ============================================================
-[CMD] py frog.py -l TRACE run examples/01_simple.frog
+[CMD] py -m frog -l TRACE run examples/01_simple.frog
 [STDOUT]:
 [TRACE] <?>:0:0: file: examples/01_simple.frog
 [NOTE] Tokens:
@@ -1438,19 +1438,19 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py -l LOL run examples/01_simple.frog
+[CMD] py -m frog -l LOL run examples/01_simple.frog
 [STDOUT]:
 [ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE']
 
 [EXIT CODE] 1
 ============================================================
-[CMD] py frog.py -l WARN run examples/01_simple.frog
+[CMD] py -m frog -l WARN run examples/01_simple.frog
 [STDOUT]:
 [PRINT] INT():3@examples/01_simple.frog:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py -l INFO run examples/01_simple.frog
+[CMD] py -m frog -l INFO run examples/01_simple.frog
 [STDOUT]:
 [INFO] examples/01_simple.frog:1:4: Stack at compile time:
 [NOTE] stack:
@@ -1470,13 +1470,13 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py -l ERROR run examples/01_simple.frog
+[CMD] py -m frog -l ERROR run examples/01_simple.frog
 [STDOUT]:
 [PRINT] INT():3@examples/01_simple.frog:1:6
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py -l TRACE run examples/02_while.frog
+[CMD] py -m frog -l TRACE run examples/02_while.frog
 [STDOUT]:
 [TRACE] <?>:0:0: file: examples/02_while.frog
 [NOTE] Tokens:
@@ -1556,7 +1556,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py -l TRACE build -r examples/02_while.frog
+[CMD] py -m frog -l TRACE build -r examples/02_while.frog
 [STDOUT]:
 [TRACE] <?>:0:0: file: examples/02_while.frog
 [NOTE] Tokens:
@@ -1701,17 +1701,17 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py run examples/00_empty.frog
+[CMD] py -m frog run examples/00_empty.frog
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py build -r examples/00_empty.frog
+[CMD] py -m frog build -r examples/00_empty.frog
 [STDOUT]:
 [CMD] gcc examples/00_empty.c -o examples/00_empty.exe
 [CMD] ./examples/00_empty.exe
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py run examples/01_simple.frog
+[CMD] py -m frog run examples/01_simple.frog
 [STDOUT]:
 [INFO] examples/01_simple.frog:1:4: Stack at compile time:
 [NOTE] stack:
@@ -1731,7 +1731,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py build -r examples/01_simple.frog
+[CMD] py -m frog build -r examples/01_simple.frog
 [STDOUT]:
 [INFO] examples/01_simple.frog:1:4: Stack at compile time:
 [NOTE] stack:
@@ -1748,7 +1748,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py run examples/02_while.frog
+[CMD] py -m frog run examples/02_while.frog
 [STDOUT]:
 [PRINT] INT():1@examples/02_while.frog:2:0
 [PRINT] INT():5@examples/02_while.frog:22:4
@@ -1763,7 +1763,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py build -r examples/02_while.frog
+[CMD] py -m frog build -r examples/02_while.frog
 [STDOUT]:
 [CMD] gcc examples/02_while.c -o examples/02_while.exe
 [CMD] ./examples/02_while.exe
@@ -1782,7 +1782,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py run examples/03_fib.frog
+[CMD] py -m frog run examples/03_fib.frog
 [STDOUT]:
 [PRINT] INT():1@examples/03_fib.frog:4:6
 [PRINT] INT():1@examples/03_fib.frog:2:44
@@ -1802,7 +1802,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py build -r examples/03_fib.frog
+[CMD] py -m frog build -r examples/03_fib.frog
 [STDOUT]:
 [CMD] gcc examples/03_fib.c -o examples/03_fib.exe
 [CMD] ./examples/03_fib.exe
@@ -1826,7 +1826,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py run examples/04_procs.frog
+[CMD] py -m frog run examples/04_procs.frog
 [STDOUT]:
 [INFO] examples/04_procs.frog:4:24: Stack at compile time:
 [NOTE] stack:
@@ -1854,7 +1854,7 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 
 [EXIT CODE] 0
 ============================================================
-[CMD] py frog.py build -r examples/04_procs.frog
+[CMD] py -m frog build -r examples/04_procs.frog
 [STDOUT]:
 [INFO] examples/04_procs.frog:4:24: Stack at compile time:
 [NOTE] stack:

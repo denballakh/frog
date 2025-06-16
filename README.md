@@ -9,7 +9,7 @@ It is heavily inspired by [Porth](https://gitlab.com/tsoding/porth)
 
 # Usage
 ```sh
-./frog.py --help
+py -m frog --help
 ```
 
 # Examples

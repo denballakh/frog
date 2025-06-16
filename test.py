@@ -5,7 +5,7 @@ import io
 from typing import TYPE_CHECKING, Any
 import shlex
 
-import frog
+from frog.__main__ import run_cmd, run_frog
 
 if TYPE_CHECKING:
     from tqdm import tqdm
@@ -205,9 +205,6 @@ for file_example in dir_examples.iterdir():
     cli_examples.append(f'run {file_example}')
     cli_examples.append(f'build -r {file_example}')
 
-src = ROOT / 'frog.py'
-src = src.relative_to(Path.cwd())
-
 tmp = ROOT / 'tmp.frog'
 tmp = tmp.relative_to(Path.cwd())
 
@@ -219,18 +216,17 @@ try:
             _ = tmp.write_text(code)
             print('=' * 60)
             print(f'[CODE] {code!r}')
-            # res = run_cmd('py', src, 'run', tmp)
-            res = frog.run_frog('py', src, 'run', tmp)
+            res = run_frog('py', '-m', 'frog', 'run', tmp)
             print(f'[EXIT CODE] {res}')
             if res == 0:
-                res = frog.run_frog('py', src, '-l', 'WARN', 'build', '-r', tmp)
+                res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', tmp)
                 print(f'[EXIT CODE] {res}')
             print()
 
     for cli in tqdm(cli_examples):
         with contextlib.redirect_stdout(buf):
             print('=' * 60)
-            res = frog.run_cmd('py', src, *shlex.split(cli))
+            res = run_cmd('py', '-m', 'frog', *shlex.split(cli))
             print(f'[EXIT CODE] {res}')
 
 except Exception as e:
