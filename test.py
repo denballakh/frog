@@ -1,9 +1,7 @@
 import contextlib
-import os
 from pathlib import Path
 import io
 from typing import TYPE_CHECKING, Any
-import subprocess
 import shlex
 
 import lang
@@ -20,48 +18,6 @@ else:
 
 
 ROOT = Path(__file__).parent
-
-
-def run_cmd(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
-
-    cmd = subprocess.list2cmdline(cmds)
-    print(f'[CMD] {cmd}')
-    res = subprocess.run(
-        cmds,
-        # shell=True,
-        capture_output=True,
-        universal_newlines=True,
-    )
-    out = res.stdout
-    err = res.stderr
-    if out:
-        print(f'[STDOUT]:')
-        print(out)
-    if err:
-        print(f'[STDERR]:')
-        print(err)
-    return res.returncode
-
-
-def run_lang(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
-
-    cmd = subprocess.list2cmdline([*args])
-    print(f'[CMD] {cmd}')
-
-    try:
-        lang.main(shlex.split(cmd)[2:])
-    except SystemExit as e:
-        code = e.code
-        match code:
-            case int():
-                return code
-            case str():
-                return 1
-            case None:
-                return 0
-    else:
-        return 0
-
 
 code_examples = [
     '1 2 + print',
@@ -242,6 +198,7 @@ cli_examples = [
     'run p1.lang',
     '-l',
     '-l TRACE run',
+    '-l TRACE run xxx',
     '-l TRACE run p1.lang',
     '-l LOL run p1.lang',
     '-l WARN run p1.lang',
@@ -252,6 +209,18 @@ cli_examples = [
     '-l TRACE run p1.lang',
     '-l TRACE run p2.lang',
     '-l TRACE run procs.lang',
+    #
+    '-l TRACE build p1.lang',
+    '-l TRACE build p2.lang',
+    '-l TRACE build procs.lang',
+    #
+    'build -r p1.lang',
+    'build -r p2.lang',
+    'build -r procs.lang',
+    #
+    'run p1.lang',
+    'run p2.lang',
+    'run procs.lang',
 ]
 
 src = ROOT / 'lang.py'
@@ -269,14 +238,14 @@ try:
             print('=' * 60)
             print(f'[CODE] {code!r}')
             # res = run_cmd('py', src, 'run', tmp)
-            res = run_lang('py', src, 'run', tmp)
+            res = lang.run_lang('py', src, 'run', tmp)
             print(f'[EXIT CODE] {res}')
             print()
 
     for cli in tqdm(cli_examples):
         with contextlib.redirect_stdout(buf):
             print('=' * 60)
-            res = run_cmd('py', src, *shlex.split(cli))
+            res = lang.run_cmd('py', src, *shlex.split(cli))
             print(f'[EXIT CODE] {res}')
 
 except Exception as e:

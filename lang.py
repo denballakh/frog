@@ -6,6 +6,9 @@ from enum import Enum, auto
 from dataclasses import dataclass, field, is_dataclass
 import traceback
 import sys
+import subprocess
+import os
+import shlex
 
 from sb import StringBuilder
 
@@ -339,7 +342,7 @@ def notimplemented(loc: _Locatable, msg: str) -> Never:
     error(loc, f'not implemented: {msg}')
 
 
-def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
+def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
     def is_int(s: str) -> bool:
         return set(s) <= set('0123456789')
 
@@ -434,6 +437,16 @@ def tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
             i_start = i + 1
 
         i += 1
+
+
+def tokenize(text: str, filename: str = '<?>') -> list[Token]:
+    toks = [*_tokenize(text, filename)]
+    trace(
+        loc_unknown,
+        f'file: {filename}',
+        Tokens=toks,
+    )
+    return toks
 
 
 def compile(toks: list[Token]) -> IR:
@@ -647,6 +660,10 @@ def compile(toks: list[Token]) -> IR:
                             error(tok, f'expected a DO after proc args, got {tok}')
                         i += 1
 
+                        if name == 'main':
+                            if len(ins) != 0 or len(outs) != 0:
+                                error(tok, f'main must take no args and return no values')
+
                         cur_proc = Proc(name=name, ins=ins, outs=outs)
                         ir.procs.append(cur_proc)
                         block = Block(InstructionType.PROC)
@@ -744,6 +761,11 @@ def compile(toks: list[Token]) -> IR:
     if not ir.get_proc_by_name('main'):
         ir.procs.append(Proc(name='main', ins=[], outs=[]))
 
+    trace(
+        loc_unknown,
+        f'Compiled IR',
+        IR=ir,
+    )
     return ir
 
 
@@ -764,14 +786,9 @@ def typecheck(ir: IR) -> None:
                 return False
         return True
 
-    # TODO
-    main = ir.get_proc_by_name('main')
-    assert main is not None
-    block_stack: list[Block] = []
-    stack: Stack = []
-
     for proc in ir.procs:
-        stack = []
+        block_stack: list[Block] = []
+        stack: Stack = []
         for type_in in proc.ins:
             stack.append(StackEntry(type_in, typechecking, tok=type_in.tok))
         instrs = proc.instrs
@@ -924,9 +941,6 @@ def typecheck(ir: IR) -> None:
                     notimplemented(instr, f'typechecking {InstructionType.PROC}')
 
                 case InstructionType.RET:
-                    # check that the stack contains correct return types
-                    # x: ValueCls = stack[i].val
-                    # outs: list[ValueCls]
                     if len(stack) != len(proc.outs):
                         error(
                             instr,
@@ -945,6 +959,9 @@ def typecheck(ir: IR) -> None:
                                 stack=stack,
                                 outs=proc.outs,
                             )
+
+                    for _ in proc.outs:
+                        _ = stack.pop()
 
                 case InstructionType.LABEL:
                     notimplemented(instr, f'typechecking {InstructionType.LABEL}')
@@ -1263,18 +1280,18 @@ def typecheck(ir: IR) -> None:
                 case _:
                     assert_never(instr.type)
 
-    if stack:
-        error(
-            None,
-            f'stack is not empty: {len(stack)} items are unhandled',
-            stack=stack,
-        )
+        if stack:
+            error(
+                None,
+                f'stack is not empty: {len(stack)} items are unhandled',
+                stack=stack,
+            )
 
-    if block_stack:
-        unreachable(
-            None,
-            block_stack=block_stack,
-        )
+        if block_stack:
+            unreachable(
+                None,
+                block_stack=block_stack,
+            )
 
 
 def interpret(ir: IR) -> None:
@@ -1744,9 +1761,9 @@ def translate(ir: IR) -> str:
             else:
                 unreachable(instr)
 
-    block_stack: list[Block] = []
     sb_global = StringBuilder()
     sb_global += f'#include <stdio.h>\n'
+    sb_global += f'#include <stdbool.h>\n'
 
     for proc in ir.procs:
         sb = StringBuilder()
@@ -1757,7 +1774,7 @@ def translate(ir: IR) -> str:
         stack: Stack = []
 
         ret = f'ret_{proc.name}'
-        sb_header += f'{ret} {proc.name}('
+        sb_header += f'{ret} proc_{proc.name}('
         for i, t in enumerate(proc.ins):
             name = get_varname('arg')
             if i > 0:
@@ -1765,13 +1782,14 @@ def translate(ir: IR) -> str:
             sb_header += f'{c_type(t)} {name}'
             stack.append(StackEntry(t, name, t.tok))
         sb_header += ') {\n'
-        sb_struct += f'struct {ret} {{\n'
+        sb_struct += f'typedef struct {{\n'
         for i, t in enumerate(proc.outs):
             name = f'_{i}'
             sb_struct += f'  {c_type(t)} {name};\n'
-        sb_struct += '};\n'
+        sb_struct += f'}} {ret};\n'
         indent = 2
 
+        block_stack: list[Block] = []
         for ip, instr in enumerate(instrs):
             ip += 1
             match instr.type:
@@ -1796,7 +1814,7 @@ def translate(ir: IR) -> str:
 
                     ret_var = f'res_{proc_called.name}'
                     ret_type = f'ret_{proc_called.name}'
-                    sb += f'{'':{indent}}{ret_type} {ret_var} = {proc_called.name}('
+                    sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called.name}('
                     for i, arg in enumerate(stack[len(stack) - len(proc_called.ins) :]):
                         if i > 0:
                             sb += ', '
@@ -1896,7 +1914,7 @@ def translate(ir: IR) -> str:
 
                 case InstructionType.RET:
                     ret_type = f'ret_{proc.name}'
-                    sb += f'{'':{indent}}return {ret_type} {{\n'
+                    sb += f'{'':{indent}}return ({ret_type}){{\n'
                     indent += 2
                     for i, x in enumerate(stack):
                         sb += f'{'':{indent}}._{i} = {x.val},\n'
@@ -2251,15 +2269,26 @@ def translate(ir: IR) -> str:
         if stack:
             unreachable(None, stack=stack)
 
+        if block_stack:
+            unreachable(None, block_stack=block_stack)
+
         sb += '}\n'
         sb_global += str(sb_struct)
         sb_global += str(sb_header)
         sb_global += str(sb)
 
-    if block_stack:
-        unreachable(None, block_stack=block_stack)
+    sb_global += 'int main() {\n'
+    sb_global += '  proc_main();\n'
+    sb_global += '  return 0;\n'
+    sb_global += '}\n'
 
     code = str(sb_global)
+
+    trace(
+        loc_unknown,
+        'Generated C code:',
+        generated_code=code,
+    )
     return code
 
 
@@ -2272,15 +2301,8 @@ def repl() -> None:
             if line == 'q':
                 break
 
-            loc = Loc('<repl>', 0, 0)
-            toks = [*tokenize(line, filename='<repl>')]
+            toks = tokenize(line, filename='<repl>')
             ir = compile(toks)
-            trace(
-                loc,
-                'before typechecking and running',
-                Tokens=toks,
-                IR=ir,
-            )
             typecheck(ir)
             interpret(ir)
 
@@ -2292,36 +2314,44 @@ def repl() -> None:
             traceback.print_exc()
 
 
-def run_file(file: str) -> None:
-    with open(file, 'rt') as f:
-        text = f.read()
+def run_cmd(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
 
-    loc = Loc(file, 0, 0)
-    toks = [*tokenize(text, filename=file)]
-    trace(
-        loc,
-        f'file: {file}',
-        Tokens=toks,
+    cmd = subprocess.list2cmdline(cmds)
+    print(f'[CMD] {cmd}')
+    res = subprocess.run(
+        cmds,
+        capture_output=True,
+        universal_newlines=True,
     )
-    ir = compile(toks)
-    trace(
-        loc,
-        f'file: {file}',
-        IR=ir,
-    )
-    typecheck(ir)
-    gen_code = translate(ir)
+    out = res.stdout
+    err = res.stderr
+    if out:
+        print(f'[STDOUT]:')
+        print(out)
+    if err:
+        print(f'[STDERR]:')
+        print(err)
+    return res.returncode
 
-    trace(
-        loc,
-        'Generated C code:',
-        generated_code=gen_code,
-    )
+
+def run_lang(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
+
+    cmd = subprocess.list2cmdline([*args])
+    print(f'[CMD] {cmd}')
+
     try:
-        interpret(ir)
-    except Exception:
-        traceback.print_exc()
-        raise SystemExit(69)
+        main(shlex.split(cmd)[2:])
+    except SystemExit as e:
+        code = e.code
+        match code:
+            case int():
+                return code
+            case str():
+                return 1
+            case None:
+                return 0
+    else:
+        return 0
 
 
 def main(argv: list[str]) -> None:
@@ -2331,12 +2361,18 @@ def main(argv: list[str]) -> None:
     def usage() -> None:
         usage_short()
         print(f'Options:')
-        print(f'  -h --help       print this help message')
-        print(f'  -l <level>      log level: ERROR,WARN,INFO,TRACE')
+        print(f'  -h --help                   print this help message')
+        print(f'  -l <level>                  log level: ERROR,WARN,INFO,TRACE')
         print(f'Subcommands:')
-        print(f'  run FILE        run a file')
-        print(f'    FILE            a file to run')
-        print(f'  repl            start a Read-Eval-Print-Loop')
+        print(f'  run FILE                  interpret')
+        print(f'    FILE                      a file to interpret')
+        print(f'    OPTIONS:')
+        print(f'  build [OPTIONS] FILE      build')
+        print(f'    FILE                      a file to build')
+        print(f'    OPTIONS:')
+        print(f'      -o FILE                 where to put built binary')
+        print(f'      -r                      also run the binary')
+        print(f'  repl                      start a Read-Eval-Print-Loop')
 
     global log_level
 
@@ -2387,7 +2423,78 @@ def main(argv: list[str]) -> None:
             usage_short()
             print(f'[ERROR] unrecognized arguments: {argv}')
             sys.exit(2)
-        run_file(filename)
+
+        with open(filename, 'rt') as f:
+            text = f.read()
+        toks = tokenize(text, filename=filename)
+        ir = compile(toks)
+        typecheck(ir)
+
+        try:
+            interpret(ir)
+        except Exception:
+            traceback.print_exc()
+            raise SystemExit(69)
+
+        sys.exit(0)
+
+    elif subcmd == 'build':
+        file_out = ''
+        should_run = False
+
+        while len(argv) > 0:
+            if argv[0] == '-h':
+                usage()
+                sys.exit(0)
+
+            elif argv[0] == '-o':
+                _, *argv = argv
+                if len(argv) < 1:
+                    usage_short()
+                    print(f'[ERROR] no output file specified')
+                    sys.exit(2)
+                file_out, *argv = argv
+
+            elif argv[0] == '-r':
+                should_run = True
+                argv = argv[1:]
+
+            else:
+                break
+
+        if len(argv) < 1:
+            usage_short()
+            print(f'[ERROR] no file specified')
+            sys.exit(2)
+
+        filename, *argv = argv
+        if file_out == '':
+            file_out = filename + '.out'
+
+        if len(argv) > 0:
+            usage_short()
+            print(f'[ERROR] unrecognized arguments: {argv}')
+            sys.exit(2)
+
+        with open(filename, 'rt') as f:
+            text = f.read()
+        toks = tokenize(text, filename=filename)
+        ir = compile(toks)
+        typecheck(ir)
+
+        code = translate(ir)
+        with open(filename + '.c', 'wt') as f:
+            _ = f.write(code)
+
+        ret = run_cmd('gcc', filename + '.c', '-o', file_out)
+        if ret != 0:
+            error(Loc('<cli>', 1, 0), f'gcc failed with exit code {ret}')
+
+        if should_run:
+            ret = run_cmd(f'./{file_out}')
+            if ret != 0:
+                error(Loc('<cli>', 1, 0), f'{file_out} failed with exit code {ret}')
+
         sys.exit(0)
 
     elif subcmd == 'repl':
