@@ -189,7 +189,6 @@ cli_examples = [
     '-l WARN run examples/01_simple.lang',
     '-l INFO run examples/01_simple.lang',
     '-l ERROR run examples/01_simple.lang',
-    '-l DEFAULT run examples/01_simple.lang',
     #
     '-l TRACE run examples/02_while.lang',
     '-l TRACE build -r examples/02_while.lang',

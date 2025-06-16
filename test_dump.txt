@@ -1064,25 +1064,29 @@ false
 [CODE] '"" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[EXIT CODE] 1
+[LOC] lang.py:563:0
+[EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[EXIT CODE] 1
+[LOC] lang.py:563:0
+[EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[EXIT CODE] 1
+[LOC] lang.py:563:0
+[EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:0: not implemented: string literals
-[EXIT CODE] 1
+[LOC] lang.py:563:0
+[EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\"" ?'
@@ -1436,7 +1440,7 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py lang.py -l LOL run examples/01_simple.lang
 [STDOUT]:
-[ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE', 'DEFAULT']
+[ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE']
 
 [EXIT CODE] 1
 ============================================================
@@ -1468,26 +1472,6 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py lang.py -l ERROR run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT():3@examples/01_simple.lang:1:6
-
-[EXIT CODE] 0
-============================================================
-[CMD] py lang.py -l DEFAULT run examples/01_simple.lang
-[STDOUT]:
-[INFO] examples/01_simple.lang:1:4: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.lang:1:0
-      1. INT()@examples/01_simple.lang:1:2
-[INFO] examples/01_simple.lang:1:8: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.lang:1:6
-[INFO] examples/01_simple.lang:1:4: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@examples/01_simple.lang:1:0
-      1. INT():2@examples/01_simple.lang:1:2
-[INFO] examples/01_simple.lang:1:8: Stack at runtime:
-[NOTE] stack:
-      0. INT():3@examples/01_simple.lang:1:6
 [PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0

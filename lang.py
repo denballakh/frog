@@ -49,7 +49,6 @@ class TokenType(Enum):
     BOOL = auto()
     CHAR = auto()
     STR = auto()
-    # FLOAT = auto()
     WORD = auto()
     KEYWORD = auto()
 
@@ -283,6 +282,10 @@ def note(**notes: Any) -> None:
                     for line in v.splitlines():
                         print(f'    {line}')
 
+RC_OK = 0
+RC_ERROR = 1
+RC_USAGE = 2
+RC_INTERNAL_ERROR = 3
 
 LL_ERROR = 0
 LL_WARN = 1
@@ -291,58 +294,100 @@ LL_TRACE = 3
 
 LL_DEFAULT = LL_INFO
 log_level = LL_INFO
+log_locations = False
 
 LL = {
     'ERROR': LL_ERROR,
     'WARN': LL_WARN,
     'INFO': LL_INFO,
     'TRACE': LL_TRACE,
-    'DEFAULT': LL_DEFAULT,
 }
 
+LL_FROM_INT = {v: k for k, v in LL.items()}
 
-def error(loc: _Locatable, msg: str, exitcode: int = 1, **notes: Any) -> Never:
-    if log_level >= LL_ERROR:
-        msg = f'[ERROR] {_locatable_to_loc(loc)}: {msg}'
-        print(msg)
+
+def get_caller_loc() -> Loc:
+    ignored_funcs = {
+        get_caller_loc,
+        _log,
+        error,
+        warn,
+        info,
+        trace,
+        typecheck_has_a_bug,
+        unreachable,
+        notimplemented,
+    }
+    ignored_func_names = {func.__name__ for func in ignored_funcs}
+
+    frame = sys._getframe(0)
+    while frame and frame.f_code.co_name in ignored_func_names:
+        frame = frame.f_back
+    
+    if frame is None:
+        print(f'[FATAL] wtf is that')
+        sys.exit(RC_INTERNAL_ERROR)
+
+    file = Path(frame.f_code.co_filename)
+    root = Path(__file__).parent
+
+    if not file.is_relative_to(root):
+        filename = str(file)
+    else:
+        filename = str(file.relative_to(root))
+
+    return Loc(filename, frame.f_lineno, 0)
+
+
+def _log(
+    level: int,
+    loc: _Locatable,
+    msg: str,
+    orig_loc: Loc | bool | None = None,
+    **notes: Any,
+) -> None:
+    if log_level >= level:
+        print(f'[{LL_FROM_INT[level]}] {_locatable_to_loc(loc)}: {msg}')
+        if orig_loc is None and log_locations or orig_loc is True:
+            orig_loc = get_caller_loc()
+        if orig_loc is not None:
+            print(f'[LOC] {orig_loc}')
         note(**notes)
+
+
+def error(loc: _Locatable, msg: str, exitcode: int = RC_ERROR, **notes: Any) -> Never:
+    _log(LL_ERROR, loc, msg, **notes)
     sys.exit(exitcode)
 
 
 def warn(loc: _Locatable, msg: str, **notes: Any) -> None:
-    if log_level >= LL_WARN:
-        msg = f'[WARN] {_locatable_to_loc(loc)}: {msg}'
-        print(msg)
-        note(**notes)
+    _log(LL_WARN, loc, msg, **notes)
 
 
 def info(loc: _Locatable, msg: str, **notes: Any) -> None:
-    if log_level >= LL_INFO:
-        print(f'[INFO] {_locatable_to_loc(loc)}: {msg}')
-        note(**notes)
+    _log(LL_INFO, loc, msg, **notes)
 
 
 def trace(loc: _Locatable, msg: str, **notes: Any) -> None:
-    if log_level >= LL_TRACE:
-        print(f'[TRACE] {_locatable_to_loc(loc)}: {msg}')
-        note(**notes)
+    _log(LL_TRACE, loc, msg, **notes)
 
 
 def typecheck_has_a_bug(loc: _Locatable, msg: str, **notes: Any) -> Never:
-    error(
-        loc,
-        f'this should not happen because this must have been caugth at typecheck time: {msg}',
-        **notes,
-    )
+    msg = f'typecheck has a bug: {msg}'
+    _log(LL_ERROR, loc, msg, orig_loc=True, **notes)
+    sys.exit(RC_INTERNAL_ERROR)
 
 
 def unreachable(loc: _Locatable, msg: str = '<?>', **notes: Any) -> Never:
-    traceback.print_stack(file=sys.stdout)
-    error(loc, f'unreachable: {msg}', **notes)
+    msg = f'unreachable: {msg}'
+    _log(LL_ERROR, loc, msg, orig_loc=True, **notes)
+    sys.exit(RC_INTERNAL_ERROR)
 
 
 def notimplemented(loc: _Locatable, msg: str) -> Never:
-    error(loc, f'not implemented: {msg}')
+    msg = f'not implemented: {msg}'
+    _log(LL_ERROR, loc, msg, orig_loc=True)
+    sys.exit(RC_INTERNAL_ERROR)
 
 
 def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
@@ -2559,14 +2604,14 @@ def main(argv: list[str]) -> None:
     while argv:
         if argv[0] == '-h' or argv[0] == '--help':
             usage()
-            sys.exit(0)
+            sys.exit(RC_OK)
 
         elif argv[0] == '-l':
             _, *argv = argv
             if len(argv) < 1:
                 usage_short()
                 print(f'[ERROR] no log level specified')
-                sys.exit(2)
+                sys.exit(RC_USAGE)
 
             ll_str, *argv = argv
             if ll_str not in LL:
@@ -2579,7 +2624,7 @@ def main(argv: list[str]) -> None:
     if len(argv) < 1:
         usage_short()
         print(f'[ERROR] no subcommand specified')
-        sys.exit(2)
+        sys.exit(RC_USAGE)
 
     subcmd, *argv = argv
 
@@ -2587,7 +2632,7 @@ def main(argv: list[str]) -> None:
         while len(argv) > 0:
             if argv[0] == '-h':
                 usage()
-                sys.exit(0)
+                sys.exit(RC_OK)
 
             else:
                 break
@@ -2595,7 +2640,7 @@ def main(argv: list[str]) -> None:
         if len(argv) < 1:
             usage_short()
             print(f'[ERROR] no file specified')
-            sys.exit(2)
+            sys.exit(RC_USAGE)
 
         file_src = Path(argv[0])
         argv = argv[1:]
@@ -2603,11 +2648,11 @@ def main(argv: list[str]) -> None:
         if len(argv) > 0:
             usage_short()
             print(f'[ERROR] unrecognized arguments: {argv}')
-            sys.exit(2)
+            sys.exit(RC_USAGE)
 
         if not file_src.exists():
             print(f'[ERROR] file {file_src} does not exist')
-            sys.exit(1)
+            sys.exit(RC_ERROR)
 
         text = file_src.read_text()
         toks = tokenize(text, filename=str(file_src))
@@ -2618,9 +2663,9 @@ def main(argv: list[str]) -> None:
             interpret(ir)
         except Exception:
             traceback.print_exc()
-            raise SystemExit(69)
+            sys.exit(RC_INTERNAL_ERROR)
 
-        sys.exit(0)
+        sys.exit(RC_OK)
 
     elif subcmd == 'build':
         file_out: Path | None = None
@@ -2629,14 +2674,14 @@ def main(argv: list[str]) -> None:
         while len(argv) > 0:
             if argv[0] == '-h':
                 usage()
-                sys.exit(0)
+                sys.exit(RC_OK)
 
             elif argv[0] == '-o':
                 _, *argv = argv
                 if len(argv) < 1:
                     usage_short()
                     print(f'[ERROR] no output file specified')
-                    sys.exit(2)
+                    sys.exit(RC_USAGE)
                 file_out = Path(argv[0])
                 argv = argv[1:]
 
@@ -2650,7 +2695,7 @@ def main(argv: list[str]) -> None:
         if len(argv) < 1:
             usage_short()
             print(f'[ERROR] no file specified')
-            sys.exit(2)
+            sys.exit(RC_USAGE)
 
         file_src = Path(argv[0])
         argv = argv[1:]
@@ -2662,11 +2707,11 @@ def main(argv: list[str]) -> None:
         if len(argv) > 0:
             usage_short()
             print(f'[ERROR] unrecognized arguments: {argv}')
-            sys.exit(2)
+            sys.exit(RC_USAGE)
 
         if not file_src.exists():
             print(f'[ERROR] file {file_src} does not exist')
-            sys.exit(1)
+            sys.exit(RC_ERROR)
 
         text = file_src.read_text()
         toks = tokenize(text, filename=str(file_src))
@@ -2686,16 +2731,16 @@ def main(argv: list[str]) -> None:
             if ret != 0:
                 error(Loc('<cli>', 1, 0), f'{file_out} failed with exit code {ret}')
 
-        sys.exit(0)
+        sys.exit(RC_OK)
 
     elif subcmd == 'repl':
         repl()
-        sys.exit(0)
+        sys.exit(RC_OK)
 
     else:
         usage_short()
         print(f'[ERROR] unknown subcommand: {subcmd}')
-        sys.exit(2)
+        sys.exit(RC_USAGE)
 
 
 if __name__ == '__main__':
