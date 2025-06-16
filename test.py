@@ -180,14 +180,15 @@ cli_examples = [
     '-h',
     '--help',
     'run',
-    'run -f p1.lang',
-    'run -l TRACE',
-    'run -l TRACE -f p1.lang',
-    'run -l LOL -f p1.lang',
-    'run -l WARN -f p1.lang',
-    'run -l INFO -f p1.lang',
-    'run -l ERROR -f p1.lang',
-    'run -l DEFAULT -f p1.lang',
+    'run p1.lang',
+    '-l',
+    '-l TRACE run',
+    '-l TRACE run p1.lang',
+    '-l LOL run p1.lang',
+    '-l WARN run p1.lang',
+    '-l INFO run p1.lang',
+    '-l ERROR run p1.lang',
+    '-l DEFAULT run p1.lang',
 ]
 
 src = ROOT / 'lang.py'
@@ -203,8 +204,8 @@ for code in tqdm(code_examples):
         _ = tmp.write_text(code)
         print('=' * 60)
         print(f'[CODE] {code!r}')
-        # res = run_cmd('py', src, 'run', '-f', tmp)
-        res = run_lang('py', src, 'run', '-f', tmp)
+        # res = run_cmd('py', src, 'run', tmp)
+        res = run_lang('py', src, 'run', tmp)
         print(f'[EXIT CODE] {res}')
         print()
 

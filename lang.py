@@ -228,11 +228,11 @@ def note(**notes: Any) -> None:
 
             case str():
                 for line in v.splitlines():
-                    print(f'         {line}')
+                    print(f'{line}')
 
             case _:
                 for line in pp(v).splitlines():
-                    print(f'         {line}')
+                    print(f'{line}')
 
 
 LL_ERROR = 0
@@ -252,12 +252,12 @@ LL = {
 }
 
 
-def error(loc: _Locatable, msg: str, **notes: Any) -> Never:
+def error(loc: _Locatable, msg: str, exitcode: int = 1, **notes: Any) -> Never:
     if log_level >= LL_ERROR:
         msg = f'[ERROR] {_locatable_to_loc(loc)}: {msg}'
         print(msg)
         note(**notes)
-    raise SystemExit(1)
+    sys.exit(exitcode)
 
 
 def warn(loc: _Locatable, msg: str, **notes: Any) -> None:
@@ -2053,80 +2053,85 @@ def run_file(file: str) -> None:
 
 
 def main(argv: list[str]) -> None:
-    def unshift(msg: str = 'expected arg') -> str:
-        if not argv:
-            error(Loc('<cli>', 1, 0), msg)
-        res, argv[:] = argv[0], argv[1:]
-        return res
+    # def unshift(msg: str = 'expected arg') -> str:
+    #     if not argv:
+    #         error(Loc('<cli>', 1, 0), msg)
+    #     res, argv[:] = argv[0], argv[1:]
+    #     return res
 
     def usage() -> None:
-        print(f'Usage: py lang.py SUBCOMMAND [OPTIONS] <ARGS>')
+        print(f'Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>')
+        print(f'Options:')
+        print(f'  -h --help       print this help message')
+        print(f'  -l <level>      log level: ERROR,WARN,INFO,TRACE')
         print(f'Subcommands:')
-        print(f'  help        print this help message')
-        print(f'  run -f FILE    run a file')
-        print(f'  repl        start a Read-Eval-Print-Loop')
-        print(f'OPTIONS:')
-        print(f'  -f <file>   file to run')
-        print(f'  -l <level>  log level: ERROR, WARN, INFO, DEBUG, TRACE')
+        print(f'  run FILE        run a file')
+        print(f'    FILE            a file to run')
+        print(f'  repl            start a Read-Eval-Print-Loop')
 
-    subcmd = ''
-    file = ''
+    def usage_short() -> None:
+        print(f'Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>')
+
     global log_level
-    cmd_log_level = LL_DEFAULT
 
     while argv:
-        arg = unshift()
-        if arg in {'-h', '--help'}:
+        if argv[0] == '-h' or argv[0] == '--help':
             usage()
             sys.exit(0)
 
-        elif arg == '-l':
-            log_level_str = unshift('expected log level after `-l`')
-            if log_level_str not in LL:
-                error(Loc('<cli>', 1, 0), f'invalid log level: {log_level_str}, expected one of {list(LL)}')
-            cmd_log_level = LL[log_level_str]
-
-        elif arg == '-f':
-            file = unshift('expected file after `-f`')
-
-        elif arg in {'run', 'repl'}:
-            if subcmd:
-                usage()
-                print(f'[ERROR] multiple subcommands specified')
+        elif argv[0] == '-l':
+            _, *argv = argv
+            if len(argv) < 1:
+                usage_short()
+                print(f'[ERROR] no log level specified')
                 sys.exit(2)
-            subcmd = arg
+
+            ll_str, *argv = argv
+            if ll_str not in LL:
+                error(Loc('<cli>', 1, 0), f'invalid log level: {ll_str}, expected one of {list(LL)}')
+            log_level = LL[ll_str]
 
         else:
-            usage()
-            print(f'[ERROR] unknown argument: {arg}')
-            sys.exit(2)
+            break
 
-    if subcmd == '':
-        usage()
+    if len(argv) < 1:
+        usage_short()
         print(f'[ERROR] no subcommand specified')
         sys.exit(2)
 
-    match subcmd:
-        case 'run':
-            log_level = cmd_log_level
-            if file == '':
+    subcmd, *argv = argv
+
+    if subcmd == 'run':
+        while len(argv) > 0:
+            if argv[0] == '-h':
                 usage()
-                print(f'[ERROR] no file specified')
-                sys.exit(2)
-            run_file(file)
-            sys.exit(0)
+                sys.exit(0)
 
-        case 'repl':
-            log_level = cmd_log_level
-            repl()
-            sys.exit(0)
+            else:
+                break
 
-        case _:
-            usage()
-            print(f'[ERROR] unknown subcommand: {subcmd}')
+        if len(argv) < 1:
+            usage_short()
+            print(f'[ERROR] no file specified')
             sys.exit(2)
 
-    assert_never(0)  # pyright: ignore[reportUnreachable]
+        filename, *argv = argv
+
+        if len(argv) > 0:
+            usage_short()
+            print(f'[ERROR] unrecognized arguments: {argv}')
+            sys.exit(2)
+        run_file(filename)
+        sys.exit(0)
+
+    elif subcmd == 'repl':
+        repl()
+        sys.exit(0)
+
+    else:
+        usage_short()
+        print(f'[ERROR] unknown subcommand: {subcmd}')
+        sys.exit(2)
 
 
 if __name__ == '__main__':

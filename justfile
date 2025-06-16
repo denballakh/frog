@@ -21,6 +21,6 @@ run file: check
 repl: check
     python lang.py repl
 
-test: check
+test: && check
     python test.py
 
