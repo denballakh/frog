@@ -1,7 +1,7 @@
 ============================================================
 [CODE] '1 2 + print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:3@tmp.lang:1:4
+[PRINT] INT():3@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -16,7 +16,7 @@
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:2: not enough items on stack for IntrinsicType.ADD: it expects two INTs on the stack
 [NOTE] stack:
-      0. INT@tmp.lang:1:0
+      0. INT()@tmp.lang:1:0
 [EXIT CODE] 1
 
 ============================================================
@@ -24,7 +24,7 @@
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
-      0. INT@tmp.lang:1:4
+      0. INT()@tmp.lang:1:4
 [NOTE] outs: (empty)
 [EXIT CODE] 1
 
@@ -35,69 +35,69 @@
 [NOTE] stack: (empty)
 [INFO] tmp.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
+      0. INT()@tmp.lang:1:2
 [INFO] tmp.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:6
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:6
 [INFO] tmp.lang:1:12: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:6
-      2. INT@tmp.lang:1:10
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:6
+      2. INT()@tmp.lang:1:10
 [INFO] tmp.lang:1:16: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:6
-      2. INT@tmp.lang:1:10
-      3. INT@tmp.lang:1:14
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:6
+      2. INT()@tmp.lang:1:10
+      3. INT()@tmp.lang:1:14
 [INFO] tmp.lang:1:20: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:6
-      2. INT@tmp.lang:1:18
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:6
+      2. INT()@tmp.lang:1:18
 [INFO] tmp.lang:1:24: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:22
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:22
 [INFO] tmp.lang:1:28: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:26
+      0. INT()@tmp.lang:1:26
 [INFO] tmp.lang:1:36: Stack at compile time:
 [NOTE] stack: (empty)
 [INFO] tmp.lang:1:0: Stack at runtime:
 [NOTE] stack: (empty)
 [INFO] tmp.lang:1:4: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:2
+      0. INT():1@tmp.lang:1:2
 [INFO] tmp.lang:1:8: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:2
-      1. INT:2@tmp.lang:1:6
+      0. INT():1@tmp.lang:1:2
+      1. INT():2@tmp.lang:1:6
 [INFO] tmp.lang:1:12: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:2
-      1. INT:2@tmp.lang:1:6
-      2. INT:3@tmp.lang:1:10
+      0. INT():1@tmp.lang:1:2
+      1. INT():2@tmp.lang:1:6
+      2. INT():3@tmp.lang:1:10
 [INFO] tmp.lang:1:16: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:2
-      1. INT:2@tmp.lang:1:6
-      2. INT:3@tmp.lang:1:10
-      3. INT:4@tmp.lang:1:14
+      0. INT():1@tmp.lang:1:2
+      1. INT():2@tmp.lang:1:6
+      2. INT():3@tmp.lang:1:10
+      3. INT():4@tmp.lang:1:14
 [INFO] tmp.lang:1:20: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:2
-      1. INT:2@tmp.lang:1:6
-      2. INT:7@tmp.lang:1:18
+      0. INT():1@tmp.lang:1:2
+      1. INT():2@tmp.lang:1:6
+      2. INT():7@tmp.lang:1:18
 [INFO] tmp.lang:1:24: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:2
-      1. INT:9@tmp.lang:1:22
+      0. INT():1@tmp.lang:1:2
+      1. INT():9@tmp.lang:1:22
 [INFO] tmp.lang:1:28: Stack at runtime:
 [NOTE] stack:
-      0. INT:10@tmp.lang:1:26
-[PRINT] INT:10@tmp.lang:1:26
+      0. INT():10@tmp.lang:1:26
+[PRINT] INT():10@tmp.lang:1:26
 [INFO] tmp.lang:1:36: Stack at runtime:
 [NOTE] stack: (empty)
 [EXIT CODE] 0
@@ -133,7 +133,7 @@
 ============================================================
 [CODE] '25 7 + print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:32@tmp.lang:1:5
+[PRINT] INT():32@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -146,7 +146,7 @@
 ============================================================
 [CODE] '25 7 - print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:18@tmp.lang:1:5
+[PRINT] INT():18@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -159,7 +159,7 @@
 ============================================================
 [CODE] '25 7 * print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:175@tmp.lang:1:5
+[PRINT] INT():175@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -172,7 +172,7 @@
 ============================================================
 [CODE] '25 7 / print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:3@tmp.lang:1:5
+[PRINT] INT():3@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -186,14 +186,14 @@
 [CODE] '2 0 / print'
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:4: division by zero
-[NOTE] a: INT:2@tmp.lang:1:0
-[NOTE] b: INT:0@tmp.lang:1:2
+[NOTE] a: INT():2@tmp.lang:1:0
+[NOTE] b: INT():0@tmp.lang:1:2
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '25 7 % print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:4@tmp.lang:1:5
+[PRINT] INT():4@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -208,14 +208,14 @@
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:5
-      1. INT@tmp.lang:1:5
+      0. INT()@tmp.lang:1:5
+      1. INT()@tmp.lang:1:5
 [INFO] tmp.lang:1:8: Stack at runtime:
 [NOTE] stack:
-      0. INT:3@tmp.lang:1:5
-      1. INT:4@tmp.lang:1:5
-[PRINT] INT:4@tmp.lang:1:5
-[PRINT] INT:3@tmp.lang:1:5
+      0. INT():3@tmp.lang:1:5
+      1. INT():4@tmp.lang:1:5
+[PRINT] INT():4@tmp.lang:1:5
+[PRINT] INT():3@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -229,7 +229,7 @@
 ============================================================
 [CODE] '25 7 << print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:3200@tmp.lang:1:5
+[PRINT] INT():3200@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -242,7 +242,7 @@
 ============================================================
 [CODE] '25 7 >> print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:0@tmp.lang:1:5
+[PRINT] INT():0@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -255,7 +255,7 @@
 ============================================================
 [CODE] '25 7 | print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:31@tmp.lang:1:5
+[PRINT] INT():31@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -268,7 +268,7 @@
 ============================================================
 [CODE] '25 7 & print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:1@tmp.lang:1:5
+[PRINT] INT():1@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -281,7 +281,7 @@
 ============================================================
 [CODE] '25 7 ^ print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:30@tmp.lang:1:5
+[PRINT] INT():30@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -294,7 +294,7 @@
 ============================================================
 [CODE] '25 ~ print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:-26@tmp.lang:1:3
+[PRINT] INT():-26@tmp.lang:1:3
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -307,79 +307,79 @@
 ============================================================
 [CODE] 'true 5 + print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot add/subtract BOOL and INT
+[ERROR] tmp.lang:1:7: cannot add/subtract BOOL() and INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 * print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot multiply/divide BOOL by INT
+[ERROR] tmp.lang:1:7: cannot multiply/divide BOOL() by INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 % print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot modulo BOOL by INT
+[ERROR] tmp.lang:1:7: cannot modulo BOOL() by INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 | print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot bitwise or/and/xor BOOL with INT
+[ERROR] tmp.lang:1:7: cannot bitwise or/and/xor BOOL() with INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 << print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot shift BOOL by INT
+[ERROR] tmp.lang:1:7: cannot shift BOOL() by INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 && print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot and/or BOOL with INT
+[ERROR] tmp.lang:1:7: cannot and/or BOOL() with INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 ! print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot not INT
+[ERROR] tmp.lang:1:7: cannot not INT()
 [NOTE] stack:
-      0. BOOL@tmp.lang:1:0
+      0. BOOL()@tmp.lang:1:0
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 swap ~ print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:12: cannot bitwise not an BOOL
+[ERROR] tmp.lang:1:12: cannot bitwise not an BOOL()
 [NOTE] stack:
-      0. INT@tmp.lang:1:5
+      0. INT()@tmp.lang:1:5
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 == print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot compare BOOL and INT
+[ERROR] tmp.lang:1:7: cannot compare BOOL() and INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 < print'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: cannot compare BOOL and INT
+[ERROR] tmp.lang:1:7: cannot compare BOOL() and INT()
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true false && print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:False@tmp.lang:1:11
+[PRINT] BOOL():False@tmp.lang:1:11
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -392,7 +392,7 @@ false
 ============================================================
 [CODE] 'true false || print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:True@tmp.lang:1:11
+[PRINT] BOOL():True@tmp.lang:1:11
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -405,7 +405,7 @@ true
 ============================================================
 [CODE] 'true ! print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:False@tmp.lang:1:5
+[PRINT] BOOL():False@tmp.lang:1:5
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -418,7 +418,7 @@ false
 ============================================================
 [CODE] 'false ! print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:True@tmp.lang:1:6
+[PRINT] BOOL():True@tmp.lang:1:6
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -431,7 +431,7 @@ true
 ============================================================
 [CODE] '1 2 == print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:False@tmp.lang:1:4
+[PRINT] BOOL():False@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -444,7 +444,7 @@ false
 ============================================================
 [CODE] '1 2 != print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:True@tmp.lang:1:4
+[PRINT] BOOL():True@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -457,7 +457,7 @@ true
 ============================================================
 [CODE] '1 2 < print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:True@tmp.lang:1:4
+[PRINT] BOOL():True@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -470,7 +470,7 @@ true
 ============================================================
 [CODE] '1 2 > print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:False@tmp.lang:1:4
+[PRINT] BOOL():False@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -483,7 +483,7 @@ false
 ============================================================
 [CODE] '1 2 <= print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:True@tmp.lang:1:4
+[PRINT] BOOL():True@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -496,7 +496,7 @@ true
 ============================================================
 [CODE] '1 2 >= print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:False@tmp.lang:1:4
+[PRINT] BOOL():False@tmp.lang:1:4
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -511,14 +511,14 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:0
-      1. INT@tmp.lang:1:2
+      0. INT()@tmp.lang:1:0
+      1. INT()@tmp.lang:1:2
 [INFO] tmp.lang:1:4: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:0
-      1. INT:2@tmp.lang:1:2
-[PRINT] INT:2@tmp.lang:1:2
-[PRINT] INT:1@tmp.lang:1:0
+      0. INT():1@tmp.lang:1:0
+      1. INT():2@tmp.lang:1:2
+[PRINT] INT():2@tmp.lang:1:2
+[PRINT] INT():1@tmp.lang:1:0
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -534,14 +534,14 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:6: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:0
-      1. INT@tmp.lang:1:0
+      0. INT()@tmp.lang:1:0
+      1. INT()@tmp.lang:1:0
 [INFO] tmp.lang:1:6: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:0
-      1. INT:1@tmp.lang:1:0
-[PRINT] INT:1@tmp.lang:1:0
-[PRINT] INT:1@tmp.lang:1:0
+      0. INT():1@tmp.lang:1:0
+      1. INT():1@tmp.lang:1:0
+[PRINT] INT():1@tmp.lang:1:0
+[PRINT] INT():1@tmp.lang:1:0
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -557,11 +557,11 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:0
+      0. INT()@tmp.lang:1:0
 [INFO] tmp.lang:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:0
-[PRINT] INT:1@tmp.lang:1:0
+      0. INT():1@tmp.lang:1:0
+[PRINT] INT():1@tmp.lang:1:0
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -576,14 +576,14 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:0
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:0
 [INFO] tmp.lang:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT:2@tmp.lang:1:2
-      1. INT:1@tmp.lang:1:0
-[PRINT] INT:1@tmp.lang:1:0
-[PRINT] INT:2@tmp.lang:1:2
+      0. INT():2@tmp.lang:1:2
+      1. INT():1@tmp.lang:1:0
+[PRINT] INT():1@tmp.lang:1:0
+[PRINT] INT():2@tmp.lang:1:2
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -599,17 +599,17 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:6: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:0
-      1. INT@tmp.lang:1:2
-      2. INT@tmp.lang:1:4
+      0. INT()@tmp.lang:1:0
+      1. INT()@tmp.lang:1:2
+      2. INT()@tmp.lang:1:4
 [INFO] tmp.lang:1:6: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@tmp.lang:1:0
-      1. INT:2@tmp.lang:1:2
-      2. INT:3@tmp.lang:1:4
-[PRINT] INT:3@tmp.lang:1:4
-[PRINT] INT:2@tmp.lang:1:2
-[PRINT] INT:1@tmp.lang:1:0
+      0. INT():1@tmp.lang:1:0
+      1. INT():2@tmp.lang:1:2
+      2. INT():3@tmp.lang:1:4
+[PRINT] INT():3@tmp.lang:1:4
+[PRINT] INT():2@tmp.lang:1:2
+[PRINT] INT():1@tmp.lang:1:0
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -626,17 +626,17 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:10: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:2
-      1. INT@tmp.lang:1:4
-      2. INT@tmp.lang:1:0
+      0. INT()@tmp.lang:1:2
+      1. INT()@tmp.lang:1:4
+      2. INT()@tmp.lang:1:0
 [INFO] tmp.lang:1:10: Stack at runtime:
 [NOTE] stack:
-      0. INT:2@tmp.lang:1:2
-      1. INT:3@tmp.lang:1:4
-      2. INT:1@tmp.lang:1:0
-[PRINT] INT:1@tmp.lang:1:0
-[PRINT] INT:3@tmp.lang:1:4
-[PRINT] INT:2@tmp.lang:1:2
+      0. INT():2@tmp.lang:1:2
+      1. INT():3@tmp.lang:1:4
+      2. INT():1@tmp.lang:1:0
+[PRINT] INT():1@tmp.lang:1:0
+[PRINT] INT():3@tmp.lang:1:4
+[PRINT] INT():2@tmp.lang:1:2
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -701,14 +701,14 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:10: condition part of InstructionType.IF should put exactly one BOOL on the stack
 [NOTE] expected_stack:
-      0. BOOL@tmp.lang:1:4
+      0. BOOL()@tmp.lang:1:4
 [NOTE] actual_stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 == do 5 else 7 end print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:7@tmp.lang:1:20
+[PRINT] INT():7@tmp.lang:1:20
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -721,7 +721,7 @@ false
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 end print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:5@tmp.lang:1:13
+[PRINT] INT():5@tmp.lang:1:13
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -736,10 +736,10 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:24: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
-      0. INT@tmp.lang:1:13
+      0. INT()@tmp.lang:1:13
 [NOTE] stack_else:
-      0. INT@tmp.lang:1:20
-      1. INT@tmp.lang:1:22
+      0. INT()@tmp.lang:1:20
+      1. INT()@tmp.lang:1:22
 [EXIT CODE] 1
 
 ============================================================
@@ -747,7 +747,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
-      0. INT@tmp.lang:1:20
+      0. INT()@tmp.lang:1:20
 [NOTE] outs: (empty)
 [EXIT CODE] 1
 
@@ -756,7 +756,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:20: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
-      0. INT@tmp.lang:1:13
+      0. INT()@tmp.lang:1:13
 [NOTE] stack_else: (empty)
 [EXIT CODE] 1
 
@@ -765,14 +765,14 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:1:15: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
-      0. INT@tmp.lang:1:13
+      0. INT()@tmp.lang:1:13
 [NOTE] stack_else: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 != do 5 print end'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:5@tmp.lang:1:13
+[PRINT] INT():5@tmp.lang:1:13
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -785,7 +785,7 @@ false
 ============================================================
 [CODE] '5 if 1 2 == do drop 7 end print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:5@tmp.lang:1:0
+[PRINT] INT():5@tmp.lang:1:0
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -798,7 +798,7 @@ false
 ============================================================
 [CODE] '5 if 1 2 != do drop 7 end print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:7@tmp.lang:1:20
+[PRINT] INT():7@tmp.lang:1:20
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -847,25 +847,25 @@ false
 ============================================================
 [CODE] 'if 1 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:5: InstructionType.DO expects one BOOL on the stack, but got INT
+[ERROR] tmp.lang:1:5: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:7: InstructionType.DO expects one BOOL on the stack, but got INT
+[ERROR] tmp.lang:1:7: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT@tmp.lang:1:3
+      0. INT()@tmp.lang:1:3
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 3 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:9: InstructionType.DO expects one BOOL on the stack, but got INT
+[ERROR] tmp.lang:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT@tmp.lang:1:3
-      1. INT@tmp.lang:1:5
+      0. INT()@tmp.lang:1:3
+      1. INT()@tmp.lang:1:5
 [EXIT CODE] 1
 
 ============================================================
@@ -874,7 +874,7 @@ false
 [ERROR] tmp.lang:1:12: condition part of InstructionType.IF should put exactly one BOOL on the stack
 [NOTE] expected_stack: (empty)
 [NOTE] actual_stack:
-      0. INT@tmp.lang:1:3
+      0. INT()@tmp.lang:1:3
 [EXIT CODE] 1
 
 ============================================================
@@ -896,27 +896,27 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:34: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:22
-[PRINT] INT:9@tmp.lang:1:22
+      0. INT()@tmp.lang:1:22
+[PRINT] INT():9@tmp.lang:1:22
 [INFO] tmp.lang:1:34: Stack at runtime:
 [NOTE] stack:
-      0. INT:9@tmp.lang:1:22
-[PRINT] INT:8@tmp.lang:1:22
+      0. INT():9@tmp.lang:1:22
+[PRINT] INT():8@tmp.lang:1:22
 [INFO] tmp.lang:1:34: Stack at runtime:
 [NOTE] stack:
-      0. INT:8@tmp.lang:1:22
-[PRINT] INT:7@tmp.lang:1:22
+      0. INT():8@tmp.lang:1:22
+[PRINT] INT():7@tmp.lang:1:22
 [INFO] tmp.lang:1:34: Stack at runtime:
 [NOTE] stack:
-      0. INT:7@tmp.lang:1:22
-[PRINT] INT:6@tmp.lang:1:22
+      0. INT():7@tmp.lang:1:22
+[PRINT] INT():6@tmp.lang:1:22
 [INFO] tmp.lang:1:34: Stack at runtime:
 [NOTE] stack:
-      0. INT:6@tmp.lang:1:22
-[PRINT] INT:5@tmp.lang:1:22
+      0. INT():6@tmp.lang:1:22
+[PRINT] INT():5@tmp.lang:1:22
 [INFO] tmp.lang:1:34: Stack at runtime:
 [NOTE] stack:
-      0. INT:5@tmp.lang:1:22
+      0. INT():5@tmp.lang:1:22
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -967,25 +967,25 @@ false
 ============================================================
 [CODE] 'while 1 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:8: InstructionType.DO expects one BOOL on the stack, but got INT
+[ERROR] tmp.lang:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:10: InstructionType.DO expects one BOOL on the stack, but got INT
+[ERROR] tmp.lang:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT@tmp.lang:1:6
+      0. INT()@tmp.lang:1:6
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 3 do end'
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:1:12: InstructionType.DO expects one BOOL on the stack, but got INT
+[ERROR] tmp.lang:1:12: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT@tmp.lang:1:6
-      1. INT@tmp.lang:1:8
+      0. INT()@tmp.lang:1:6
+      1. INT()@tmp.lang:1:8
 [EXIT CODE] 1
 
 ============================================================
@@ -994,7 +994,7 @@ false
 [ERROR] tmp.lang:1:15: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
 [NOTE] expected_stack: (empty)
 [NOTE] actual_stack:
-      0. INT@tmp.lang:1:6
+      0. INT()@tmp.lang:1:6
 [EXIT CODE] 1
 
 ============================================================
@@ -1093,7 +1093,7 @@ false
 ============================================================
 [CODE] '1 // comment \n print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:1@tmp.lang:1:0
+[PRINT] INT():1@tmp.lang:1:0
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1118,7 +1118,7 @@ false
 ============================================================
 [CODE] '\n    proc a int -- int do 2 * end\n    5 a print\n    '
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:10@tmp.lang:2:27
+[PRINT] INT():10@tmp.lang:2:27
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1145,7 +1145,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:19: not enough items on stack for IntrinsicType.MUL: it expects two INTs on the stack
 [NOTE] other_stack_items:
-      0. INT@tmp.lang:2:17
+      0. INT()@tmp.lang:2:17
 [EXIT CODE] 1
 
 ============================================================
@@ -1153,7 +1153,7 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:25: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
-      0. INT@tmp.lang:2:23
+      0. INT()@tmp.lang:2:23
 [NOTE] outs: (empty)
 [EXIT CODE] 1
 
@@ -1162,16 +1162,16 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:2:33: return type mismatch: expected 2 items on the stack, got 1
 [NOTE] stack:
-      0. INT@tmp.lang:2:31
+      0. INT()@tmp.lang:2:31
 [NOTE] outs:
-      0. INT
-      1. INT
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '\n    proc a int -- int do drop 5 end\n    5 a print\n    '
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:5@tmp.lang:2:30
+[PRINT] INT():5@tmp.lang:2:30
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1184,11 +1184,11 @@ false
 ============================================================
 [CODE] '\n    proc a bool -- int do drop 5 end\n    5 a print\n    '
 [CMD] py lang.py run tmp.lang
-[ERROR] tmp.lang:3:6: stack doesnt match at 0 for a: expected INT but got BOOL
+[ERROR] tmp.lang:3:6: stack doesnt match at 0 for a: expected INT() but got BOOL()
 [NOTE] stack:
-      0. INT@tmp.lang:3:4
+      0. INT()@tmp.lang:3:4
 [NOTE] ins:
-      0. BOOL
+      0. BOOL()
 [EXIT CODE] 1
 
 ============================================================
@@ -1196,16 +1196,16 @@ false
 [CMD] py lang.py run tmp.lang
 [ERROR] tmp.lang:3:6: stack too small for a: expected 2 but got 1
 [NOTE] stack:
-      0. INT@tmp.lang:3:4
+      0. INT()@tmp.lang:3:4
 [NOTE] ins:
-      0. INT
-      1. INT
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '\n    proc a int int -- int do + end\n    5 7 a print\n    '
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:12@tmp.lang:2:29
+[PRINT] INT():12@tmp.lang:2:29
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1220,25 +1220,25 @@ false
 [CMD] py lang.py run tmp.lang
 [INFO] tmp.lang:1:6: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:0
-      1. TYPE(INT)@tmp.lang:1:2
-[WARN] tmp.lang:1:8: redundant cast INT to INT
+      0. INT()@tmp.lang:1:0
+      1. TYPE(INT())@tmp.lang:1:2
+[WARN] tmp.lang:1:8: redundant cast INT() to INT()
 [INFO] tmp.lang:1:13: Stack at compile time:
 [NOTE] stack:
-      0. INT@tmp.lang:1:8
+      0. INT()@tmp.lang:1:8
 [INFO] tmp.lang:1:6: Stack at runtime:
 [NOTE] stack:
-      0. INT:5@tmp.lang:1:0
-      1. TYPE(INT):INT@tmp.lang:1:2
-[WARN] tmp.lang:1:8: redundant cast INT to INT
+      0. INT():5@tmp.lang:1:0
+      1. TYPE(INT()):INT()@tmp.lang:1:2
+[WARN] tmp.lang:1:8: redundant cast INT() to INT()
 [INFO] tmp.lang:1:13: Stack at runtime:
 [NOTE] stack:
-      0. INT:5@tmp.lang:1:8
-[PRINT] INT:5@tmp.lang:1:8
+      0. INT():5@tmp.lang:1:8
+[PRINT] INT():5@tmp.lang:1:8
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
-[WARN] tmp.lang:1:8: redundant cast INT to INT
-[WARN] tmp.lang:1:8: redundant cast INT to INT
+[WARN] tmp.lang:1:8: redundant cast INT() to INT()
+[WARN] tmp.lang:1:8: redundant cast INT() to INT()
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1249,7 +1249,7 @@ false
 ============================================================
 [CODE] '5 bool cast print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:True@tmp.lang:1:7
+[PRINT] BOOL():True@tmp.lang:1:7
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1262,7 +1262,7 @@ true
 ============================================================
 [CODE] '0 bool cast print'
 [CMD] py lang.py run tmp.lang
-[PRINT] BOOL:False@tmp.lang:1:7
+[PRINT] BOOL():False@tmp.lang:1:7
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1275,7 +1275,7 @@ false
 ============================================================
 [CODE] 'true int cast print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:1@tmp.lang:1:9
+[PRINT] INT():1@tmp.lang:1:9
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1288,7 +1288,7 @@ false
 ============================================================
 [CODE] 'false int cast print'
 [CMD] py lang.py run tmp.lang
-[PRINT] INT:0@tmp.lang:1:10
+[PRINT] INT():0@tmp.lang:1:10
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
 [CMD] gcc tmp.c -o tmp.exe
@@ -1301,13 +1301,13 @@ false
 ============================================================
 [CODE] 'false bool cast print'
 [CMD] py lang.py run tmp.lang
-[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
-[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
-[PRINT] BOOL:False@tmp.lang:1:11
+[WARN] tmp.lang:1:11: redundant cast BOOL() to BOOL()
+[WARN] tmp.lang:1:11: redundant cast BOOL() to BOOL()
+[PRINT] BOOL():False@tmp.lang:1:11
 [EXIT CODE] 0
 [CMD] py lang.py -l WARN build -r tmp.lang
-[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
-[WARN] tmp.lang:1:11: redundant cast BOOL to BOOL
+[WARN] tmp.lang:1:11: redundant cast BOOL() to BOOL()
+[WARN] tmp.lang:1:11: redundant cast BOOL() to BOOL()
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1418,19 +1418,19 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
       6. RET
 [INFO] examples/01_simple.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:0
-      1. INT@examples/01_simple.lang:1:2
+      0. INT()@examples/01_simple.lang:1:0
+      1. INT()@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:6
+      0. INT()@examples/01_simple.lang:1:6
 [INFO] examples/01_simple.lang:1:4: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@examples/01_simple.lang:1:0
-      1. INT:2@examples/01_simple.lang:1:2
+      0. INT():1@examples/01_simple.lang:1:0
+      1. INT():2@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at runtime:
 [NOTE] stack:
-      0. INT:3@examples/01_simple.lang:1:6
-[PRINT] INT:3@examples/01_simple.lang:1:6
+      0. INT():3@examples/01_simple.lang:1:6
+[PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
@@ -1442,7 +1442,7 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py lang.py -l WARN run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT:3@examples/01_simple.lang:1:6
+[PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
@@ -1450,25 +1450,25 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/01_simple.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:0
-      1. INT@examples/01_simple.lang:1:2
+      0. INT()@examples/01_simple.lang:1:0
+      1. INT()@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:6
+      0. INT()@examples/01_simple.lang:1:6
 [INFO] examples/01_simple.lang:1:4: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@examples/01_simple.lang:1:0
-      1. INT:2@examples/01_simple.lang:1:2
+      0. INT():1@examples/01_simple.lang:1:0
+      1. INT():2@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at runtime:
 [NOTE] stack:
-      0. INT:3@examples/01_simple.lang:1:6
-[PRINT] INT:3@examples/01_simple.lang:1:6
+      0. INT():3@examples/01_simple.lang:1:6
+[PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
 [CMD] py lang.py -l ERROR run examples/01_simple.lang
 [STDOUT]:
-[PRINT] INT:3@examples/01_simple.lang:1:6
+[PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
@@ -1476,19 +1476,19 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/01_simple.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:0
-      1. INT@examples/01_simple.lang:1:2
+      0. INT()@examples/01_simple.lang:1:0
+      1. INT()@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:6
+      0. INT()@examples/01_simple.lang:1:6
 [INFO] examples/01_simple.lang:1:4: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@examples/01_simple.lang:1:0
-      1. INT:2@examples/01_simple.lang:1:2
+      0. INT():1@examples/01_simple.lang:1:0
+      1. INT():2@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at runtime:
 [NOTE] stack:
-      0. INT:3@examples/01_simple.lang:1:6
-[PRINT] INT:3@examples/01_simple.lang:1:6
+      0. INT():3@examples/01_simple.lang:1:6
+[PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
@@ -1559,16 +1559,16 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
      27. END:8
      28. INTRINSIC:DROP
      29. RET
-[PRINT] INT:1@examples/02_while.lang:2:0
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT():1@examples/02_while.lang:2:0
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
 
 [EXIT CODE] 0
 ============================================================
@@ -1731,19 +1731,19 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/01_simple.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:0
-      1. INT@examples/01_simple.lang:1:2
+      0. INT()@examples/01_simple.lang:1:0
+      1. INT()@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:6
+      0. INT()@examples/01_simple.lang:1:6
 [INFO] examples/01_simple.lang:1:4: Stack at runtime:
 [NOTE] stack:
-      0. INT:1@examples/01_simple.lang:1:0
-      1. INT:2@examples/01_simple.lang:1:2
+      0. INT():1@examples/01_simple.lang:1:0
+      1. INT():2@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at runtime:
 [NOTE] stack:
-      0. INT:3@examples/01_simple.lang:1:6
-[PRINT] INT:3@examples/01_simple.lang:1:6
+      0. INT():3@examples/01_simple.lang:1:6
+[PRINT] INT():3@examples/01_simple.lang:1:6
 
 [EXIT CODE] 0
 ============================================================
@@ -1751,11 +1751,11 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/01_simple.lang:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:0
-      1. INT@examples/01_simple.lang:1:2
+      0. INT()@examples/01_simple.lang:1:0
+      1. INT()@examples/01_simple.lang:1:2
 [INFO] examples/01_simple.lang:1:8: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/01_simple.lang:1:6
+      0. INT()@examples/01_simple.lang:1:6
 [CMD] gcc examples/01_simple.c -o examples/01_simple.exe
 [CMD] ./examples/01_simple.exe
 [STDOUT]:
@@ -1766,16 +1766,16 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py lang.py run examples/02_while.lang
 [STDOUT]:
-[PRINT] INT:1@examples/02_while.lang:2:0
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
-[PRINT] INT:7@examples/02_while.lang:24:4
-[PRINT] INT:5@examples/02_while.lang:22:4
+[PRINT] INT():1@examples/02_while.lang:2:0
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
+[PRINT] INT():7@examples/02_while.lang:24:4
+[PRINT] INT():5@examples/02_while.lang:22:4
 
 [EXIT CODE] 0
 ============================================================
@@ -1800,21 +1800,21 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py lang.py run examples/03_fib.lang
 [STDOUT]:
-[PRINT] INT:1@examples/03_fib.lang:4:6
-[PRINT] INT:1@examples/03_fib.lang:2:44
-[PRINT] INT:2@examples/03_fib.lang:2:44
-[PRINT] INT:3@examples/03_fib.lang:2:44
-[PRINT] INT:5@examples/03_fib.lang:2:44
-[PRINT] INT:8@examples/03_fib.lang:2:44
-[PRINT] INT:13@examples/03_fib.lang:2:44
-[PRINT] INT:21@examples/03_fib.lang:2:44
-[PRINT] INT:34@examples/03_fib.lang:2:44
-[PRINT] INT:55@examples/03_fib.lang:2:44
-[PRINT] INT:89@examples/03_fib.lang:2:44
-[PRINT] INT:144@examples/03_fib.lang:2:44
-[PRINT] INT:233@examples/03_fib.lang:2:44
-[PRINT] INT:377@examples/03_fib.lang:2:44
-[PRINT] INT:610@examples/03_fib.lang:2:44
+[PRINT] INT():1@examples/03_fib.lang:4:6
+[PRINT] INT():1@examples/03_fib.lang:2:44
+[PRINT] INT():2@examples/03_fib.lang:2:44
+[PRINT] INT():3@examples/03_fib.lang:2:44
+[PRINT] INT():5@examples/03_fib.lang:2:44
+[PRINT] INT():8@examples/03_fib.lang:2:44
+[PRINT] INT():13@examples/03_fib.lang:2:44
+[PRINT] INT():21@examples/03_fib.lang:2:44
+[PRINT] INT():34@examples/03_fib.lang:2:44
+[PRINT] INT():55@examples/03_fib.lang:2:44
+[PRINT] INT():89@examples/03_fib.lang:2:44
+[PRINT] INT():144@examples/03_fib.lang:2:44
+[PRINT] INT():233@examples/03_fib.lang:2:44
+[PRINT] INT():377@examples/03_fib.lang:2:44
+[PRINT] INT():610@examples/03_fib.lang:2:44
 
 [EXIT CODE] 0
 ============================================================
@@ -1846,27 +1846,27 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/04_procs.lang:4:24: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/04_procs.lang:4:10
+      0. INT()@examples/04_procs.lang:4:10
 [INFO] examples/04_procs.lang:4:24: Stack at runtime:
 [NOTE] stack:
-      0. INT:9@examples/04_procs.lang:2:25
-[PRINT] INT:9@examples/04_procs.lang:2:25
+      0. INT():9@examples/04_procs.lang:2:25
+[PRINT] INT():9@examples/04_procs.lang:2:25
 [INFO] examples/04_procs.lang:4:24: Stack at runtime:
 [NOTE] stack:
-      0. INT:8@examples/04_procs.lang:2:25
-[PRINT] INT:8@examples/04_procs.lang:2:25
+      0. INT():8@examples/04_procs.lang:2:25
+[PRINT] INT():8@examples/04_procs.lang:2:25
 [INFO] examples/04_procs.lang:4:24: Stack at runtime:
 [NOTE] stack:
-      0. INT:7@examples/04_procs.lang:2:25
-[PRINT] INT:7@examples/04_procs.lang:2:25
+      0. INT():7@examples/04_procs.lang:2:25
+[PRINT] INT():7@examples/04_procs.lang:2:25
 [INFO] examples/04_procs.lang:4:24: Stack at runtime:
 [NOTE] stack:
-      0. INT:6@examples/04_procs.lang:2:25
-[PRINT] INT:6@examples/04_procs.lang:2:25
+      0. INT():6@examples/04_procs.lang:2:25
+[PRINT] INT():6@examples/04_procs.lang:2:25
 [INFO] examples/04_procs.lang:4:24: Stack at runtime:
 [NOTE] stack:
-      0. INT:5@examples/04_procs.lang:2:25
-[PRINT] INT:5@examples/04_procs.lang:2:25
+      0. INT():5@examples/04_procs.lang:2:25
+[PRINT] INT():5@examples/04_procs.lang:2:25
 
 [EXIT CODE] 0
 ============================================================
@@ -1874,7 +1874,7 @@ Usage: py lang.py [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/04_procs.lang:4:24: Stack at compile time:
 [NOTE] stack:
-      0. INT@examples/04_procs.lang:4:10
+      0. INT()@examples/04_procs.lang:4:10
 [CMD] gcc examples/04_procs.c -o examples/04_procs.exe
 [CMD] ./examples/04_procs.exe
 [STDOUT]:

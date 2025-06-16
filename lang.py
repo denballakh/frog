@@ -207,18 +207,9 @@ def pp(x: Any) -> str:
             return f'{pp(x.type)}:{pp(x.val)}@{pp(x.tok.loc)}'
 
         case ValueCls():
-            # return f'{pp(x.type)}({pp(x.val)})'
-            match x.type:
-                case ValueClsType.INT:
-                    return 'INT'
-                case ValueClsType.BOOL:
-                    return 'BOOL'
-                case ValueClsType.PTR:
-                    return f'PTR({pp(x.val)})'
-                case ValueClsType.TYPE:
-                    return f'TYPE({pp(x.val)})'
-                case _:
-                    assert_never(x.type)
+            if x.val is unused:
+                return f'{pp(x.type)}()'
+            return f'{pp(x.type)}({pp(x.val)})'
 
         case Token():
             return f'{x.loc}:{pp(x.type)}:{pp(x.value)}'
