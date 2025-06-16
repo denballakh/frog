@@ -1807,7 +1807,7 @@ def translate(ir: IR) -> str:
                     typ = ValueCls(ValueClsType.BOOL, unused, instr.tok)
                     declare_var(var, typ)
                     stack.append(StackEntry(typ, var, tok=instr.tok))
-                    sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
+                    sb += f'{'':{indent}}{var} = {"true" if instr.tok.value else "false"};\n'
 
                 case InstructionType.WORD:
                     proc_called = ir.get_proc_by_name(instr.arg1)
@@ -2224,7 +2224,6 @@ def translate(ir: IR) -> str:
 
                         # stack manipulation:
                         case IntrinsicType.DUP:
-                            # a -- a a
                             a = stack.pop()
                             stack.append(a)
 
@@ -2234,18 +2233,15 @@ def translate(ir: IR) -> str:
                             sb += f'{'':{indent}}{var} = {a.val};\n'
 
                         case IntrinsicType.DROP:
-                            # a --
                             _ = stack.pop()
 
                         case IntrinsicType.SWAP:
-                            # a b -- b a
                             b = stack.pop()
                             a = stack.pop()
                             stack.append(b)
                             stack.append(a)
 
                         case IntrinsicType.ROT:
-                            # a b c -- b c a
                             c = stack.pop()
                             b = stack.pop()
                             a = stack.pop()
@@ -2255,15 +2251,20 @@ def translate(ir: IR) -> str:
 
                         # debugging:
                         case IntrinsicType.PRINT:
-                            # a --
                             a = stack.pop()
-                            sb += f'{'':{indent}}printf("%d\\n", {a.val});\n'
+                            if a.type.type == ValueClsType.INT:
+                                sb += f'{'':{indent}}printf("%d\\n", {a.val});\n'
+
+                            elif a.type.type == ValueClsType.BOOL:
+                                sb += f'{'':{indent}}printf("%s\\n", {a.val} ? "true" : "false");\n'
+
+                            else:
+                                notimplemented(instr, f'printing {pp(a.type)} is not implemented yet')
 
                         case IntrinsicType.DEBUG:
                             pass
 
                         case _:
-                            # sb += f'  // {pp(instr)}'
                             assert_never(intr_type)
                 case _:
                     assert_never(instr.type)
@@ -2382,6 +2383,7 @@ def main(argv: list[str]) -> None:
         print(f'  repl                      start a Read-Eval-Print-Loop')
 
     global log_level
+    log_level = LL_DEFAULT
 
     while argv:
         if argv[0] == '-h' or argv[0] == '--help':
