@@ -14,9 +14,12 @@
 ============================================================
 [CODE] '1 + print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:2: not enough items on stack for IntrinsicType.ADD: it expects two INTs on the stack
+[ERROR] tmp.frog:1:2: stack too small for IntrinsicType.ADD: expected 2 but got 1
 [NOTE] stack:
       0. INT()@tmp.frog:1:0
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
@@ -112,22 +115,30 @@
 ============================================================
 [CODE] '+'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.ADD: it expects two INTs on the stack
+[ERROR] tmp.frog:1:0: stack too small for IntrinsicType.ADD: expected 2 but got 0
 [NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '~'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.BNOT: it expects one INT on the stack
+[ERROR] tmp.frog:1:0: stack too small for IntrinsicType.BNOT: expected 1 but got 0
 [NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '/%'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:0: not enough items on stack for IntrinsicType.DIVMOD: it expects two INTs on the stack
+[ERROR] tmp.frog:1:0: stack too small for IntrinsicType.DIVMOD: expected 2 but got 0
 [NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
@@ -307,73 +318,119 @@
 ============================================================
 [CODE] 'true 5 + print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot add/subtract BOOL() and INT()
-[NOTE] other_stack_items: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.ADD: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 * print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot multiply/divide BOOL() by INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.MUL: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 % print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot modulo BOOL() by INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.MOD: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 | print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot bitwise or/and/xor BOOL() with INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.BOR: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 << print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot shift BOOL() by INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.SHL: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 && print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot and/or BOOL() with INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 0 for IntrinsicType.AND: expected INT() but got BOOL()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. BOOL()
+      1. BOOL()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 ! print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot not INT()
+[ERROR] tmp.frog:1:7: stack doesnt match at 0 for IntrinsicType.NOT: expected INT() but got BOOL()
 [NOTE] stack:
       0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. BOOL()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 swap ~ print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:12: cannot bitwise not an BOOL()
+[ERROR] tmp.frog:1:12: stack doesnt match at 0 for IntrinsicType.BNOT: expected BOOL() but got INT()
 [NOTE] stack:
       0. INT()@tmp.frog:1:5
+      1. BOOL()@tmp.frog:1:0
+[NOTE] ins:
+      0. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 == print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot compare BOOL() and INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.EQ: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'true 5 < print'
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:1:7: cannot compare BOOL() and INT()
-[NOTE] stack: (empty)
+[ERROR] tmp.frog:1:7: stack doesnt match at 1 for IntrinsicType.LT: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@tmp.frog:1:0
+      1. INT()@tmp.frog:1:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
@@ -1064,28 +1121,28 @@ false
 [CODE] '"" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:210:0
+[LOC] __init__.py:212:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:210:0
+[LOC] __init__.py:212:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:210:0
+[LOC] __init__.py:212:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:210:0
+[LOC] __init__.py:212:0
 [EXIT CODE] 3
 
 ============================================================
@@ -1147,9 +1204,12 @@ false
 ============================================================
 [CODE] '\n    proc a -- do 2 * end\n    '
 [CMD] py -m frog run tmp.frog
-[ERROR] tmp.frog:2:19: not enough items on stack for IntrinsicType.MUL: it expects two INTs on the stack
-[NOTE] other_stack_items:
+[ERROR] tmp.frog:2:19: stack too small for IntrinsicType.MUL: expected 2 but got 1
+[NOTE] stack:
       0. INT()@tmp.frog:2:17
+[NOTE] ins:
+      0. INT()
+      1. INT()
 [EXIT CODE] 1
 
 ============================================================
@@ -1836,7 +1896,7 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/04_procs.frog:4:24: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/04_procs.frog:4:10
+      0. INT()@examples/04_procs.frog:4:21
 [INFO] examples/04_procs.frog:4:24: Stack at runtime:
 [NOTE] stack:
       0. INT():9@examples/04_procs.frog:2:25
@@ -1864,7 +1924,7 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [STDOUT]:
 [INFO] examples/04_procs.frog:4:24: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/04_procs.frog:4:10
+      0. INT()@examples/04_procs.frog:4:21
 [CMD] gcc examples/04_procs.c -o examples/04_procs.exe
 [CMD] ./examples/04_procs.exe
 [STDOUT]:

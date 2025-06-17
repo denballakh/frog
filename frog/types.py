@@ -141,8 +141,7 @@ class ValueClsType(Enum):
 @dataclass
 class ValueCls:
     type: ValueClsType
-    val: Any
-    tok: Token = field(compare=False)
+    val: Any = unused
 
 
 @dataclass
@@ -156,6 +155,7 @@ class Proc:
     name: str
     contract: Contract
     instrs: list[Instruction]
+    tok: Token
 
 
 @dataclass
