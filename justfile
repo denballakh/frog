@@ -13,12 +13,12 @@
 
 typecheck: _mypy _basedpyright
 fmt: _black
-check: typecheck && fmt
+check: typecheck fmt
 
 repl:
     ./frog.py repl
 
-test: && check
+test:
     ./test.py
 
 clean:
@@ -26,3 +26,5 @@ clean:
     rm *.exe || true
     rm examples/*.c || true
     rm examples/*.exe || true
+
+precommit: check test clean
