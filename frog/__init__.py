@@ -1927,10 +1927,11 @@ def translate(ir: IR) -> str:
                                     stack=stack,
                                 )
 
-                            trace(instr,
-                            'casting during codegen',
-                            x=x,
-                            t=t,
+                            trace(
+                                instr,
+                                'casting during codegen',
+                                x=x,
+                                t=t,
                             )
                             match (x.type, t.type.val):
                                 case _ if x.type == t.type.val:
