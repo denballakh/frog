@@ -5,7 +5,7 @@ import io
 from typing import TYPE_CHECKING, Any
 import shlex
 
-from frog.__main__ import run_cmd, run_frog
+from frog.__main__ import run_frog
 
 if TYPE_CHECKING:
     from tqdm import tqdm
@@ -221,17 +221,14 @@ try:
             print('=' * 60)
             print(f'[CODE] {code!r}')
             res = run_frog('py', '-m', 'frog', 'run', tmp)
-            print(f'[EXIT CODE] {res}')
             if res == 0:
                 res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', tmp)
-                print(f'[EXIT CODE] {res}')
             print()
 
     for cli in tqdm(cli_examples):
         with contextlib.redirect_stdout(buf):
             print('=' * 60)
-            res = run_cmd('py', '-m', 'frog', *shlex.split(cli))
-            print(f'[EXIT CODE] {res}')
+            res = run_frog('py', '-m', 'frog', *shlex.split(cli))
 
 except Exception as e:
     print(buf.getvalue())

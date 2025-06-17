@@ -43,10 +43,11 @@ def repl() -> None:
             traceback.print_exc()
 
 
-def run_cmd(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
+def run_cmd(*cmds: str | os.PathLike[str]) -> int:
 
     cmd = subprocess.list2cmdline(cmds)
     print(f'[CMD] {cmd}')
+
     res = subprocess.run(
         cmds,
         capture_output=True,
@@ -60,27 +61,31 @@ def run_cmd(*cmds: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
     if err:
         print(f'[STDERR]:')
         print(err)
+
+    if res.returncode != 0:
+        print(f'[EXIT CODE] {res.returncode}')
+
     return res.returncode
 
 
-def run_frog(*args: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> int:
+def run_frog(*args: str | os.PathLike[str]) -> int:
 
     cmd = subprocess.list2cmdline([*args])
     print(f'[CMD] {cmd}')
 
     try:
         main(shlex.split(cmd)[3:])
+
     except SystemExit as e:
         code = e.code
-        match code:
-            case int():
-                return code
-            case str():
-                return 1
-            case None:
-                return 0
+        assert isinstance(code, int), f'unknown exit code: {code!r}'
     else:
-        return 0
+        code = RC_OK
+
+    if code != 0:
+        print(f'[EXIT CODE] {code}')
+
+    return code
 
 
 def main(argv: list[str]) -> None:
