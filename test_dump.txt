@@ -1207,6 +1207,12 @@ false
 [EXIT CODE] 1
 
 ============================================================
+[CODE] '\n    proc a x -- y do + end\n    5 a print\n    '
+[CMD] py -m frog run tmp.frog
+[ERROR] tmp.frog:2:11: expected a type after proc name, got x
+[EXIT CODE] 1
+
+============================================================
 [CODE] '\n    proc a int int -- int do + end\n    5 7 a print\n    '
 [CMD] py -m frog run tmp.frog
 [PRINT] INT():12@tmp.frog:2:29
@@ -1322,14 +1328,14 @@ false
 ============================================================
 [CMD] py -m frog
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no subcommand specified
 
 [EXIT CODE] 2
 ============================================================
 [CMD] py -m frog -h
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 Options:
   -h --help                   print this help message
   -l <level>                  log level: ERROR,WARN,INFO,TRACE
@@ -1348,7 +1354,7 @@ Subcommands:
 ============================================================
 [CMD] py -m frog --help
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 Options:
   -h --help                   print this help message
   -l <level>                  log level: ERROR,WARN,INFO,TRACE
@@ -1367,7 +1373,7 @@ Subcommands:
 ============================================================
 [CMD] py -m frog run
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no file specified
 
 [EXIT CODE] 2
@@ -1380,21 +1386,21 @@ Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
 ============================================================
 [CMD] py -m frog -l
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no log level specified
 
 [EXIT CODE] 2
 ============================================================
 [CMD] py -m frog -l TRACE
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no subcommand specified
 
 [EXIT CODE] 2
 ============================================================
 [CMD] py -m frog -l TRACE run
 [STDOUT]:
-Usage: py frog.py [OPTIONS] SUBCOMMAND <ARGS>
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [ERROR] no file specified
 
 [EXIT CODE] 2

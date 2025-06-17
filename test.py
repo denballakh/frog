@@ -164,6 +164,10 @@ code_examples = [
     5 a print
     ''',
     '''
+    proc a x -- y do + end
+    5 a print
+    ''',
+    '''
     proc a int int -- int do + end
     5 7 a print
     ''',
