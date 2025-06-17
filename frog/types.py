@@ -146,11 +146,16 @@ class ValueCls:
 
 
 @dataclass
-class Proc:
-    name: str
+class Contract:
     ins: list[ValueCls]
     outs: list[ValueCls]
-    instrs: list[Instruction] = field(default_factory=list)
+
+
+@dataclass
+class Proc:
+    name: str
+    contract: Contract
+    instrs: list[Instruction]
 
 
 @dataclass

@@ -1064,28 +1064,28 @@ false
 [CODE] '"" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:209:0
+[LOC] __init__.py:210:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:209:0
+[LOC] __init__.py:210:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:209:0
+[LOC] __init__.py:210:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
 [CMD] py -m frog run tmp.frog
 [ERROR] tmp.frog:1:0: not implemented: string literals
-[LOC] __init__.py:209:0
+[LOC] __init__.py:210:0
 [EXIT CODE] 3
 
 ============================================================

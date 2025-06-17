@@ -24,6 +24,7 @@ from .types import (
     StackEntry,
     Stack,
     Proc,
+    Contract,
     IR,
     Error,
     IntrinsicType,
@@ -157,7 +158,7 @@ def compile(toks: list[Token]) -> IR:
             cur_proc = ir.get_proc_by_name('main')
             implicit_main = True
         if cur_proc is None:
-            cur_proc = Proc(name='main', ins=[], outs=[])
+            cur_proc = Proc(name='main', contract=Contract(ins=[], outs=[]), instrs=[])
             ir.procs.append(cur_proc)
         cur_proc.instrs.append(instr)
         return len(cur_proc.instrs) - 1
@@ -165,7 +166,7 @@ def compile(toks: list[Token]) -> IR:
     # pyright tries to be smart and infer that `cur_proc` is always `None`
     # trick it into thinking that it might be non-`None`
     if len('abc') == 4:
-        cur_proc = Proc(name='lol', ins=[], outs=[])
+        cur_proc = Proc(name='lol', contract=Contract(ins=[], outs=[]), instrs=[])
 
     # _label_cnt = 0
     # def get_label() -> int:
@@ -358,7 +359,7 @@ def compile(toks: list[Token]) -> IR:
                             if len(ins) != 0 or len(outs) != 0:
                                 error(tok, f'main must take no args and return no values')
 
-                        cur_proc = Proc(name=name, ins=ins, outs=outs)
+                        cur_proc = Proc(name=name, contract=Contract(ins=ins, outs=outs), instrs=[])
                         ir.procs.append(cur_proc)
                         block = Block(InstructionType.PROC)
                         block_stack.append(block)
@@ -468,7 +469,7 @@ def compile(toks: list[Token]) -> IR:
         )
 
     if not ir.get_proc_by_name('main'):
-        ir.procs.append(Proc(name='main', ins=[], outs=[]))
+        ir.procs.append(Proc(name='main', contract=Contract(ins=[], outs=[]), instrs=[]))
 
     trace(
         loc_unknown,
@@ -498,7 +499,7 @@ def typecheck(ir: IR) -> None:
     for proc in ir.procs:
         block_stack: list[Block] = []
         stack: Stack = []
-        for type_in in proc.ins:
+        for type_in in proc.contract.ins:
             stack.append(StackEntry(type_in, typechecking, tok=type_in.tok))
         instrs = proc.instrs
         for instr in instrs:
@@ -522,29 +523,29 @@ def typecheck(ir: IR) -> None:
                         error(instr, f'unknown word {instr.arg1}')
 
                     # 1. check that stack and proc_called.ins are the same
-                    if len(stack) < len(proc_called.ins):
+                    if len(stack) < len(proc_called.contract.ins):
                         error(
                             instr,
-                            f'stack too small for {instr.arg1}: expected {len(proc_called.ins)} but got {len(stack)}',
+                            f'stack too small for {instr.arg1}: expected {len(proc_called.contract.ins)} but got {len(stack)}',
                             stack=stack,
-                            ins=proc_called.ins,
+                            ins=proc_called.contract.ins,
                         )
 
-                    for i, (e1, e2) in enumerate(zip(reversed(stack), proc_called.ins)):
+                    for i, (e1, e2) in enumerate(zip(reversed(stack), proc_called.contract.ins)):
                         if e1.type != e2:
                             error(
                                 instr,
                                 f'stack doesnt match at {i} for {instr.arg1}: expected {pp(e1.type)} but got {pp(e2)}',
                                 stack=stack,
-                                ins=proc_called.ins,
+                                ins=proc_called.contract.ins,
                             )
 
                     # 2. remove proc_called.ins from stack
-                    for _ in proc_called.ins:
+                    for _ in proc_called.contract.ins:
                         _ = stack.pop()
 
                     # 3. put proc_called.outs on stack
-                    for out in proc_called.outs:
+                    for out in proc_called.contract.outs:
                         stack.append(StackEntry(out, typechecking, tok=instr.tok))
 
                 # if // s = stack1
@@ -655,15 +656,15 @@ def typecheck(ir: IR) -> None:
                     notimplemented(instr, f'typechecking {InstructionType.PROC}')
 
                 case InstructionType.RET:
-                    if len(stack) != len(proc.outs):
+                    if len(stack) != len(proc.contract.outs):
                         error(
                             instr,
-                            f'return type mismatch: expected {len(proc.outs)} items on the stack, got {len(stack)}',
+                            f'return type mismatch: expected {len(proc.contract.outs)} items on the stack, got {len(stack)}',
                             stack=stack,
-                            outs=proc.outs,
+                            outs=proc.contract.outs,
                         )
 
-                    for i, (item_stack, item_out) in enumerate(zip(stack, proc.outs)):
+                    for i, (item_stack, item_out) in enumerate(zip(stack, proc.contract.outs)):
                         t1 = item_stack.type
                         t2 = item_out
                         if t1 != t2:
@@ -671,10 +672,10 @@ def typecheck(ir: IR) -> None:
                                 instr,
                                 f'return type mismatch at {i}: expected {t2} on the stack, got {t1}',
                                 stack=stack,
-                                outs=proc.outs,
+                                outs=proc.contract.outs,
                             )
 
-                    for _ in proc.outs:
+                    for _ in proc.contract.outs:
                         _ = stack.pop()
 
                 case InstructionType.LABEL:
@@ -1593,7 +1594,7 @@ def translate(ir: IR) -> str:
 
         ret = f'ret_{proc.name}'
         sb_header += f'{ret} proc_{proc.name}('
-        for i, typ in enumerate(proc.ins):
+        for i, typ in enumerate(proc.contract.ins):
             name = get_varname('arg')
             if i > 0:
                 sb_header += ', '
@@ -1601,7 +1602,7 @@ def translate(ir: IR) -> str:
             stack.append(StackEntry(typ, name, typ.tok))
         sb_header += ') {\n'
         sb_struct += f'typedef struct {{\n'
-        for i, typ in enumerate(proc.outs):
+        for i, typ in enumerate(proc.contract.outs):
             name = f'_{i}'
             sb_struct += f'  {c_type(typ)} {name};\n'
         sb_struct += f'}} {ret};\n'
@@ -1637,21 +1638,19 @@ def translate(ir: IR) -> str:
                     ret_var = f'res_{proc_called.name}'
                     ret_type = f'ret_{proc_called.name}'
                     sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called.name}('
-                    for i, arg in enumerate(stack[len(stack) - len(proc_called.ins) :]):
+                    for i, arg in enumerate(stack[len(stack) - len(proc_called.contract.ins) :]):
                         if i > 0:
                             sb += ', '
                         sb += f'{arg.val}'
                         _ = stack.pop()
                     sb += ');\n'
 
-                    for i, out in enumerate(proc_called.outs):
+                    for i, out in enumerate(proc_called.contract.outs):
                         typ = ValueCls(out.type, unused, instr.tok)
                         var = get_varname(f'res_{proc_called.name}_{i}')
                         declare_var(var, typ)
                         stack.append(StackEntry(typ, var, tok=instr.tok))
                         sb += f'{'':{indent}}{var} = {ret_var}._{i};\n'
-                    # stack.append(StackEntry(typ, var, tok=instr.tok))
-                    # sb += f'{'':{indent}}{var} = {proc_called.name};\n'
 
                 case InstructionType.IF:
                     block = Block(InstructionType.IF)
