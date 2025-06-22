@@ -1,6 +1,7 @@
 { pkgs, lib, config, inputs, ... }:
 let
   pkgs-unstable = import inputs.nixpkgs-unstable { system = pkgs.stdenv.system; };
+  py = pkgs.python313;
 in
 {
   # https://devenv.sh/basics/
@@ -9,20 +10,22 @@ in
   packages = [
     pkgs.git
     pkgs.basedpyright
-    pkgs.python313
-    pkgs.python313Packages.types-tqdm
-    pkgs.python313Packages.tqdm
-    pkgs.python313Packages.mypy
-    pkgs.python313Packages.black
+    (py.withPackages (python-pkgs: [
+      python-pkgs.types-tqdm
+      python-pkgs.tqdm
+      python-pkgs.mypy
+      python-pkgs.black
+    ]))
+
   ];
 
   # https://devenv.sh/languages/
   languages.python = {
     enable = true;
-    package = pkgs.python313;
+    package = py;
   };
 
-  # languages.nix.enable = true;
+  languages.nix.enable = true;
 
   # git-hooks.hooks = {
   #   alejandra.enable = true;

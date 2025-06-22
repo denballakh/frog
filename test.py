@@ -220,7 +220,7 @@ try:
             _ = tmp.write_text(code)
             print('=' * 60)
             print(f'[CODE] {code!r}')
-            res = run_frog('py', '-m', 'frog', 'run', tmp)
+            res = run_frog('py', '-m', 'frog', 'run', '-c', code)
             if res == 0:
                 res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', tmp)
             print()

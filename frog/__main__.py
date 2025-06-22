@@ -74,7 +74,7 @@ def run_frog(*args: str | os.PathLike[str]) -> int:
     print(f'[CMD] {cmd}')
 
     try:
-        main(shlex.split(cmd)[3:])
+        main([str(x) for x in args[3:]])
 
     except SystemExit as e:
         code = e.code
@@ -87,6 +87,22 @@ def run_frog(*args: str | os.PathLike[str]) -> int:
 
     return code
 
+USAGE = """
+Options:
+  -h --help                   print this help message
+  -l <level>                  log level: ERROR,WARN,INFO,TRACE
+Subcommands:
+  run [OPTIONS]             interpre
+    -c CODE                   code to interpret
+       FILE                   file to interpret
+  build [OPTIONS] FILE      build
+    FILE                      file to build
+    OPTIONS:
+      -o FILE                 where to put built binary
+      -r                      also run the binary
+  repl                      start a Read-Eval-Print-Loop
+
+"""
 
 def main(argv: list[str]) -> None:
     def usage_short() -> None:
@@ -94,19 +110,7 @@ def main(argv: list[str]) -> None:
 
     def usage() -> None:
         usage_short()
-        print(f'Options:')
-        print(f'  -h --help                   print this help message')
-        print(f'  -l <level>                  log level: ERROR,WARN,INFO,TRACE')
-        print(f'Subcommands:')
-        print(f'  run FILE                  interpret')
-        print(f'    FILE                      a file to interpret')
-        print(f'    OPTIONS:')
-        print(f'  build [OPTIONS] FILE      build')
-        print(f'    FILE                      a file to build')
-        print(f'    OPTIONS:')
-        print(f'      -o FILE                 where to put built binary')
-        print(f'      -r                      also run the binary')
-        print(f'  repl                      start a Read-Eval-Print-Loop')
+        print(USAGE)
 
     logging_cfg.log_level = LL_DEFAULT
 
@@ -138,33 +142,52 @@ def main(argv: list[str]) -> None:
     subcmd, *argv = argv
 
     if subcmd == 'run':
+        code_src: str | None = None
+        filename: str
+
         while len(argv) > 0:
             if argv[0] == '-h':
                 usage()
                 sys.exit(RC_OK)
+            
+            elif argv[0] == '-c':
+                _, *argv = argv
+                if len(argv) < 1:
+                    usage_short()
+                    print(f'[ERROR] no code specified')
+                    sys.exit(RC_USAGE)
+
+                code_src = argv[0]
+                argv = argv[1:]
 
             else:
                 break
+        
+        if code_src is None:
+            if len(argv) < 1:
+                usage_short()
+                print(f'[ERROR] no file specified')
+                sys.exit(RC_USAGE)
 
-        if len(argv) < 1:
-            usage_short()
-            print(f'[ERROR] no file specified')
-            sys.exit(RC_USAGE)
+            file_src = Path(argv[0])
+            argv = argv[1:]
 
-        file_src = Path(argv[0])
-        argv = argv[1:]
+            if not file_src.exists():
+                print(f'[ERROR] file {file_src} does not exist')
+                sys.exit(RC_ERROR)
+            
+            code_src = file_src.read_text()
+            filename = str(file_src)
+        
+        else:
+            filename = '<cli>'
 
         if len(argv) > 0:
             usage_short()
             print(f'[ERROR] unrecognized arguments: {argv}')
             sys.exit(RC_USAGE)
 
-        if not file_src.exists():
-            print(f'[ERROR] file {file_src} does not exist')
-            sys.exit(RC_ERROR)
-
-        text = file_src.read_text()
-        toks = tokenize(text, filename=str(file_src))
+        toks = tokenize(code_src, filename=filename)
         ir = compile(toks)
         typecheck(ir)
 
