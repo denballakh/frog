@@ -1,7 +1,13 @@
 { pkgs, lib, config, inputs, ... }:
 let
   pkgs-unstable = import inputs.nixpkgs-unstable { system = pkgs.stdenv.system; };
-  py = pkgs.python313;
+  py_base = pkgs.python313;
+  py = py_base.override {
+    enableOptimizations = true;
+    reproducibleBuild = false;
+    enableLTO = true;
+    self = py_base;
+  };
 in
 {
   # https://devenv.sh/basics/
