@@ -1668,42 +1668,68 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 5
 
 ============================================================
-[CMD] py -m frog run examples/04_procs.frog
-[INFO] examples/04_procs.frog:4:24: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/04_procs.frog:4:21
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
-[NOTE] stack:
-      0. INT():9@examples/04_procs.frog:2:25
-[PRINT] INT():9@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
-[NOTE] stack:
-      0. INT():8@examples/04_procs.frog:2:25
-[PRINT] INT():8@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
-[NOTE] stack:
-      0. INT():7@examples/04_procs.frog:2:25
-[PRINT] INT():7@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
-[NOTE] stack:
-      0. INT():6@examples/04_procs.frog:2:25
-[PRINT] INT():6@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
-[NOTE] stack:
-      0. INT():5@examples/04_procs.frog:2:25
-[PRINT] INT():5@examples/04_procs.frog:2:25
+[CMD] py -m frog run examples/00_empty.frog
 ============================================================
-[CMD] py -m frog build -r examples/04_procs.frog
-[INFO] examples/04_procs.frog:4:24: Stack at compile time:
+[CMD] py -m frog build -r examples/00_empty.frog
+[CMD] gcc examples/00_empty.c -o examples/00_empty.exe
+[CMD] ./examples/00_empty.exe
+============================================================
+[CMD] py -m frog run examples/01_simple.frog
+[INFO] examples/01_simple.frog:1:4: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/04_procs.frog:4:21
-[CMD] gcc examples/04_procs.c -o examples/04_procs.exe
-[CMD] ./examples/04_procs.exe
+      0. INT()@examples/01_simple.frog:1:0
+      1. INT()@examples/01_simple.frog:1:2
+[INFO] examples/01_simple.frog:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:6
+[INFO] examples/01_simple.frog:1:4: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@examples/01_simple.frog:1:0
+      1. INT():2@examples/01_simple.frog:1:2
+[INFO] examples/01_simple.frog:1:8: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@examples/01_simple.frog:1:6
+[PRINT] INT():3@examples/01_simple.frog:1:6
+============================================================
+[CMD] py -m frog build -r examples/01_simple.frog
+[INFO] examples/01_simple.frog:1:4: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:0
+      1. INT()@examples/01_simple.frog:1:2
+[INFO] examples/01_simple.frog:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:6
+[CMD] gcc examples/01_simple.c -o examples/01_simple.exe
+[CMD] ./examples/01_simple.exe
 [STDOUT]:
-9
-8
+3
+
+============================================================
+[CMD] py -m frog run examples/02_while.frog
+[PRINT] INT():1@examples/02_while.frog:2:0
+[PRINT] INT():5@examples/02_while.frog:22:4
+[PRINT] INT():7@examples/02_while.frog:24:4
+[PRINT] INT():5@examples/02_while.frog:22:4
+[PRINT] INT():7@examples/02_while.frog:24:4
+[PRINT] INT():5@examples/02_while.frog:22:4
+[PRINT] INT():7@examples/02_while.frog:24:4
+[PRINT] INT():5@examples/02_while.frog:22:4
+[PRINT] INT():7@examples/02_while.frog:24:4
+[PRINT] INT():5@examples/02_while.frog:22:4
+============================================================
+[CMD] py -m frog build -r examples/02_while.frog
+[CMD] gcc examples/02_while.c -o examples/02_while.exe
+[CMD] ./examples/02_while.exe
+[STDOUT]:
+1
+5
 7
-6
+5
+7
+5
+7
+5
+7
 5
 
 ============================================================
@@ -1745,67 +1771,41 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 610
 
 ============================================================
-[CMD] py -m frog run examples/02_while.frog
-[PRINT] INT():1@examples/02_while.frog:2:0
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
+[CMD] py -m frog run examples/04_procs.frog
+[INFO] examples/04_procs.frog:4:24: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/04_procs.frog:4:21
+[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT():9@examples/04_procs.frog:2:25
+[PRINT] INT():9@examples/04_procs.frog:2:25
+[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT():8@examples/04_procs.frog:2:25
+[PRINT] INT():8@examples/04_procs.frog:2:25
+[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT():7@examples/04_procs.frog:2:25
+[PRINT] INT():7@examples/04_procs.frog:2:25
+[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT():6@examples/04_procs.frog:2:25
+[PRINT] INT():6@examples/04_procs.frog:2:25
+[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@examples/04_procs.frog:2:25
+[PRINT] INT():5@examples/04_procs.frog:2:25
 ============================================================
-[CMD] py -m frog build -r examples/02_while.frog
-[CMD] gcc examples/02_while.c -o examples/02_while.exe
-[CMD] ./examples/02_while.exe
+[CMD] py -m frog build -r examples/04_procs.frog
+[INFO] examples/04_procs.frog:4:24: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/04_procs.frog:4:21
+[CMD] gcc examples/04_procs.c -o examples/04_procs.exe
+[CMD] ./examples/04_procs.exe
 [STDOUT]:
-1
-5
+9
+8
 7
-5
-7
-5
-7
-5
-7
+6
 5
 
-============================================================
-[CMD] py -m frog run examples/01_simple.frog
-[INFO] examples/01_simple.frog:1:4: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:0
-      1. INT()@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:6
-[INFO] examples/01_simple.frog:1:4: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:0
-      1. INT():2@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at runtime:
-[NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:6
-[PRINT] INT():3@examples/01_simple.frog:1:6
-============================================================
-[CMD] py -m frog build -r examples/01_simple.frog
-[INFO] examples/01_simple.frog:1:4: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:0
-      1. INT()@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:6
-[CMD] gcc examples/01_simple.c -o examples/01_simple.exe
-[CMD] ./examples/01_simple.exe
-[STDOUT]:
-3
-
-============================================================
-[CMD] py -m frog run examples/00_empty.frog
-============================================================
-[CMD] py -m frog build -r examples/00_empty.frog
-[CMD] gcc examples/00_empty.c -o examples/00_empty.exe
-[CMD] ./examples/00_empty.exe

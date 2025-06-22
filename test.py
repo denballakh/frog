@@ -200,7 +200,7 @@ cli_examples = [
 
 dir_examples = ROOT / 'examples'
 
-for file_example in dir_examples.iterdir():
+for file_example in sorted(dir_examples.iterdir()):
     file_example = file_example.relative_to(Path.cwd())
     if not file_example.is_file():
         continue

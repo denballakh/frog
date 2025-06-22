@@ -16,10 +16,10 @@ fmt: _black
 check: typecheck fmt
 
 repl:
-    ./frog.py repl
+    python -m frog repl
 
 test:
-    ./test.py
+    python test.py
 
 clean:
     rm *.c || true
