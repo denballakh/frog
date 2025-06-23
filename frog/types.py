@@ -115,6 +115,7 @@ class IntrinsicType(Enum):
     DUP = auto()  # a -- a a
     DROP = auto()  # a --
     SWAP = auto()  # a b -- b a
+    SWAP2 = auto() # a b x y -- x y a b
     ROT = auto()  # a b c -- b c a
     CAST = auto()  # x T -- (T)x
 

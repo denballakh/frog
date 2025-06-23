@@ -646,6 +646,47 @@ false
 
 
 ============================================================
+[CODE] '1 2 3 4 ? swap2 ? print print print print'
+[CMD] py -m frog run -c "1 2 3 4 ? swap2 ? print print print print"
+[INFO] <cli>:1:8: Stack at compile time:
+[NOTE] stack:
+      0. INT()@<cli>:1:0
+      1. INT()@<cli>:1:2
+      2. INT()@<cli>:1:4
+      3. INT()@<cli>:1:6
+[INFO] <cli>:1:16: Stack at compile time:
+[NOTE] stack:
+      0. INT()@<cli>:1:4
+      1. INT()@<cli>:1:6
+      2. INT()@<cli>:1:0
+      3. INT()@<cli>:1:2
+[INFO] <cli>:1:8: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@<cli>:1:0
+      1. INT():2@<cli>:1:2
+      2. INT():3@<cli>:1:4
+      3. INT():4@<cli>:1:6
+[INFO] <cli>:1:16: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@<cli>:1:4
+      1. INT():4@<cli>:1:6
+      2. INT():1@<cli>:1:0
+      3. INT():2@<cli>:1:2
+[PRINT] INT():2@<cli>:1:2
+[PRINT] INT():1@<cli>:1:0
+[PRINT] INT():4@<cli>:1:6
+[PRINT] INT():3@<cli>:1:4
+[CMD] py -m frog -l WARN build -r tmp.frog
+[CMD] gcc tmp.c -o tmp.exe
+[CMD] ./tmp.exe
+[STDOUT]:
+2
+1
+4
+3
+
+
+============================================================
 [CODE] 'print'
 [CMD] py -m frog run -c print
 [ERROR] <cli>:1:0: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack

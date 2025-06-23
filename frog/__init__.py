@@ -370,7 +370,7 @@ def compile(toks: list[Token]) -> IR:
                         assert_never(kw_type)
 
             case TokenType.WORD:
-                expect_enum_size(IntrinsicType, 28)
+                expect_enum_size(IntrinsicType, 29)
                 match tok.value:
                     # arithmetic:
                     case '+':
@@ -430,6 +430,8 @@ def compile(toks: list[Token]) -> IR:
                         _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DROP))
                     case 'swap':
                         _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP))
+                    case 'swap2':
+                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP2))
                     case 'rot':
                         _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ROT))
                     case 'cast':
@@ -830,6 +832,23 @@ def typecheck(ir: IR) -> None:
                             a = stack.pop()
                             stack.append(b)
                             stack.append(a)
+
+                        case IntrinsicType.SWAP2:
+                            # a b x y -- x y a b
+                            if len(stack) < 4:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects four items on the stack',
+                                    stack=stack,
+                                )
+                            y = stack.pop()
+                            x = stack.pop()
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(x)
+                            stack.append(y)
+                            stack.append(a)
+                            stack.append(b)
 
                         case IntrinsicType.ROT:
                             # a b c -- b c a
@@ -1308,6 +1327,18 @@ def interpret(ir: IR) -> None:
                         a = stack.pop()
                         stack.append(b)
                         stack.append(a)
+                    case IntrinsicType.SWAP2:
+                        # a b x y -- x y a b
+                        if len(stack) < 4:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        y = stack.pop()
+                        x = stack.pop()
+                        b = stack.pop()
+                        a = stack.pop()
+                        stack.append(x)
+                        stack.append(y)
+                        stack.append(a)
+                        stack.append(b)
 
                     case IntrinsicType.ROT:
                         # a b c -- b c a
@@ -1901,6 +1932,16 @@ def translate(ir: IR) -> str:
                             a = stack.pop()
                             stack.append(b)
                             stack.append(a)
+
+                        case IntrinsicType.SWAP2:
+                            y = stack.pop()
+                            x = stack.pop()
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(x)
+                            stack.append(y)
+                            stack.append(a)
+                            stack.append(b)
 
                         case IntrinsicType.ROT:
                             c = stack.pop()

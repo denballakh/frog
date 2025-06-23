@@ -72,6 +72,7 @@ code_examples = [
     '1 2 swap ? print print',
     '1 2 3 ? print print print',
     '1 2 3 rot ? print print print',
+    '1 2 3 4 ? swap2 ? print print print print',
     'print',
     '?',
     'dup',
