@@ -1521,7 +1521,7 @@ def translate(ir: IR) -> str:
                     if proc_called is None:
                         unreachable(instr, f'proc {instr.arg1} not found')
 
-                    ret_var = f'res_{proc_called.name}'
+                    ret_var = get_varname(f'res_{proc_called.name}')
                     ret_type = f'ret_{proc_called.name}'
                     sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called.name}('
                     for i, arg in enumerate(stack[len(stack) - len(proc_called.contract.ins) :]):

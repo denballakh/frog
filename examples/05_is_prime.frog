@@ -1,0 +1,86 @@
+proc is_prime int -- bool do
+  // n
+  dup 2 <
+  // n f
+  2
+  // n f i
+  while
+    // n f i
+    rot dup rot
+    // f n n i
+    dup rot
+    // f n i i n
+    <
+    // f n i i<n
+    swap2 swap swap2
+    // n f i i<n
+  do
+    // n f i
+    rot dup rot
+    // f n n i
+    dup rot
+    // f n i i n
+    swap % 0 ==
+    // f n i n%i=0
+    swap2 rot rot
+    // i n n%i=0 f
+    ||
+    // i n f'
+    rot
+    // n f' i
+    1 +
+    // n f' i+1
+  end
+  // n f i
+  drop
+  // n f
+  swap drop
+  // f
+  !
+  // !f
+end
+
+proc is_prime_minimized int -- bool do
+  dup 2 < 2
+  while rot dup rot dup rot < swap2 swap swap2
+  do rot dup rot dup rot swap % 0 == swap2 rot rot || rot 1 + end
+  drop swap drop !
+end
+
+proc show int -- do
+    dup print is_prime print
+end
+
+proc main -- do
+   0 show
+   1 show
+   2 show
+   3 show
+   4 show
+   5 show
+   6 show
+   7 show
+   8 show
+   9 show
+  10 show
+  11 show
+  12 show
+  13 show
+  14 show
+  15 show
+  16 show
+  17 show
+  18 show
+  19 show
+  20 show
+  21 show
+  22 show
+  23 show
+  24 show
+  25 show
+  26 show
+  27 show
+  28 show
+  29 show
+  30 show
+end

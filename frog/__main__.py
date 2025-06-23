@@ -1,6 +1,5 @@
 import os
 import subprocess
-import shlex
 from pathlib import Path
 import sys
 import traceback
@@ -87,6 +86,7 @@ def run_frog(*args: str | os.PathLike[str]) -> int:
 
     return code
 
+
 USAGE = """
 Options:
   -h --help                   print this help message
@@ -103,6 +103,7 @@ Subcommands:
   repl                      start a Read-Eval-Print-Loop
 
 """
+
 
 def main(argv: list[str]) -> None:
     def usage_short() -> None:
@@ -149,7 +150,7 @@ def main(argv: list[str]) -> None:
             if argv[0] == '-h':
                 usage()
                 sys.exit(RC_OK)
-            
+
             elif argv[0] == '-c':
                 _, *argv = argv
                 if len(argv) < 1:
@@ -162,7 +163,7 @@ def main(argv: list[str]) -> None:
 
             else:
                 break
-        
+
         if code_src is None:
             if len(argv) < 1:
                 usage_short()
@@ -175,10 +176,10 @@ def main(argv: list[str]) -> None:
             if not file_src.exists():
                 print(f'[ERROR] file {file_src} does not exist')
                 sys.exit(RC_ERROR)
-            
+
             code_src = file_src.read_text()
             filename = str(file_src)
-        
+
         else:
             filename = '<cli>'
 

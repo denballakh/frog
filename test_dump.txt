@@ -1850,3 +1850,135 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 6
 5
 
+============================================================
+[CMD] py -m frog run examples/05_is_prime.frog
+[PRINT] INT():0@examples/05_is_prime.frog:55:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():1@examples/05_is_prime.frog:56:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():2@examples/05_is_prime.frog:57:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():3@examples/05_is_prime.frog:58:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():4@examples/05_is_prime.frog:59:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():5@examples/05_is_prime.frog:60:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():6@examples/05_is_prime.frog:61:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():7@examples/05_is_prime.frog:62:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():8@examples/05_is_prime.frog:63:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():9@examples/05_is_prime.frog:64:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():10@examples/05_is_prime.frog:65:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():11@examples/05_is_prime.frog:66:2
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():12@examples/05_is_prime.frog:67:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():13@examples/05_is_prime.frog:68:2
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():14@examples/05_is_prime.frog:69:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():15@examples/05_is_prime.frog:70:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():16@examples/05_is_prime.frog:71:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():17@examples/05_is_prime.frog:72:2
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():18@examples/05_is_prime.frog:73:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():19@examples/05_is_prime.frog:74:2
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():20@examples/05_is_prime.frog:75:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():21@examples/05_is_prime.frog:76:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():22@examples/05_is_prime.frog:77:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():23@examples/05_is_prime.frog:78:2
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():24@examples/05_is_prime.frog:79:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():25@examples/05_is_prime.frog:80:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():26@examples/05_is_prime.frog:81:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():27@examples/05_is_prime.frog:82:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():28@examples/05_is_prime.frog:83:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():29@examples/05_is_prime.frog:84:2
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
+[PRINT] INT():30@examples/05_is_prime.frog:85:2
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+============================================================
+[CMD] py -m frog build -r examples/05_is_prime.frog
+[CMD] gcc examples/05_is_prime.c -o examples/05_is_prime.exe
+[CMD] ./examples/05_is_prime.exe
+[STDOUT]:
+0
+false
+1
+false
+2
+true
+3
+true
+4
+false
+5
+true
+6
+false
+7
+true
+8
+false
+9
+false
+10
+false
+11
+true
+12
+false
+13
+true
+14
+false
+15
+false
+16
+false
+17
+true
+18
+false
+19
+true
+20
+false
+21
+false
+22
+false
+23
+true
+24
+false
+25
+false
+26
+false
+27
+false
+28
+false
+29
+true
+30
+false
+
