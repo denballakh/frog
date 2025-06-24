@@ -1,7 +1,7 @@
 ============================================================
 [CODE] '1 2 + print'
 [CMD] py -m frog run -c "1 2 + print"
-[PRINT] INT():3@<cli>:1:4
+[PRINT] INT():3@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -12,9 +12,9 @@
 ============================================================
 [CODE] '1 + print'
 [CMD] py -m frog run -c "1 + print"
-[ERROR] <cli>:1:2: stack too small for IntrinsicType.ADD: expected 2 but got 1
+[ERROR] <cli>:1:3: stack too small for IntrinsicType.ADD: expected 2 but got 1
 [NOTE] stack:
-      0. INT()@<cli>:1:0
+      0. INT()@<cli>:1:1
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -25,81 +25,81 @@
 [CMD] py -m frog run -c "1 2 +"
 [ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
-      0. INT()@<cli>:1:4
+      0. INT()@<cli>:1:5
 [NOTE] outs: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?'
 [CMD] py -m frog run -c "? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?"
-[INFO] <cli>:1:0: Stack at compile time:
+[INFO] <cli>:1:1: Stack at compile time:
 [NOTE] stack: (empty)
-[INFO] <cli>:1:4: Stack at compile time:
+[INFO] <cli>:1:5: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-[INFO] <cli>:1:8: Stack at compile time:
+      0. INT()@<cli>:1:3
+[INFO] <cli>:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:6
-[INFO] <cli>:1:12: Stack at compile time:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:7
+[INFO] <cli>:1:13: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:6
-      2. INT()@<cli>:1:10
-[INFO] <cli>:1:16: Stack at compile time:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:7
+      2. INT()@<cli>:1:11
+[INFO] <cli>:1:17: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:6
-      2. INT()@<cli>:1:10
-      3. INT()@<cli>:1:14
-[INFO] <cli>:1:20: Stack at compile time:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:7
+      2. INT()@<cli>:1:11
+      3. INT()@<cli>:1:15
+[INFO] <cli>:1:21: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:6
-      2. INT()@<cli>:1:18
-[INFO] <cli>:1:24: Stack at compile time:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:7
+      2. INT()@<cli>:1:19
+[INFO] <cli>:1:25: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:22
-[INFO] <cli>:1:28: Stack at compile time:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:23
+[INFO] <cli>:1:29: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:26
-[INFO] <cli>:1:36: Stack at compile time:
+      0. INT()@<cli>:1:27
+[INFO] <cli>:1:37: Stack at compile time:
 [NOTE] stack: (empty)
-[INFO] <cli>:1:0: Stack at runtime:
+[INFO] <cli>:1:1: Stack at runtime:
 [NOTE] stack: (empty)
-[INFO] <cli>:1:4: Stack at runtime:
+[INFO] <cli>:1:5: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:2
-[INFO] <cli>:1:8: Stack at runtime:
+      0. INT():1@<cli>:1:3
+[INFO] <cli>:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:2
-      1. INT():2@<cli>:1:6
-[INFO] <cli>:1:12: Stack at runtime:
+      0. INT():1@<cli>:1:3
+      1. INT():2@<cli>:1:7
+[INFO] <cli>:1:13: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:2
-      1. INT():2@<cli>:1:6
-      2. INT():3@<cli>:1:10
-[INFO] <cli>:1:16: Stack at runtime:
+      0. INT():1@<cli>:1:3
+      1. INT():2@<cli>:1:7
+      2. INT():3@<cli>:1:11
+[INFO] <cli>:1:17: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:2
-      1. INT():2@<cli>:1:6
-      2. INT():3@<cli>:1:10
-      3. INT():4@<cli>:1:14
-[INFO] <cli>:1:20: Stack at runtime:
+      0. INT():1@<cli>:1:3
+      1. INT():2@<cli>:1:7
+      2. INT():3@<cli>:1:11
+      3. INT():4@<cli>:1:15
+[INFO] <cli>:1:21: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:2
-      1. INT():2@<cli>:1:6
-      2. INT():7@<cli>:1:18
-[INFO] <cli>:1:24: Stack at runtime:
+      0. INT():1@<cli>:1:3
+      1. INT():2@<cli>:1:7
+      2. INT():7@<cli>:1:19
+[INFO] <cli>:1:25: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:2
-      1. INT():9@<cli>:1:22
-[INFO] <cli>:1:28: Stack at runtime:
+      0. INT():1@<cli>:1:3
+      1. INT():9@<cli>:1:23
+[INFO] <cli>:1:29: Stack at runtime:
 [NOTE] stack:
-      0. INT():10@<cli>:1:26
-[PRINT] INT():10@<cli>:1:26
-[INFO] <cli>:1:36: Stack at runtime:
+      0. INT():10@<cli>:1:27
+[PRINT] INT():10@<cli>:1:27
+[INFO] <cli>:1:37: Stack at runtime:
 [NOTE] stack: (empty)
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
@@ -111,7 +111,7 @@
 ============================================================
 [CODE] '+'
 [CMD] py -m frog run -c +
-[ERROR] <cli>:1:0: stack too small for IntrinsicType.ADD: expected 2 but got 0
+[ERROR] <cli>:1:1: stack too small for IntrinsicType.ADD: expected 2 but got 0
 [NOTE] stack: (empty)
 [NOTE] ins:
       0. INT()
@@ -121,7 +121,7 @@
 ============================================================
 [CODE] '~'
 [CMD] py -m frog run -c ~
-[ERROR] <cli>:1:0: stack too small for IntrinsicType.BNOT: expected 1 but got 0
+[ERROR] <cli>:1:1: stack too small for IntrinsicType.BNOT: expected 1 but got 0
 [NOTE] stack: (empty)
 [NOTE] ins:
       0. INT()
@@ -130,7 +130,7 @@
 ============================================================
 [CODE] '/%'
 [CMD] py -m frog run -c /%
-[ERROR] <cli>:1:0: stack too small for IntrinsicType.DIVMOD: expected 2 but got 0
+[ERROR] <cli>:1:1: stack too small for IntrinsicType.DIVMOD: expected 2 but got 0
 [NOTE] stack: (empty)
 [NOTE] ins:
       0. INT()
@@ -140,7 +140,7 @@
 ============================================================
 [CODE] '25 7 + print'
 [CMD] py -m frog run -c "25 7 + print"
-[PRINT] INT():32@<cli>:1:5
+[PRINT] INT():32@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -151,7 +151,7 @@
 ============================================================
 [CODE] '25 7 - print'
 [CMD] py -m frog run -c "25 7 - print"
-[PRINT] INT():18@<cli>:1:5
+[PRINT] INT():18@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -162,7 +162,7 @@
 ============================================================
 [CODE] '25 7 * print'
 [CMD] py -m frog run -c "25 7 * print"
-[PRINT] INT():175@<cli>:1:5
+[PRINT] INT():175@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -173,7 +173,7 @@
 ============================================================
 [CODE] '25 7 / print'
 [CMD] py -m frog run -c "25 7 / print"
-[PRINT] INT():3@<cli>:1:5
+[PRINT] INT():3@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -184,15 +184,15 @@
 ============================================================
 [CODE] '2 0 / print'
 [CMD] py -m frog run -c "2 0 / print"
-[ERROR] <cli>:1:4: division by zero
-[NOTE] a: INT():2@<cli>:1:0
-[NOTE] b: INT():0@<cli>:1:2
+[ERROR] <cli>:1:5: division by zero
+[NOTE] a: INT():2@<cli>:1:1
+[NOTE] b: INT():0@<cli>:1:3
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '25 7 % print'
 [CMD] py -m frog run -c "25 7 % print"
-[PRINT] INT():4@<cli>:1:5
+[PRINT] INT():4@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -203,16 +203,16 @@
 ============================================================
 [CODE] '25 7 /% ? print print'
 [CMD] py -m frog run -c "25 7 /% ? print print"
-[INFO] <cli>:1:8: Stack at compile time:
+[INFO] <cli>:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:5
-      1. INT()@<cli>:1:5
-[INFO] <cli>:1:8: Stack at runtime:
+      0. INT()@<cli>:1:6
+      1. INT()@<cli>:1:6
+[INFO] <cli>:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT():3@<cli>:1:5
-      1. INT():4@<cli>:1:5
-[PRINT] INT():4@<cli>:1:5
-[PRINT] INT():3@<cli>:1:5
+      0. INT():3@<cli>:1:6
+      1. INT():4@<cli>:1:6
+[PRINT] INT():4@<cli>:1:6
+[PRINT] INT():3@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -224,7 +224,7 @@
 ============================================================
 [CODE] '25 7 << print'
 [CMD] py -m frog run -c "25 7 << print"
-[PRINT] INT():3200@<cli>:1:5
+[PRINT] INT():3200@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -235,7 +235,7 @@
 ============================================================
 [CODE] '25 7 >> print'
 [CMD] py -m frog run -c "25 7 >> print"
-[PRINT] INT():0@<cli>:1:5
+[PRINT] INT():0@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -246,7 +246,7 @@
 ============================================================
 [CODE] '25 7 | print'
 [CMD] py -m frog run -c "25 7 | print"
-[PRINT] INT():31@<cli>:1:5
+[PRINT] INT():31@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -257,7 +257,7 @@
 ============================================================
 [CODE] '25 7 & print'
 [CMD] py -m frog run -c "25 7 & print"
-[PRINT] INT():1@<cli>:1:5
+[PRINT] INT():1@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -268,7 +268,7 @@
 ============================================================
 [CODE] '25 7 ^ print'
 [CMD] py -m frog run -c "25 7 ^ print"
-[PRINT] INT():30@<cli>:1:5
+[PRINT] INT():30@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -279,7 +279,7 @@
 ============================================================
 [CODE] '25 ~ print'
 [CMD] py -m frog run -c "25 ~ print"
-[PRINT] INT():-26@<cli>:1:3
+[PRINT] INT():-26@<cli>:1:4
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -290,10 +290,10 @@
 ============================================================
 [CODE] 'true 5 + print'
 [CMD] py -m frog run -c "true 5 + print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.ADD: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.ADD: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -302,10 +302,10 @@
 ============================================================
 [CODE] 'true 5 * print'
 [CMD] py -m frog run -c "true 5 * print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.MUL: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.MUL: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -314,10 +314,10 @@
 ============================================================
 [CODE] 'true 5 % print'
 [CMD] py -m frog run -c "true 5 % print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.MOD: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.MOD: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -326,10 +326,10 @@
 ============================================================
 [CODE] 'true 5 | print'
 [CMD] py -m frog run -c "true 5 | print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.BOR: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.BOR: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -338,10 +338,10 @@
 ============================================================
 [CODE] 'true 5 << print'
 [CMD] py -m frog run -c "true 5 << print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.SHL: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.SHL: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -350,10 +350,10 @@
 ============================================================
 [CODE] 'true 5 && print'
 [CMD] py -m frog run -c "true 5 && print"
-[ERROR] <cli>:1:7: stack doesnt match at 0 for IntrinsicType.AND: expected INT() but got BOOL()
+[ERROR] <cli>:1:8: stack doesnt match at 0 for IntrinsicType.AND: expected INT() but got BOOL()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. BOOL()
       1. BOOL()
@@ -362,10 +362,10 @@
 ============================================================
 [CODE] 'true 5 ! print'
 [CMD] py -m frog run -c "true 5 ! print"
-[ERROR] <cli>:1:7: stack doesnt match at 0 for IntrinsicType.NOT: expected INT() but got BOOL()
+[ERROR] <cli>:1:8: stack doesnt match at 0 for IntrinsicType.NOT: expected INT() but got BOOL()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. BOOL()
 [EXIT CODE] 1
@@ -373,10 +373,10 @@
 ============================================================
 [CODE] 'true 5 swap ~ print'
 [CMD] py -m frog run -c "true 5 swap ~ print"
-[ERROR] <cli>:1:12: stack doesnt match at 0 for IntrinsicType.BNOT: expected BOOL() but got INT()
+[ERROR] <cli>:1:13: stack doesnt match at 0 for IntrinsicType.BNOT: expected BOOL() but got INT()
 [NOTE] stack:
-      0. INT()@<cli>:1:5
-      1. BOOL()@<cli>:1:0
+      0. INT()@<cli>:1:6
+      1. BOOL()@<cli>:1:1
 [NOTE] ins:
       0. INT()
 [EXIT CODE] 1
@@ -384,10 +384,10 @@
 ============================================================
 [CODE] 'true 5 == print'
 [CMD] py -m frog run -c "true 5 == print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.EQ: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.EQ: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -396,10 +396,10 @@
 ============================================================
 [CODE] 'true 5 < print'
 [CMD] py -m frog run -c "true 5 < print"
-[ERROR] <cli>:1:7: stack doesnt match at 1 for IntrinsicType.LT: expected BOOL() but got INT()
+[ERROR] <cli>:1:8: stack doesnt match at 1 for IntrinsicType.LT: expected BOOL() but got INT()
 [NOTE] stack:
-      0. BOOL()@<cli>:1:0
-      1. INT()@<cli>:1:5
+      0. BOOL()@<cli>:1:1
+      1. INT()@<cli>:1:6
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -408,7 +408,7 @@
 ============================================================
 [CODE] 'true false && print'
 [CMD] py -m frog run -c "true false && print"
-[PRINT] BOOL():False@<cli>:1:11
+[PRINT] BOOL():False@<cli>:1:12
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -419,7 +419,7 @@ false
 ============================================================
 [CODE] 'true false || print'
 [CMD] py -m frog run -c "true false || print"
-[PRINT] BOOL():True@<cli>:1:11
+[PRINT] BOOL():True@<cli>:1:12
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -430,7 +430,7 @@ true
 ============================================================
 [CODE] 'true ! print'
 [CMD] py -m frog run -c "true ! print"
-[PRINT] BOOL():False@<cli>:1:5
+[PRINT] BOOL():False@<cli>:1:6
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -441,7 +441,7 @@ false
 ============================================================
 [CODE] 'false ! print'
 [CMD] py -m frog run -c "false ! print"
-[PRINT] BOOL():True@<cli>:1:6
+[PRINT] BOOL():True@<cli>:1:7
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -452,7 +452,7 @@ true
 ============================================================
 [CODE] '1 2 == print'
 [CMD] py -m frog run -c "1 2 == print"
-[PRINT] BOOL():False@<cli>:1:4
+[PRINT] BOOL():False@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -463,7 +463,7 @@ false
 ============================================================
 [CODE] '1 2 != print'
 [CMD] py -m frog run -c "1 2 != print"
-[PRINT] BOOL():True@<cli>:1:4
+[PRINT] BOOL():True@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -474,7 +474,7 @@ true
 ============================================================
 [CODE] '1 2 < print'
 [CMD] py -m frog run -c "1 2 < print"
-[PRINT] BOOL():True@<cli>:1:4
+[PRINT] BOOL():True@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -485,7 +485,7 @@ true
 ============================================================
 [CODE] '1 2 > print'
 [CMD] py -m frog run -c "1 2 > print"
-[PRINT] BOOL():False@<cli>:1:4
+[PRINT] BOOL():False@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -496,7 +496,7 @@ false
 ============================================================
 [CODE] '1 2 <= print'
 [CMD] py -m frog run -c "1 2 <= print"
-[PRINT] BOOL():True@<cli>:1:4
+[PRINT] BOOL():True@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -507,7 +507,7 @@ true
 ============================================================
 [CODE] '1 2 >= print'
 [CMD] py -m frog run -c "1 2 >= print"
-[PRINT] BOOL():False@<cli>:1:4
+[PRINT] BOOL():False@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -518,16 +518,16 @@ false
 ============================================================
 [CODE] '1 2 ? print print'
 [CMD] py -m frog run -c "1 2 ? print print"
-[INFO] <cli>:1:4: Stack at compile time:
+[INFO] <cli>:1:5: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:0
-      1. INT()@<cli>:1:2
-[INFO] <cli>:1:4: Stack at runtime:
+      0. INT()@<cli>:1:1
+      1. INT()@<cli>:1:3
+[INFO] <cli>:1:5: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:0
-      1. INT():2@<cli>:1:2
-[PRINT] INT():2@<cli>:1:2
-[PRINT] INT():1@<cli>:1:0
+      0. INT():1@<cli>:1:1
+      1. INT():2@<cli>:1:3
+[PRINT] INT():2@<cli>:1:3
+[PRINT] INT():1@<cli>:1:1
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -539,16 +539,16 @@ false
 ============================================================
 [CODE] '1 dup ? print print'
 [CMD] py -m frog run -c "1 dup ? print print"
-[INFO] <cli>:1:6: Stack at compile time:
+[INFO] <cli>:1:7: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:0
-      1. INT()@<cli>:1:0
-[INFO] <cli>:1:6: Stack at runtime:
+      0. INT()@<cli>:1:1
+      1. INT()@<cli>:1:1
+[INFO] <cli>:1:7: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:0
-      1. INT():1@<cli>:1:0
-[PRINT] INT():1@<cli>:1:0
-[PRINT] INT():1@<cli>:1:0
+      0. INT():1@<cli>:1:1
+      1. INT():1@<cli>:1:1
+[PRINT] INT():1@<cli>:1:1
+[PRINT] INT():1@<cli>:1:1
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -560,13 +560,13 @@ false
 ============================================================
 [CODE] '1 2 drop ? print'
 [CMD] py -m frog run -c "1 2 drop ? print"
-[INFO] <cli>:1:9: Stack at compile time:
+[INFO] <cli>:1:10: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:0
-[INFO] <cli>:1:9: Stack at runtime:
+      0. INT()@<cli>:1:1
+[INFO] <cli>:1:10: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:0
-[PRINT] INT():1@<cli>:1:0
+      0. INT():1@<cli>:1:1
+[PRINT] INT():1@<cli>:1:1
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -577,16 +577,16 @@ false
 ============================================================
 [CODE] '1 2 swap ? print print'
 [CMD] py -m frog run -c "1 2 swap ? print print"
-[INFO] <cli>:1:9: Stack at compile time:
+[INFO] <cli>:1:10: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:0
-[INFO] <cli>:1:9: Stack at runtime:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:1
+[INFO] <cli>:1:10: Stack at runtime:
 [NOTE] stack:
-      0. INT():2@<cli>:1:2
-      1. INT():1@<cli>:1:0
-[PRINT] INT():1@<cli>:1:0
-[PRINT] INT():2@<cli>:1:2
+      0. INT():2@<cli>:1:3
+      1. INT():1@<cli>:1:1
+[PRINT] INT():1@<cli>:1:1
+[PRINT] INT():2@<cli>:1:3
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -598,19 +598,19 @@ false
 ============================================================
 [CODE] '1 2 3 ? print print print'
 [CMD] py -m frog run -c "1 2 3 ? print print print"
-[INFO] <cli>:1:6: Stack at compile time:
+[INFO] <cli>:1:7: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:0
-      1. INT()@<cli>:1:2
-      2. INT()@<cli>:1:4
-[INFO] <cli>:1:6: Stack at runtime:
+      0. INT()@<cli>:1:1
+      1. INT()@<cli>:1:3
+      2. INT()@<cli>:1:5
+[INFO] <cli>:1:7: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:0
-      1. INT():2@<cli>:1:2
-      2. INT():3@<cli>:1:4
-[PRINT] INT():3@<cli>:1:4
-[PRINT] INT():2@<cli>:1:2
-[PRINT] INT():1@<cli>:1:0
+      0. INT():1@<cli>:1:1
+      1. INT():2@<cli>:1:3
+      2. INT():3@<cli>:1:5
+[PRINT] INT():3@<cli>:1:5
+[PRINT] INT():2@<cli>:1:3
+[PRINT] INT():1@<cli>:1:1
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -623,19 +623,19 @@ false
 ============================================================
 [CODE] '1 2 3 rot ? print print print'
 [CMD] py -m frog run -c "1 2 3 rot ? print print print"
-[INFO] <cli>:1:10: Stack at compile time:
+[INFO] <cli>:1:11: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:2
-      1. INT()@<cli>:1:4
-      2. INT()@<cli>:1:0
-[INFO] <cli>:1:10: Stack at runtime:
+      0. INT()@<cli>:1:3
+      1. INT()@<cli>:1:5
+      2. INT()@<cli>:1:1
+[INFO] <cli>:1:11: Stack at runtime:
 [NOTE] stack:
-      0. INT():2@<cli>:1:2
-      1. INT():3@<cli>:1:4
-      2. INT():1@<cli>:1:0
-[PRINT] INT():1@<cli>:1:0
-[PRINT] INT():3@<cli>:1:4
-[PRINT] INT():2@<cli>:1:2
+      0. INT():2@<cli>:1:3
+      1. INT():3@<cli>:1:5
+      2. INT():1@<cli>:1:1
+[PRINT] INT():1@<cli>:1:1
+[PRINT] INT():3@<cli>:1:5
+[PRINT] INT():2@<cli>:1:3
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -648,34 +648,34 @@ false
 ============================================================
 [CODE] '1 2 3 4 ? swap2 ? print print print print'
 [CMD] py -m frog run -c "1 2 3 4 ? swap2 ? print print print print"
-[INFO] <cli>:1:8: Stack at compile time:
+[INFO] <cli>:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:0
-      1. INT()@<cli>:1:2
-      2. INT()@<cli>:1:4
-      3. INT()@<cli>:1:6
-[INFO] <cli>:1:16: Stack at compile time:
+      0. INT()@<cli>:1:1
+      1. INT()@<cli>:1:3
+      2. INT()@<cli>:1:5
+      3. INT()@<cli>:1:7
+[INFO] <cli>:1:17: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:4
-      1. INT()@<cli>:1:6
-      2. INT()@<cli>:1:0
-      3. INT()@<cli>:1:2
-[INFO] <cli>:1:8: Stack at runtime:
+      0. INT()@<cli>:1:5
+      1. INT()@<cli>:1:7
+      2. INT()@<cli>:1:1
+      3. INT()@<cli>:1:3
+[INFO] <cli>:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@<cli>:1:0
-      1. INT():2@<cli>:1:2
-      2. INT():3@<cli>:1:4
-      3. INT():4@<cli>:1:6
-[INFO] <cli>:1:16: Stack at runtime:
+      0. INT():1@<cli>:1:1
+      1. INT():2@<cli>:1:3
+      2. INT():3@<cli>:1:5
+      3. INT():4@<cli>:1:7
+[INFO] <cli>:1:17: Stack at runtime:
 [NOTE] stack:
-      0. INT():3@<cli>:1:4
-      1. INT():4@<cli>:1:6
-      2. INT():1@<cli>:1:0
-      3. INT():2@<cli>:1:2
-[PRINT] INT():2@<cli>:1:2
-[PRINT] INT():1@<cli>:1:0
-[PRINT] INT():4@<cli>:1:6
-[PRINT] INT():3@<cli>:1:4
+      0. INT():3@<cli>:1:5
+      1. INT():4@<cli>:1:7
+      2. INT():1@<cli>:1:1
+      3. INT():2@<cli>:1:3
+[PRINT] INT():2@<cli>:1:3
+[PRINT] INT():1@<cli>:1:1
+[PRINT] INT():4@<cli>:1:7
+[PRINT] INT():3@<cli>:1:5
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -689,16 +689,16 @@ false
 ============================================================
 [CODE] 'print'
 [CMD] py -m frog run -c print
-[ERROR] <cli>:1:0: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack
+[ERROR] <cli>:1:1: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '?'
 [CMD] py -m frog run -c ?
-[INFO] <cli>:1:0: Stack at compile time:
+[INFO] <cli>:1:1: Stack at compile time:
 [NOTE] stack: (empty)
-[INFO] <cli>:1:0: Stack at runtime:
+[INFO] <cli>:1:1: Stack at runtime:
 [NOTE] stack: (empty)
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
@@ -707,44 +707,44 @@ false
 ============================================================
 [CODE] 'dup'
 [CMD] py -m frog run -c dup
-[ERROR] <cli>:1:0: not enough items on stack for IntrinsicType.DUP: it expects one item on the stack
+[ERROR] <cli>:1:1: not enough items on stack for IntrinsicType.DUP: it expects one item on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'swap'
 [CMD] py -m frog run -c swap
-[ERROR] <cli>:1:0: not enough items on stack for IntrinsicType.SWAP: it expects two items on the stack
+[ERROR] <cli>:1:1: not enough items on stack for IntrinsicType.SWAP: it expects two items on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'drop'
 [CMD] py -m frog run -c drop
-[ERROR] <cli>:1:0: not enough items on stack for IntrinsicType.DROP: it expects one item on the stack
+[ERROR] <cli>:1:1: not enough items on stack for IntrinsicType.DROP: it expects one item on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'rot'
 [CMD] py -m frog run -c rot
-[ERROR] <cli>:1:0: not enough items on stack for IntrinsicType.ROT: it expects three items on the stack
+[ERROR] <cli>:1:1: not enough items on stack for IntrinsicType.ROT: it expects three items on the stack
 [NOTE] stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '1 2 == if do 5 else 7 end print'
 [CMD] py -m frog run -c "1 2 == if do 5 else 7 end print"
-[ERROR] <cli>:1:10: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[ERROR] <cli>:1:11: condition part of InstructionType.IF should put exactly one BOOL on the stack
 [NOTE] expected_stack:
-      0. BOOL()@<cli>:1:4
+      0. BOOL()@<cli>:1:5
 [NOTE] actual_stack: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 == do 5 else 7 end print'
 [CMD] py -m frog run -c "if 1 2 == do 5 else 7 end print"
-[PRINT] INT():7@<cli>:1:20
+[PRINT] INT():7@<cli>:1:21
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -755,7 +755,7 @@ false
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 end print'
 [CMD] py -m frog run -c "if 1 2 != do 5 else 7 end print"
-[PRINT] INT():5@<cli>:1:13
+[PRINT] INT():5@<cli>:1:14
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -766,12 +766,12 @@ false
 ============================================================
 [CODE] 'if 1 2 != do 5 else 7 8 end print'
 [CMD] py -m frog run -c "if 1 2 != do 5 else 7 8 end print"
-[ERROR] <cli>:1:24: both branches of InstructionType.IF must leave the stack in the same state
+[ERROR] <cli>:1:25: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
-      0. INT()@<cli>:1:13
+      0. INT()@<cli>:1:14
 [NOTE] stack_else:
-      0. INT()@<cli>:1:20
-      1. INT()@<cli>:1:22
+      0. INT()@<cli>:1:21
+      1. INT()@<cli>:1:23
 [EXIT CODE] 1
 
 ============================================================
@@ -779,32 +779,32 @@ false
 [CMD] py -m frog run -c "if 1 2 != do 5 else 7 end"
 [ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
-      0. INT()@<cli>:1:20
+      0. INT()@<cli>:1:21
 [NOTE] outs: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 != do 5 else end'
 [CMD] py -m frog run -c "if 1 2 != do 5 else end"
-[ERROR] <cli>:1:20: both branches of InstructionType.IF must leave the stack in the same state
+[ERROR] <cli>:1:21: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
-      0. INT()@<cli>:1:13
+      0. INT()@<cli>:1:14
 [NOTE] stack_else: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 != do 5 end'
 [CMD] py -m frog run -c "if 1 2 != do 5 end"
-[ERROR] <cli>:1:15: both branches of InstructionType.IF must leave the stack in the same state
+[ERROR] <cli>:1:16: both branches of InstructionType.IF must leave the stack in the same state
 [NOTE] stack_then:
-      0. INT()@<cli>:1:13
+      0. INT()@<cli>:1:14
 [NOTE] stack_else: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 != do 5 print end'
 [CMD] py -m frog run -c "if 1 2 != do 5 print end"
-[PRINT] INT():5@<cli>:1:13
+[PRINT] INT():5@<cli>:1:14
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -815,7 +815,7 @@ false
 ============================================================
 [CODE] '5 if 1 2 == do drop 7 end print'
 [CMD] py -m frog run -c "5 if 1 2 == do drop 7 end print"
-[PRINT] INT():5@<cli>:1:0
+[PRINT] INT():5@<cli>:1:1
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -826,7 +826,7 @@ false
 ============================================================
 [CODE] '5 if 1 2 != do drop 7 end print'
 [CMD] py -m frog run -c "5 if 1 2 != do drop 7 end print"
-[PRINT] INT():7@<cli>:1:20
+[PRINT] INT():7@<cli>:1:21
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -861,88 +861,88 @@ false
 ============================================================
 [CODE] 'if 1 2 == else 5 end'
 [CMD] py -m frog run -c "if 1 2 == else 5 end"
-[ERROR] <cli>:1:17: if <cond> do <body> [else <body>] end
+[ERROR] <cli>:1:18: if <cond> do <body> [else <body>] end
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if do end'
 [CMD] py -m frog run -c "if do end"
-[ERROR] <cli>:1:3: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[ERROR] <cli>:1:4: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 do end'
 [CMD] py -m frog run -c "if 1 do end"
-[ERROR] <cli>:1:5: InstructionType.DO expects one BOOL on the stack, but got INT()
+[ERROR] <cli>:1:6: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 do end'
 [CMD] py -m frog run -c "if 1 2 do end"
-[ERROR] <cli>:1:7: InstructionType.DO expects one BOOL on the stack, but got INT()
+[ERROR] <cli>:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT()@<cli>:1:3
+      0. INT()@<cli>:1:4
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 3 do end'
 [CMD] py -m frog run -c "if 1 2 3 do end"
-[ERROR] <cli>:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
+[ERROR] <cli>:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT()@<cli>:1:3
-      1. INT()@<cli>:1:5
+      0. INT()@<cli>:1:4
+      1. INT()@<cli>:1:6
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'if 1 2 3 == do end'
 [CMD] py -m frog run -c "if 1 2 3 == do end"
-[ERROR] <cli>:1:12: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[ERROR] <cli>:1:13: condition part of InstructionType.IF should put exactly one BOOL on the stack
 [NOTE] expected_stack: (empty)
 [NOTE] actual_stack:
-      0. INT()@<cli>:1:3
+      0. INT()@<cli>:1:4
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'else'
 [CMD] py -m frog run -c else
-[ERROR] <cli>:1:0: ELSE should follow an IF
+[ERROR] <cli>:1:1: ELSE should follow an IF
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '10 while dup 5 > do 1 - print ? end drop'
 [CMD] py -m frog run -c "10 while dup 5 > do 1 - print ? end drop"
-[INFO] <cli>:1:30: Stack at compile time:
+[INFO] <cli>:1:31: Stack at compile time:
 [NOTE] stack: (empty)
-[ERROR] <cli>:1:32: InstructionType.WHILE must not alter the stack state
+[ERROR] <cli>:1:33: InstructionType.WHILE must not alter the stack state
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '10 while dup 5 > do 1 - dup print ? end drop'
 [CMD] py -m frog run -c "10 while dup 5 > do 1 - dup print ? end drop"
-[INFO] <cli>:1:34: Stack at compile time:
+[INFO] <cli>:1:35: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:22
-[PRINT] INT():9@<cli>:1:22
-[INFO] <cli>:1:34: Stack at runtime:
+      0. INT()@<cli>:1:23
+[PRINT] INT():9@<cli>:1:23
+[INFO] <cli>:1:35: Stack at runtime:
 [NOTE] stack:
-      0. INT():9@<cli>:1:22
-[PRINT] INT():8@<cli>:1:22
-[INFO] <cli>:1:34: Stack at runtime:
+      0. INT():9@<cli>:1:23
+[PRINT] INT():8@<cli>:1:23
+[INFO] <cli>:1:35: Stack at runtime:
 [NOTE] stack:
-      0. INT():8@<cli>:1:22
-[PRINT] INT():7@<cli>:1:22
-[INFO] <cli>:1:34: Stack at runtime:
+      0. INT():8@<cli>:1:23
+[PRINT] INT():7@<cli>:1:23
+[INFO] <cli>:1:35: Stack at runtime:
 [NOTE] stack:
-      0. INT():7@<cli>:1:22
-[PRINT] INT():6@<cli>:1:22
-[INFO] <cli>:1:34: Stack at runtime:
+      0. INT():7@<cli>:1:23
+[PRINT] INT():6@<cli>:1:23
+[INFO] <cli>:1:35: Stack at runtime:
 [NOTE] stack:
-      0. INT():6@<cli>:1:22
-[PRINT] INT():5@<cli>:1:22
-[INFO] <cli>:1:34: Stack at runtime:
+      0. INT():6@<cli>:1:23
+[PRINT] INT():5@<cli>:1:23
+[INFO] <cli>:1:35: Stack at runtime:
 [NOTE] stack:
-      0. INT():5@<cli>:1:22
+      0. INT():5@<cli>:1:23
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -957,13 +957,13 @@ false
 ============================================================
 [CODE] 'while else'
 [CMD] py -m frog run -c "while else"
-[ERROR] <cli>:1:6: ELSE should follow an IF, not WHILE
+[ERROR] <cli>:1:7: ELSE should follow an IF, not WHILE
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while end'
 [CMD] py -m frog run -c "while end"
-[ERROR] <cli>:1:6: while <cond> do <body> end
+[ERROR] <cli>:1:7: while <cond> do <body> end
 [EXIT CODE] 1
 
 ============================================================
@@ -985,52 +985,52 @@ false
 ============================================================
 [CODE] 'while do end'
 [CMD] py -m frog run -c "while do end"
-[ERROR] <cli>:1:6: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[ERROR] <cli>:1:7: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 do end'
 [CMD] py -m frog run -c "while 1 do end"
-[ERROR] <cli>:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
+[ERROR] <cli>:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items: (empty)
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 do end'
 [CMD] py -m frog run -c "while 1 2 do end"
-[ERROR] <cli>:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
+[ERROR] <cli>:1:11: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT()@<cli>:1:6
+      0. INT()@<cli>:1:7
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 3 do end'
 [CMD] py -m frog run -c "while 1 2 3 do end"
-[ERROR] <cli>:1:12: InstructionType.DO expects one BOOL on the stack, but got INT()
+[ERROR] <cli>:1:13: InstructionType.DO expects one BOOL on the stack, but got INT()
 [NOTE] other_stack_items:
-      0. INT()@<cli>:1:6
-      1. INT()@<cli>:1:8
+      0. INT()@<cli>:1:7
+      1. INT()@<cli>:1:9
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'while 1 2 3 == do end'
 [CMD] py -m frog run -c "while 1 2 3 == do end"
-[ERROR] <cli>:1:15: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
+[ERROR] <cli>:1:16: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
 [NOTE] expected_stack: (empty)
 [NOTE] actual_stack:
-      0. INT()@<cli>:1:6
+      0. INT()@<cli>:1:7
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'do'
 [CMD] py -m frog run -c do
-[ERROR] <cli>:1:0: DO should follow an IF or WHILE
+[ERROR] <cli>:1:1: DO should follow an IF or WHILE
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'end'
 [CMD] py -m frog run -c end
-[ERROR] <cli>:1:0: END should follow an IF or WHILE
+[ERROR] <cli>:1:1: END should follow an IF or WHILE
 [EXIT CODE] 1
 
 ============================================================
@@ -1043,84 +1043,84 @@ false
 ============================================================
 [CODE] "'"
 [CMD] py -m frog run -c '
-[ERROR] <cli>:1:0: unterminated character literal
+[ERROR] <cli>:1:1: unterminated character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "''"
 [CMD] py -m frog run -c ''
-[ERROR] <cli>:1:0: invalid character literal
+[ERROR] <cli>:1:1: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'aa'"
 [CMD] py -m frog run -c 'aa'
-[ERROR] <cli>:1:0: invalid character literal
+[ERROR] <cli>:1:1: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'\\n'"
 [CMD] py -m frog run -c '\n'
-[ERROR] <cli>:1:0: invalid character literal
+[ERROR] <cli>:1:1: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'\\t'"
 [CMD] py -m frog run -c '\t'
-[ERROR] <cli>:1:0: invalid character literal
+[ERROR] <cli>:1:1: invalid character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] "'\\''"
 [CMD] py -m frog run -c '\''
-[ERROR] <cli>:1:1: unterminated character literal
+[ERROR] <cli>:1:2: unterminated character literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '"'
 [CMD] py -m frog run -c \"
-[ERROR] <cli>:1:0: unterminated string literal
+[ERROR] <cli>:1:1: unterminated string literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '"" ?'
 [CMD] py -m frog run -c "\"\" ?"
-[ERROR] <cli>:1:0: not implemented: string literals
-[LOC] __init__.py:212:0
+[ERROR] <cli>:1:1: not implemented: string literals
+[LOC] __init__.py:217:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
 [CMD] py -m frog run -c "\"abc\" ?"
-[ERROR] <cli>:1:0: not implemented: string literals
-[LOC] __init__.py:212:0
+[ERROR] <cli>:1:1: not implemented: string literals
+[LOC] __init__.py:217:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
 [CMD] py -m frog run -c "\"abc\n\" ?"
-[ERROR] <cli>:1:0: not implemented: string literals
-[LOC] __init__.py:212:0
+[ERROR] <cli>:1:1: not implemented: string literals
+[LOC] __init__.py:217:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
 [CMD] py -m frog run -c "\"abc'\" ?"
-[ERROR] <cli>:1:0: not implemented: string literals
-[LOC] __init__.py:212:0
+[ERROR] <cli>:1:1: not implemented: string literals
+[LOC] __init__.py:217:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\"" ?'
 [CMD] py -m frog run -c "\"abc\\\"\" ?"
-[ERROR] <cli>:1:1: unterminated string literal
+[ERROR] <cli>:1:2: unterminated string literal
 [EXIT CODE] 1
 
 ============================================================
 [CODE] '1 // comment \n print'
 [CMD] py -m frog run -c "1 // comment 
  print"
-[PRINT] INT():1@<cli>:1:0
+[PRINT] INT():1@<cli>:1:1
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1131,13 +1131,13 @@ false
 ============================================================
 [CODE] 'proc'
 [CMD] py -m frog run -c proc
-[ERROR] <cli>:1:0: expected a name after PROC
+[ERROR] <cli>:1:1: expected a name after PROC
 [EXIT CODE] 1
 
 ============================================================
 [CODE] 'somerandomword'
 [CMD] py -m frog run -c somerandomword
-[ERROR] <cli>:1:0: unknown word somerandomword
+[ERROR] <cli>:1:1: unknown word somerandomword
 [EXIT CODE] 1
 
 ============================================================
@@ -1146,7 +1146,7 @@ false
     proc a int -- int do 2 * end
     5 a print
     "
-[PRINT] INT():10@<cli>:2:27
+[PRINT] INT():10@<cli>:2:28
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1159,7 +1159,7 @@ false
 [CMD] py -m frog run -c "
     proc a do 2 * end
     "
-[ERROR] <cli>:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=<cli>:2:11)
+[ERROR] <cli>:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=<cli>:2:12)
 [EXIT CODE] 1
 
 ============================================================
@@ -1167,7 +1167,7 @@ false
 [CMD] py -m frog run -c "
     proc a int do 2 * end
     "
-[ERROR] <cli>:2:9: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=<cli>:2:15)
+[ERROR] <cli>:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=<cli>:2:16)
 [EXIT CODE] 1
 
 ============================================================
@@ -1175,9 +1175,9 @@ false
 [CMD] py -m frog run -c "
     proc a -- do 2 * end
     "
-[ERROR] <cli>:2:19: stack too small for IntrinsicType.MUL: expected 2 but got 1
+[ERROR] <cli>:2:20: stack too small for IntrinsicType.MUL: expected 2 but got 1
 [NOTE] stack:
-      0. INT()@<cli>:2:17
+      0. INT()@<cli>:2:18
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -1188,9 +1188,9 @@ false
 [CMD] py -m frog run -c "
     proc a int -- do 2 * end
     "
-[ERROR] <cli>:2:25: return type mismatch: expected 0 items on the stack, got 1
+[ERROR] <cli>:2:26: return type mismatch: expected 0 items on the stack, got 1
 [NOTE] stack:
-      0. INT()@<cli>:2:23
+      0. INT()@<cli>:2:24
 [NOTE] outs: (empty)
 [EXIT CODE] 1
 
@@ -1199,9 +1199,9 @@ false
 [CMD] py -m frog run -c "
     proc a int -- int int do 2 * end
     "
-[ERROR] <cli>:2:33: return type mismatch: expected 2 items on the stack, got 1
+[ERROR] <cli>:2:34: return type mismatch: expected 2 items on the stack, got 1
 [NOTE] stack:
-      0. INT()@<cli>:2:31
+      0. INT()@<cli>:2:32
 [NOTE] outs:
       0. INT()
       1. INT()
@@ -1213,7 +1213,7 @@ false
     proc a int -- int do drop 5 end
     5 a print
     "
-[PRINT] INT():5@<cli>:2:30
+[PRINT] INT():5@<cli>:2:31
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1227,9 +1227,9 @@ false
     proc a bool -- int do drop 5 end
     5 a print
     "
-[ERROR] <cli>:3:6: stack doesnt match at 0 for a: expected INT() but got BOOL()
+[ERROR] <cli>:3:7: stack doesnt match at 0 for a: expected INT() but got BOOL()
 [NOTE] stack:
-      0. INT()@<cli>:3:4
+      0. INT()@<cli>:3:5
 [NOTE] ins:
       0. BOOL()
 [EXIT CODE] 1
@@ -1240,9 +1240,9 @@ false
     proc a int int -- int do + end
     5 a print
     "
-[ERROR] <cli>:3:6: stack too small for a: expected 2 but got 1
+[ERROR] <cli>:3:7: stack too small for a: expected 2 but got 1
 [NOTE] stack:
-      0. INT()@<cli>:3:4
+      0. INT()@<cli>:3:5
 [NOTE] ins:
       0. INT()
       1. INT()
@@ -1254,7 +1254,7 @@ false
     proc a x -- y do + end
     5 a print
     "
-[ERROR] <cli>:2:11: expected a type after proc name, got x
+[ERROR] <cli>:2:12: expected a type after proc name, got x
 [EXIT CODE] 1
 
 ============================================================
@@ -1263,7 +1263,7 @@ false
     proc a int int -- int do + end
     5 7 a print
     "
-[PRINT] INT():12@<cli>:2:29
+[PRINT] INT():12@<cli>:2:30
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1274,26 +1274,26 @@ false
 ============================================================
 [CODE] '5 int ? cast ? print'
 [CMD] py -m frog run -c "5 int ? cast ? print"
-[INFO] <cli>:1:6: Stack at compile time:
+[INFO] <cli>:1:7: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:0
-      1. TYPE(INT())@<cli>:1:2
-[WARN] <cli>:1:8: redundant cast INT() to INT()
-[INFO] <cli>:1:13: Stack at compile time:
+      0. INT()@<cli>:1:1
+      1. TYPE(INT())@<cli>:1:3
+[WARN] <cli>:1:9: redundant cast INT() to INT()
+[INFO] <cli>:1:14: Stack at compile time:
 [NOTE] stack:
-      0. INT()@<cli>:1:8
-[INFO] <cli>:1:6: Stack at runtime:
+      0. INT()@<cli>:1:9
+[INFO] <cli>:1:7: Stack at runtime:
 [NOTE] stack:
-      0. INT():5@<cli>:1:0
-      1. TYPE(INT()):INT()@<cli>:1:2
-[WARN] <cli>:1:8: redundant cast INT() to INT()
-[INFO] <cli>:1:13: Stack at runtime:
+      0. INT():5@<cli>:1:1
+      1. TYPE(INT()):INT()@<cli>:1:3
+[WARN] <cli>:1:9: redundant cast INT() to INT()
+[INFO] <cli>:1:14: Stack at runtime:
 [NOTE] stack:
-      0. INT():5@<cli>:1:8
-[PRINT] INT():5@<cli>:1:8
+      0. INT():5@<cli>:1:9
+[PRINT] INT():5@<cli>:1:9
 [CMD] py -m frog -l WARN build -r tmp.frog
-[WARN] tmp.frog:1:8: redundant cast INT() to INT()
-[WARN] tmp.frog:1:8: redundant cast INT() to INT()
+[WARN] tmp.frog:1:9: redundant cast INT() to INT()
+[WARN] tmp.frog:1:9: redundant cast INT() to INT()
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1303,7 +1303,7 @@ false
 ============================================================
 [CODE] '5 bool cast print'
 [CMD] py -m frog run -c "5 bool cast print"
-[PRINT] BOOL():True@<cli>:1:7
+[PRINT] BOOL():True@<cli>:1:8
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1314,7 +1314,7 @@ true
 ============================================================
 [CODE] '0 bool cast print'
 [CMD] py -m frog run -c "0 bool cast print"
-[PRINT] BOOL():False@<cli>:1:7
+[PRINT] BOOL():False@<cli>:1:8
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1325,7 +1325,7 @@ false
 ============================================================
 [CODE] 'true int cast print'
 [CMD] py -m frog run -c "true int cast print"
-[PRINT] INT():1@<cli>:1:9
+[PRINT] INT():1@<cli>:1:10
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1336,7 +1336,7 @@ false
 ============================================================
 [CODE] 'false int cast print'
 [CMD] py -m frog run -c "false int cast print"
-[PRINT] INT():0@<cli>:1:10
+[PRINT] INT():0@<cli>:1:11
 [CMD] py -m frog -l WARN build -r tmp.frog
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
@@ -1347,12 +1347,12 @@ false
 ============================================================
 [CODE] 'false bool cast print'
 [CMD] py -m frog run -c "false bool cast print"
-[WARN] <cli>:1:11: redundant cast BOOL() to BOOL()
-[WARN] <cli>:1:11: redundant cast BOOL() to BOOL()
-[PRINT] BOOL():False@<cli>:1:11
+[WARN] <cli>:1:12: redundant cast BOOL() to BOOL()
+[WARN] <cli>:1:12: redundant cast BOOL() to BOOL()
+[PRINT] BOOL():False@<cli>:1:12
 [CMD] py -m frog -l WARN build -r tmp.frog
-[WARN] tmp.frog:1:11: redundant cast BOOL() to BOOL()
-[WARN] tmp.frog:1:11: redundant cast BOOL() to BOOL()
+[WARN] tmp.frog:1:12: redundant cast BOOL() to BOOL()
+[WARN] tmp.frog:1:12: redundant cast BOOL() to BOOL()
 [CMD] gcc tmp.c -o tmp.exe
 [CMD] ./tmp.exe
 [STDOUT]:
@@ -1430,12 +1430,12 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [CMD] py -m frog -l TRACE run examples/01_simple.frog
 [TRACE] <?>:0:0: file: examples/01_simple.frog
 [NOTE] Tokens:
-      0. examples/01_simple.frog:1:0:INT:1
-      1. examples/01_simple.frog:1:2:INT:2
-      2. examples/01_simple.frog:1:4:WORD:'?'
-      3. examples/01_simple.frog:1:6:WORD:'+'
-      4. examples/01_simple.frog:1:8:WORD:'?'
-      5. examples/01_simple.frog:1:10:WORD:'print'
+      0. examples/01_simple.frog:1:1:INT:1
+      1. examples/01_simple.frog:1:3:INT:2
+      2. examples/01_simple.frog:1:5:WORD:'?'
+      3. examples/01_simple.frog:1:7:WORD:'+'
+      4. examples/01_simple.frog:1:9:WORD:'?'
+      5. examples/01_simple.frog:1:11:WORD:'print'
 [TRACE] <?>:0:0: Compiled IR
 [NOTE] IR:
     IR:
@@ -1447,81 +1447,81 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
       4. INTRINSIC:DEBUG
       5. INTRINSIC:PRINT
       6. RET
-[INFO] examples/01_simple.frog:1:4: Stack at compile time:
+[INFO] examples/01_simple.frog:1:5: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:0
-      1. INT()@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at compile time:
+      0. INT()@examples/01_simple.frog:1:1
+      1. INT()@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:6
-[INFO] examples/01_simple.frog:1:4: Stack at runtime:
+      0. INT()@examples/01_simple.frog:1:7
+[INFO] examples/01_simple.frog:1:5: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:0
-      1. INT():2@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at runtime:
+      0. INT():1@examples/01_simple.frog:1:1
+      1. INT():2@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:6
-[PRINT] INT():3@examples/01_simple.frog:1:6
+      0. INT():3@examples/01_simple.frog:1:7
+[PRINT] INT():3@examples/01_simple.frog:1:7
 ============================================================
 [CMD] py -m frog -l LOL run examples/01_simple.frog
 [ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE']
 [EXIT CODE] 1
 ============================================================
 [CMD] py -m frog -l WARN run examples/01_simple.frog
-[PRINT] INT():3@examples/01_simple.frog:1:6
+[PRINT] INT():3@examples/01_simple.frog:1:7
 ============================================================
 [CMD] py -m frog -l INFO run examples/01_simple.frog
-[INFO] examples/01_simple.frog:1:4: Stack at compile time:
+[INFO] examples/01_simple.frog:1:5: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:0
-      1. INT()@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at compile time:
+      0. INT()@examples/01_simple.frog:1:1
+      1. INT()@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:6
-[INFO] examples/01_simple.frog:1:4: Stack at runtime:
+      0. INT()@examples/01_simple.frog:1:7
+[INFO] examples/01_simple.frog:1:5: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:0
-      1. INT():2@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at runtime:
+      0. INT():1@examples/01_simple.frog:1:1
+      1. INT():2@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:6
-[PRINT] INT():3@examples/01_simple.frog:1:6
+      0. INT():3@examples/01_simple.frog:1:7
+[PRINT] INT():3@examples/01_simple.frog:1:7
 ============================================================
 [CMD] py -m frog -l ERROR run examples/01_simple.frog
-[PRINT] INT():3@examples/01_simple.frog:1:6
+[PRINT] INT():3@examples/01_simple.frog:1:7
 ============================================================
 [CMD] py -m frog -l TRACE run examples/02_while.frog
 [TRACE] <?>:0:0: file: examples/02_while.frog
 [NOTE] Tokens:
-      0. examples/02_while.frog:2:0:INT:1
-      1. examples/02_while.frog:3:0:INT:2
-      2. examples/02_while.frog:4:0:WORD:'swap'
-      3. examples/02_while.frog:5:0:WORD:'dup'
-      4. examples/02_while.frog:6:0:WORD:'print'
-      5. examples/02_while.frog:7:0:INT:10
-      6. examples/02_while.frog:8:0:WORD:'*'
-      7. examples/02_while.frog:9:0:WORD:'+'
-      8. examples/02_while.frog:10:0:KEYWORD:WHILE
-      9. examples/02_while.frog:11:2:WORD:'dup'
-     10. examples/02_while.frog:12:2:INT:3
-     11. examples/02_while.frog:13:2:WORD:'>'
-     12. examples/02_while.frog:14:0:KEYWORD:DO
-     13. examples/02_while.frog:15:2:KEYWORD:IF
-     14. examples/02_while.frog:16:4:WORD:'dup'
-     15. examples/02_while.frog:17:4:INT:2
-     16. examples/02_while.frog:18:4:WORD:'%'
-     17. examples/02_while.frog:19:4:INT:0
-     18. examples/02_while.frog:20:4:WORD:'=='
-     19. examples/02_while.frog:21:2:KEYWORD:DO
-     20. examples/02_while.frog:22:4:INT:5
-     21. examples/02_while.frog:23:2:KEYWORD:ELSE
-     22. examples/02_while.frog:24:4:INT:7
-     23. examples/02_while.frog:25:2:KEYWORD:END
-     24. examples/02_while.frog:27:2:WORD:'print'
-     25. examples/02_while.frog:28:2:INT:1
-     26. examples/02_while.frog:29:2:WORD:'-'
-     27. examples/02_while.frog:30:0:KEYWORD:END
-     28. examples/02_while.frog:32:0:WORD:'drop'
+      0. examples/02_while.frog:2:1:INT:1
+      1. examples/02_while.frog:3:1:INT:2
+      2. examples/02_while.frog:4:1:WORD:'swap'
+      3. examples/02_while.frog:5:1:WORD:'dup'
+      4. examples/02_while.frog:6:1:WORD:'print'
+      5. examples/02_while.frog:7:1:INT:10
+      6. examples/02_while.frog:8:1:WORD:'*'
+      7. examples/02_while.frog:9:1:WORD:'+'
+      8. examples/02_while.frog:10:1:KEYWORD:WHILE
+      9. examples/02_while.frog:11:3:WORD:'dup'
+     10. examples/02_while.frog:12:3:INT:3
+     11. examples/02_while.frog:13:3:WORD:'>'
+     12. examples/02_while.frog:14:1:KEYWORD:DO
+     13. examples/02_while.frog:15:3:KEYWORD:IF
+     14. examples/02_while.frog:16:5:WORD:'dup'
+     15. examples/02_while.frog:17:5:INT:2
+     16. examples/02_while.frog:18:5:WORD:'%'
+     17. examples/02_while.frog:19:5:INT:0
+     18. examples/02_while.frog:20:5:WORD:'=='
+     19. examples/02_while.frog:21:3:KEYWORD:DO
+     20. examples/02_while.frog:22:5:INT:5
+     21. examples/02_while.frog:23:3:KEYWORD:ELSE
+     22. examples/02_while.frog:24:5:INT:7
+     23. examples/02_while.frog:25:3:KEYWORD:END
+     24. examples/02_while.frog:27:3:WORD:'print'
+     25. examples/02_while.frog:28:3:INT:1
+     26. examples/02_while.frog:29:3:WORD:'-'
+     27. examples/02_while.frog:30:1:KEYWORD:END
+     28. examples/02_while.frog:32:1:WORD:'drop'
 [TRACE] <?>:0:0: Compiled IR
 [NOTE] IR:
     IR:
@@ -1556,49 +1556,49 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
      27. END:8
      28. INTRINSIC:DROP
      29. RET
-[PRINT] INT():1@examples/02_while.frog:2:0
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
+[PRINT] INT():1@examples/02_while.frog:2:1
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
 ============================================================
 [CMD] py -m frog -l TRACE build -r examples/02_while.frog
 [TRACE] <?>:0:0: file: examples/02_while.frog
 [NOTE] Tokens:
-      0. examples/02_while.frog:2:0:INT:1
-      1. examples/02_while.frog:3:0:INT:2
-      2. examples/02_while.frog:4:0:WORD:'swap'
-      3. examples/02_while.frog:5:0:WORD:'dup'
-      4. examples/02_while.frog:6:0:WORD:'print'
-      5. examples/02_while.frog:7:0:INT:10
-      6. examples/02_while.frog:8:0:WORD:'*'
-      7. examples/02_while.frog:9:0:WORD:'+'
-      8. examples/02_while.frog:10:0:KEYWORD:WHILE
-      9. examples/02_while.frog:11:2:WORD:'dup'
-     10. examples/02_while.frog:12:2:INT:3
-     11. examples/02_while.frog:13:2:WORD:'>'
-     12. examples/02_while.frog:14:0:KEYWORD:DO
-     13. examples/02_while.frog:15:2:KEYWORD:IF
-     14. examples/02_while.frog:16:4:WORD:'dup'
-     15. examples/02_while.frog:17:4:INT:2
-     16. examples/02_while.frog:18:4:WORD:'%'
-     17. examples/02_while.frog:19:4:INT:0
-     18. examples/02_while.frog:20:4:WORD:'=='
-     19. examples/02_while.frog:21:2:KEYWORD:DO
-     20. examples/02_while.frog:22:4:INT:5
-     21. examples/02_while.frog:23:2:KEYWORD:ELSE
-     22. examples/02_while.frog:24:4:INT:7
-     23. examples/02_while.frog:25:2:KEYWORD:END
-     24. examples/02_while.frog:27:2:WORD:'print'
-     25. examples/02_while.frog:28:2:INT:1
-     26. examples/02_while.frog:29:2:WORD:'-'
-     27. examples/02_while.frog:30:0:KEYWORD:END
-     28. examples/02_while.frog:32:0:WORD:'drop'
+      0. examples/02_while.frog:2:1:INT:1
+      1. examples/02_while.frog:3:1:INT:2
+      2. examples/02_while.frog:4:1:WORD:'swap'
+      3. examples/02_while.frog:5:1:WORD:'dup'
+      4. examples/02_while.frog:6:1:WORD:'print'
+      5. examples/02_while.frog:7:1:INT:10
+      6. examples/02_while.frog:8:1:WORD:'*'
+      7. examples/02_while.frog:9:1:WORD:'+'
+      8. examples/02_while.frog:10:1:KEYWORD:WHILE
+      9. examples/02_while.frog:11:3:WORD:'dup'
+     10. examples/02_while.frog:12:3:INT:3
+     11. examples/02_while.frog:13:3:WORD:'>'
+     12. examples/02_while.frog:14:1:KEYWORD:DO
+     13. examples/02_while.frog:15:3:KEYWORD:IF
+     14. examples/02_while.frog:16:5:WORD:'dup'
+     15. examples/02_while.frog:17:5:INT:2
+     16. examples/02_while.frog:18:5:WORD:'%'
+     17. examples/02_while.frog:19:5:INT:0
+     18. examples/02_while.frog:20:5:WORD:'=='
+     19. examples/02_while.frog:21:3:KEYWORD:DO
+     20. examples/02_while.frog:22:5:INT:5
+     21. examples/02_while.frog:23:3:KEYWORD:ELSE
+     22. examples/02_while.frog:24:5:INT:7
+     23. examples/02_while.frog:25:3:KEYWORD:END
+     24. examples/02_while.frog:27:3:WORD:'print'
+     25. examples/02_while.frog:28:3:INT:1
+     26. examples/02_while.frog:29:3:WORD:'-'
+     27. examples/02_while.frog:30:1:KEYWORD:END
+     28. examples/02_while.frog:32:1:WORD:'drop'
 [TRACE] <?>:0:0: Compiled IR
 [NOTE] IR:
     IR:
@@ -1716,30 +1716,30 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [CMD] ./examples/00_empty.exe
 ============================================================
 [CMD] py -m frog run examples/01_simple.frog
-[INFO] examples/01_simple.frog:1:4: Stack at compile time:
+[INFO] examples/01_simple.frog:1:5: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:0
-      1. INT()@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at compile time:
+      0. INT()@examples/01_simple.frog:1:1
+      1. INT()@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:6
-[INFO] examples/01_simple.frog:1:4: Stack at runtime:
+      0. INT()@examples/01_simple.frog:1:7
+[INFO] examples/01_simple.frog:1:5: Stack at runtime:
 [NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:0
-      1. INT():2@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at runtime:
+      0. INT():1@examples/01_simple.frog:1:1
+      1. INT():2@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at runtime:
 [NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:6
-[PRINT] INT():3@examples/01_simple.frog:1:6
+      0. INT():3@examples/01_simple.frog:1:7
+[PRINT] INT():3@examples/01_simple.frog:1:7
 ============================================================
 [CMD] py -m frog build -r examples/01_simple.frog
-[INFO] examples/01_simple.frog:1:4: Stack at compile time:
+[INFO] examples/01_simple.frog:1:5: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:0
-      1. INT()@examples/01_simple.frog:1:2
-[INFO] examples/01_simple.frog:1:8: Stack at compile time:
+      0. INT()@examples/01_simple.frog:1:1
+      1. INT()@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:6
+      0. INT()@examples/01_simple.frog:1:7
 [CMD] gcc examples/01_simple.c -o examples/01_simple.exe
 [CMD] ./examples/01_simple.exe
 [STDOUT]:
@@ -1747,16 +1747,16 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 
 ============================================================
 [CMD] py -m frog run examples/02_while.frog
-[PRINT] INT():1@examples/02_while.frog:2:0
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
-[PRINT] INT():7@examples/02_while.frog:24:4
-[PRINT] INT():5@examples/02_while.frog:22:4
+[PRINT] INT():1@examples/02_while.frog:2:1
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
 ============================================================
 [CMD] py -m frog build -r examples/02_while.frog
 [CMD] gcc examples/02_while.c -o examples/02_while.exe
@@ -1775,21 +1775,21 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 
 ============================================================
 [CMD] py -m frog run examples/03_fib.frog
-[PRINT] INT():1@examples/03_fib.frog:4:6
-[PRINT] INT():1@examples/03_fib.frog:2:44
-[PRINT] INT():2@examples/03_fib.frog:2:44
-[PRINT] INT():3@examples/03_fib.frog:2:44
-[PRINT] INT():5@examples/03_fib.frog:2:44
-[PRINT] INT():8@examples/03_fib.frog:2:44
-[PRINT] INT():13@examples/03_fib.frog:2:44
-[PRINT] INT():21@examples/03_fib.frog:2:44
-[PRINT] INT():34@examples/03_fib.frog:2:44
-[PRINT] INT():55@examples/03_fib.frog:2:44
-[PRINT] INT():89@examples/03_fib.frog:2:44
-[PRINT] INT():144@examples/03_fib.frog:2:44
-[PRINT] INT():233@examples/03_fib.frog:2:44
-[PRINT] INT():377@examples/03_fib.frog:2:44
-[PRINT] INT():610@examples/03_fib.frog:2:44
+[PRINT] INT():1@examples/03_fib.frog:4:7
+[PRINT] INT():1@examples/03_fib.frog:2:45
+[PRINT] INT():2@examples/03_fib.frog:2:45
+[PRINT] INT():3@examples/03_fib.frog:2:45
+[PRINT] INT():5@examples/03_fib.frog:2:45
+[PRINT] INT():8@examples/03_fib.frog:2:45
+[PRINT] INT():13@examples/03_fib.frog:2:45
+[PRINT] INT():21@examples/03_fib.frog:2:45
+[PRINT] INT():34@examples/03_fib.frog:2:45
+[PRINT] INT():55@examples/03_fib.frog:2:45
+[PRINT] INT():89@examples/03_fib.frog:2:45
+[PRINT] INT():144@examples/03_fib.frog:2:45
+[PRINT] INT():233@examples/03_fib.frog:2:45
+[PRINT] INT():377@examples/03_fib.frog:2:45
+[PRINT] INT():610@examples/03_fib.frog:2:45
 ============================================================
 [CMD] py -m frog build -r examples/03_fib.frog
 [CMD] gcc examples/03_fib.c -o examples/03_fib.exe
@@ -1813,34 +1813,34 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 
 ============================================================
 [CMD] py -m frog run examples/04_procs.frog
-[INFO] examples/04_procs.frog:4:24: Stack at compile time:
+[INFO] examples/04_procs.frog:4:25: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/04_procs.frog:4:21
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+      0. INT()@examples/04_procs.frog:4:22
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
 [NOTE] stack:
-      0. INT():9@examples/04_procs.frog:2:25
-[PRINT] INT():9@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+      0. INT():9@examples/04_procs.frog:2:26
+[PRINT] INT():9@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
 [NOTE] stack:
-      0. INT():8@examples/04_procs.frog:2:25
-[PRINT] INT():8@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+      0. INT():8@examples/04_procs.frog:2:26
+[PRINT] INT():8@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
 [NOTE] stack:
-      0. INT():7@examples/04_procs.frog:2:25
-[PRINT] INT():7@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+      0. INT():7@examples/04_procs.frog:2:26
+[PRINT] INT():7@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
 [NOTE] stack:
-      0. INT():6@examples/04_procs.frog:2:25
-[PRINT] INT():6@examples/04_procs.frog:2:25
-[INFO] examples/04_procs.frog:4:24: Stack at runtime:
+      0. INT():6@examples/04_procs.frog:2:26
+[PRINT] INT():6@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
 [NOTE] stack:
-      0. INT():5@examples/04_procs.frog:2:25
-[PRINT] INT():5@examples/04_procs.frog:2:25
+      0. INT():5@examples/04_procs.frog:2:26
+[PRINT] INT():5@examples/04_procs.frog:2:26
 ============================================================
 [CMD] py -m frog build -r examples/04_procs.frog
-[INFO] examples/04_procs.frog:4:24: Stack at compile time:
+[INFO] examples/04_procs.frog:4:25: Stack at compile time:
 [NOTE] stack:
-      0. INT()@examples/04_procs.frog:4:21
+      0. INT()@examples/04_procs.frog:4:22
 [CMD] gcc examples/04_procs.c -o examples/04_procs.exe
 [CMD] ./examples/04_procs.exe
 [STDOUT]:
@@ -1852,68 +1852,68 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 
 ============================================================
 [CMD] py -m frog run examples/05_is_prime.frog
-[PRINT] INT():0@examples/05_is_prime.frog:55:3
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():1@examples/05_is_prime.frog:56:3
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():2@examples/05_is_prime.frog:57:3
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():3@examples/05_is_prime.frog:58:3
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():4@examples/05_is_prime.frog:59:3
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():5@examples/05_is_prime.frog:60:3
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():6@examples/05_is_prime.frog:61:3
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():7@examples/05_is_prime.frog:62:3
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():8@examples/05_is_prime.frog:63:3
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():9@examples/05_is_prime.frog:64:3
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():10@examples/05_is_prime.frog:65:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():11@examples/05_is_prime.frog:66:2
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():12@examples/05_is_prime.frog:67:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():13@examples/05_is_prime.frog:68:2
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():14@examples/05_is_prime.frog:69:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():15@examples/05_is_prime.frog:70:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():16@examples/05_is_prime.frog:71:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():17@examples/05_is_prime.frog:72:2
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():18@examples/05_is_prime.frog:73:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():19@examples/05_is_prime.frog:74:2
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():20@examples/05_is_prime.frog:75:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():21@examples/05_is_prime.frog:76:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():22@examples/05_is_prime.frog:77:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():23@examples/05_is_prime.frog:78:2
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():24@examples/05_is_prime.frog:79:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():25@examples/05_is_prime.frog:80:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():26@examples/05_is_prime.frog:81:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():27@examples/05_is_prime.frog:82:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():28@examples/05_is_prime.frog:83:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
-[PRINT] INT():29@examples/05_is_prime.frog:84:2
-[PRINT] BOOL():True@examples/05_is_prime.frog:39:2
-[PRINT] INT():30@examples/05_is_prime.frog:85:2
-[PRINT] BOOL():False@examples/05_is_prime.frog:39:2
+[PRINT] INT():0@examples/05_is_prime.frog:55:4
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():1@examples/05_is_prime.frog:56:4
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():2@examples/05_is_prime.frog:57:4
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():3@examples/05_is_prime.frog:58:4
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():4@examples/05_is_prime.frog:59:4
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():5@examples/05_is_prime.frog:60:4
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():6@examples/05_is_prime.frog:61:4
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():7@examples/05_is_prime.frog:62:4
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():8@examples/05_is_prime.frog:63:4
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():9@examples/05_is_prime.frog:64:4
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():10@examples/05_is_prime.frog:65:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():11@examples/05_is_prime.frog:66:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():12@examples/05_is_prime.frog:67:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():13@examples/05_is_prime.frog:68:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():14@examples/05_is_prime.frog:69:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():15@examples/05_is_prime.frog:70:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():16@examples/05_is_prime.frog:71:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():17@examples/05_is_prime.frog:72:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():18@examples/05_is_prime.frog:73:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():19@examples/05_is_prime.frog:74:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():20@examples/05_is_prime.frog:75:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():21@examples/05_is_prime.frog:76:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():22@examples/05_is_prime.frog:77:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():23@examples/05_is_prime.frog:78:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():24@examples/05_is_prime.frog:79:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():25@examples/05_is_prime.frog:80:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():26@examples/05_is_prime.frog:81:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():27@examples/05_is_prime.frog:82:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():28@examples/05_is_prime.frog:83:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
+[PRINT] INT():29@examples/05_is_prime.frog:84:3
+[PRINT] BOOL():True@examples/05_is_prime.frog:39:3
+[PRINT] INT():30@examples/05_is_prime.frog:85:3
+[PRINT] BOOL():False@examples/05_is_prime.frog:39:3
 ============================================================
 [CMD] py -m frog build -r examples/05_is_prime.frog
 [CMD] gcc examples/05_is_prime.c -o examples/05_is_prime.exe
@@ -1982,3 +1982,13 @@ true
 30
 false
 
+============================================================
+[CMD] py -m frog run examples/06_let.frog
+[ERROR] examples/06_let.frog:3:4: not implemented: let statements
+[LOC] __init__.py:258:0
+[EXIT CODE] 3
+============================================================
+[CMD] py -m frog build -r examples/06_let.frog
+[ERROR] examples/06_let.frog:3:4: not implemented: let statements
+[LOC] __init__.py:258:0
+[EXIT CODE] 3

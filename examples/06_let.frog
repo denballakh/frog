@@ -1,0 +1,13 @@
+proc main -- do
+   1 2 3
+   let a b c do
+    a b c ? print print print
+    c b a ? print print print
+    a a a ? print print print
+    b b b ? print print print
+    c c c ? print print print
+    c b c
+   end
+   ? print print print
+end
+

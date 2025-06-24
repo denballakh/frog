@@ -128,6 +128,8 @@ def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
                         yield Token(TokenType.KEYWORD, KeywordType.DO, loc_start)
                     case '--':
                         yield Token(TokenType.KEYWORD, KeywordType.TYPE_DELIM, loc_start)
+                    case 'let':
+                        yield Token(TokenType.KEYWORD, KeywordType.LET, loc_start)
                     case _:
                         yield Token(TokenType.WORD, chunk, loc_start)
 
@@ -251,6 +253,9 @@ def compile(toks: list[Token]) -> IR:
 
                         else:
                             error(tok, f'DO should follow an IF or WHILE, not {pp(b.type)}')
+
+                    case KeywordType.LET:
+                        notimplemented(tok.loc, f'let statements')
 
                     case KeywordType.END:
                         if not block_stack:

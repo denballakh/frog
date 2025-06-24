@@ -53,6 +53,7 @@ class KeywordType(Enum):
     DO = auto()
     END = auto()
     TYPE_DELIM = auto()  # --
+    LET = auto()
 
 
 @dataclass
