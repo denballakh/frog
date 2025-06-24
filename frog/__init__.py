@@ -38,11 +38,14 @@ def expect_enum_size(e_cls: type[Enum], expected_size: int) -> None:
 
 
 def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
+    FIRST_LINE = 1
+    FIRST_COL = 1
+
     def is_int(s: str) -> bool:
         return set(s) <= set('0123456789')
 
-    line_no = 1
-    col_no = 0
+    line_no = FIRST_LINE
+    col_no = FIRST_COL
 
     loc_start = Loc(filename, line_no, col_no)
     i_start = 0
@@ -56,7 +59,7 @@ def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
         col_no += 1
         if c == '\n':
             line_no += 1
-            col_no = 0
+            col_no = FIRST_COL
 
         if c == '\'':
             chars = ''
