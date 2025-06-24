@@ -1,0 +1,334 @@
+[CMD] py -m frog
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no subcommand specified
+[EXIT CODE] 2
+[CMD] py -m frog -h
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+
+Options:
+  -h --help                   print this help message
+  -l <level>                  log level: ERROR,WARN,INFO,TRACE
+Subcommands:
+  run [OPTIONS]             interpre
+    -c CODE                   code to interpret
+       FILE                   file to interpret
+  build [OPTIONS] FILE      build
+    FILE                      file to build
+    OPTIONS:
+      -o FILE                 where to put built binary
+      -r                      also run the binary
+  repl                      start a Read-Eval-Print-Loop
+
+
+[CMD] py -m frog --help
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+
+Options:
+  -h --help                   print this help message
+  -l <level>                  log level: ERROR,WARN,INFO,TRACE
+Subcommands:
+  run [OPTIONS]             interpre
+    -c CODE                   code to interpret
+       FILE                   file to interpret
+  build [OPTIONS] FILE      build
+    FILE                      file to build
+    OPTIONS:
+      -o FILE                 where to put built binary
+      -r                      also run the binary
+  repl                      start a Read-Eval-Print-Loop
+
+
+[CMD] py -m frog run
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no file specified
+[EXIT CODE] 2
+[CMD] py -m frog run xxx
+[ERROR] file xxx does not exist
+[EXIT CODE] 1
+[CMD] py -m frog -l
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no log level specified
+[EXIT CODE] 2
+[CMD] py -m frog -l TRACE
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no subcommand specified
+[EXIT CODE] 2
+[CMD] py -m frog -l TRACE run
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no file specified
+[EXIT CODE] 2
+[CMD] py -m frog -l TRACE run examples/01_simple.frog
+[TRACE] <?>:0:0: file: examples/01_simple.frog
+[NOTE] Tokens:
+      0. examples/01_simple.frog:1:1:INT:1
+      1. examples/01_simple.frog:1:3:INT:2
+      2. examples/01_simple.frog:1:5:WORD:'?'
+      3. examples/01_simple.frog:1:7:WORD:'+'
+      4. examples/01_simple.frog:1:9:WORD:'?'
+      5. examples/01_simple.frog:1:11:WORD:'print'
+[TRACE] <?>:0:0: Compiled IR
+[NOTE] IR:
+    IR:
+    proc main:
+      0. PUSH_INT:1
+      1. PUSH_INT:2
+      2. INTRINSIC:DEBUG
+      3. INTRINSIC:ADD
+      4. INTRINSIC:DEBUG
+      5. INTRINSIC:PRINT
+      6. RET
+[INFO] examples/01_simple.frog:1:5: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:1
+      1. INT()@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:7
+[INFO] examples/01_simple.frog:1:5: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@examples/01_simple.frog:1:1
+      1. INT():2@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@examples/01_simple.frog:1:7
+[PRINT] INT():3@examples/01_simple.frog:1:7
+[CMD] py -m frog -l LOL run examples/01_simple.frog
+[ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE']
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN run examples/01_simple.frog
+[PRINT] INT():3@examples/01_simple.frog:1:7
+[CMD] py -m frog -l INFO run examples/01_simple.frog
+[INFO] examples/01_simple.frog:1:5: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:1
+      1. INT()@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/01_simple.frog:1:7
+[INFO] examples/01_simple.frog:1:5: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@examples/01_simple.frog:1:1
+      1. INT():2@examples/01_simple.frog:1:3
+[INFO] examples/01_simple.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@examples/01_simple.frog:1:7
+[PRINT] INT():3@examples/01_simple.frog:1:7
+[CMD] py -m frog -l ERROR run examples/01_simple.frog
+[PRINT] INT():3@examples/01_simple.frog:1:7
+[CMD] py -m frog -l TRACE run examples/02_while.frog
+[TRACE] <?>:0:0: file: examples/02_while.frog
+[NOTE] Tokens:
+      0. examples/02_while.frog:2:1:INT:1
+      1. examples/02_while.frog:3:1:INT:2
+      2. examples/02_while.frog:4:1:WORD:'swap'
+      3. examples/02_while.frog:5:1:WORD:'dup'
+      4. examples/02_while.frog:6:1:WORD:'print'
+      5. examples/02_while.frog:7:1:INT:10
+      6. examples/02_while.frog:8:1:WORD:'*'
+      7. examples/02_while.frog:9:1:WORD:'+'
+      8. examples/02_while.frog:10:1:KEYWORD:WHILE
+      9. examples/02_while.frog:11:3:WORD:'dup'
+     10. examples/02_while.frog:12:3:INT:3
+     11. examples/02_while.frog:13:3:WORD:'>'
+     12. examples/02_while.frog:14:1:KEYWORD:DO
+     13. examples/02_while.frog:15:3:KEYWORD:IF
+     14. examples/02_while.frog:16:5:WORD:'dup'
+     15. examples/02_while.frog:17:5:INT:2
+     16. examples/02_while.frog:18:5:WORD:'%'
+     17. examples/02_while.frog:19:5:INT:0
+     18. examples/02_while.frog:20:5:WORD:'=='
+     19. examples/02_while.frog:21:3:KEYWORD:DO
+     20. examples/02_while.frog:22:5:INT:5
+     21. examples/02_while.frog:23:3:KEYWORD:ELSE
+     22. examples/02_while.frog:24:5:INT:7
+     23. examples/02_while.frog:25:3:KEYWORD:END
+     24. examples/02_while.frog:27:3:WORD:'print'
+     25. examples/02_while.frog:28:3:INT:1
+     26. examples/02_while.frog:29:3:WORD:'-'
+     27. examples/02_while.frog:30:1:KEYWORD:END
+     28. examples/02_while.frog:32:1:WORD:'drop'
+[TRACE] <?>:0:0: Compiled IR
+[NOTE] IR:
+    IR:
+    proc main:
+      0. PUSH_INT:1
+      1. PUSH_INT:2
+      2. INTRINSIC:SWAP
+      3. INTRINSIC:DUP
+      4. INTRINSIC:PRINT
+      5. PUSH_INT:10
+      6. INTRINSIC:MUL
+      7. INTRINSIC:ADD
+      8. WHILE
+      9. INTRINSIC:DUP
+     10. PUSH_INT:3
+     11. INTRINSIC:GT
+     12. DO:27
+     13. IF
+     14. INTRINSIC:DUP
+     15. PUSH_INT:2
+     16. INTRINSIC:MOD
+     17. PUSH_INT:0
+     18. INTRINSIC:EQ
+     19. DO:21
+     20. PUSH_INT:5
+     21. ELSE:23
+     22. PUSH_INT:7
+     23. END:24
+     24. INTRINSIC:PRINT
+     25. PUSH_INT:1
+     26. INTRINSIC:SUB
+     27. END:8
+     28. INTRINSIC:DROP
+     29. RET
+[PRINT] INT():1@examples/02_while.frog:2:1
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[CMD] py -m frog -l TRACE build -r examples/02_while.frog
+[TRACE] <?>:0:0: file: examples/02_while.frog
+[NOTE] Tokens:
+      0. examples/02_while.frog:2:1:INT:1
+      1. examples/02_while.frog:3:1:INT:2
+      2. examples/02_while.frog:4:1:WORD:'swap'
+      3. examples/02_while.frog:5:1:WORD:'dup'
+      4. examples/02_while.frog:6:1:WORD:'print'
+      5. examples/02_while.frog:7:1:INT:10
+      6. examples/02_while.frog:8:1:WORD:'*'
+      7. examples/02_while.frog:9:1:WORD:'+'
+      8. examples/02_while.frog:10:1:KEYWORD:WHILE
+      9. examples/02_while.frog:11:3:WORD:'dup'
+     10. examples/02_while.frog:12:3:INT:3
+     11. examples/02_while.frog:13:3:WORD:'>'
+     12. examples/02_while.frog:14:1:KEYWORD:DO
+     13. examples/02_while.frog:15:3:KEYWORD:IF
+     14. examples/02_while.frog:16:5:WORD:'dup'
+     15. examples/02_while.frog:17:5:INT:2
+     16. examples/02_while.frog:18:5:WORD:'%'
+     17. examples/02_while.frog:19:5:INT:0
+     18. examples/02_while.frog:20:5:WORD:'=='
+     19. examples/02_while.frog:21:3:KEYWORD:DO
+     20. examples/02_while.frog:22:5:INT:5
+     21. examples/02_while.frog:23:3:KEYWORD:ELSE
+     22. examples/02_while.frog:24:5:INT:7
+     23. examples/02_while.frog:25:3:KEYWORD:END
+     24. examples/02_while.frog:27:3:WORD:'print'
+     25. examples/02_while.frog:28:3:INT:1
+     26. examples/02_while.frog:29:3:WORD:'-'
+     27. examples/02_while.frog:30:1:KEYWORD:END
+     28. examples/02_while.frog:32:1:WORD:'drop'
+[TRACE] <?>:0:0: Compiled IR
+[NOTE] IR:
+    IR:
+    proc main:
+      0. PUSH_INT:1
+      1. PUSH_INT:2
+      2. INTRINSIC:SWAP
+      3. INTRINSIC:DUP
+      4. INTRINSIC:PRINT
+      5. PUSH_INT:10
+      6. INTRINSIC:MUL
+      7. INTRINSIC:ADD
+      8. WHILE
+      9. INTRINSIC:DUP
+     10. PUSH_INT:3
+     11. INTRINSIC:GT
+     12. DO:27
+     13. IF
+     14. INTRINSIC:DUP
+     15. PUSH_INT:2
+     16. INTRINSIC:MOD
+     17. PUSH_INT:0
+     18. INTRINSIC:EQ
+     19. DO:21
+     20. PUSH_INT:5
+     21. ELSE:23
+     22. PUSH_INT:7
+     23. END:24
+     24. INTRINSIC:PRINT
+     25. PUSH_INT:1
+     26. INTRINSIC:SUB
+     27. END:8
+     28. INTRINSIC:DROP
+     29. RET
+[TRACE] <?>:0:0: Generated C code:
+[NOTE] generated_code:
+    #include <stdio.h>
+    #include <stdbool.h>
+    typedef struct {
+    } ret_main;
+    ret_main proc_main() {
+      int lit_int_0;
+      int lit_int_1;
+      int dup_0;
+      int lit_int_2;
+      int mul_0;
+      int add_0;
+      int dup_1;
+      int lit_int_3;
+      int gt_0;
+      int dup_2;
+      int lit_int_4;
+      int mod_0;
+      int lit_int_5;
+      int eq_0;
+      int lit_int_6;
+      int lit_int_7;
+      int lit_int_8;
+      int sub_0;
+      lit_int_0 = 1;
+      lit_int_1 = 2;
+      dup_0 = lit_int_0;
+      printf("%d\n", dup_0);
+      lit_int_2 = 10;
+      mul_0 = lit_int_0 * lit_int_2;
+      add_0 = lit_int_1 + mul_0;
+      while (true) {
+        dup_1 = add_0;
+        lit_int_3 = 3;
+        gt_0 = dup_1 > lit_int_3;
+        if (gt_0) {
+          dup_2 = add_0;
+          lit_int_4 = 2;
+          mod_0 = dup_2 % lit_int_4;
+          lit_int_5 = 0;
+          eq_0 = mod_0 == lit_int_5;
+          if (eq_0) {
+            lit_int_6 = 5;
+          } else {
+            lit_int_7 = 7;
+            lit_int_6 = lit_int_7;
+          }
+          printf("%d\n", lit_int_6);
+          lit_int_8 = 1;
+          sub_0 = add_0 - lit_int_8;
+          add_0 = sub_0;
+        } else break;
+      }
+      return (ret_main){
+      };
+    }
+    int main() {
+      proc_main();
+      return 0;
+    }
+[CMD] gcc examples/02_while.c -o examples/02_while.exe
+[CMD] examples/02_while.exe
+[STDOUT]:
+1
+5
+7
+5
+7
+5
+7
+5
+7
+5
+

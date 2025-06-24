@@ -1,0 +1,4 @@
+[CMD] py -m frog run examples/00_empty.frog
+[CMD] py -m frog -l WARN build -r examples/00_empty.frog
+[CMD] gcc examples/00_empty.c -o examples/00_empty.exe
+[CMD] examples/00_empty.exe

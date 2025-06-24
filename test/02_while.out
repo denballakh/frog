@@ -1,0 +1,26 @@
+[CMD] py -m frog run examples/02_while.frog
+[PRINT] INT():1@examples/02_while.frog:2:1
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[CMD] py -m frog -l WARN build -r examples/02_while.frog
+[CMD] gcc examples/02_while.c -o examples/02_while.exe
+[CMD] examples/02_while.exe
+[STDOUT]:
+1
+5
+7
+5
+7
+5
+7
+5
+7
+5
+

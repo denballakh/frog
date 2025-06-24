@@ -1,0 +1,36 @@
+[CMD] py -m frog run examples/03_fib.frog
+[PRINT] INT():1@examples/03_fib.frog:4:7
+[PRINT] INT():1@examples/03_fib.frog:2:45
+[PRINT] INT():2@examples/03_fib.frog:2:45
+[PRINT] INT():3@examples/03_fib.frog:2:45
+[PRINT] INT():5@examples/03_fib.frog:2:45
+[PRINT] INT():8@examples/03_fib.frog:2:45
+[PRINT] INT():13@examples/03_fib.frog:2:45
+[PRINT] INT():21@examples/03_fib.frog:2:45
+[PRINT] INT():34@examples/03_fib.frog:2:45
+[PRINT] INT():55@examples/03_fib.frog:2:45
+[PRINT] INT():89@examples/03_fib.frog:2:45
+[PRINT] INT():144@examples/03_fib.frog:2:45
+[PRINT] INT():233@examples/03_fib.frog:2:45
+[PRINT] INT():377@examples/03_fib.frog:2:45
+[PRINT] INT():610@examples/03_fib.frog:2:45
+[CMD] py -m frog -l WARN build -r examples/03_fib.frog
+[CMD] gcc examples/03_fib.c -o examples/03_fib.exe
+[CMD] examples/03_fib.exe
+[STDOUT]:
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+

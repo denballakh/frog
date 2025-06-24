@@ -61,7 +61,7 @@ def run_cmd(*cmds: str | os.PathLike[str]) -> int:
         print(f'[STDERR]:')
         print(err)
 
-    if res.returncode != 0:
+    if res.returncode != RC_OK:
         print(f'[EXIT CODE] {res.returncode}')
 
     return res.returncode
@@ -81,7 +81,7 @@ def run_frog(*args: str | os.PathLike[str]) -> int:
     else:
         code = RC_OK
 
-    if code != 0:
+    if code != RC_OK:
         print(f'[EXIT CODE] {code}')
 
     return code
@@ -260,7 +260,7 @@ def main(argv: list[str]) -> None:
             error(Loc('<cli>', 1, 0), f'gcc failed with exit code {ret}')
 
         if should_run:
-            ret = run_cmd(f'./{file_out}')
+            ret = run_cmd(file_out)
             if ret != 0:
                 error(Loc('<cli>', 1, 0), f'{file_out} failed with exit code {ret}')
 

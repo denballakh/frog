@@ -1,0 +1,4 @@
+[CMD] py -m frog run examples/06_let.frog
+[ERROR] examples/06_let.frog:3:4: not implemented: let statements
+[LOC] __init__.py:245:0
+[EXIT CODE] 3

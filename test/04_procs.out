@@ -1,0 +1,34 @@
+[CMD] py -m frog run examples/04_procs.frog
+[INFO] examples/04_procs.frog:4:25: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/04_procs.frog:4:22
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():9@examples/04_procs.frog:2:26
+[PRINT] INT():9@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():8@examples/04_procs.frog:2:26
+[PRINT] INT():8@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():7@examples/04_procs.frog:2:26
+[PRINT] INT():7@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():6@examples/04_procs.frog:2:26
+[PRINT] INT():6@examples/04_procs.frog:2:26
+[INFO] examples/04_procs.frog:4:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@examples/04_procs.frog:2:26
+[PRINT] INT():5@examples/04_procs.frog:2:26
+[CMD] py -m frog -l WARN build -r examples/04_procs.frog
+[CMD] gcc examples/04_procs.c -o examples/04_procs.exe
+[CMD] examples/04_procs.exe
+[STDOUT]:
+9
+8
+7
+6
+5
+

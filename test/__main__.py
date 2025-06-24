@@ -1,26 +1,10 @@
 import contextlib
 from pathlib import Path
 import io
-from typing import TYPE_CHECKING, Any
 import shlex
 
 from frog.__main__ import run_frog
 
-if TYPE_CHECKING:
-
-    def tqdm[T](x: T, *_: Any, **_a: Any) -> T:
-        return x
-
-else:
-    try:
-        from tqdm import tqdm
-    except ImportError:
-
-        def tqdm[T](x: T, *_: Any, **__: Any) -> T:
-            return x
-
-
-ROOT = Path(__file__).parent.parent
 
 code_examples = [
     '1 2 + print',
@@ -201,46 +185,50 @@ cli_examples = [
     '-l TRACE build -r examples/02_while.frog',
 ]
 
+ROOT = Path(__file__).parent.parent
+
 dir_examples = ROOT / 'examples'
+dir_tests = ROOT / 'test'
 
 for file_example in sorted(dir_examples.iterdir()):
-    file_example = file_example.relative_to(Path.cwd())
     if not file_example.is_file():
         continue
     if file_example.suffix != '.frog':
         continue
-    cli_examples.append(f'run {file_example}')
-    cli_examples.append(f'build -r {file_example}')
+    file_example = file_example.relative_to(ROOT)
 
-tmp = ROOT / 'tmp.frog'
-tmp = tmp.relative_to(Path.cwd())
+    print(f'[FILE] {file_example}')
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            res = run_frog('py', '-m', 'frog', 'run', file_example)
+            if res == 0:
+                res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', file_example)
+    finally:
+        _ = (dir_tests / file_example.name).with_suffix('.out').write_text(buf.getvalue())
 
-out = ROOT / 'test_dump.txt'
+
 buf = io.StringIO()
 try:
-    for code in tqdm(code_examples):
+    for cli_example in cli_examples:
+        print(f'[CLI] {cli_example}')
         with contextlib.redirect_stdout(buf):
-            _ = tmp.write_text(code)
-            print('=' * 60)
-            print(f'[CODE] {code!r}')
-            res = run_frog('py', '-m', 'frog', 'run', '-c', code)
-            if res == 0:
-                res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', tmp)
-            print()
-
-    for cli in tqdm(cli_examples):
-        with contextlib.redirect_stdout(buf):
-            print('=' * 60)
-            res = run_frog('py', '-m', 'frog', *shlex.split(cli))
-
-except Exception as e:
-    print(buf.getvalue())
-    import traceback
-
-    traceback.print_exc()
-
-else:
-    _ = out.write_text(buf.getvalue())
-
+            res = run_frog('py', '-m', 'frog', *shlex.split(cli_example))
 finally:
-    tmp.unlink()
+    _ = (dir_tests / 'cli.out').write_text(buf.getvalue())
+
+
+tmp = dir_tests / 'tmp.frog'
+tmp = tmp.relative_to(Path.cwd())
+
+buf = io.StringIO()
+try:
+    for code_example in code_examples:
+        print(f'[CODE] {code_example!r}')
+        with contextlib.redirect_stdout(buf):
+            _ = tmp.write_text(code_example)
+            res = run_frog('py', '-m', 'frog', 'run', tmp)
+            res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', tmp)
+finally:
+    _ = (dir_tests / 'code.out').write_text(buf.getvalue())
+tmp.unlink()

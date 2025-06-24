@@ -19,6 +19,7 @@ repl:
     python -m frog repl
 
 test:
+    rm test/*.out || true
     python -m test
 
 clean:
@@ -26,5 +27,7 @@ clean:
     rm *.exe || true
     rm examples/*.c || true
     rm examples/*.exe || true
+    rm test/*.c || true
+    rm test/*.exe || true
 
 precommit: check test clean

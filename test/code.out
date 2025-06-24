@@ -1,0 +1,1341 @@
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():3@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+3
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:3: stack too small for IntrinsicType.ADD: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:3: stack too small for IntrinsicType.ADD: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:5
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:5
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:1: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] test/tmp.frog:1:5: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+[INFO] test/tmp.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:7
+[INFO] test/tmp.frog:1:13: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:7
+      2. INT()@test/tmp.frog:1:11
+[INFO] test/tmp.frog:1:17: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:7
+      2. INT()@test/tmp.frog:1:11
+      3. INT()@test/tmp.frog:1:15
+[INFO] test/tmp.frog:1:21: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:7
+      2. INT()@test/tmp.frog:1:19
+[INFO] test/tmp.frog:1:25: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:29: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:27
+[INFO] test/tmp.frog:1:37: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] test/tmp.frog:1:1: Stack at runtime:
+[NOTE] stack: (empty)
+[INFO] test/tmp.frog:1:5: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:3
+[INFO] test/tmp.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:3
+      1. INT():2@test/tmp.frog:1:7
+[INFO] test/tmp.frog:1:13: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:3
+      1. INT():2@test/tmp.frog:1:7
+      2. INT():3@test/tmp.frog:1:11
+[INFO] test/tmp.frog:1:17: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:3
+      1. INT():2@test/tmp.frog:1:7
+      2. INT():3@test/tmp.frog:1:11
+      3. INT():4@test/tmp.frog:1:15
+[INFO] test/tmp.frog:1:21: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:3
+      1. INT():2@test/tmp.frog:1:7
+      2. INT():7@test/tmp.frog:1:19
+[INFO] test/tmp.frog:1:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:3
+      1. INT():9@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:29: Stack at runtime:
+[NOTE] stack:
+      0. INT():10@test/tmp.frog:1:27
+[PRINT] INT():10@test/tmp.frog:1:27
+[INFO] test/tmp.frog:1:37: Stack at runtime:
+[NOTE] stack: (empty)
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+10
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: stack too small for IntrinsicType.ADD: expected 2 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: stack too small for IntrinsicType.ADD: expected 2 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: stack too small for IntrinsicType.BNOT: expected 1 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: stack too small for IntrinsicType.BNOT: expected 1 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: stack too small for IntrinsicType.DIVMOD: expected 2 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: stack too small for IntrinsicType.DIVMOD: expected 2 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():32@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+32
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():18@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+18
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():175@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+175
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():3@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+3
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:5: division by zero
+[NOTE] a: INT():2@test/tmp.frog:1:1
+[NOTE] b: INT():0@test/tmp.frog:1:3
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[EXIT CODE] -4
+[ERROR] <cli>:1:0: test/tmp.exe failed with exit code -4
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():4@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+4
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:6
+      1. INT()@test/tmp.frog:1:6
+[INFO] test/tmp.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@test/tmp.frog:1:6
+      1. INT():4@test/tmp.frog:1:6
+[PRINT] INT():4@test/tmp.frog:1:6
+[PRINT] INT():3@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+4
+3
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():3200@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+3200
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():0@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+0
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():31@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+31
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():1@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():30@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+30
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():-26@test/tmp.frog:1:4
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+-26
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.ADD: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.ADD: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.MUL: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.MUL: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.MOD: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.MOD: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.BOR: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.BOR: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.SHL: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.SHL: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 0 for IntrinsicType.AND: expected INT() but got BOOL()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. BOOL()
+      1. BOOL()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 0 for IntrinsicType.AND: expected INT() but got BOOL()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. BOOL()
+      1. BOOL()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 0 for IntrinsicType.NOT: expected INT() but got BOOL()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. BOOL()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 0 for IntrinsicType.NOT: expected INT() but got BOOL()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. BOOL()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:13: stack doesnt match at 0 for IntrinsicType.BNOT: expected BOOL() but got INT()
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:6
+      1. BOOL()@test/tmp.frog:1:1
+[NOTE] ins:
+      0. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:13: stack doesnt match at 0 for IntrinsicType.BNOT: expected BOOL() but got INT()
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:6
+      1. BOOL()@test/tmp.frog:1:1
+[NOTE] ins:
+      0. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.EQ: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.EQ: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.LT: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: stack doesnt match at 1 for IntrinsicType.LT: expected BOOL() but got INT()
+[NOTE] stack:
+      0. BOOL()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:6
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():False@test/tmp.frog:1:12
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():True@test/tmp.frog:1:12
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+true
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():False@test/tmp.frog:1:6
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():True@test/tmp.frog:1:7
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+true
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():False@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():True@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+true
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():True@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+true
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():False@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():True@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+true
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():False@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:5: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:3
+[INFO] test/tmp.frog:1:5: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:1
+      1. INT():2@test/tmp.frog:1:3
+[PRINT] INT():2@test/tmp.frog:1:3
+[PRINT] INT():1@test/tmp.frog:1:1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+2
+1
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:7: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:1
+[INFO] test/tmp.frog:1:7: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:1
+      1. INT():1@test/tmp.frog:1:1
+[PRINT] INT():1@test/tmp.frog:1:1
+[PRINT] INT():1@test/tmp.frog:1:1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+1
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:10: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+[INFO] test/tmp.frog:1:10: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:1
+[PRINT] INT():1@test/tmp.frog:1:1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:10: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:1
+[INFO] test/tmp.frog:1:10: Stack at runtime:
+[NOTE] stack:
+      0. INT():2@test/tmp.frog:1:3
+      1. INT():1@test/tmp.frog:1:1
+[PRINT] INT():1@test/tmp.frog:1:1
+[PRINT] INT():2@test/tmp.frog:1:3
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+2
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:7: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:3
+      2. INT()@test/tmp.frog:1:5
+[INFO] test/tmp.frog:1:7: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:1
+      1. INT():2@test/tmp.frog:1:3
+      2. INT():3@test/tmp.frog:1:5
+[PRINT] INT():3@test/tmp.frog:1:5
+[PRINT] INT():2@test/tmp.frog:1:3
+[PRINT] INT():1@test/tmp.frog:1:1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+3
+2
+1
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:11: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:3
+      1. INT()@test/tmp.frog:1:5
+      2. INT()@test/tmp.frog:1:1
+[INFO] test/tmp.frog:1:11: Stack at runtime:
+[NOTE] stack:
+      0. INT():2@test/tmp.frog:1:3
+      1. INT():3@test/tmp.frog:1:5
+      2. INT():1@test/tmp.frog:1:1
+[PRINT] INT():1@test/tmp.frog:1:1
+[PRINT] INT():3@test/tmp.frog:1:5
+[PRINT] INT():2@test/tmp.frog:1:3
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+3
+2
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+      1. INT()@test/tmp.frog:1:3
+      2. INT()@test/tmp.frog:1:5
+      3. INT()@test/tmp.frog:1:7
+[INFO] test/tmp.frog:1:17: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:5
+      1. INT()@test/tmp.frog:1:7
+      2. INT()@test/tmp.frog:1:1
+      3. INT()@test/tmp.frog:1:3
+[INFO] test/tmp.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:1
+      1. INT():2@test/tmp.frog:1:3
+      2. INT():3@test/tmp.frog:1:5
+      3. INT():4@test/tmp.frog:1:7
+[INFO] test/tmp.frog:1:17: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@test/tmp.frog:1:5
+      1. INT():4@test/tmp.frog:1:7
+      2. INT():1@test/tmp.frog:1:1
+      3. INT():2@test/tmp.frog:1:3
+[PRINT] INT():2@test/tmp.frog:1:3
+[PRINT] INT():1@test/tmp.frog:1:1
+[PRINT] INT():4@test/tmp.frog:1:7
+[PRINT] INT():3@test/tmp.frog:1:5
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+2
+1
+4
+3
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:1: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] test/tmp.frog:1:1: Stack at runtime:
+[NOTE] stack: (empty)
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.DUP: it expects one item on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.DUP: it expects one item on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.SWAP: it expects two items on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.SWAP: it expects two items on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.DROP: it expects one item on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.DROP: it expects one item on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.ROT: it expects three items on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not enough items on stack for IntrinsicType.ROT: it expects three items on the stack
+[NOTE] stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:11: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack:
+      0. BOOL()@test/tmp.frog:1:5
+[NOTE] actual_stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:11: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack:
+      0. BOOL()@test/tmp.frog:1:5
+[NOTE] actual_stack: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():7@test/tmp.frog:1:21
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():5@test/tmp.frog:1:14
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:25: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp.frog:1:14
+[NOTE] stack_else:
+      0. INT()@test/tmp.frog:1:21
+      1. INT()@test/tmp.frog:1:23
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:25: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp.frog:1:14
+[NOTE] stack_else:
+      0. INT()@test/tmp.frog:1:21
+      1. INT()@test/tmp.frog:1:23
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:21
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:21
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:21: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp.frog:1:14
+[NOTE] stack_else: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:21: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp.frog:1:14
+[NOTE] stack_else: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:16: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp.frog:1:14
+[NOTE] stack_else: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:16: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp.frog:1:14
+[NOTE] stack_else: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():5@test/tmp.frog:1:14
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():5@test/tmp.frog:1:1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():7@test/tmp.frog:1:21
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:18: if <cond> do <body> [else <body>] end
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:18: if <cond> do <body> [else <body>] end
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:4: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:4: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:6: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:6: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:4
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:4
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:4
+      1. INT()@test/tmp.frog:1:6
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:4
+      1. INT()@test/tmp.frog:1:6
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:13: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack: (empty)
+[NOTE] actual_stack:
+      0. INT()@test/tmp.frog:1:4
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:13: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack: (empty)
+[NOTE] actual_stack:
+      0. INT()@test/tmp.frog:1:4
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: ELSE should follow an IF
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: ELSE should follow an IF
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:31: Stack at compile time:
+[NOTE] stack: (empty)
+[ERROR] test/tmp.frog:1:33: InstructionType.WHILE must not alter the stack state
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:33: InstructionType.WHILE must not alter the stack state
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:35: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:23
+[PRINT] INT():9@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():9@test/tmp.frog:1:23
+[PRINT] INT():8@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():8@test/tmp.frog:1:23
+[PRINT] INT():7@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():7@test/tmp.frog:1:23
+[PRINT] INT():6@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():6@test/tmp.frog:1:23
+[PRINT] INT():5@test/tmp.frog:1:23
+[INFO] test/tmp.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@test/tmp.frog:1:23
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+9
+8
+7
+6
+5
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:7: ELSE should follow an IF, not WHILE
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:7: ELSE should follow an IF, not WHILE
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:7: while <cond> do <body> end
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:7: while <cond> do <body> end
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:7: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:7: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:11: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:7
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:11: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:7
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:13: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:7
+      1. INT()@test/tmp.frog:1:9
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:13: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp.frog:1:7
+      1. INT()@test/tmp.frog:1:9
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:16: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
+[NOTE] expected_stack: (empty)
+[NOTE] actual_stack:
+      0. INT()@test/tmp.frog:1:7
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:16: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
+[NOTE] expected_stack: (empty)
+[NOTE] actual_stack:
+      0. INT()@test/tmp.frog:1:7
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: DO should follow an IF or WHILE
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: DO should follow an IF or WHILE
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: END should follow an IF or WHILE
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: END should follow an IF or WHILE
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: unterminated character literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: unterminated character literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: invalid character literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:2: unterminated character literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:2: unterminated character literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: unterminated string literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: unterminated string literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: not implemented: string literals
+[LOC] __init__.py:204:0
+[EXIT CODE] 3
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:2: unterminated string literal
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:2: unterminated string literal
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():1@test/tmp.frog:1:1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: expected a name after PROC
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: expected a name after PROC
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: unknown word somerandomword
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: unknown word somerandomword
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():10@test/tmp.frog:2:28
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+10
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=test/tmp.frog:2:12)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=test/tmp.frog:2:12)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=test/tmp.frog:2:16)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=test/tmp.frog:2:16)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:2:20: stack too small for IntrinsicType.MUL: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:2:18
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:2:20: stack too small for IntrinsicType.MUL: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:2:18
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:2:26: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:2:24
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:2:26: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:2:24
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:2:34: return type mismatch: expected 2 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:2:32
+[NOTE] outs:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:2:34: return type mismatch: expected 2 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:2:32
+[NOTE] outs:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():5@test/tmp.frog:2:31
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:3:7: stack doesnt match at 0 for a: expected INT() but got BOOL()
+[NOTE] stack:
+      0. INT()@test/tmp.frog:3:5
+[NOTE] ins:
+      0. BOOL()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:3:7: stack doesnt match at 0 for a: expected INT() but got BOOL()
+[NOTE] stack:
+      0. INT()@test/tmp.frog:3:5
+[NOTE] ins:
+      0. BOOL()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:3:7: stack too small for a: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:3:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:3:7: stack too small for a: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp.frog:3:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:2:12: expected a type after proc name, got x
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:2:12: expected a type after proc name, got x
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():12@test/tmp.frog:2:30
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+12
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:7: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:1
+      1. TYPE(INT())@test/tmp.frog:1:3
+[WARN] test/tmp.frog:1:9: redundant cast INT() to INT()
+[INFO] test/tmp.frog:1:14: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:9
+[INFO] test/tmp.frog:1:7: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@test/tmp.frog:1:1
+      1. TYPE(INT()):INT()@test/tmp.frog:1:3
+[WARN] test/tmp.frog:1:9: redundant cast INT() to INT()
+[INFO] test/tmp.frog:1:14: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@test/tmp.frog:1:9
+[PRINT] INT():5@test/tmp.frog:1:9
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[WARN] test/tmp.frog:1:9: redundant cast INT() to INT()
+[WARN] test/tmp.frog:1:9: redundant cast INT() to INT()
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():True@test/tmp.frog:1:8
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+true
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] BOOL():False@test/tmp.frog:1:8
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():1@test/tmp.frog:1:10
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():0@test/tmp.frog:1:11
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+0
+
+[CMD] py -m frog run test/tmp.frog
+[WARN] test/tmp.frog:1:12: redundant cast BOOL() to BOOL()
+[WARN] test/tmp.frog:1:12: redundant cast BOOL() to BOOL()
+[PRINT] BOOL():False@test/tmp.frog:1:12
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[WARN] test/tmp.frog:1:12: redundant cast BOOL() to BOOL()
+[WARN] test/tmp.frog:1:12: redundant cast BOOL() to BOOL()
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+false
+
