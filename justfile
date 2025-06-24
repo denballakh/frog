@@ -19,7 +19,7 @@ repl:
     python -m frog repl
 
 test:
-    python test.py
+    python -m test
 
 clean:
     rm *.c || true

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import contextlib
 from pathlib import Path
 import io
@@ -8,7 +7,10 @@ import shlex
 from frog.__main__ import run_frog
 
 if TYPE_CHECKING:
-    from tqdm import tqdm
+
+    def tqdm[T](x: T, *_: Any, **_a: Any) -> T:
+        return x
+
 else:
     try:
         from tqdm import tqdm
@@ -18,7 +20,7 @@ else:
             return x
 
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent
 
 code_examples = [
     '1 2 + print',
