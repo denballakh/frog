@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from .sb import StringBuilder
 from .logs import error, notimplemented, warn, info, trace, unreachable, typecheck_has_a_bug
 from .types import (
+    INTRINSIC_TO_INTRINSIC_TYPE,
     KW_TO_KWT,
     missing,
     unused,
@@ -366,76 +367,14 @@ def compile(toks: list[Token]) -> IR:
             case TokenType.WORD:
                 expect_enum_size(IntrinsicType, 29)
                 match tok.value:
-                    # arithmetic:
-                    case '+':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ADD))
-                    case '-':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SUB))
-                    case '*':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MUL))
-                    case '/':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIV))
-                    case '%':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.MOD))
-                    case '/%':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DIVMOD))
-
-                    case '<<':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHL))
-                    case '>>':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SHR))
-
-                    # bitwise:
-                    case '&':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BAND))
-                    case '|':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BOR))
-                    case '^':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BXOR))
-                    case '~':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.BNOT))
-
-                    # logic:
-                    case '&&':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.AND))
-                    case '||':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.OR))
-                    case '!':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NOT))
-
-                    # comparison:
-                    case '==':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.EQ))
-                    case '!=':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.NE))
-                    case '<':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LT))
-                    case '>':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GT))
-                    case '<=':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.LE))
-                    case '>=':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.GE))
-
-                    # stack manipulation:
-                    case 'dup':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DUP))
-                    case 'drop':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DROP))
-                    case 'swap':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP))
-                    case 'swap2':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.SWAP2))
-                    case 'rot':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.ROT))
-                    case 'cast':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.CAST))
-
-                    # debugging:
-                    case 'print':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.PRINT))
-                    case '?':
-                        _ = add_instr(Instruction(type=InstructionType.INTRINSIC, tok=tok, arg1=IntrinsicType.DEBUG))
+                    case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
+                        _ = add_instr(
+                            Instruction(
+                                type=InstructionType.INTRINSIC,
+                                tok=tok,
+                                arg1=INTRINSIC_TO_INTRINSIC_TYPE[tok.value],
+                            )
+                        )
 
                     case 'int':
                         _ = add_instr(

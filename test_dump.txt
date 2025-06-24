@@ -1086,28 +1086,28 @@ false
 [CODE] '"" ?'
 [CMD] py -m frog run -c "\"\" ?"
 [ERROR] <cli>:1:1: not implemented: string literals
-[LOC] __init__.py:203:0
+[LOC] __init__.py:204:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc" ?'
 [CMD] py -m frog run -c "\"abc\" ?"
 [ERROR] <cli>:1:1: not implemented: string literals
-[LOC] __init__.py:203:0
+[LOC] __init__.py:204:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\\n" ?'
 [CMD] py -m frog run -c "\"abc\n\" ?"
 [ERROR] <cli>:1:1: not implemented: string literals
-[LOC] __init__.py:203:0
+[LOC] __init__.py:204:0
 [EXIT CODE] 3
 
 ============================================================
 [CODE] '"abc\'" ?'
 [CMD] py -m frog run -c "\"abc'\" ?"
 [ERROR] <cli>:1:1: not implemented: string literals
-[LOC] __init__.py:203:0
+[LOC] __init__.py:204:0
 [EXIT CODE] 3
 
 ============================================================
@@ -1985,10 +1985,10 @@ false
 ============================================================
 [CMD] py -m frog run examples/06_let.frog
 [ERROR] examples/06_let.frog:3:4: not implemented: let statements
-[LOC] __init__.py:244:0
+[LOC] __init__.py:245:0
 [EXIT CODE] 3
 ============================================================
 [CMD] py -m frog build -r examples/06_let.frog
 [ERROR] examples/06_let.frog:3:4: not implemented: let statements
-[LOC] __init__.py:244:0
+[LOC] __init__.py:245:0
 [EXIT CODE] 3

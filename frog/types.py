@@ -138,6 +138,39 @@ class IntrinsicType(Enum):
     DEBUG = auto()  # --
 
 
+INTRINSIC_TO_INTRINSIC_TYPE = {
+    '+': IntrinsicType.ADD,
+    '-': IntrinsicType.SUB,
+    '*': IntrinsicType.MUL,
+    '/': IntrinsicType.DIV,
+    '%': IntrinsicType.MOD,
+    '/%': IntrinsicType.DIVMOD,
+    '<<': IntrinsicType.SHL,
+    '>>': IntrinsicType.SHR,
+    '|': IntrinsicType.BOR,
+    '&': IntrinsicType.BAND,
+    '^': IntrinsicType.BXOR,
+    '~': IntrinsicType.BNOT,
+    '&&': IntrinsicType.AND,
+    '||': IntrinsicType.OR,
+    '!': IntrinsicType.NOT,
+    '==': IntrinsicType.EQ,
+    '!=': IntrinsicType.NE,
+    '<': IntrinsicType.LT,
+    '>': IntrinsicType.GT,
+    '<=': IntrinsicType.LE,
+    '>=': IntrinsicType.GE,
+    'dup': IntrinsicType.DUP,
+    'drop': IntrinsicType.DROP,
+    'swap': IntrinsicType.SWAP,
+    'swap2': IntrinsicType.SWAP2,
+    'rot': IntrinsicType.ROT,
+    'cast': IntrinsicType.CAST,
+    'print': IntrinsicType.PRINT,
+    '?': IntrinsicType.DEBUG,
+}
+
+
 @dataclass
 class Instruction:
     type: InstructionType
