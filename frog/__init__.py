@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from .sb import StringBuilder
 from .logs import error, notimplemented, warn, info, trace, unreachable, typecheck_has_a_bug
 from .types import (
+    KW_TO_KWT,
     missing,
     unused,
     typechecking,
@@ -113,25 +114,10 @@ def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
             elif is_int(chunk):
                 yield Token(TokenType.INT, int(chunk), loc_start)
             else:
-                match chunk:
-                    case 'proc':
-                        yield Token(TokenType.KEYWORD, KeywordType.PROC, loc_start)
-                    case 'if':
-                        yield Token(TokenType.KEYWORD, KeywordType.IF, loc_start)
-                    case 'else':
-                        yield Token(TokenType.KEYWORD, KeywordType.ELSE, loc_start)
-                    case 'end':
-                        yield Token(TokenType.KEYWORD, KeywordType.END, loc_start)
-                    case 'while':
-                        yield Token(TokenType.KEYWORD, KeywordType.WHILE, loc_start)
-                    case 'do':
-                        yield Token(TokenType.KEYWORD, KeywordType.DO, loc_start)
-                    case '--':
-                        yield Token(TokenType.KEYWORD, KeywordType.TYPE_DELIM, loc_start)
-                    case 'let':
-                        yield Token(TokenType.KEYWORD, KeywordType.LET, loc_start)
-                    case _:
-                        yield Token(TokenType.WORD, chunk, loc_start)
+                if chunk in KW_TO_KWT:
+                    yield Token(TokenType.KEYWORD, KW_TO_KWT[chunk], loc_start)
+                else:
+                    yield Token(TokenType.WORD, chunk, loc_start)
 
             loc_start = Loc(filename, line_no, col_no)
             i_start = i + 1

@@ -56,6 +56,19 @@ class KeywordType(Enum):
     LET = auto()
 
 
+KW_TO_KWT = {
+    'proc': KeywordType.PROC,
+    'if': KeywordType.IF,
+    'else': KeywordType.ELSE,
+    'while': KeywordType.WHILE,
+    'do': KeywordType.DO,
+    'end': KeywordType.END,
+    '--': KeywordType.TYPE_DELIM,
+    'let': KeywordType.LET,
+}
+assert len(KW_TO_KWT) == len(KeywordType)
+
+
 @dataclass
 class Token:
     type: TokenType
