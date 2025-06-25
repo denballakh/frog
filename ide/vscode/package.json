@@ -1,0 +1,22 @@
+{
+  "name": "frog",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "frog",
+        "extensions": [".frog"]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "frog",
+        "scopeName": "source.frog",
+        "path": "./frog_grammar.json"
+      }
+    ]
+  }
+}

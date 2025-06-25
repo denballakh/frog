@@ -1,0 +1,75 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "source.frog",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#punctiation" },
+    { "include": "#operators" },
+    { "include": "#special" },
+    { "include": "#literals" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": "//.*$",
+          "name": "comment.line.double-slash.frog"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(proc|if|else|while|do|end|let)\\b",
+          "name": "keyword.control.frog"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "match": "\\b(int|bool)\\b",
+          "name": "storage.type.frog"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { 
+          "match": "\\+|-|\\*|/|%|/%|<<|>>|\\||&|\\^|~|&&|\\|\\||!|==|!=|<=|>=|<|>",
+          "name": "keyword.operator.frog"
+        }
+      ]
+    },
+    "punctiation": {
+      "patterns": [
+        {
+          "match": "--",
+          "name": "punctuation.frog"
+        }
+      ]
+    },
+    "special": {
+      "patterns": [
+        {
+          "match": "\\?",
+          "name": "support.function"
+        }
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {
+          "match": "\\b\\d+\\b",
+          "name": "constant.numeric.frog"
+        },
+        {
+          "match": "\\b(true|false)\\b",
+          "name": "constant.frog"
+        }
+      ]
+    }
+  }
+}
