@@ -93,6 +93,10 @@ class InstructionType(Enum):
     LABEL = auto()
     RET = auto()
 
+    BIND = auto()
+    LOAD_BIND = auto()
+    UNBIND = auto()
+
 
 class IntrinsicType(Enum):
     # arithhmetic:

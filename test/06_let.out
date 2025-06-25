@@ -1,4 +1,102 @@
 [CMD] py -m frog run examples/06_let.frog
-[ERROR] examples/06_let.frog:3:4: not implemented: let statements
-[LOC] __init__.py:245:0
-[EXIT CODE] 3
+[INFO] examples/06_let.frog:4:11: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/06_let.frog:2:4
+      1. INT()@examples/06_let.frog:2:6
+      2. INT()@examples/06_let.frog:2:8
+[INFO] examples/06_let.frog:5:11: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/06_let.frog:2:8
+      1. INT()@examples/06_let.frog:2:6
+      2. INT()@examples/06_let.frog:2:4
+[INFO] examples/06_let.frog:6:11: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/06_let.frog:2:4
+      1. INT()@examples/06_let.frog:2:4
+      2. INT()@examples/06_let.frog:2:4
+[INFO] examples/06_let.frog:7:11: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/06_let.frog:2:6
+      1. INT()@examples/06_let.frog:2:6
+      2. INT()@examples/06_let.frog:2:6
+[INFO] examples/06_let.frog:8:11: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/06_let.frog:2:8
+      1. INT()@examples/06_let.frog:2:8
+      2. INT()@examples/06_let.frog:2:8
+[INFO] examples/06_let.frog:11:4: Stack at compile time:
+[NOTE] stack:
+      0. INT()@examples/06_let.frog:2:8
+      1. INT()@examples/06_let.frog:2:6
+      2. INT()@examples/06_let.frog:2:8
+[INFO] examples/06_let.frog:4:11: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@examples/06_let.frog:2:4
+      1. INT():2@examples/06_let.frog:2:6
+      2. INT():3@examples/06_let.frog:2:8
+[PRINT] INT():3@examples/06_let.frog:2:8
+[PRINT] INT():2@examples/06_let.frog:2:6
+[PRINT] INT():1@examples/06_let.frog:2:4
+[INFO] examples/06_let.frog:5:11: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@examples/06_let.frog:2:8
+      1. INT():2@examples/06_let.frog:2:6
+      2. INT():1@examples/06_let.frog:2:4
+[PRINT] INT():1@examples/06_let.frog:2:4
+[PRINT] INT():2@examples/06_let.frog:2:6
+[PRINT] INT():3@examples/06_let.frog:2:8
+[INFO] examples/06_let.frog:6:11: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@examples/06_let.frog:2:4
+      1. INT():1@examples/06_let.frog:2:4
+      2. INT():1@examples/06_let.frog:2:4
+[PRINT] INT():1@examples/06_let.frog:2:4
+[PRINT] INT():1@examples/06_let.frog:2:4
+[PRINT] INT():1@examples/06_let.frog:2:4
+[INFO] examples/06_let.frog:7:11: Stack at runtime:
+[NOTE] stack:
+      0. INT():2@examples/06_let.frog:2:6
+      1. INT():2@examples/06_let.frog:2:6
+      2. INT():2@examples/06_let.frog:2:6
+[PRINT] INT():2@examples/06_let.frog:2:6
+[PRINT] INT():2@examples/06_let.frog:2:6
+[PRINT] INT():2@examples/06_let.frog:2:6
+[INFO] examples/06_let.frog:8:11: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@examples/06_let.frog:2:8
+      1. INT():3@examples/06_let.frog:2:8
+      2. INT():3@examples/06_let.frog:2:8
+[PRINT] INT():3@examples/06_let.frog:2:8
+[PRINT] INT():3@examples/06_let.frog:2:8
+[PRINT] INT():3@examples/06_let.frog:2:8
+[INFO] examples/06_let.frog:11:4: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@examples/06_let.frog:2:8
+      1. INT():2@examples/06_let.frog:2:6
+      2. INT():3@examples/06_let.frog:2:8
+[PRINT] INT():3@examples/06_let.frog:2:8
+[PRINT] INT():2@examples/06_let.frog:2:6
+[PRINT] INT():3@examples/06_let.frog:2:8
+[CMD] py -m frog -l WARN build -r examples/06_let.frog
+[CMD] gcc examples/06_let.c -o examples/06_let.exe
+[CMD] examples/06_let.exe
+[STDOUT]:
+3
+2
+1
+1
+2
+3
+1
+1
+1
+2
+2
+2
+3
+3
+3
+3
+2
+3
+

@@ -828,32 +828,32 @@ false
 [CMD] py -m frog run test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1)
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:18: if <cond> do <body> [else <body>] end
@@ -972,22 +972,22 @@ false
 [CMD] py -m frog run test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] <?>:0:0: unclosed blocks
 [NOTE] blocks:
-      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1)
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:7: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
@@ -1097,35 +1097,35 @@ false
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:204:0
+[LOC] __init__.py:205:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:2: unterminated string literal

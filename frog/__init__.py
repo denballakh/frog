@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import assert_never, cast
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .sb import StringBuilder
 from .logs import error, notimplemented, warn, info, trace, unreachable, typecheck_has_a_bug
@@ -175,6 +175,7 @@ def compile(toks: list[Token]) -> IR:
         ip2: int = -1
         ip3: int = -1
         ip4: int = -1
+        bound_vars: list[str] = field(default_factory=list)
 
     block_stack: list[Block] = []
 
@@ -242,7 +243,27 @@ def compile(toks: list[Token]) -> IR:
                             error(tok, f'DO should follow an IF or WHILE, not {pp(b.type)}')
 
                     case KeywordType.LET:
-                        notimplemented(tok.loc, f'let statements')
+                        # let a b c do ... end
+                        words: list[str] = []
+                        while i < len(toks) and toks[i].type == TokenType.WORD:
+                            words.append(toks[i].value)
+                            i += 1
+
+                        if i >= len(toks):
+                            error(tok, f'expected a {KeywordType.DO} after let binding')
+
+                        if toks[i].type != TokenType.KEYWORD or toks[i].value != KeywordType.DO:
+                            error(tok, f'expected a {KeywordType.DO} after let binding, got {toks[i]}')
+                        i += 1
+
+                        if len(words) < 1:
+                            error(tok, f'let must have at least one word')
+
+                        block = Block(InstructionType.BIND, bound_vars=words)
+                        block_stack.append(block)
+
+                        for word in reversed(words):
+                            _ = add_instr(Instruction(type=InstructionType.BIND, tok=tok, arg1=word))
 
                     case KeywordType.END:
                         if not block_stack:
@@ -298,6 +319,10 @@ def compile(toks: list[Token]) -> IR:
                             case InstructionType.PROC:
                                 _ = add_instr(Instruction(type=InstructionType.RET, tok=tok))
                                 cur_proc = None
+
+                            case InstructionType.BIND:
+                                for word in b.bound_vars:
+                                    _ = add_instr(Instruction(type=InstructionType.UNBIND, tok=tok, arg1=word))
 
                             case _:
                                 error(tok, f'END should follow an IF or WHILE, not {pp(b.type)}')
@@ -386,7 +411,20 @@ def compile(toks: list[Token]) -> IR:
                         )
 
                     case _:
-                        _ = add_instr(Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value))
+                        for block in reversed(block_stack):
+                            if block.type != InstructionType.BIND:
+                                continue
+                            if tok.value in block.bound_vars:
+                                _ = add_instr(
+                                    Instruction(
+                                        type=InstructionType.LOAD_BIND,
+                                        tok=tok,
+                                        arg1=tok.value,
+                                    )
+                                )
+                                break
+                        else:
+                            _ = add_instr(Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value))
 
             case _:
                 assert_never(tok.type)
@@ -466,6 +504,8 @@ def typecheck(ir: IR) -> None:
     for proc in ir.procs:
         block_stack: list[Block] = []
         stack: Stack = []
+        bound_vars: list[tuple[str, StackEntry]] = []
+
         for type_in in proc.contract.ins:
             stack.append(StackEntry(type_in, typechecking, tok=proc.tok))
         instrs = proc.instrs
@@ -486,6 +526,14 @@ def typecheck(ir: IR) -> None:
                         error(instr, f'unknown word {instr.arg1}')
 
                     typecheck_contract(instr, stack, proc_called.contract)
+
+                case InstructionType.LOAD_BIND:
+                    for name, stack_entry in reversed(bound_vars):
+                        if name == instr.arg1:
+                            stack.append(stack_entry)
+                            break
+                    else:
+                        error(instr, f'unknown variable {instr.arg1}')
 
                 # if // s = stack1
                 #   <cond>
@@ -510,6 +558,21 @@ def typecheck(ir: IR) -> None:
 
                     else:
                         error(instr, f'{InstructionType.ELSE} must come after {InstructionType.IF}')
+
+                case InstructionType.BIND:
+                    if len(stack) < 1:
+                        error(instr, f'{InstructionType.BIND} must have at least 1 element on the stack')
+                    bound_vars.append((instr.arg1, stack.pop()))
+
+                case InstructionType.UNBIND:
+                    if len(bound_vars) < 1:
+                        unreachable(instr, f'{InstructionType.UNBIND} must come after {InstructionType.BIND}')
+
+                    bound_var = bound_vars.pop()
+                    if bound_var[0] != instr.arg1:
+                        error(
+                            instr, f'{InstructionType.UNBIND} must unbind the same variable as {InstructionType.BIND}'
+                        )
 
                 case InstructionType.END:
                     block = block_stack.pop()
@@ -900,7 +963,8 @@ def interpret(ir: IR) -> None:
     main = ir.get_proc_by_name('main')
     assert main is not None
 
-    stack: list[StackEntry] = []
+    stack: Stack = []
+    bound_vars: list[tuple[str, StackEntry]] = []
     frame_stack: list[Frame] = [Frame(main.instrs)]
 
     while frame_stack and frame_stack[-1].ip < len(frame_stack[-1].instrs):
@@ -956,6 +1020,18 @@ def interpret(ir: IR) -> None:
 
             case InstructionType.LABEL:
                 notimplemented(instr, 'labels are not implemented yet')
+
+            case InstructionType.BIND:
+                bound_vars.append((instr.arg1, stack.pop()))
+
+            case InstructionType.UNBIND:
+                _ = bound_vars.pop()
+
+            case InstructionType.LOAD_BIND:
+                for name, value in reversed(bound_vars):
+                    if name == instr.arg1:
+                        stack.append(value)
+                        break
 
             case InstructionType.INTRINSIC:
                 intr_type = cast(IntrinsicType, instr.arg1)
@@ -1410,6 +1486,7 @@ def translate(ir: IR) -> str:
 
         instrs = proc.instrs
         stack: Stack = []
+        bound_vars: list[tuple[str, StackEntry]] = []
 
         ret = f'ret_{proc.name}'
         sb_header += f'{ret} proc_{proc.name}('
@@ -1564,6 +1641,18 @@ def translate(ir: IR) -> str:
 
                 case InstructionType.LABEL:
                     notimplemented(instr, f'translating {InstructionType.LABEL}')
+
+                case InstructionType.BIND:
+                    bound_vars.append((instr.arg1, stack.pop()))
+
+                case InstructionType.UNBIND:
+                    _ = bound_vars.pop()
+
+                case InstructionType.LOAD_BIND:
+                    for name, value in reversed(bound_vars):
+                        if name == instr.arg1:
+                            stack.append(value)
+                            break
 
                 case InstructionType.INTRINSIC:
                     intr_type = cast(IntrinsicType, instr.arg1)
