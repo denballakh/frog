@@ -11,17 +11,28 @@
 @_black:
     black .
 
+[group("test")]
 typecheck: _mypy _basedpyright
+[group("test")]
 fmt: _black
+[group("test")]
 check: typecheck fmt
 
-repl:
-    python -m frog repl
-
-test:
+[group("test")]
+test: && check
     rm test/*.out || true
     python -m test
 
+[group("run")]
+repl:
+    python -m frog repl
+
+[group("run")]
+[positional-arguments]
+@cli *args:
+    python -m frog "$@"
+
+[group("misc")]
 clean:
     rm *.c || true
     rm *.exe || true
@@ -29,5 +40,3 @@ clean:
     rm examples/*.exe || true
     rm test/*.c || true
     rm test/*.exe || true
-
-precommit: check test clean
