@@ -261,6 +261,7 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [NOTE] generated_code:
     #include <stdio.h>
     #include <stdbool.h>
+    #include <stdlib.h>
     typedef struct {
     } ret_main;
     ret_main proc_main() {
@@ -296,6 +297,12 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
         if (gt_0) {
           dup_2 = add_0;
           lit_int_4 = 2;
+          if (lit_int_4 == 0) {
+            printf("[ERROR] examples/02_while.frog:18:5: division by zero\n");
+            printf("[NOTE] a: INT():%d@examples/02_while.frog:16:5\n", dup_2);
+            printf("[NOTE] b: INT():%d@examples/02_while.frog:17:5\n", lit_int_4);
+            exit(1);
+          }
           mod_0 = dup_2 % lit_int_4;
           lit_int_5 = 0;
           eq_0 = mod_0 == lit_int_5;

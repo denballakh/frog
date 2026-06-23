@@ -1457,6 +1457,20 @@ def translate(ir: IR) -> str:
         typ: str = c_type(type)
         sb_header.add(f'  {typ} {var};\n')
 
+    def c_str(s: str) -> str:
+        return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+
+    def emit_division_by_zero_check(instr: Instruction, a: StackEntry, b: StackEntry) -> None:
+        loc = c_str(repr(instr.tok.loc))
+        loc_a = c_str(repr(a.tok.loc))
+        loc_b = c_str(repr(b.tok.loc))
+        sb.add(f'{'':{indent}}if ({b.val} == 0) {{\n')
+        sb.add(f'{'':{indent + 2}}printf("[ERROR] {loc}: division by zero\\n");\n')
+        sb.add(f'{'':{indent + 2}}printf("[NOTE] a: INT():%d@{loc_a}\\n", {a.val});\n')
+        sb.add(f'{'':{indent + 2}}printf("[NOTE] b: INT():%d@{loc_b}\\n", {b.val});\n')
+        sb.add(f'{'':{indent + 2}}exit(1);\n')
+        sb.add(f'{'':{indent}}}}\n')
+
     def copy_stacks(src: Stack, dst: Stack) -> None:
         for a, b in zip(src, dst):
             if a.type != b.type:
@@ -1478,6 +1492,7 @@ def translate(ir: IR) -> str:
     sb_global = StringBuilder()
     sb_global += f'#include <stdio.h>\n'
     sb_global += f'#include <stdbool.h>\n'
+    sb_global += f'#include <stdlib.h>\n'
 
     for proc in ir.procs:
         sb = StringBuilder()
@@ -1705,6 +1720,7 @@ def translate(ir: IR) -> str:
                                 var = get_varname(f'div')
                                 declare_var(var, a.type)
                                 stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                emit_division_by_zero_check(instr, a, b)
                                 sb += f'{'':{indent}}{var} = {a.val} / {b.val};\n'
 
                             else:
@@ -1718,6 +1734,7 @@ def translate(ir: IR) -> str:
                                 var = get_varname(f'mod')
                                 declare_var(var, a.type)
                                 stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                emit_division_by_zero_check(instr, a, b)
                                 sb += f'{'':{indent}}{var} = {a.val} % {b.val};\n'
 
                             else:
@@ -1734,6 +1751,7 @@ def translate(ir: IR) -> str:
                                 declare_var(var2, a.type)
                                 stack.append(StackEntry(a.type, var1, tok=instr.tok))
                                 stack.append(StackEntry(a.type, var2, tok=instr.tok))
+                                emit_division_by_zero_check(instr, a, b)
                                 sb += f'{'':{indent}}{var1} = {a.val} / {b.val};\n'
                                 sb += f'{'':{indent}}{var2} = {a.val} % {b.val};\n'
 
