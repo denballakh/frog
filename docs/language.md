@@ -2,16 +2,6 @@
 
 FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, and block keywords such as `proc`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
-## Compiler Pipeline
-
-- `tokenize(text, filename)` creates tokens with source positions.
-- `compile(toks)` lowers tokens into an IR containing procedures and instructions.
-- Top-level instructions create an implicit `main` procedure; an empty program still gets an empty `main`.
-- Explicit `proc main -- do ... end` must have no inputs and no outputs.
-- `typecheck(ir)` simulates stack effects and rejects stack underflows, unknown words, wrong contracts, bad branch/loop stack states, and non-empty final stacks.
-- `interpret(ir)` executes Frog directly.
-- `translate(ir)` emits C code, and the CLI can compile it with `gcc`.
-
 ## Values And Literals
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, and `type`.
@@ -85,7 +75,5 @@ Casts currently allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, and `p
 ### Output And Debugging
 
 - `print` consumes one value and prints it with a newline.
-- The interpreter prints `[PRINT] ...`; generated C prints raw values without the `[PRINT]` prefix.
-- `putc` consumes an `int` codepoint and writes a single character without an added newline or interpreter prefix.
-- Generated C implements `putc` using `putchar`.
+- `putc` consumes an `int` codepoint and writes a single character without an added newline or interpreter prefix. Generated C implements `putc` using `putchar`.
 - `?` logs the stack at compile time during typechecking and at runtime during interpretation; it is omitted in C codegen.
