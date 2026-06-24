@@ -131,6 +131,7 @@ class IntrinsicType(Enum):
 
     # stack manipulation:
     DUP = auto()  # a -- a a
+    DUP2 = auto()  # a b -- a b a b
     DROP = auto()  # a --
     SWAP = auto()  # a b -- b a
     SWAP2 = auto()  # a b x y -- x y a b
@@ -185,6 +186,7 @@ INTRINSIC_TO_INTRINSIC_TYPE = {
     '<=': IntrinsicType.LE,
     '>=': IntrinsicType.GE,
     'dup': IntrinsicType.DUP,
+    'dup2': IntrinsicType.DUP2,
     'drop': IntrinsicType.DROP,
     'swap': IntrinsicType.SWAP,
     'swap2': IntrinsicType.SWAP2,

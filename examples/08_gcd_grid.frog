@@ -8,18 +8,14 @@ proc gcd int int -- int do
     drop
 end
 
-proc render_bool bool -- do
-    if dup do
+proc render_point int int -- do
+    if dup2 gcd 1 == do
         '#'
     else
         ' '
     end
     dup putc putc
-    drop
-end
-
-proc render_point int int -- do
-    gcd 1 == render_bool
+    drop drop
 end
 
 proc render_row int -- do

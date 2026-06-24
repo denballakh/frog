@@ -54,7 +54,7 @@
     "special": {
       "patterns": [
         {
-          "match": "\\?|\\bputc\\b",
+          "match": "\\?|\\b(dup|dup2|drop|swap|swap2|rot|cast|alloc|print|putc)\\b",
           "name": "support.function"
         }
       ]

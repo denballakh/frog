@@ -54,6 +54,7 @@ code_examples = [
     #
     '1 2 ? print print',
     '1 dup ? print print',
+    '1 2 dup2 ? print print print print',
     '1 2 drop ? print',
     '1 2 swap ? print print',
     '1 2 3 ? print print print',

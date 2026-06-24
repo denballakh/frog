@@ -145,7 +145,7 @@ Subcommands:
 ## Implementation Conventions And Gotchas
 
 - `frog/__init__.py` is large and intentionally keeps the pipeline together; prefer minimal targeted edits unless a refactor is explicitly needed.
-- When adding an intrinsic, update all relevant places together: `IntrinsicType`, `INTRINSIC_TO_INTRINSIC_TYPE`, the `expect_enum_size(IntrinsicType, ...)` check, typechecker behavior, interpreter behavior, C translator behavior, tests, and optionally VS Code grammar.
+- When adding an intrinsic, update all relevant places together: `IntrinsicType`, `INTRINSIC_TO_INTRINSIC_TYPE`, the `expect_enum_size(IntrinsicType, ...)` check, typechecker behavior, interpreter behavior, C translator behavior, tests, docs, and optionally VS Code grammar. Keep concrete language behavior documented in user-facing docs rather than adding one-off feature facts here.
 - When adding a value class, update `ValueClsType`, the `expect_enum_size(ValueClsType, ...)` checks, typechecking, interpretation, C type mapping, stack-copy logic, printing, casts, and tests.
 - When adding a keyword, update `KeywordType`, `KW_TO_KWT`, parser/compiler handling, tests, and `ide/vscode/frog_grammar.json`.
 - Error paths often call `error(...)`, which prints diagnostics then `sys.exit(...)`; tests rely on captured stdout and exit-code lines from helpers.
@@ -157,7 +157,7 @@ Subcommands:
 ## VS Code Grammar
 
 - The grammar is a small TextMate JSON package for `.frog` files.
-- If language keywords, types, operators, comments, or literals change, update `ide/vscode/frog_grammar.json` as part of the same change.
+- If language keywords, types, operators, word-like intrinsics, comments, or literals change, update `ide/vscode/frog_grammar.json` as part of the same change.
 - The existing repository key is spelled `punctiation`; preserve or fix carefully because references currently use that spelling.
 
 ## Working Tree Hygiene

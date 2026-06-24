@@ -418,7 +418,7 @@ def compile(toks: list[Token]) -> IR:
                         assert_never(kw_type)
 
             case TokenType.WORD:
-                expect_enum_size(IntrinsicType, 47)
+                expect_enum_size(IntrinsicType, 48)
                 match tok.value:
                     case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
                         _ = add_instr(
@@ -855,6 +855,21 @@ def typecheck(ir: IR) -> None:
                             a = stack.pop()
                             stack.append(a)
                             stack.append(a)
+
+                        case IntrinsicType.DUP2:
+                            # a b -- a b a b
+                            if len(stack) < 2:
+                                error(
+                                    instr,
+                                    f'not enough items on stack for {intr_type}: it expects two items on the stack',
+                                    stack=stack,
+                                )
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(a)
+                            stack.append(b)
+                            stack.append(a)
+                            stack.append(b)
 
                         case IntrinsicType.DROP:
                             # a --
@@ -1432,6 +1447,17 @@ def interpret(ir: IR) -> None:
                         a = stack.pop()
                         stack.append(a)
                         stack.append(a)
+
+                    case IntrinsicType.DUP2:
+                        # a b -- a b a b
+                        if len(stack) < 2:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        b = stack.pop()
+                        a = stack.pop()
+                        stack.append(a)
+                        stack.append(b)
+                        stack.append(a)
+                        stack.append(b)
 
                     case IntrinsicType.DROP:
                         # a --
@@ -2177,6 +2203,22 @@ def translate(ir: IR) -> str:
                             declare_var(var, a.type)
                             stack.append(StackEntry(a.type, var, tok=instr.tok))
                             sb += f'{'':{indent}}{var} = {a.val};\n'
+
+                        case IntrinsicType.DUP2:
+                            b = stack.pop()
+                            a = stack.pop()
+                            stack.append(a)
+                            stack.append(b)
+
+                            var_a = get_varname(f'dup2')
+                            declare_var(var_a, a.type)
+                            stack.append(StackEntry(a.type, var_a, tok=instr.tok))
+                            sb += f'{'':{indent}}{var_a} = {a.val};\n'
+
+                            var_b = get_varname(f'dup2')
+                            declare_var(var_b, b.type)
+                            stack.append(StackEntry(b.type, var_b, tok=instr.tok))
+                            sb += f'{'':{indent}}{var_b} = {b.val};\n'
 
                         case IntrinsicType.DROP:
                             _ = stack.pop()

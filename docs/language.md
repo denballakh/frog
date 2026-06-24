@@ -50,30 +50,84 @@ end
 
 ## Control Flow
 
-- `if <cond> do <then> [else <else>] end` requires the condition to leave exactly one bool and both branches to leave the same stack shape.
-- `while <cond> do <body> end` requires the condition to leave exactly one bool and the loop body to preserve the original stack shape.
+- `if <cond> do <then> [else <else>] end` requires the condition to preserve the stack from before `if` and add exactly one `bool`. The `do` consumes that bool. Both branches must leave the same stack shape.
+- `while <cond> do <body> end` requires the condition to preserve the stack from before `while` and add exactly one `bool`. The loop body must preserve the original loop stack shape.
+
+## Language Constructs
+
+- `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
+- Top-level instructions are compiled into an implicit `main` procedure.
+- `proc main -- do ... end` may be defined explicitly, but it must have no inputs and no outputs.
+- Procedure calls use the procedure name as a word and are statically checked against the declared contract.
+- `if ... do ... else ... end` selects one of two branches. `else` is optional.
+- `while ... do ... end` repeats while the condition leaves `true`.
+- `let name... do ... end` binds visible stack values to local names in source order.
+- `//` starts a line comment only when it appears as its own whitespace-delimited token.
 
 ## Intrinsics
 
-Intrinsics include arithmetic, bitwise, logic, comparisons, stack manipulation, memory operations, `cast`, `print`, `putc`, and `?` debug.
+### Arithmetic
+
+- `+`: `int int -- int`, `ptr int -- ptr`
+- `-`: `int int -- int`, `ptr int -- ptr`
+- `*`: `int int -- int`
+- `/`: `int int -- int`
+- `%`: `int int -- int`
+- `/%`: `int int -- int int`, producing quotient then remainder
+
+### Bitwise
+
+- `<<`: `int int -- int`
+- `>>`: `int int -- int`
+- `|`: `int int -- int`
+- `&`: `int int -- int`
+- `^`: `int int -- int`
+- `~`: `int -- int`
+
+### Logic
+
+- `&&`: `bool bool -- bool`
+- `||`: `bool bool -- bool`
+- `!`: `bool -- bool`
+
+### Comparisons
+
+- `==`: `int int -- bool`
+- `!=`: `int int -- bool`
+- `<`: `int int -- bool`
+- `>`: `int int -- bool`
+- `<=`: `int int -- bool`
+- `>=`: `int int -- bool`
+
+### Stack Manipulation
+
+- `dup`: `a -- a a`
+- `dup2`: `a b -- a b a b`
+- `drop`: `a --`
+- `swap`: `a b -- b a`
+- `swap2`: `a b x y -- x y a b`
+- `rot`: `a b c -- b c a`
 
 ### Memory
 
 - `alloc`: `size_bytes -- ptr` allocates a byte buffer.
 - Pointer arithmetic supports `ptr int + -- ptr` and `ptr int - -- ptr`; offsets are in bytes.
 - `int ptr +` is not supported.
-- Typed pointer reads use `ptr @i<n> -- int` and `ptr @u<n> -- int` for signed/unsigned `n`-bit values.
-- Typed pointer writes use `val ptr !i<n> --` and `val ptr !u<n> --` for signed/unsigned `n`-bit values.
-- Supported memory access widths are `8`, `16`, `32`, and `64`.
+- Signed pointer reads: `@i8`, `@i16`, `@i32`, `@i64`, each `ptr -- int`.
+- Unsigned pointer reads: `@u8`, `@u16`, `@u32`, `@u64`, each `ptr -- int`.
+- Signed pointer writes: `!i8`, `!i16`, `!i32`, `!i64`, each `int ptr --`.
+- Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
 - The interpreter models allocated memory as bytearray-backed pointers and checks bounds/fit for memory access.
 - Generated C uses `malloc`, `void*`, byte pointer arithmetic, and fixed-width integer loads/stores from `<stdint.h>`.
 
 ### Casts
 
-Casts currently allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, and `ptr`/`int` conversions.
+- `cast`: `x type -- y`
+- Casts currently allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, and `ptr`/`int` conversions.
+- The destination type is pushed with the `int`, `bool`, or `ptr` type word.
 
 ### Output And Debugging
 
-- `print` consumes one value and prints it with a newline.
-- `putc` consumes an `int` codepoint and writes a single character without an added newline or interpreter prefix. Generated C implements `putc` using `putchar`.
-- `?` logs the stack at compile time during typechecking and at runtime during interpretation; it is omitted in C codegen.
+- `print`: `a --`, prints one value with a newline.
+- `putc`: `int --`, writes a single character without an added newline or interpreter prefix. Generated C implements `putc` using `putchar`.
+- `?`: `--`, logs the stack at compile time during typechecking and at runtime during interpretation; it is omitted in C codegen.
