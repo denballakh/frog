@@ -16,7 +16,7 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 FrogLang is a small stack-based, concatenative, statically typed language implemented in Python. The implementation can interpret Frog directly or translate Frog IR to C and compile it with `gcc`.
 
-The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, and block keywords such as `proc`, `if`, `else`, `while`, `do`, `end`, and `let`.
+The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, compile-time token macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
@@ -129,7 +129,8 @@ Subcommands:
 ## Compiler Pipeline
 
 - `tokenize(text, filename)` creates `Token` objects with `Loc` source positions and emits TRACE logs when enabled.
-- `compile(toks)` lowers tokens into an `IR` containing `Proc` objects and `Instruction` lists.
+- `compile(toks)` first strips and expands `macro name <body> end` declarations, then lowers tokens into an `IR` containing `Proc` objects and `Instruction` lists.
+- Macro expansion is token-based. Macro declarations are collected with whole-file scope before the remaining code is compiled, and expansion happens before intrinsic/procedure resolution, so macros can shadow intrinsics or procedures. Recursive macro expansion is rejected.
 - Top-level instructions create an implicit `main` proc; an empty program still gets an empty `main`.
 - Explicit `proc main -- do ... end` must have no inputs and no outputs.
 - `typecheck(ir)` simulates stack effects and rejects stack underflows, unknown words, wrong contracts, bad branch/loop stack states, and non-empty final stacks.
@@ -140,6 +141,7 @@ Subcommands:
 ## Language Semantics
 
 - User-facing language documentation lives in `docs/language.md`; update it when changing Frog syntax, semantics, intrinsics, examples, diagnostics that users see, or backend-visible behavior.
+- `macro name <body> end` records `<body>` as a compile-time token sequence. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc` or `macro` definitions.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 
 ## Implementation Conventions And Gotchas
@@ -147,7 +149,7 @@ Subcommands:
 - `frog/__init__.py` is large and intentionally keeps the pipeline together; prefer minimal targeted edits unless a refactor is explicitly needed.
 - When adding an intrinsic, update all relevant places together: `IntrinsicType`, `INTRINSIC_TO_INTRINSIC_TYPE`, the `expect_enum_size(IntrinsicType, ...)` check, typechecker behavior, interpreter behavior, C translator behavior, tests, docs, and optionally VS Code grammar. Keep concrete language behavior documented in user-facing docs rather than adding one-off feature facts here.
 - When adding a value class, update `ValueClsType`, the `expect_enum_size(ValueClsType, ...)` checks, typechecking, interpretation, C type mapping, stack-copy logic, printing, casts, and tests.
-- When adding a keyword, update `KeywordType`, `KW_TO_KWT`, parser/compiler handling, tests, and `ide/vscode/frog_grammar.json`.
+- When adding a keyword, update `KeywordType`, `KW_TO_KWT`, parser/compiler handling, macro body validation if the keyword affects block syntax, tests, docs, and `ide/vscode/frog_grammar.json`.
 - Error paths often call `error(...)`, which prints diagnostics then `sys.exit(...)`; tests rely on captured stdout and exit-code lines from helpers.
 - Internal consistency failures should use `unreachable`, `typecheck_has_a_bug`, or `notimplemented` from `frog/logs.py` as appropriate.
 - Do not treat generated `.c` or `.exe` files as authoritative source. They are build/test artifacts even if some currently exist in the tree.

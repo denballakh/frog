@@ -162,7 +162,110 @@ def tokenize(text: str, filename: str = '<?>') -> list[Token]:
     return toks
 
 
-def compile(toks: list[Token]) -> IR:
+@dataclass
+class Macro:
+    name: str
+    tok: Token
+    body: list[Token]
+
+
+def _expand_macros(toks: list[Token]) -> list[Token]:
+    block_openers = {KeywordType.IF, KeywordType.WHILE, KeywordType.LET, KeywordType.PROC, KeywordType.MACRO}
+    macros: dict[str, Macro] = {}
+
+    def collect_macro_body(macro_tok: Token, start_i: int) -> tuple[list[Token], int]:
+        body: list[Token] = []
+        depth = 0
+        i = start_i
+        while i < len(toks):
+            tok = toks[i]
+            if tok.type == TokenType.KEYWORD:
+                kw_type = cast(KeywordType, tok.value)
+                if kw_type == KeywordType.END:
+                    if depth == 0:
+                        return body, i + 1
+                    depth -= 1
+                elif kw_type in block_openers:
+                    depth += 1
+
+            body.append(tok)
+            i += 1
+
+        error(macro_tok, f'expected a {KeywordType.END} after macro body')
+
+    def validate_macro_body(macro: Macro) -> None:
+        _ = _compile_tokens(
+            macro.body,
+            expand_macros=False,
+            allow_proc=False,
+            unclosed_blocks_loc=macro.tok,
+            unclosed_blocks_msg=f'unclosed blocks in macro {macro.name}',
+            trace_ir=False,
+        )
+
+    toks_without_macros: list[Token] = []
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        i += 1
+        if tok.type == TokenType.KEYWORD and tok.value == KeywordType.MACRO:
+            if i >= len(toks):
+                error(tok, f'expected a name after MACRO')
+            name_tok = toks[i]
+            if name_tok.type != TokenType.WORD:
+                error(name_tok, f'expected a name after MACRO, got {name_tok.type}')
+            name = name_tok.value
+            if name in macros:
+                error(name_tok, f'macro {name} is already defined', previous_definition=macros[name].tok)
+            i += 1
+
+            body, i = collect_macro_body(tok, i)
+            macro = Macro(name=name, tok=tok, body=body)
+            validate_macro_body(macro)
+            macros[name] = macro
+        else:
+            toks_without_macros.append(tok)
+
+    if not macros:
+        return toks_without_macros
+
+    def expand_token(tok: Token, expansion_stack: list[str]) -> list[Token]:
+        if tok.type != TokenType.WORD or tok.value not in macros:
+            return [tok]
+
+        name = tok.value
+        if name in expansion_stack:
+            error(
+                tok,
+                f'recursive macro expansion for {name}',
+                expansion_stack=[*expansion_stack, name],
+            )
+
+        macro = macros[name]
+        expanded: list[Token] = []
+        for body_tok in macro.body:
+            expanded.extend(expand_token(body_tok, [*expansion_stack, name]))
+        return expanded
+
+    expanded_toks: list[Token] = []
+    for tok in toks_without_macros:
+        expanded_toks.extend(expand_token(tok, []))
+
+    trace(loc_unknown, 'Expanded macros', Tokens=expanded_toks)
+    return expanded_toks
+
+
+def _compile_tokens(
+    toks: list[Token],
+    *,
+    expand_macros: bool,
+    allow_proc: bool,
+    unclosed_blocks_loc: Token | None,
+    unclosed_blocks_msg: str,
+    trace_ir: bool,
+) -> IR:
+    if expand_macros:
+        toks = _expand_macros(toks)
     ir = IR()
 
     implicit_main = False
@@ -357,6 +460,9 @@ def compile(toks: list[Token]) -> IR:
                         error(tok, f'{kw_type} should not be used only in proc signatures')
 
                     case KeywordType.PROC:
+                        if not allow_proc:
+                            error(tok, f'PROC should not be inside of a MACRO')
+
                         if cur_proc is not None:
                             error(tok, f'PROC should not be inside of another PROC: {cur_proc.name}')
 
@@ -414,6 +520,12 @@ def compile(toks: list[Token]) -> IR:
                         block = Block(InstructionType.PROC)
                         block_stack.append(block)
 
+                    case KeywordType.MACRO:
+                        if expand_macros:
+                            unreachable(tok, f'macro definitions should be removed before IR compilation')
+                        else:
+                            error(tok, f'MACRO should not be inside of another MACRO')
+
                     case _:
                         assert_never(kw_type)
 
@@ -466,8 +578,8 @@ def compile(toks: list[Token]) -> IR:
 
     if block_stack:
         error(
-            None,
-            'unclosed blocks',
+            unclosed_blocks_loc,
+            unclosed_blocks_msg,
             blocks=block_stack,
         )
 
@@ -481,12 +593,24 @@ def compile(toks: list[Token]) -> IR:
             )
         )
 
-    trace(
-        loc_unknown,
-        f'Compiled IR',
-        IR=ir,
-    )
+    if trace_ir:
+        trace(
+            loc_unknown,
+            f'Compiled IR',
+            IR=ir,
+        )
     return ir
+
+
+def compile(toks: list[Token]) -> IR:
+    return _compile_tokens(
+        toks,
+        expand_macros=True,
+        allow_proc=True,
+        unclosed_blocks_loc=None,
+        unclosed_blocks_msg='unclosed blocks',
+        trace_ir=True,
+    )
 
 
 def typecheck(ir: IR) -> None:

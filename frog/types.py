@@ -54,10 +54,12 @@ class KeywordType(Enum):
     END = auto()
     TYPE_DELIM = auto()  # --
     LET = auto()
+    MACRO = auto()
 
 
 KW_TO_KWT = {
     'proc': KeywordType.PROC,
+    'macro': KeywordType.MACRO,
     'if': KeywordType.IF,
     'else': KeywordType.ELSE,
     'while': KeywordType.WHILE,

@@ -1081,6 +1081,132 @@ false
 [ERROR] test/tmp.frog:1:1: END should follow an IF or WHILE
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:38: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:32
+      1. INT()@test/tmp.frog:1:32
+[INFO] test/tmp.frog:1:38: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp.frog:1:32
+      1. INT():1@test/tmp.frog:1:32
+[PRINT] INT():1@test/tmp.frog:1:32
+[PRINT] INT():1@test/tmp.frog:1:32
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+1
+
+[CMD] py -m frog run test/tmp.frog
+[INFO] test/tmp.frog:1:44: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp.frog:1:37
+      1. INT()@test/tmp.frog:1:35
+[INFO] test/tmp.frog:1:44: Stack at runtime:
+[NOTE] stack:
+      0. INT():2@test/tmp.frog:1:37
+      1. INT():1@test/tmp.frog:1:35
+[PRINT] INT():1@test/tmp.frog:1:35
+[PRINT] INT():2@test/tmp.frog:1:37
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+2
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():10@test/tmp.frog:1:18
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+10
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():6@test/tmp.frog:1:13
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+6
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():6@test/tmp.frog:1:29
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+6
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():7@test/tmp.frog:1:34
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():7@test/tmp.frog:1:13
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:12: recursive macro expansion for loop
+[NOTE] expansion_stack:
+      0. 'loop'
+      1. 'loop'
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:12: recursive macro expansion for loop
+[NOTE] expansion_stack:
+      0. 'loop'
+      1. 'loop'
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:23: recursive macro expansion for a
+[NOTE] expansion_stack:
+      0. 'a'
+      1. 'b'
+      2. 'a'
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:23: recursive macro expansion for a
+[NOTE] expansion_stack:
+      0. 'a'
+      1. 'b'
+      2. 'a'
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:13: MACRO should not be inside of another MACRO
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:13: MACRO should not be inside of another MACRO
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:9: ELSE should follow an IF
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:9: ELSE should follow an IF
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:1: expected a name after MACRO
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:1: expected a name after MACRO
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
+[ERROR] test/tmp.frog:1:7: expected a name after MACRO, got TokenType.INT
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[ERROR] test/tmp.frog:1:7: expected a name after MACRO, got TokenType.INT
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp.frog
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [CMD] gcc test/tmp.c -o test/tmp.exe
 [CMD] test/tmp.exe
@@ -1128,35 +1254,35 @@ false
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:231:0
+[LOC] __init__.py:334:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:2: unterminated string literal

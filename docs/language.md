@@ -1,6 +1,6 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, and block keywords such as `proc`, `if`, `else`, `while`, `do`, `end`, and `let`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Values And Literals
 
@@ -31,6 +31,21 @@ end
 
 Procedure calls are statically checked against declared stack contracts. Return values are modeled as struct fields in generated C.
 
+## Macros
+
+Macros are compile-time token substitutions:
+
+```frog
+macro dup let x do x x end end
+macro swap let x y do y x end end
+
+1 2 swap
+```
+
+`macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. Whenever `name` appears as a word in the remaining code, it is expanded before normal word resolution, so macros can shadow intrinsics or procedures with the same name.
+
+Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc` and nested `macro` definitions are not valid inside a macro body. Recursive macro expansion is rejected.
+
 ## Local Bindings
 
 `let a b c do ... end` binds stack values to names in source order. If the stack is `1 2 3`, then `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`.
@@ -59,6 +74,7 @@ end
 - Top-level instructions are compiled into an implicit `main` procedure.
 - `proc main -- do ... end` may be defined explicitly, but it must have no inputs and no outputs.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
+- `macro name <body> end` defines a compile-time token substitution.
 - `if ... do ... else ... end` selects one of two branches. `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
