@@ -23,6 +23,16 @@ check: typecheck fmt
 test: && check
     rm test/*.out || true
     python -m test
+    git diff --exit-code -- test/*.out
+
+[group("test")]
+show-diff:
+    git diff -- test/*.out
+
+# ONLY run this if you are ABSOLUTELY SURE the golden output changes are correct.
+[group("test")]
+approve-diff:
+    git add test/*.out
 
 [group("run")]
 @repl:

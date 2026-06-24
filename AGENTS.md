@@ -58,6 +58,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Format Python with Black: `just fmt`
 - Run typecheck and format: `just check`
 - Run the full test suite, including typecheck/format first: `just test`
+- Show regenerated golden-output diffs: `just show-diff`
+- Approve regenerated golden-output diffs after careful review: `just approve-diff`
 - Start REPL: `just repl`
 - Run Frog CLI through just: `just cli <args>`
 - Remove generated C/exe artifacts: `just clean`
@@ -83,7 +85,9 @@ Useful direct commands:
 
 - `just test` is the expected and recommended full verification command
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
-- `just test` does not compare against committed goldens itself; it regenerates `test/*.out` by capturing stdout from many scenarios.
+- `just test` regenerates `test/*.out` by capturing stdout from many scenarios, then fails if tracked golden outputs have unstaged diffs.
+- Use `just show-diff` to inspect golden-output changes.
+- Use `just approve-diff` to `git add test/*.out` ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated `.out` files to confirm the new output is intentional.
 - The test runner also builds and runs examples through the C backend, so `gcc` must be available.
 - `test/tmp.frog` is created during tests and unlinked at the end; failed runs can leave generated artifacts.

@@ -516,11 +516,12 @@ def typecheck(ir: IR) -> None:
                 ins=contract.ins,
             )
 
-        for i, (e1, e2) in enumerate(zip(reversed(stack), contract.ins)):
+        stack_suffix = stack[len(stack) - len(contract.ins) :]
+        for i, (e1, e2) in enumerate(zip(stack_suffix, contract.ins)):
             if e1.type != e2:
                 error(
                     instr,
-                    f'stack doesnt match at {i} for {instr.arg1}: expected {pp(e1.type)} but got {pp(e2)}',
+                    f'stack doesnt match at {i} for {instr.arg1}: expected {pp(e2)} but got {pp(e1.type)}',
                     stack=stack,
                     ins=contract.ins,
                 )
@@ -1002,7 +1003,7 @@ def typecheck(ir: IR) -> None:
                             typecheck_contract(
                                 instr,
                                 stack,
-                                Contract(ins=[ValueCls(ValueClsType.PTR), ValueCls(ValueClsType.INT)], outs=[]),
+                                Contract(ins=[ValueCls(ValueClsType.INT), ValueCls(ValueClsType.PTR)], outs=[]),
                             )
 
                         # debugging:
