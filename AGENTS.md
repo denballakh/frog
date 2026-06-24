@@ -87,7 +87,7 @@ Useful direct commands:
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
 - `just test` regenerates `test/*.out` by capturing stdout from many scenarios, then fails if tracked golden outputs have unstaged diffs.
 - Use `just show-diff` to inspect golden-output changes.
-- Use `just approve-diff` to `git add test/*.out` ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
+- Use `just approve-diff` to approve the golden-output diff ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated `.out` files to confirm the new output is intentional.
 - The test runner also builds and runs examples through the C backend, so `gcc` must be available.
 - `test/tmp.frog` is created during tests and unlinked at the end; failed runs can leave generated artifacts.
@@ -134,6 +134,7 @@ Subcommands:
 - `typecheck(ir)` simulates stack effects and rejects stack underflows, unknown words, wrong contracts, bad branch/loop stack states, and non-empty final stacks.
 - `interpret(ir)` executes the IR directly and prints debug/runtime output.
 - `translate(ir)` emits C code using `StringBuilder`, then the CLI compiles it with `gcc`.
+- Generated C sanitizes Frog procedure names into valid C identifiers for `proc_*`, `ret_*`, and related result variable prefixes, so punctuation in procedure names does not directly leak into C symbols.
 
 ## Language Semantics
 

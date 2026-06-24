@@ -158,6 +158,10 @@ code_examples = [
     proc a int int -- int do + end
     5 7 a print
     ''',
+    '''
+    proc ++ int -- int do 1 + end
+    5 ++ print
+    ''',
     #
     '5 int ? cast ? print',
     '5 bool cast print',

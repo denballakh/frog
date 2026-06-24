@@ -1647,6 +1647,15 @@ def translate(ir: IR) -> str:
     def c_str(s: str) -> str:
         return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
 
+    def c_ident(s: str) -> str:
+        res = ''
+        for c in s:
+            if 'a' <= c <= 'z' or 'A' <= c <= 'Z' or '0' <= c <= '9':
+                res += c
+            else:
+                res += f'_{ord(c):x}_'
+        return res
+
     def emit_division_by_zero_check(instr: Instruction, a: StackEntry, b: StackEntry) -> None:
         loc = c_str(repr(instr.tok.loc))
         loc_a = c_str(repr(a.tok.loc))
@@ -1694,8 +1703,9 @@ def translate(ir: IR) -> str:
         stack: Stack = []
         bound_vars: list[tuple[str, StackEntry]] = []
 
-        ret = f'ret_{proc.name}'
-        sb_header += f'{ret} proc_{proc.name}('
+        proc_name = c_ident(proc.name)
+        ret = f'ret_{proc_name}'
+        sb_header += f'{ret} proc_{proc_name}('
         for i, typ in enumerate(proc.contract.ins):
             name = get_varname('arg')
             if i > 0:
@@ -1737,9 +1747,10 @@ def translate(ir: IR) -> str:
                     if proc_called is None:
                         unreachable(instr, f'proc {instr.arg1} not found')
 
-                    ret_var = get_varname(f'res_{proc_called.name}')
-                    ret_type = f'ret_{proc_called.name}'
-                    sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called.name}('
+                    proc_called_name = c_ident(proc_called.name)
+                    ret_var = get_varname(f'res_{proc_called_name}')
+                    ret_type = f'ret_{proc_called_name}'
+                    sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called_name}('
                     for i, arg in enumerate(stack[len(stack) - len(proc_called.contract.ins) :]):
                         if i > 0:
                             sb += ', '
@@ -1749,7 +1760,7 @@ def translate(ir: IR) -> str:
 
                     for i, out in enumerate(proc_called.contract.outs):
                         typ = out
-                        var = get_varname(f'res_{proc_called.name}_{i}')
+                        var = get_varname(f'res_{proc_called_name}_{i}')
                         declare_var(var, typ)
                         stack.append(StackEntry(typ, var, tok=instr.tok))
                         sb += f'{'':{indent}}{var} = {ret_var}._{i};\n'
@@ -1836,7 +1847,7 @@ def translate(ir: IR) -> str:
                     unreachable(instr, 'proc instrs must not me emitted')
 
                 case InstructionType.RET:
-                    ret_type = f'ret_{proc.name}'
+                    ret_type = f'ret_{proc_name}'
                     sb += f'{'':{indent}}return ({ret_type}){{\n'
                     indent += 2
                     for i, x in enumerate(stack):

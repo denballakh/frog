@@ -1275,6 +1275,14 @@ false
 12
 
 [CMD] py -m frog run test/tmp.frog
+[PRINT] INT():6@test/tmp.frog:2:29
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+6
+
+[CMD] py -m frog run test/tmp.frog
 [INFO] test/tmp.frog:1:7: Stack at compile time:
 [NOTE] stack:
       0. INT()@test/tmp.frog:1:1
