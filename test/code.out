@@ -1102,35 +1102,35 @@ false
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp.frog
 [ERROR] test/tmp.frog:1:1: not implemented: string literals
-[LOC] __init__.py:205:0
+[LOC] __init__.py:231:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp.frog
 [ERROR] test/tmp.frog:1:2: unterminated string literal
@@ -1343,4 +1343,59 @@ false
 [CMD] test/tmp.exe
 [STDOUT]:
 false
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():1@test/tmp.frog:1:16
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[STDERR]:
+test/tmp.c: In function ‘proc_main’:
+test/tmp.c:12:12: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+   12 |   cast_0 = (void*)lit_int_0;
+      |            ^
+test/tmp.c:13:12: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+   13 |   cast_1 = (int)cast_0;
+      |            ^
+
+[CMD] test/tmp.exe
+[STDOUT]:
+1
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():42@test/tmp.frog:1:29
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+42
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():255@test/tmp.frog:1:30
+[PRINT] INT():-1@test/tmp.frog:1:42
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+255
+-1
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():4660@test/tmp.frog:1:32
+[PRINT] INT():18@test/tmp.frog:1:49
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+4660
+18
+
+[CMD] py -m frog run test/tmp.frog
+[PRINT] INT():127@test/tmp.frog:1:30
+[PRINT] INT():128@test/tmp.frog:1:52
+[CMD] py -m frog -l WARN build -r test/tmp.frog
+[CMD] gcc test/tmp.c -o test/tmp.exe
+[CMD] test/tmp.exe
+[STDOUT]:
+127
+128
 

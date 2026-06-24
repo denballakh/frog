@@ -137,8 +137,28 @@ class IntrinsicType(Enum):
     ROT = auto()  # a b c -- b c a
     CAST = auto()  # x T -- (T)x
 
+    # memory:
+    ALLOC = auto()  # size -- ptr
+    READ_I8 = auto()  # ptr -- int
+    READ_I16 = auto()  # ptr -- int
+    READ_I32 = auto()  # ptr -- int
+    READ_I64 = auto()  # ptr -- int
+    READ_U8 = auto()  # ptr -- int
+    READ_U16 = auto()  # ptr -- int
+    READ_U32 = auto()  # ptr -- int
+    READ_U64 = auto()  # ptr -- int
+    WRITE_I8 = auto()  # int ptr --
+    WRITE_I16 = auto()  # int ptr --
+    WRITE_I32 = auto()  # int ptr --
+    WRITE_I64 = auto()  # int ptr --
+    WRITE_U8 = auto()  # int ptr --
+    WRITE_U16 = auto()  # int ptr --
+    WRITE_U32 = auto()  # int ptr --
+    WRITE_U64 = auto()  # int ptr --
+
     # debugging:
     PRINT = auto()  # a --
+    PUTC = auto()  # int --
     DEBUG = auto()  # --
 
 
@@ -170,7 +190,25 @@ INTRINSIC_TO_INTRINSIC_TYPE = {
     'swap2': IntrinsicType.SWAP2,
     'rot': IntrinsicType.ROT,
     'cast': IntrinsicType.CAST,
+    'alloc': IntrinsicType.ALLOC,
+    '@i8': IntrinsicType.READ_I8,
+    '@i16': IntrinsicType.READ_I16,
+    '@i32': IntrinsicType.READ_I32,
+    '@i64': IntrinsicType.READ_I64,
+    '@u8': IntrinsicType.READ_U8,
+    '@u16': IntrinsicType.READ_U16,
+    '@u32': IntrinsicType.READ_U32,
+    '@u64': IntrinsicType.READ_U64,
+    '!i8': IntrinsicType.WRITE_I8,
+    '!i16': IntrinsicType.WRITE_I16,
+    '!i32': IntrinsicType.WRITE_I32,
+    '!i64': IntrinsicType.WRITE_I64,
+    '!u8': IntrinsicType.WRITE_U8,
+    '!u16': IntrinsicType.WRITE_U16,
+    '!u32': IntrinsicType.WRITE_U32,
+    '!u64': IntrinsicType.WRITE_U64,
     'print': IntrinsicType.PRINT,
+    'putc': IntrinsicType.PUTC,
     '?': IntrinsicType.DEBUG,
 }
 

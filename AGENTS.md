@@ -2,7 +2,15 @@
 
 ## Maintenance Instruction
 
-If you notice that AGENTS.md file is wrong - update it. And if you change the project substantially - update the AGENTS.md automatically.
+Agents MUST update this `AGENTS.md` when introducing substantial project changes, including language features, compiler pipeline behavior, tests, commands, or repository workflow changes.
+
+Agents SHOULD periodically check whether this file is incorrect, stale, or incomplete while working. If it is, they MUST update it in the same change rather than leaving follow-up documentation work for the user.
+
+Agents MUST update user-facing docs under `docs/` when making significant user-facing changes to language behavior, CLI behavior, examples, or workflow.
+
+Agents may add possible future improvements to `TODO.md` only after mandatory user approval. Do not add speculative TODOs without explicit approval.
+
+If the error message or log line is incorrect, misleading, useless or in any other way nonhelpful - agent SHOULD attempt to alleviate that.
 
 ## Project Overview
 
@@ -18,6 +26,17 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `frog/logs.py`: Logging, diagnostics, exit codes, source locations, and fatal helper functions.
 - `frog/sb.py`: Persistent-ish `StringBuilder` used by pretty-printing and C code generation.
 - `examples/*.frog`: Example Frog programs. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
+- `examples/00_empty.frog`: Empty program smoke test.
+- `examples/01_simple.frog`: Basic stack arithmetic, debug, and print demo.
+- `examples/02_while.frog`: While loop, nested if/else, and arithmetic demo.
+- `examples/03_fib.frog`: Fibonacci sequence using procedures and stack rotation.
+- `examples/04_procs.frog`: Small procedure composition and loop demo.
+- `examples/05_is_prime.frog`: Prime-checking procedures and boolean logic demo.
+- `examples/06_let.frog`: Local binding demo with `let`.
+- `examples/07_rule30.frog`: Rule 30 ASCII cellular automaton using byte buffers, pointer arithmetic, memory reads/writes, and `putc`.
+- `docs/README.md`: Documentation index.
+- `docs/language.md`: User-facing FrogLang language reference.
+- `TODO.md`: User-approved future improvements and cleanup ideas.
 - `test/__main__.py`: Golden-output test generator/runner. It runs example files, CLI cases, and inline code snippets.
 - `test/*.out`: Golden output files produced by `python -m test`.
 - `test/tmp.c` and `test/tmp.exe`: Generated test build artifacts.
@@ -38,7 +57,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Typecheck with mypy and basedpyright: `just typecheck`
 - Format Python with Black: `just fmt`
 - Run typecheck and format: `just check`
-- Run tests, including typecheck/format first: `just test`
+- Run the full test suite, including typecheck/format first: `just test`
 - Start REPL: `just repl`
 - Run Frog CLI through just: `just cli <args>`
 - Remove generated C/exe artifacts: `just clean`
@@ -62,8 +81,9 @@ Useful direct commands:
 
 ## Testing Nuances
 
-- `just test` deletes `test/*.out` first, then runs `python -m test`.
-- `python -m test` does not compare against committed goldens itself; it regenerates `test/*.out` by capturing stdout from many scenarios.
+- `just test` is the expected and recommended full verification command
+- Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
+- `just test` does not compare against committed goldens itself; it regenerates `test/*.out` by capturing stdout from many scenarios.
 - After behavior changes, inspect the regenerated `.out` files to confirm the new output is intentional.
 - The test runner also builds and runs examples through the C backend, so `gcc` must be available.
 - `test/tmp.frog` is created during tests and unlinked at the end; failed runs can leave generated artifacts.
@@ -90,7 +110,7 @@ Options:
   -h --help                   print this help message
   -l <level>                  log level: ERROR,WARN,INFO,TRACE
 Subcommands:
-  run [OPTIONS]             interpre
+  run [OPTIONS]             interpret
     -c CODE                   code to interpret
        FILE                   file to interpret
   build [OPTIONS] FILE      build
@@ -113,20 +133,8 @@ Subcommands:
 
 ## Language Semantics
 
-- Supported runtime value classes are `int`, `bool`, `ptr`, and `type`, though parser-level procedure signatures currently only accept `int` and `bool`.
-- Integer literals are non-negative decimal chunks. Negative values are produced by operations, not by signed literal syntax.
-- `true` and `false` are bool literals.
-- Character literals push integer codepoints. Only exactly one raw character is accepted; backslash escape handling is not implemented despite tests covering escaped-looking inputs.
-- String literals tokenize, but compilation currently reports `not implemented: string literals`.
-- `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
-- Intrinsics include arithmetic, bitwise, logic, comparisons, stack manipulation, `cast`, `print`, and `?` debug.
-- `?` logs the stack at compile time during typechecking and at runtime during interpretation; it is omitted in C codegen.
-- `print` prints `[PRINT] ...` in the interpreter, but generated C prints raw values without the `[PRINT]` prefix.
-- `if <cond> do <then> [else <else>] end` requires the condition to leave exactly one bool and both branches to leave the same stack shape.
-- `while <cond> do <body> end` requires the condition to leave exactly one bool and the loop body to preserve the original stack shape.
-- `let a b c do ... end` pops values into bindings in reverse word order at compile time emission, then `LOAD_BIND` reuses the bound `StackEntry`; `end` emits matching unbinds.
-- Procedure calls are statically checked against declared stack contracts. Return values are modeled as struct fields in generated C.
-- Casts currently allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, and `ptr`/`int` conversions.
+- User-facing language documentation lives in `docs/language.md`; update it when changing Frog syntax, semantics, intrinsics, examples, diagnostics that users see, or backend-visible behavior.
+- `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 
 ## Implementation Conventions And Gotchas
 

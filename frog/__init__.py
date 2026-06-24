@@ -34,6 +34,32 @@ from .types import (
 )
 
 
+@dataclass(frozen=True)
+class MemoryPtr:
+    buf: bytearray
+    offset: int = 0
+
+
+MEMORY_ACCESS_BITS = {
+    IntrinsicType.READ_I8: (8, True),
+    IntrinsicType.READ_I16: (16, True),
+    IntrinsicType.READ_I32: (32, True),
+    IntrinsicType.READ_I64: (64, True),
+    IntrinsicType.READ_U8: (8, False),
+    IntrinsicType.READ_U16: (16, False),
+    IntrinsicType.READ_U32: (32, False),
+    IntrinsicType.READ_U64: (64, False),
+    IntrinsicType.WRITE_I8: (8, True),
+    IntrinsicType.WRITE_I16: (16, True),
+    IntrinsicType.WRITE_I32: (32, True),
+    IntrinsicType.WRITE_I64: (64, True),
+    IntrinsicType.WRITE_U8: (8, False),
+    IntrinsicType.WRITE_U16: (16, False),
+    IntrinsicType.WRITE_U32: (32, False),
+    IntrinsicType.WRITE_U64: (64, False),
+}
+
+
 def expect_enum_size(e_cls: type[Enum], expected_size: int) -> None:
     if len(e_cls) != expected_size:
         raise Error(f'{e_cls.__name__} has {len(e_cls)} members, expected {expected_size}')
@@ -350,6 +376,8 @@ def compile(toks: list[Token]) -> IR:
                                     return ValueCls(ValueClsType.INT)
                                 case 'bool':
                                     return ValueCls(ValueClsType.BOOL)
+                                case 'ptr':
+                                    return ValueCls(ValueClsType.PTR)
                                 case _:
                                     error(tok, f'expected a type after proc name, got {tok.value}')
 
@@ -390,7 +418,7 @@ def compile(toks: list[Token]) -> IR:
                         assert_never(kw_type)
 
             case TokenType.WORD:
-                expect_enum_size(IntrinsicType, 29)
+                expect_enum_size(IntrinsicType, 47)
                 match tok.value:
                     case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
                         _ = add_instr(
@@ -408,6 +436,10 @@ def compile(toks: list[Token]) -> IR:
                     case 'bool':
                         _ = add_instr(
                             Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.BOOL))
+                        )
+                    case 'ptr':
+                        _ = add_instr(
+                            Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.PTR))
                         )
 
                     case _:
@@ -688,14 +720,31 @@ def typecheck(ir: IR) -> None:
                     match intr_type:
                         # arithmetic:
                         case IntrinsicType.ADD | IntrinsicType.SUB:
-                            typecheck_contract(
-                                instr,
-                                stack,
-                                Contract(
-                                    ins=[ValueCls(ValueClsType.INT), ValueCls(ValueClsType.INT)],
-                                    outs=[ValueCls(ValueClsType.INT)],
-                                ),
-                            )
+                            if len(stack) < 2:
+                                typecheck_contract(
+                                    instr,
+                                    stack=stack,
+                                    contract=Contract(
+                                        ins=[ValueCls(ValueClsType.INT), ValueCls(ValueClsType.INT)],
+                                        outs=[ValueCls(ValueClsType.INT)],
+                                    ),
+                                )
+
+                            b = stack[-1]
+                            a = stack[-2]
+                            if a.type.type == ValueClsType.PTR and b.type.type == ValueClsType.INT:
+                                _ = stack.pop()
+                                _ = stack.pop()
+                                stack.append(StackEntry(ValueCls(ValueClsType.PTR), typechecking, tok=instr.tok))
+                            else:
+                                typecheck_contract(
+                                    instr,
+                                    stack,
+                                    Contract(
+                                        ins=[ValueCls(ValueClsType.INT), ValueCls(ValueClsType.INT)],
+                                        outs=[ValueCls(ValueClsType.INT)],
+                                    ),
+                                )
 
                         case IntrinsicType.MUL | IntrinsicType.DIV:
                             typecheck_contract(
@@ -916,6 +965,46 @@ def typecheck(ir: IR) -> None:
                                         stack=stack,
                                     )
 
+                        # memory:
+                        case IntrinsicType.ALLOC:
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(ins=[ValueCls(ValueClsType.INT)], outs=[ValueCls(ValueClsType.PTR)]),
+                            )
+
+                        case (
+                            IntrinsicType.READ_I8
+                            | IntrinsicType.READ_I16
+                            | IntrinsicType.READ_I32
+                            | IntrinsicType.READ_I64
+                            | IntrinsicType.READ_U8
+                            | IntrinsicType.READ_U16
+                            | IntrinsicType.READ_U32
+                            | IntrinsicType.READ_U64
+                        ):
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(ins=[ValueCls(ValueClsType.PTR)], outs=[ValueCls(ValueClsType.INT)]),
+                            )
+
+                        case (
+                            IntrinsicType.WRITE_I8
+                            | IntrinsicType.WRITE_I16
+                            | IntrinsicType.WRITE_I32
+                            | IntrinsicType.WRITE_I64
+                            | IntrinsicType.WRITE_U8
+                            | IntrinsicType.WRITE_U16
+                            | IntrinsicType.WRITE_U32
+                            | IntrinsicType.WRITE_U64
+                        ):
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(ins=[ValueCls(ValueClsType.PTR), ValueCls(ValueClsType.INT)], outs=[]),
+                            )
+
                         # debugging:
                         case IntrinsicType.PRINT:
                             # a --
@@ -926,6 +1015,13 @@ def typecheck(ir: IR) -> None:
                                     stack=stack,
                                 )
                             a = stack.pop()
+
+                        case IntrinsicType.PUTC:
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(ins=[ValueCls(ValueClsType.INT)], outs=[]),
+                            )
 
                         case IntrinsicType.DEBUG:
                             info(
@@ -1047,8 +1143,15 @@ def interpret(ir: IR) -> None:
                         if a.type.type == b.type.type == ValueClsType.INT:
                             stack.append(StackEntry(a.type, a.val + b.val, tok=instr.tok))
 
+                        elif a.type.type == ValueClsType.PTR and b.type.type == ValueClsType.INT:
+                            if not isinstance(a.val, MemoryPtr):
+                                error(instr, f'cannot do pointer arithmetic on non-allocated pointer {a.val}')
+                            stack.append(StackEntry(a.type, MemoryPtr(a.val.buf, a.val.offset + b.val), tok=instr.tok))
+
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
+                            typecheck_has_a_bug(
+                                instr, f'expected INT INT or PTR INT, got {pp(a.type)} and {pp(b.type)}'
+                            )
 
                     case IntrinsicType.SUB:
                         # a b -- a-b
@@ -1060,8 +1163,15 @@ def interpret(ir: IR) -> None:
                         if a.type.type == b.type.type == ValueClsType.INT:
                             stack.append(StackEntry(a.type, a.val - b.val, tok=instr.tok))
 
+                        elif a.type.type == ValueClsType.PTR and b.type.type == ValueClsType.INT:
+                            if not isinstance(a.val, MemoryPtr):
+                                error(instr, f'cannot do pointer arithmetic on non-allocated pointer {a.val}')
+                            stack.append(StackEntry(a.type, MemoryPtr(a.val.buf, a.val.offset - b.val), tok=instr.tok))
+
                         else:
-                            typecheck_has_a_bug(instr, f'expected two INTs, got {pp(a.type)} and {pp(b.type)}')
+                            typecheck_has_a_bug(
+                                instr, f'expected INT INT or PTR INT, got {pp(a.type)} and {pp(b.type)}'
+                            )
 
                     case IntrinsicType.MUL:
                         # a b -- a*b
@@ -1404,6 +1514,74 @@ def interpret(ir: IR) -> None:
                                     stack=stack,
                                 )
 
+                    # memory:
+                    case IntrinsicType.ALLOC:
+                        if len(stack) < 1:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        alloc_size = stack.pop()
+                        if alloc_size.type.type != ValueClsType.INT:
+                            typecheck_has_a_bug(instr, f'expected an INT, got {pp(alloc_size.type)}')
+                        if alloc_size.val < 0:
+                            error(instr, f'cannot allocate a negative buffer size: {alloc_size.val}')
+                        stack.append(
+                            StackEntry(ValueCls(ValueClsType.PTR), MemoryPtr(bytearray(alloc_size.val)), tok=instr.tok)
+                        )
+
+                    case (
+                        IntrinsicType.READ_I8
+                        | IntrinsicType.READ_I16
+                        | IntrinsicType.READ_I32
+                        | IntrinsicType.READ_I64
+                        | IntrinsicType.READ_U8
+                        | IntrinsicType.READ_U16
+                        | IntrinsicType.READ_U32
+                        | IntrinsicType.READ_U64
+                    ):
+                        if len(stack) < 1:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        ptr = stack.pop()
+                        if ptr.type.type != ValueClsType.PTR:
+                            typecheck_has_a_bug(instr, f'expected a PTR, got {pp(ptr.type)}')
+                        if not isinstance(ptr.val, MemoryPtr):
+                            error(instr, f'cannot read from non-allocated pointer {ptr.val}')
+                        bits, signed = MEMORY_ACCESS_BITS[intr_type]
+                        access_size = bits // 8
+                        if ptr.val.offset < 0 or ptr.val.offset + access_size > len(ptr.val.buf):
+                            error(instr, f'pointer read out of bounds: offset {ptr.val.offset}, size {access_size}')
+                        read_val = int.from_bytes(
+                            ptr.val.buf[ptr.val.offset : ptr.val.offset + access_size], 'little', signed=signed
+                        )
+                        stack.append(StackEntry(ValueCls(ValueClsType.INT), read_val, tok=instr.tok))
+
+                    case (
+                        IntrinsicType.WRITE_I8
+                        | IntrinsicType.WRITE_I16
+                        | IntrinsicType.WRITE_I32
+                        | IntrinsicType.WRITE_I64
+                        | IntrinsicType.WRITE_U8
+                        | IntrinsicType.WRITE_U16
+                        | IntrinsicType.WRITE_U32
+                        | IntrinsicType.WRITE_U64
+                    ):
+                        if len(stack) < 2:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        ptr = stack.pop()
+                        val = stack.pop()
+                        if ptr.type.type != ValueClsType.PTR or val.type.type != ValueClsType.INT:
+                            typecheck_has_a_bug(instr, f'expected INT PTR, got {pp(val.type)} and {pp(ptr.type)}')
+                        if not isinstance(ptr.val, MemoryPtr):
+                            error(instr, f'cannot write to non-allocated pointer {ptr.val}')
+                        bits, signed = MEMORY_ACCESS_BITS[intr_type]
+                        access_size = bits // 8
+                        if ptr.val.offset < 0 or ptr.val.offset + access_size > len(ptr.val.buf):
+                            error(instr, f'pointer write out of bounds: offset {ptr.val.offset}, size {access_size}')
+                        try:
+                            bs = int(val.val).to_bytes(access_size, 'little', signed=signed)
+                        except OverflowError:
+                            sign_name = 'signed' if signed else 'unsigned'
+                            error(instr, f'{val.val} does not fit in {bits}-bit {sign_name} integer')
+                        ptr.val.buf[ptr.val.offset : ptr.val.offset + access_size] = bs
+
                     # debugging:
                     case IntrinsicType.PRINT:
                         # a --
@@ -1411,6 +1589,14 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
                         a = stack.pop()
                         print(f'[PRINT] {pp(a)}')
+
+                    case IntrinsicType.PUTC:
+                        if len(stack) < 1:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        a = stack.pop()
+                        if a.type.type != ValueClsType.INT:
+                            typecheck_has_a_bug(instr, f'expected an INT, got {pp(a.type)}')
+                        print(chr(a.val), end='')
 
                     case IntrinsicType.DEBUG:
                         info(instr, 'Stack at runtime:', stack=stack)
@@ -1447,7 +1633,7 @@ def translate(ir: IR) -> str:
             case ValueClsType.BOOL:
                 return 'bool'
             case ValueClsType.PTR:
-                return f'{c_type(type.val)}*'
+                return 'void*'
             case ValueClsType.TYPE:
                 return f'type[{c_type(type.val)}]'
             case _:
@@ -1486,6 +1672,9 @@ def translate(ir: IR) -> str:
             elif a.type.type == b.type.type == ValueClsType.BOOL:
                 sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
 
+            elif a.type.type == b.type.type == ValueClsType.PTR:
+                sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
+
             else:
                 unreachable(instr)
 
@@ -1493,6 +1682,7 @@ def translate(ir: IR) -> str:
     sb_global += f'#include <stdio.h>\n'
     sb_global += f'#include <stdbool.h>\n'
     sb_global += f'#include <stdlib.h>\n'
+    sb_global += f'#include <stdint.h>\n'
 
     for proc in ir.procs:
         sb = StringBuilder()
@@ -1528,7 +1718,7 @@ def translate(ir: IR) -> str:
                     typ = ValueCls(ValueClsType.INT)
                     declare_var(var, typ)
                     stack.append(StackEntry(typ, var, tok=instr.tok))
-                    sb += f'{'':{indent}}{var} = {instr.tok.value};\n'
+                    sb += f'{'':{indent}}{var} = {instr.arg1};\n'
 
                 case InstructionType.PUSH_BOOL:
                     var = get_varname('lit_bool')
@@ -1683,6 +1873,12 @@ def translate(ir: IR) -> str:
                                 stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} + {b.val};\n'
 
+                            elif a.type.type == ValueClsType.PTR and b.type.type == ValueClsType.INT:
+                                var = get_varname(f'ptr_add')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = (void*)((char*){a.val} + {b.val});\n'
+
                             else:
                                 unreachable(instr)
 
@@ -1695,6 +1891,12 @@ def translate(ir: IR) -> str:
                                 declare_var(var, a.type)
                                 stack.append(StackEntry(a.type, var, tok=instr.tok))
                                 sb += f'{'':{indent}}{var} = {a.val} - {b.val};\n'
+
+                            elif a.type.type == ValueClsType.PTR and b.type.type == ValueClsType.INT:
+                                var = get_varname(f'ptr_sub')
+                                declare_var(var, a.type)
+                                stack.append(StackEntry(a.type, var, tok=instr.tok))
+                                sb += f'{'':{indent}}{var} = (void*)((char*){a.val} - {b.val});\n'
 
                             else:
                                 unreachable(instr)
@@ -2040,6 +2242,51 @@ def translate(ir: IR) -> str:
                                         stack=stack,
                                     )
 
+                        # memory:
+                        case IntrinsicType.ALLOC:
+                            size = stack.pop()
+                            var = get_varname(f'alloc')
+                            typ = ValueCls(ValueClsType.PTR)
+                            declare_var(var, typ)
+                            stack.append(StackEntry(typ, var, tok=instr.tok))
+                            sb += f'{'':{indent}}{var} = malloc({size.val});\n'
+                            sb += f'{'':{indent}}if ({var} == NULL) {{ printf("[ERROR] allocation failed\\n"); exit(1); }}\n'
+
+                        case (
+                            IntrinsicType.READ_I8
+                            | IntrinsicType.READ_I16
+                            | IntrinsicType.READ_I32
+                            | IntrinsicType.READ_I64
+                            | IntrinsicType.READ_U8
+                            | IntrinsicType.READ_U16
+                            | IntrinsicType.READ_U32
+                            | IntrinsicType.READ_U64
+                        ):
+                            ptr = stack.pop()
+                            bits, signed = MEMORY_ACCESS_BITS[intr_type]
+                            c_read_type = f'int{bits}_t' if signed else f'uint{bits}_t'
+                            var = get_varname(f'read')
+                            typ = ValueCls(ValueClsType.INT)
+                            declare_var(var, typ)
+                            stack.append(StackEntry(typ, var, tok=instr.tok))
+                            sb += f'{'':{indent}}{var} = (int)(*({c_read_type}*){ptr.val});\n'
+
+                        case (
+                            IntrinsicType.WRITE_I8
+                            | IntrinsicType.WRITE_I16
+                            | IntrinsicType.WRITE_I32
+                            | IntrinsicType.WRITE_I64
+                            | IntrinsicType.WRITE_U8
+                            | IntrinsicType.WRITE_U16
+                            | IntrinsicType.WRITE_U32
+                            | IntrinsicType.WRITE_U64
+                        ):
+                            ptr = stack.pop()
+                            val = stack.pop()
+                            bits, signed = MEMORY_ACCESS_BITS[intr_type]
+                            c_write_type = f'int{bits}_t' if signed else f'uint{bits}_t'
+                            sb += f'{'':{indent}}*({c_write_type}*){ptr.val} = ({c_write_type}){val.val};\n'
+
                         # debugging:
                         case IntrinsicType.PRINT:
                             a = stack.pop()
@@ -2051,6 +2298,14 @@ def translate(ir: IR) -> str:
 
                             else:
                                 notimplemented(instr, f'printing {pp(a.type)} is not implemented yet')
+
+                        case IntrinsicType.PUTC:
+                            a = stack.pop()
+                            if a.type.type == ValueClsType.INT:
+                                sb += f'{'':{indent}}putchar({a.val});\n'
+
+                            else:
+                                unreachable(instr)
 
                         case IntrinsicType.DEBUG:
                             pass

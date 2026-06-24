@@ -9,7 +9,7 @@ Options:
   -h --help                   print this help message
   -l <level>                  log level: ERROR,WARN,INFO,TRACE
 Subcommands:
-  run [OPTIONS]             interpre
+  run [OPTIONS]             interpret
     -c CODE                   code to interpret
        FILE                   file to interpret
   build [OPTIONS] FILE      build
@@ -27,7 +27,7 @@ Options:
   -h --help                   print this help message
   -l <level>                  log level: ERROR,WARN,INFO,TRACE
 Subcommands:
-  run [OPTIONS]             interpre
+  run [OPTIONS]             interpret
     -c CODE                   code to interpret
        FILE                   file to interpret
   build [OPTIONS] FILE      build
@@ -262,6 +262,7 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
     #include <stdio.h>
     #include <stdbool.h>
     #include <stdlib.h>
+    #include <stdint.h>
     typedef struct {
     } ret_main;
     ret_main proc_main() {

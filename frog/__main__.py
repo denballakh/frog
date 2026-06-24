@@ -92,7 +92,7 @@ Options:
   -h --help                   print this help message
   -l <level>                  log level: ERROR,WARN,INFO,TRACE
 Subcommands:
-  run [OPTIONS]             interpre
+  run [OPTIONS]             interpret
     -c CODE                   code to interpret
        FILE                   file to interpret
   build [OPTIONS] FILE      build

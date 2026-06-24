@@ -165,6 +165,15 @@ code_examples = [
     'true int cast print',
     'false int cast print',
     'false bool cast print',
+    '1 ptr cast int cast print',
+    '4 alloc let p do 42 p !i8 p @i8 print end',
+    '4 alloc let p do 255 p !u8 p @u8 print p @i8 print end',
+    '4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end',
+    '4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end',
+    # '''
+    # proc cell ptr int -- int do + @u8 end
+    # 4 alloc let p do p 0 cell drop end
+    # ''',
 ]
 cli_examples = [
     '',

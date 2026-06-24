@@ -1,3 +1,4 @@
+# https://just.systems/man/en/
 
 @_default:
     just --list
@@ -24,7 +25,7 @@ test: && check
     python -m test
 
 [group("run")]
-repl:
+@repl:
     python -m frog repl
 
 [group("run")]
