@@ -34,6 +34,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `examples/05_is_prime.frog`: Prime-checking procedures and boolean logic demo.
 - `examples/06_let.frog`: Local binding demo with `let`.
 - `examples/07_rule30.frog`: Rule 30 ASCII cellular automaton using byte buffers, pointer arithmetic, memory reads/writes, and `putc`.
+- `examples/08_gcd_grid.frog`: Euclidean GCD rendered as a 40x40 coprimality grid using `#` for coprime coordinates and space otherwise.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
 - `TODO.md`: User-approved future improvements and cleanup ideas.

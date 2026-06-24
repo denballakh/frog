@@ -1,0 +1,44 @@
+proc gcd int int -- int do
+    while dup 0 != do
+        let a b do
+            b
+            a b %
+        end
+    end
+    drop
+end
+
+proc render_bool bool -- do
+    if dup do
+        '#'
+    else
+        ' '
+    end
+    dup putc putc
+    drop
+end
+
+proc render_point int int -- do
+    gcd 1 == render_bool
+end
+
+proc render_row int -- do
+    let y do
+        1
+        while dup 41 < do
+            dup y render_point
+            1 +
+        end
+        drop
+        10 putc
+    end
+end
+
+proc main -- do
+    1
+    while dup 41 < do
+        dup render_row
+        1 +
+    end
+    drop
+end
