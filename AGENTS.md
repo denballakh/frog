@@ -38,9 +38,9 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
-- `test/__main__.py`: Golden-output test generator/runner. It runs example files, CLI cases, and inline code snippets.
+- `test/__main__.py`: Golden-output test generator/runner. It runs example files, CLI cases, inline code snippets, and multi-file import-system cases.
 - `test/*.out`: Golden output files produced by `python -m test`.
-- `test/tmp.c` and `test/tmp.exe`: Generated test build artifacts.
+- `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
 - `devenv.nix`, `devenv.yaml`, `.envrc`: Nix/devenv environment setup.
 - `justfile`: Project command recipes.
@@ -87,11 +87,12 @@ Useful direct commands:
 - `just test` is the expected and recommended full verification command
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
 - `just test` regenerates `test/*.out` by capturing stdout from many scenarios, then fails if tracked golden outputs have unstaged diffs.
+- Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and are expected to fail until imports are implemented; do not approve their golden-output changes as final behavior before the implementation exists.
 - Use `just show-diff` to inspect golden-output changes.
 - Use `just approve-diff` to approve the golden-output diff ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated `.out` files to confirm the new output is intentional.
 - The test runner also builds and runs examples through the C backend, so `gcc` must be available.
-- `test/tmp.frog` is created during tests and unlinked at the end; failed runs can leave generated artifacts.
+- `test/tmp_fs/` is created during tests and removed at the end; failed runs can leave generated artifacts there.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
 
 ## CLI Behavior
