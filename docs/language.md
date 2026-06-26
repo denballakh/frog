@@ -1,6 +1,6 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, imports, macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Values And Literals
 
@@ -10,7 +10,7 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints and are supported by both interpretation and C codegen.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.
-- String literals tokenize, but compilation currently reports `not implemented: string literals`.
+- String literals are supported in import declarations. In normal code, string literals tokenize, but compilation currently reports `not implemented: string literals`.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 
 ## Stack Effects
@@ -46,6 +46,42 @@ macro swap let x y do y x end end
 
 Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc` and nested `macro` definitions are not valid inside a macro body. Recursive macro expansion is rejected.
 
+## Imports
+
+Imports make procedures and macros from another Frog file visible in the importing module:
+
+```frog
+from "math.frog" import inc
+from "math.frog" import inc as bump
+from "math.frog" import ( inc dec add2 )
+
+41 inc print
+```
+
+Only `from "path" import ...` is supported. Module alias imports such as `import "math.frog" as math` and wildcard imports are not supported. Grouped imports are whitespace-separated; commas are rejected.
+
+Import declarations are collected before procedure bodies and top-level code are compiled, so imported names can be used before the import declaration appears in the file.
+
+Import paths are resolved relative to the root file being compiled, not relative to the importing module. For example, inside `pkg/use.frog`, `from "math.frog" import value` refers to the root-level `math.frog`; use `from "pkg/math.frog" import value` for the file under `pkg/`.
+
+Imported files may reexport imported names:
+
+```frog
+// facade.frog
+from "math.frog" import inc as bump
+```
+
+```frog
+// main.frog
+from "facade.frog" import bump
+```
+
+Imported top-level code is ignored. Imported files contribute procedure and macro definitions, but only the root module's `main` runs.
+
+Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
+
+Import cycles are rejected. Importing the same canonical file more than once is allowed, but two different symbols cannot be imported under the same visible name.
+
 ## Local Bindings
 
 `let a b c do ... end` binds stack values to names in source order. If the stack is `1 2 3`, then `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`.
@@ -75,6 +111,7 @@ end
 - `proc main -- do ... end` may be defined explicitly, but it must have no inputs and no outputs.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
+- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures or macros from another file.
 - `if ... do ... else ... end` selects one of two branches. `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.

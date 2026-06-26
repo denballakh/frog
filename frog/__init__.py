@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 from typing import assert_never, cast
 from enum import Enum
 from dataclasses import dataclass, field
@@ -26,6 +27,8 @@ from .types import (
     StackEntry,
     Stack,
     Proc,
+    ProcRef,
+    Module,
     Contract,
     IR,
     Error,
@@ -169,40 +172,193 @@ class Macro:
     body: list[Token]
 
 
-def _expand_macros(toks: list[Token]) -> list[Token]:
+class SymbolType(Enum):
+    PROC = 'proc'
+    MACRO = 'macro'
+
+
+@dataclass(frozen=True)
+class Symbol:
+    type: SymbolType
+    module: str
+    name: str
+
+
+@dataclass
+class ImportItem:
+    name: str
+    alias: str
+    tok: Token
+
+
+@dataclass
+class ImportDecl:
+    path: str
+    tok: Token
+    items: list[ImportItem]
+
+
+@dataclass
+class ModuleSource:
+    id: str
+    path: str
+    canonical_path: Path | None
+    toks: list[Token]
+    imports: list[ImportDecl]
+    body_toks: list[Token]
+    macros: dict[str, Macro] = field(default_factory=dict)
+    proc_toks: dict[str, Token] = field(default_factory=dict)
+    imported_symbols: dict[str, Symbol] = field(default_factory=dict)
+    scope: dict[str, Symbol] = field(default_factory=dict)
+
+
+def _display_path(path: Path) -> str:
+    path = path.resolve(strict=False)
+    cwd = Path.cwd().resolve(strict=False)
+    try:
+        return str(path.relative_to(cwd))
+    except ValueError:
+        return str(path)
+
+
+def _normalize_import_path(root_dir: Path, path: str) -> Path:
+    return (root_dir / path).resolve(strict=False)
+
+
+def _is_word(tok: Token, value: str) -> bool:
+    return tok.type == TokenType.WORD and tok.value == value
+
+
+def _is_keyword(tok: Token, value: KeywordType) -> bool:
+    return tok.type == TokenType.KEYWORD and tok.value == value
+
+
+def _parse_import_item(toks: list[Token], i: int) -> tuple[ImportItem, int]:
+    if i >= len(toks):
+        error(toks[-1] if toks else None, 'expected imported name after import')
+
+    name_tok = toks[i]
+    if name_tok.type != TokenType.WORD:
+        error(name_tok, f'expected imported name after import, got {name_tok.type}')
+    if name_tok.value == '*':
+        error(name_tok, 'wildcard imports are not supported')
+    if ',' in name_tok.value:
+        error(name_tok, 'commas are not valid in import lists')
+    if name_tok.value in {'(', ')'}:
+        error(name_tok, f'expected imported name after import, got {name_tok.value}')
+
+    name = name_tok.value
+    alias = name
+    i += 1
+    if i < len(toks) and _is_keyword(toks[i], KeywordType.AS):
+        i += 1
+        if i >= len(toks):
+            error(name_tok, f'expected an alias after as')
+        alias_tok = toks[i]
+        if alias_tok.type != TokenType.WORD:
+            error(alias_tok, f'expected an alias after as, got {alias_tok.type}')
+        if alias_tok.value == '*' or ',' in alias_tok.value or alias_tok.value in {'(', ')'}:
+            error(alias_tok, f'invalid import alias {alias_tok.value}')
+        alias = alias_tok.value
+        i += 1
+
+    return ImportItem(name=name, alias=alias, tok=name_tok), i
+
+
+def _parse_import_decl(toks: list[Token], i: int) -> tuple[ImportDecl, int]:
+    tok_from = toks[i]
+    i += 1
+
+    if i >= len(toks) or toks[i].type != TokenType.STR:
+        error(tok_from, 'expected a string path after from')
+    path_tok = toks[i]
+    path = cast(str, path_tok.value)
+    i += 1
+
+    if i >= len(toks) or not _is_keyword(toks[i], KeywordType.IMPORT):
+        error(path_tok, 'expected import after module path')
+    i += 1
+
+    items: list[ImportItem] = []
+    if i >= len(toks):
+        error(path_tok, 'expected imported name after import')
+
+    if _is_word(toks[i], '('):
+        i += 1
+        while i < len(toks) and not _is_word(toks[i], ')'):
+            if _is_word(toks[i], ','):
+                error(toks[i], 'commas are not valid in import lists')
+            item, i = _parse_import_item(toks, i)
+            items.append(item)
+        if i >= len(toks):
+            error(path_tok, 'expected ) after import list')
+        i += 1
+        if not items:
+            error(path_tok, 'import group must contain at least one name')
+    else:
+        item, i = _parse_import_item(toks, i)
+        items.append(item)
+
+    return ImportDecl(path=path, tok=tok_from, items=items), i
+
+
+def _strip_imports(toks: list[Token]) -> tuple[list[ImportDecl], list[Token]]:
     block_openers = {KeywordType.IF, KeywordType.WHILE, KeywordType.LET, KeywordType.PROC, KeywordType.MACRO}
+    imports: list[ImportDecl] = []
+    body_toks: list[Token] = []
+    depth = 0
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        if tok.type == TokenType.KEYWORD:
+            kw_type = cast(KeywordType, tok.value)
+            if kw_type == KeywordType.FROM:
+                if depth != 0:
+                    error(tok, 'imports are only allowed at top level')
+                import_decl, i = _parse_import_decl(toks, i)
+                imports.append(import_decl)
+                continue
+            if kw_type == KeywordType.IMPORT:
+                if depth != 0:
+                    error(tok, 'imports are only allowed at top level')
+                error(tok, 'only from path import name is supported')
+            if kw_type in block_openers:
+                depth += 1
+            elif kw_type == KeywordType.END:
+                depth -= 1
+                if depth < 0:
+                    depth = 0
+
+        body_toks.append(tok)
+        i += 1
+
+    return imports, body_toks
+
+
+def _collect_macro_body(toks: list[Token], macro_tok: Token, start_i: int) -> tuple[list[Token], int]:
+    block_openers = {KeywordType.IF, KeywordType.WHILE, KeywordType.LET, KeywordType.PROC, KeywordType.MACRO}
+    body: list[Token] = []
+    depth = 0
+    i = start_i
+    while i < len(toks):
+        tok = toks[i]
+        if tok.type == TokenType.KEYWORD:
+            kw_type = cast(KeywordType, tok.value)
+            if kw_type == KeywordType.END:
+                if depth == 0:
+                    return body, i + 1
+                depth -= 1
+            elif kw_type in block_openers:
+                depth += 1
+
+        body.append(tok)
+        i += 1
+
+    error(macro_tok, f'expected a {KeywordType.END} after macro body')
+
+
+def _strip_macros(toks: list[Token]) -> tuple[dict[str, Macro], list[Token]]:
     macros: dict[str, Macro] = {}
-
-    def collect_macro_body(macro_tok: Token, start_i: int) -> tuple[list[Token], int]:
-        body: list[Token] = []
-        depth = 0
-        i = start_i
-        while i < len(toks):
-            tok = toks[i]
-            if tok.type == TokenType.KEYWORD:
-                kw_type = cast(KeywordType, tok.value)
-                if kw_type == KeywordType.END:
-                    if depth == 0:
-                        return body, i + 1
-                    depth -= 1
-                elif kw_type in block_openers:
-                    depth += 1
-
-            body.append(tok)
-            i += 1
-
-        error(macro_tok, f'expected a {KeywordType.END} after macro body')
-
-    def validate_macro_body(macro: Macro) -> None:
-        _ = _compile_tokens(
-            macro.body,
-            expand_macros=False,
-            allow_proc=False,
-            unclosed_blocks_loc=macro.tok,
-            unclosed_blocks_msg=f'unclosed blocks in macro {macro.name}',
-            trace_ir=False,
-        )
-
     toks_without_macros: list[Token] = []
     i = 0
     while i < len(toks):
@@ -214,88 +370,263 @@ def _expand_macros(toks: list[Token]) -> list[Token]:
             name_tok = toks[i]
             if name_tok.type != TokenType.WORD:
                 error(name_tok, f'expected a name after MACRO, got {name_tok.type}')
-            name = name_tok.value
+            name = cast(str, name_tok.value)
             if name in macros:
                 error(name_tok, f'macro {name} is already defined', previous_definition=macros[name].tok)
             i += 1
 
-            body, i = collect_macro_body(tok, i)
-            macro = Macro(name=name, tok=tok, body=body)
-            validate_macro_body(macro)
-            macros[name] = macro
+            body, i = _collect_macro_body(toks, tok, i)
+            macros[name] = Macro(name=name, tok=tok, body=body)
         else:
             toks_without_macros.append(tok)
 
-    if not macros:
-        return toks_without_macros
-
-    def expand_token(tok: Token, expansion_stack: list[str]) -> list[Token]:
-        if tok.type != TokenType.WORD or tok.value not in macros:
-            return [tok]
-
-        name = tok.value
-        if name in expansion_stack:
-            error(
-                tok,
-                f'recursive macro expansion for {name}',
-                expansion_stack=[*expansion_stack, name],
-            )
-
-        macro = macros[name]
-        expanded: list[Token] = []
-        for body_tok in macro.body:
-            expanded.extend(expand_token(body_tok, [*expansion_stack, name]))
-        return expanded
-
-    expanded_toks: list[Token] = []
-    for tok in toks_without_macros:
-        expanded_toks.extend(expand_token(tok, []))
-
-    trace(loc_unknown, 'Expanded macros', Tokens=expanded_toks)
-    return expanded_toks
+    return macros, toks_without_macros
 
 
-def _compile_tokens(
-    toks: list[Token],
+def _collect_proc_toks(toks: list[Token]) -> dict[str, Token]:
+    proc_toks: dict[str, Token] = {}
+    depth = 0
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        if tok.type == TokenType.KEYWORD:
+            kw_type = cast(KeywordType, tok.value)
+            if kw_type == KeywordType.PROC and depth == 0:
+                if i + 1 >= len(toks):
+                    error(tok, f'expected a name after PROC')
+                name_tok = toks[i + 1]
+                if name_tok.type != TokenType.WORD:
+                    error(name_tok, f'expected a name after PROC, got {name_tok.type}')
+                name = cast(str, name_tok.value)
+                if name not in proc_toks:
+                    proc_toks[name] = name_tok
+                depth += 1
+            elif kw_type in {KeywordType.IF, KeywordType.WHILE, KeywordType.LET}:
+                depth += 1
+            elif kw_type == KeywordType.END:
+                depth -= 1
+                if depth < 0:
+                    depth = 0
+        i += 1
+    return proc_toks
+
+
+def _top_level_proc_tokens(toks: list[Token]) -> list[Token]:
+    proc_toks: list[Token] = []
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        if tok.type != TokenType.KEYWORD or tok.value != KeywordType.PROC:
+            i += 1
+            continue
+
+        depth = 0
+        while i < len(toks):
+            proc_tok = toks[i]
+            proc_toks.append(proc_tok)
+            if proc_tok.type == TokenType.KEYWORD:
+                kw_type = cast(KeywordType, proc_tok.value)
+                if kw_type in {KeywordType.PROC, KeywordType.IF, KeywordType.WHILE, KeywordType.LET}:
+                    depth += 1
+                elif kw_type == KeywordType.END:
+                    depth -= 1
+                    if depth == 0:
+                        i += 1
+                        break
+            i += 1
+
+    return proc_toks
+
+
+def _validate_macro_body(macro: Macro) -> None:
+    @dataclass
+    class Block:
+        type: KeywordType
+        has_do: bool = False
+        has_else: bool = False
+
+    blocks: list[Block] = []
+    for tok in macro.body:
+        if tok.type != TokenType.KEYWORD:
+            continue
+        kw_type = cast(KeywordType, tok.value)
+        match kw_type:
+            case KeywordType.PROC:
+                error(tok, f'PROC should not be inside of a MACRO')
+            case KeywordType.MACRO:
+                error(tok, f'MACRO should not be inside of another MACRO')
+            case KeywordType.FROM | KeywordType.IMPORT:
+                error(tok, 'imports are only allowed at top level')
+            case KeywordType.IF | KeywordType.WHILE | KeywordType.LET:
+                blocks.append(Block(kw_type))
+            case KeywordType.DO:
+                if not blocks:
+                    error(tok, f'DO should follow an IF or WHILE')
+                block = blocks[-1]
+                if block.has_do:
+                    error(tok, f'DO should follow an IF or WHILE')
+                block.has_do = True
+            case KeywordType.ELSE:
+                if not blocks or blocks[-1].type != KeywordType.IF:
+                    error(tok, f'ELSE should follow an IF')
+                block = blocks[-1]
+                if not block.has_do or block.has_else:
+                    error(tok, f'ELSE should follow an IF')
+                block.has_else = True
+            case KeywordType.END:
+                if not blocks:
+                    error(tok, f'END should follow an IF or WHILE')
+                block = blocks.pop()
+                if block.type in {KeywordType.IF, KeywordType.WHILE, KeywordType.LET} and not block.has_do:
+                    error(
+                        tok, f'{block.type.value if isinstance(block.type.value, str) else block.type} block needs DO'
+                    )
+            case KeywordType.TYPE_DELIM | KeywordType.AS:
+                pass
+
+    if blocks:
+        error(macro.tok, f'unclosed blocks in macro {macro.name}', blocks=blocks)
+
+
+def _prepare_module_source(
     *,
-    expand_macros: bool,
-    allow_proc: bool,
-    unclosed_blocks_loc: Token | None,
-    unclosed_blocks_msg: str,
+    module_id: str,
+    path: str,
+    canonical_path: Path | None,
+    toks: list[Token],
+) -> ModuleSource:
+    imports, toks_without_imports = _strip_imports(toks)
+    macros, body_toks = _strip_macros(toks_without_imports)
+    for macro in macros.values():
+        _validate_macro_body(macro)
+    return ModuleSource(
+        id=module_id,
+        path=path,
+        canonical_path=canonical_path,
+        toks=toks,
+        imports=imports,
+        body_toks=body_toks,
+        macros=macros,
+        proc_toks=_collect_proc_toks(body_toks),
+    )
+
+
+def _root_dir_from_tokens(toks: list[Token]) -> Path:
+    for tok in toks:
+        path = Path(tok.loc.file)
+        if tok.loc.file.startswith('<'):
+            break
+        return path.parent.resolve(strict=False)
+    return Path.cwd().resolve(strict=False)
+
+
+def _module_id(root_dir: Path, path: Path) -> str:
+    path = path.resolve(strict=False)
+    try:
+        return str(path.relative_to(root_dir))
+    except ValueError:
+        return str(path)
+
+
+def _load_import_modules(
+    root_dir: Path,
+    source: ModuleSource,
+    modules_by_path: dict[Path, ModuleSource],
+    loading_stack: list[Path],
+) -> None:
+    for import_decl in source.imports:
+        import_path = _normalize_import_path(root_dir, import_decl.path)
+        if import_path in loading_stack:
+            chain = [_display_path(path) for path in loading_stack]
+            chain.append(_display_path(import_path))
+            error(import_decl.tok, 'cyclic import', import_chain=chain)
+        if import_path in modules_by_path:
+            continue
+        if not import_path.exists():
+            error(import_decl.tok, f'imported file does not exist: {import_decl.path}')
+
+        text = import_path.read_text()
+        display_path = _display_path(import_path)
+        toks = tokenize(text, filename=display_path)
+        imported_source = _prepare_module_source(
+            module_id=_module_id(root_dir, import_path),
+            path=display_path,
+            canonical_path=import_path,
+            toks=toks,
+        )
+        modules_by_path[import_path] = imported_source
+        _load_import_modules(root_dir, imported_source, modules_by_path, [*loading_stack, import_path])
+
+
+def _resolve_module_scopes(root_dir: Path, sources: list[ModuleSource]) -> None:
+    source_by_path = {source.canonical_path: source for source in sources if source.canonical_path is not None}
+    resolved: set[str] = set()
+
+    def add_imported_symbol(source: ModuleSource, alias: str, symbol: Symbol, tok: Token) -> None:
+        if alias in source.proc_toks or alias in source.macros:
+            error(tok, f'name {alias} is already defined')
+        existing = source.imported_symbols.get(alias)
+        if existing is not None:
+            if existing == symbol:
+                return
+            error(tok, f'name {alias} is already defined')
+        source.imported_symbols[alias] = symbol
+
+    def resolve(source: ModuleSource) -> None:
+        if source.id in resolved:
+            return
+        for import_decl in source.imports:
+            imported_path = _normalize_import_path(root_dir, import_decl.path)
+            imported_source = source_by_path.get(imported_path)
+            if imported_source is None:
+                error(import_decl.tok, f'imported file does not exist: {import_decl.path}')
+            resolve(imported_source)
+            for item in import_decl.items:
+                symbol = imported_source.scope.get(item.name)
+                if symbol is None:
+                    error(item.tok, f'module {import_decl.path} does not export {item.name}')
+                add_imported_symbol(source, item.alias, symbol, item.tok)
+
+        scope = dict(source.imported_symbols)
+        for name in source.proc_toks:
+            scope[name] = Symbol(SymbolType.PROC, source.id, name)
+        for name in source.macros:
+            scope[name] = Symbol(SymbolType.MACRO, source.id, name)
+        source.scope = scope
+        resolved.add(source.id)
+
+    for source in sources:
+        resolve(source)
+
+
+def _compile_module_source(
+    source: ModuleSource,
+    sources_by_id: dict[str, ModuleSource],
+    *,
+    is_root: bool,
     trace_ir: bool,
-) -> IR:
-    if expand_macros:
-        toks = _expand_macros(toks)
-    ir = IR()
+) -> Module:
+    module = Module(id=source.id, path=source.path)
 
     implicit_main = False
     cur_proc: Proc | None = None
 
     def add_instr(instr: Instruction) -> int:
-        """returns index of added instruction"""
         nonlocal cur_proc
         nonlocal implicit_main
         if cur_proc is None:
-            cur_proc = ir.get_proc_by_name('main')
+            cur_proc = module.get_proc_by_name('main')
             implicit_main = True
         if cur_proc is None:
             cur_proc = Proc(name='main', contract=Contract(ins=[], outs=[]), instrs=[], tok=instr.tok)
-            ir.procs.append(cur_proc)
+            module.procs.append(cur_proc)
         cur_proc.instrs.append(instr)
         return len(cur_proc.instrs) - 1
 
-    # pyright tries to be smart and infer that `cur_proc` is always `None`
-    # trick it into thinking that it might be non-`None`
     if len('abc') == 4:
         cur_proc = Proc(
             name='lol', contract=Contract(ins=[], outs=[]), instrs=[], tok=Token(TokenType.IMAGINARY, ..., loc_unknown)
         )
-
-    # _label_cnt = 0
-    # def get_label() -> int:
-    #     nonlocal _label_cnt
-    #     _label_cnt += 1
-    #     return _label_cnt
 
     @dataclass
     class Block:
@@ -308,283 +639,283 @@ def _compile_tokens(
 
     block_stack: list[Block] = []
 
-    i = 0
-    while i < len(toks):
-        tok = toks[i]
-        i += 1
-        match tok.type:
-            case TokenType.IMAGINARY:
-                warn(tok, f'encountered imaginary token: {pp(tok)}')
+    def parse_type(tok: Token) -> ValueCls:
+        if tok.type != TokenType.WORD:
+            error(tok, f'expected a type after proc name, got {tok.type}')
+        match tok.value:
+            case 'int':
+                return ValueCls(ValueClsType.INT)
+            case 'bool':
+                return ValueCls(ValueClsType.BOOL)
+            case 'ptr':
+                return ValueCls(ValueClsType.PTR)
+            case _:
+                error(tok, f'expected a type after proc name, got {tok.value}')
 
-            case TokenType.INT:
-                _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=tok.value))
+    def compile_stream(toks: list[Token], scope_source: ModuleSource, expansion_stack: list[Symbol]) -> None:
+        nonlocal cur_proc
+        i = 0
+        while i < len(toks):
+            tok = toks[i]
+            i += 1
+            match tok.type:
+                case TokenType.IMAGINARY:
+                    warn(tok, f'encountered imaginary token: {pp(tok)}')
 
-            case TokenType.BOOL:
-                _ = add_instr(Instruction(type=InstructionType.PUSH_BOOL, tok=tok, arg1=tok.value))
+                case TokenType.INT:
+                    _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=tok.value))
 
-            case TokenType.CHAR:
-                if len(tok.value) != 1:
-                    error(
-                        tok,
-                        f'invalid character literal: {tok.value}, it must contain exactly one character',
-                    )
-                _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value)))
+                case TokenType.BOOL:
+                    _ = add_instr(Instruction(type=InstructionType.PUSH_BOOL, tok=tok, arg1=tok.value))
 
-            case TokenType.STR:
-                notimplemented(tok.loc, f'string literals')
-
-            case TokenType.KEYWORD:
-                kw_type = cast(KeywordType, tok.value)
-                match kw_type:
-                    case KeywordType.IF:
-                        b = Block(
-                            InstructionType.IF,
+                case TokenType.CHAR:
+                    if len(tok.value) != 1:
+                        error(
+                            tok,
+                            f'invalid character literal: {tok.value}, it must contain exactly one character',
                         )
-                        block_stack.append(b)
-                        b.ip1 = add_instr(Instruction(type=InstructionType.IF, tok=tok))
+                    _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value)))
 
-                    case KeywordType.ELSE:
-                        if not block_stack:
-                            error(tok, f'ELSE should follow an IF')
-                        b = block_stack[-1]
-                        if b.type != InstructionType.IF:
-                            error(tok, f'ELSE should follow an IF, not {pp(b.type)}')
-                        b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+                case TokenType.STR:
+                    notimplemented(tok.loc, f'string literals')
 
-                    case KeywordType.WHILE:
-                        b = Block(
-                            InstructionType.WHILE,
-                        )
-                        block_stack.append(b)
-                        b.ip1 = add_instr(Instruction(type=InstructionType.WHILE, tok=tok))
+                case TokenType.KEYWORD:
+                    kw_type = cast(KeywordType, tok.value)
+                    match kw_type:
+                        case KeywordType.IF:
+                            b = Block(InstructionType.IF)
+                            block_stack.append(b)
+                            b.ip1 = add_instr(Instruction(type=InstructionType.IF, tok=tok))
 
-                    case KeywordType.DO:
-                        if not block_stack:
-                            error(tok, f'DO should follow an IF or WHILE')
-                        b = block_stack[-1]
-                        if b.type == InstructionType.WHILE:
-                            b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
+                        case KeywordType.ELSE:
+                            if not block_stack:
+                                error(tok, f'ELSE should follow an IF')
+                            b = block_stack[-1]
+                            if b.type != InstructionType.IF:
+                                error(tok, f'ELSE should follow an IF, not {pp(b.type)}')
+                            b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
 
-                        elif b.type == InstructionType.IF:
-                            b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
+                        case KeywordType.WHILE:
+                            b = Block(InstructionType.WHILE)
+                            block_stack.append(b)
+                            b.ip1 = add_instr(Instruction(type=InstructionType.WHILE, tok=tok))
 
-                        else:
-                            error(tok, f'DO should follow an IF or WHILE, not {pp(b.type)}')
+                        case KeywordType.DO:
+                            if not block_stack:
+                                error(tok, f'DO should follow an IF or WHILE')
+                            b = block_stack[-1]
+                            if b.type == InstructionType.WHILE:
+                                b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
-                    case KeywordType.LET:
-                        # let a b c do ... end
-                        words: list[str] = []
-                        while i < len(toks) and toks[i].type == TokenType.WORD:
-                            words.append(toks[i].value)
+                            elif b.type == InstructionType.IF:
+                                b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
+
+                            else:
+                                error(tok, f'DO should follow an IF or WHILE, not {pp(b.type)}')
+
+                        case KeywordType.LET:
+                            words: list[str] = []
+                            while i < len(toks) and toks[i].type == TokenType.WORD:
+                                words.append(toks[i].value)
+                                i += 1
+
+                            if i >= len(toks):
+                                error(tok, f'expected a {KeywordType.DO} after let binding')
+
+                            if toks[i].type != TokenType.KEYWORD or toks[i].value != KeywordType.DO:
+                                error(tok, f'expected a {KeywordType.DO} after let binding, got {toks[i]}')
                             i += 1
 
-                        if i >= len(toks):
-                            error(tok, f'expected a {KeywordType.DO} after let binding')
+                            if len(words) < 1:
+                                error(tok, f'let must have at least one word')
 
-                        if toks[i].type != TokenType.KEYWORD or toks[i].value != KeywordType.DO:
-                            error(tok, f'expected a {KeywordType.DO} after let binding, got {toks[i]}')
-                        i += 1
+                            block = Block(InstructionType.BIND, bound_vars=words)
+                            block_stack.append(block)
 
-                        if len(words) < 1:
-                            error(tok, f'let must have at least one word')
+                            for word in reversed(words):
+                                _ = add_instr(Instruction(type=InstructionType.BIND, tok=tok, arg1=word))
 
-                        block = Block(InstructionType.BIND, bound_vars=words)
-                        block_stack.append(block)
+                        case KeywordType.END:
+                            if not block_stack:
+                                error(tok, f'END should follow an IF or WHILE')
+                            b = block_stack.pop()
 
-                        for word in reversed(words):
-                            _ = add_instr(Instruction(type=InstructionType.BIND, tok=tok, arg1=word))
+                            match b.type:
+                                case InstructionType.IF:
+                                    if b.ip1 == -1:
+                                        unreachable(tok, f'somehow the IF doesnt have an IF-instruction address saved')
+                                    if b.ip2 == -1:
+                                        error(tok, f'if <cond> do <body> [else <body>] end')
 
-                    case KeywordType.END:
-                        if not block_stack:
-                            error(tok, f'END should follow an IF or WHILE')
-                        b = block_stack.pop()
+                                    if b.ip3 == -1:
+                                        b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
 
-                        match b.type:
-                            # if // ip1
-                            #   <cond>
-                            # do // ip2
-                            #   <body>
-                            # else // ip3
-                            #   <body>
-                            # end // ip4
-                            case InstructionType.IF:
-                                if b.ip1 == -1:
-                                    unreachable(
-                                        tok,
-                                        f'somehow the IF doesnt have an IF-instruction address saved',
+                                    assert cur_proc is not None
+                                    b.ip4 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=-1))
+                                    cur_proc.instrs[-1].arg1 = b.ip4 + 1
+
+                                    cur_proc.instrs[b.ip2].arg1 = b.ip3
+                                    cur_proc.instrs[b.ip3].arg1 = b.ip4
+
+                                case InstructionType.WHILE:
+                                    if b.ip1 == -1:
+                                        unreachable(
+                                            tok,
+                                            f'somehow the WHILE doesnt have an WHILE-instruction address saved',
+                                        )
+                                    if b.ip2 == -1:
+                                        error(tok, f'while <cond> do <body> end')
+
+                                    assert cur_proc is not None
+                                    cur_proc.instrs[b.ip2].arg1 = b.ip3 = add_instr(
+                                        Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1)
                                     )
-                                if b.ip2 == -1:
-                                    error(tok, f'if <cond> do <body> [else <body>] end')
 
-                                if b.ip3 == -1:
-                                    b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+                                case InstructionType.PROC:
+                                    _ = add_instr(Instruction(type=InstructionType.RET, tok=tok))
+                                    cur_proc = None
 
-                                assert cur_proc is not None
-                                b.ip4 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=-1))
-                                cur_proc.instrs[-1].arg1 = b.ip4 + 1
+                                case InstructionType.BIND:
+                                    for word in b.bound_vars:
+                                        _ = add_instr(Instruction(type=InstructionType.UNBIND, tok=tok, arg1=word))
 
-                                cur_proc.instrs[b.ip2].arg1 = b.ip3
-                                cur_proc.instrs[b.ip3].arg1 = b.ip4
-
-                            # while // ip1
-                            #   <cond>
-                            # do // ip2
-                            #   <body>
-                            # end // ip3
-                            case InstructionType.WHILE:
-                                if b.ip1 == -1:
-                                    unreachable(
-                                        tok,
-                                        f'somehow the WHILE doesnt have an WHILE-instruction address saved',
-                                    )
-                                if b.ip2 == -1:
-                                    error(tok, f'while <cond> do <body> end')
-
-                                assert cur_proc is not None
-                                cur_proc.instrs[b.ip2].arg1 = b.ip3 = add_instr(
-                                    Instruction(type=InstructionType.END, tok=tok, arg1=b.ip1)
-                                )
-
-                            case InstructionType.PROC:
-                                _ = add_instr(Instruction(type=InstructionType.RET, tok=tok))
-                                cur_proc = None
-
-                            case InstructionType.BIND:
-                                for word in b.bound_vars:
-                                    _ = add_instr(Instruction(type=InstructionType.UNBIND, tok=tok, arg1=word))
-
-                            case _:
-                                error(tok, f'END should follow an IF or WHILE, not {pp(b.type)}')
-
-                    case KeywordType.TYPE_DELIM:
-                        error(tok, f'{kw_type} should not be used only in proc signatures')
-
-                    case KeywordType.PROC:
-                        if not allow_proc:
-                            error(tok, f'PROC should not be inside of a MACRO')
-
-                        if cur_proc is not None:
-                            error(tok, f'PROC should not be inside of another PROC: {cur_proc.name}')
-
-                        if i >= len(toks):
-                            error(tok, f'expected a name after PROC')
-                        tok = toks[i]
-                        if tok.type != TokenType.WORD:
-                            error(tok, f'expected a name after PROC, got {tok.type}')
-                        name = tok.value
-                        i += 1
-
-                        def parse_type(tok: Token) -> ValueCls:
-                            if tok.type != TokenType.WORD:
-                                error(tok, f'expected a type after proc name, got {tok.type}')
-                            match tok.value:
-                                case 'int':
-                                    return ValueCls(ValueClsType.INT)
-                                case 'bool':
-                                    return ValueCls(ValueClsType.BOOL)
-                                case 'ptr':
-                                    return ValueCls(ValueClsType.PTR)
                                 case _:
-                                    error(tok, f'expected a type after proc name, got {tok.value}')
+                                    error(tok, f'END should follow an IF or WHILE, not {pp(b.type)}')
 
-                        ins: list[ValueCls] = []
-                        while i < len(toks) and toks[i].type == TokenType.WORD:
-                            ins.append(parse_type(toks[i]))
+                        case KeywordType.TYPE_DELIM:
+                            error(tok, f'{kw_type} should not be used only in proc signatures')
+
+                        case KeywordType.PROC:
+                            if scope_source.id != source.id:
+                                error(tok, f'PROC should not be inside of a MACRO')
+
+                            if cur_proc is not None:
+                                error(tok, f'PROC should not be inside of another PROC: {cur_proc.name}')
+
+                            if i >= len(toks):
+                                error(tok, f'expected a name after PROC')
+                            tok = toks[i]
+                            if tok.type != TokenType.WORD:
+                                error(tok, f'expected a name after PROC, got {tok.type}')
+                            name = tok.value
                             i += 1
 
-                        if i >= len(toks):
-                            error(tok, f'expected a {KeywordType.TYPE_DELIM} after proc args')
+                            ins: list[ValueCls] = []
+                            while i < len(toks) and toks[i].type == TokenType.WORD:
+                                ins.append(parse_type(toks[i]))
+                                i += 1
 
-                        if toks[i].type != TokenType.KEYWORD or toks[i].value != KeywordType.TYPE_DELIM:
-                            error(tok, f'expected a {KeywordType.TYPE_DELIM} after proc args, got {toks[i]}')
-                        i += 1
+                            if i >= len(toks):
+                                error(tok, f'expected a {KeywordType.TYPE_DELIM} after proc args')
 
-                        outs: list[ValueCls] = []
-                        while i < len(toks) and toks[i].type == TokenType.WORD:
-                            outs.append(parse_type(toks[i]))
+                            if toks[i].type != TokenType.KEYWORD or toks[i].value != KeywordType.TYPE_DELIM:
+                                error(tok, f'expected a {KeywordType.TYPE_DELIM} after proc args, got {toks[i]}')
                             i += 1
 
-                        if i >= len(toks):
-                            error(tok, f'expected a DO after proc args')
-                        tok = toks[i]
-                        if tok.type != TokenType.KEYWORD or tok.value != KeywordType.DO:
-                            error(tok, f'expected a DO after proc args, got {tok}')
-                        i += 1
+                            outs: list[ValueCls] = []
+                            while i < len(toks) and toks[i].type == TokenType.WORD:
+                                outs.append(parse_type(toks[i]))
+                                i += 1
 
-                        if name == 'main':
-                            if len(ins) != 0 or len(outs) != 0:
+                            if i >= len(toks):
+                                error(tok, f'expected a DO after proc args')
+                            tok = toks[i]
+                            if tok.type != TokenType.KEYWORD or tok.value != KeywordType.DO:
+                                error(tok, f'expected a DO after proc args, got {tok}')
+                            i += 1
+
+                            if name == 'main' and (len(ins) != 0 or len(outs) != 0):
                                 error(tok, f'main must take no args and return no values')
 
-                        cur_proc = Proc(name=name, contract=Contract(ins=ins, outs=outs), instrs=[], tok=tok)
-                        ir.procs.append(cur_proc)
-                        block = Block(InstructionType.PROC)
-                        block_stack.append(block)
+                            cur_proc = Proc(name=name, contract=Contract(ins=ins, outs=outs), instrs=[], tok=tok)
+                            module.procs.append(cur_proc)
+                            block = Block(InstructionType.PROC)
+                            block_stack.append(block)
 
-                    case KeywordType.MACRO:
-                        if expand_macros:
-                            unreachable(tok, f'macro definitions should be removed before IR compilation')
-                        else:
+                        case KeywordType.MACRO:
                             error(tok, f'MACRO should not be inside of another MACRO')
 
-                    case _:
-                        assert_never(kw_type)
+                        case KeywordType.FROM | KeywordType.IMPORT:
+                            error(tok, 'imports are only allowed at top level')
 
-            case TokenType.WORD:
-                expect_enum_size(IntrinsicType, 48)
-                match tok.value:
-                    case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
-                        _ = add_instr(
-                            Instruction(
-                                type=InstructionType.INTRINSIC,
-                                tok=tok,
-                                arg1=INTRINSIC_TO_INTRINSIC_TYPE[tok.value],
+                        case KeywordType.AS:
+                            error(tok, f'AS should only be used in import declarations')
+
+                        case _:
+                            assert_never(kw_type)
+
+                case TokenType.WORD:
+                    symbol = scope_source.scope.get(tok.value)
+                    if symbol is not None and symbol.type == SymbolType.MACRO:
+                        if symbol in expansion_stack:
+                            error(
+                                tok,
+                                f'recursive macro expansion for {symbol.name}',
+                                expansion_stack=[*expansion_stack, symbol],
                             )
-                        )
+                        macro_source = sources_by_id[symbol.module]
+                        macro = macro_source.macros[symbol.name]
+                        compile_stream(macro.body, macro_source, [*expansion_stack, symbol])
+                        continue
 
-                    case 'int':
-                        _ = add_instr(
-                            Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.INT))
-                        )
-                    case 'bool':
-                        _ = add_instr(
-                            Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.BOOL))
-                        )
-                    case 'ptr':
-                        _ = add_instr(
-                            Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.PTR))
-                        )
-
-                    case _:
-                        for block in reversed(block_stack):
-                            if block.type != InstructionType.BIND:
-                                continue
-                            if tok.value in block.bound_vars:
-                                _ = add_instr(
-                                    Instruction(
-                                        type=InstructionType.LOAD_BIND,
-                                        tok=tok,
-                                        arg1=tok.value,
-                                    )
+                    expect_enum_size(IntrinsicType, 48)
+                    match tok.value:
+                        case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
+                            _ = add_instr(
+                                Instruction(
+                                    type=InstructionType.INTRINSIC,
+                                    tok=tok,
+                                    arg1=INTRINSIC_TO_INTRINSIC_TYPE[tok.value],
                                 )
-                                break
-                        else:
-                            _ = add_instr(Instruction(type=InstructionType.WORD, tok=tok, arg1=tok.value))
+                            )
 
-            case _:
-                assert_never(tok.type)
+                        case 'int':
+                            _ = add_instr(
+                                Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.INT))
+                            )
+                        case 'bool':
+                            _ = add_instr(
+                                Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.BOOL))
+                            )
+                        case 'ptr':
+                            _ = add_instr(
+                                Instruction(type=InstructionType.PUSH_TYPE, tok=tok, arg1=ValueCls(ValueClsType.PTR))
+                            )
+
+                        case _:
+                            for block in reversed(block_stack):
+                                if block.type != InstructionType.BIND:
+                                    continue
+                                if tok.value in block.bound_vars:
+                                    _ = add_instr(
+                                        Instruction(
+                                            type=InstructionType.LOAD_BIND,
+                                            tok=tok,
+                                            arg1=tok.value,
+                                        )
+                                    )
+                                    break
+                            else:
+                                if symbol is not None and symbol.type == SymbolType.PROC:
+                                    ref = ProcRef(symbol.module, symbol.name)
+                                else:
+                                    ref = ProcRef(scope_source.id, tok.value)
+                                _ = add_instr(Instruction(type=InstructionType.WORD, tok=tok, arg1=ref))
+
+                case _:
+                    assert_never(tok.type)
+
+    toks_to_compile = source.body_toks if is_root else _top_level_proc_tokens(source.body_toks)
+    compile_stream(toks_to_compile, source, [])
 
     if implicit_main:
         _ = add_instr(Instruction(type=InstructionType.RET, tok=Token(TokenType.IMAGINARY, '', loc_unknown)))
 
     if block_stack:
-        error(
-            unclosed_blocks_loc,
-            unclosed_blocks_msg,
-            blocks=block_stack,
-        )
+        error(None, 'unclosed blocks', blocks=block_stack)
 
-    if not ir.get_proc_by_name('main'):
-        ir.procs.append(
+    if is_root and not module.get_proc_by_name('main'):
+        module.procs.append(
             Proc(
                 name='main',
                 contract=Contract(ins=[], outs=[]),
@@ -594,23 +925,63 @@ def _compile_tokens(
         )
 
     if trace_ir:
-        trace(
-            loc_unknown,
-            f'Compiled IR',
-            IR=ir,
-        )
-    return ir
+        trace(loc_unknown, f'Compiled module {source.path}', module=module)
+    return module
+
+
+def _module_compile_order(
+    root_source: ModuleSource, sources_by_path: dict[Path, ModuleSource], root_dir: Path
+) -> list[ModuleSource]:
+    ordered: list[ModuleSource] = []
+    seen: set[str] = set()
+
+    def visit(source: ModuleSource) -> None:
+        if source.id in seen:
+            return
+        seen.add(source.id)
+        for import_decl in source.imports:
+            imported_path = _normalize_import_path(root_dir, import_decl.path)
+            imported_source = sources_by_path.get(imported_path)
+            if imported_source is not None:
+                visit(imported_source)
+        ordered.append(source)
+
+    visit(root_source)
+    return ordered
 
 
 def compile(toks: list[Token]) -> IR:
-    return _compile_tokens(
-        toks,
-        expand_macros=True,
-        allow_proc=True,
-        unclosed_blocks_loc=None,
-        unclosed_blocks_msg='unclosed blocks',
-        trace_ir=True,
+    root_dir = _root_dir_from_tokens(toks)
+    root_source = _prepare_module_source(
+        module_id='',
+        path='<root>',
+        canonical_path=None,
+        toks=toks,
     )
+    modules_by_path: dict[Path, ModuleSource] = {}
+    _load_import_modules(root_dir, root_source, modules_by_path, [])
+    sources = [root_source, *modules_by_path.values()]
+    _resolve_module_scopes(root_dir, sources)
+
+    compile_order = _module_compile_order(root_source, modules_by_path, root_dir)
+    sources_by_id = {source.id: source for source in sources}
+    ir = IR(root_module='')
+    for source in compile_order:
+        ir.modules.append(
+            _compile_module_source(
+                source,
+                sources_by_id,
+                is_root=source.id == '',
+                trace_ir=False,
+            )
+        )
+
+    trace(
+        loc_unknown,
+        f'Compiled IR',
+        IR=ir,
+    )
+    return ir
 
 
 def typecheck(ir: IR) -> None:
@@ -630,12 +1001,19 @@ def typecheck(ir: IR) -> None:
                 return False
         return True
 
+    def instr_contract_name(instr: Instruction) -> object:
+        if instr.type == InstructionType.WORD:
+            ref = cast(ProcRef, instr.arg1)
+            return ref.name
+        return instr.arg1
+
     def typecheck_contract(instr: Instruction, stack: Stack, contract: Contract) -> None:
+        contract_name = instr_contract_name(instr)
         # 1. check that stack and ins are the same
         if len(stack) < len(contract.ins):
             error(
                 instr,
-                f'stack too small for {instr.arg1}: expected {len(contract.ins)} but got {len(stack)}',
+                f'stack too small for {contract_name}: expected {len(contract.ins)} but got {len(stack)}',
                 stack=stack,
                 ins=contract.ins,
             )
@@ -645,7 +1023,7 @@ def typecheck(ir: IR) -> None:
             if e1.type != e2:
                 error(
                     instr,
-                    f'stack doesnt match at {i} for {instr.arg1}: expected {pp(e2)} but got {pp(e1.type)}',
+                    f'stack doesnt match at {i} for {contract_name}: expected {pp(e2)} but got {pp(e1.type)}',
                     stack=stack,
                     ins=contract.ins,
                 )
@@ -678,9 +1056,10 @@ def typecheck(ir: IR) -> None:
                     stack.append(StackEntry(ValueCls(ValueClsType.TYPE, instr.arg1), typechecking, tok=instr.tok))
 
                 case InstructionType.WORD:
-                    proc_called = ir.get_proc_by_name(instr.arg1)
+                    proc_ref = cast(ProcRef, instr.arg1)
+                    proc_called = ir.get_proc_by_ref(proc_ref)
                     if proc_called is None:
-                        error(instr, f'unknown word {instr.arg1}')
+                        error(instr, f'unknown word {proc_ref.name}')
 
                     typecheck_contract(instr, stack, proc_called.contract)
 
@@ -1196,7 +1575,7 @@ def interpret(ir: IR) -> None:
         instrs: list[Instruction]
         ip: int = 0
 
-    main = ir.get_proc_by_name('main')
+    main = ir.get_root_module().get_proc_by_name('main')
     assert main is not None
 
     stack: Stack = []
@@ -1218,9 +1597,10 @@ def interpret(ir: IR) -> None:
                 stack.append(StackEntry(ValueCls(ValueClsType.TYPE, instr.arg1), instr.arg1, tok=instr.tok))
 
             case InstructionType.WORD:
-                proc = ir.get_proc_by_name(instr.arg1)
+                proc_ref = cast(ProcRef, instr.arg1)
+                proc = ir.get_proc_by_ref(proc_ref)
                 if proc is None:
-                    typecheck_has_a_bug(instr, f'unknown word: {instr.arg1}')
+                    typecheck_has_a_bug(instr, f'unknown word: {proc_ref.name}')
                 frame_stack.append(Frame(proc.instrs))
 
             case InstructionType.IF:
@@ -1806,6 +2186,11 @@ def translate(ir: IR) -> str:
                 res += f'_{ord(c):x}_'
         return res
 
+    def c_proc_ident(module_id: str, proc_name: str) -> str:
+        if module_id == ir.root_module:
+            return c_ident(proc_name)
+        return c_ident(f'{module_id}__{proc_name}')
+
     def emit_division_by_zero_check(instr: Instruction, a: StackEntry, b: StackEntry) -> None:
         loc = c_str(repr(instr.tok.loc))
         loc_a = c_str(repr(a.tok.loc))
@@ -1844,7 +2229,7 @@ def translate(ir: IR) -> str:
     sb_global += f'#include <stdlib.h>\n'
     sb_global += f'#include <stdint.h>\n'
 
-    for proc in ir.procs:
+    for module, proc in ((module, proc) for module in ir.modules for proc in module.procs):
         sb = StringBuilder()
         sb_header = StringBuilder()
         sb_struct = StringBuilder()
@@ -1853,7 +2238,7 @@ def translate(ir: IR) -> str:
         stack: Stack = []
         bound_vars: list[tuple[str, StackEntry]] = []
 
-        proc_name = c_ident(proc.name)
+        proc_name = c_proc_ident(module.id, proc.name)
         ret = f'ret_{proc_name}'
         sb_header += f'{ret} proc_{proc_name}('
         for i, typ in enumerate(proc.contract.ins):
@@ -1893,11 +2278,12 @@ def translate(ir: IR) -> str:
                     stack.append(StackEntry(typ, unused, tok=instr.tok))
 
                 case InstructionType.WORD:
-                    proc_called = ir.get_proc_by_name(instr.arg1)
+                    proc_ref = cast(ProcRef, instr.arg1)
+                    proc_called = ir.get_proc_by_ref(proc_ref)
                     if proc_called is None:
-                        unreachable(instr, f'proc {instr.arg1} not found')
+                        unreachable(instr, f'proc {proc_ref.name} not found')
 
-                    proc_called_name = c_ident(proc_called.name)
+                    proc_called_name = c_proc_ident(proc_ref.module, proc_called.name)
                     ret_var = get_varname(f'res_{proc_called_name}')
                     ret_type = f'ret_{proc_called_name}'
                     sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called_name}('

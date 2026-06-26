@@ -55,6 +55,9 @@ class KeywordType(Enum):
     TYPE_DELIM = auto()  # --
     LET = auto()
     MACRO = auto()
+    FROM = auto()
+    IMPORT = auto()
+    AS = auto()
 
 
 KW_TO_KWT = {
@@ -67,6 +70,9 @@ KW_TO_KWT = {
     'end': KeywordType.END,
     '--': KeywordType.TYPE_DELIM,
     'let': KeywordType.LET,
+    'from': KeywordType.FROM,
+    'import': KeywordType.IMPORT,
+    'as': KeywordType.AS,
 }
 assert len(KW_TO_KWT) == len(KeywordType)
 
@@ -252,8 +258,16 @@ class Proc:
     tok: Token
 
 
+@dataclass(frozen=True)
+class ProcRef:
+    module: str
+    name: str
+
+
 @dataclass
-class IR:
+class Module:
+    id: str
+    path: str
     procs: list[Proc] = field(default_factory=list)
 
     def get_proc_by_name(self, name: str) -> Proc | None:
@@ -261,6 +275,37 @@ class IR:
             if proc.name == name:
                 return proc
         return None
+
+
+@dataclass
+class IR:
+    modules: list[Module] = field(default_factory=list)
+    root_module: str = ''
+
+    @property
+    def procs(self) -> list[Proc]:
+        return [proc for module in self.modules for proc in module.procs]
+
+    def get_module_by_id(self, module_id: str) -> Module | None:
+        for module in self.modules:
+            if module.id == module_id:
+                return module
+        return None
+
+    def get_root_module(self) -> Module:
+        module = self.get_module_by_id(self.root_module)
+        if module is None:
+            raise Error(f'root module {self.root_module!r} not found')
+        return module
+
+    def get_proc_by_name(self, name: str) -> Proc | None:
+        return self.get_root_module().get_proc_by_name(name)
+
+    def get_proc_by_ref(self, ref: ProcRef) -> Proc | None:
+        module = self.get_module_by_id(ref.module)
+        if module is None:
+            return None
+        return module.get_proc_by_name(ref.name)
 
 
 @dataclass
@@ -297,12 +342,20 @@ def pp(x: Any) -> str:
         case IR():
             sb = StringBuilder()
             sb += 'IR:\n'
-            for proc in x.procs:
-                sb += f'proc {proc.name}:\n'
-                for i, instr in enumerate(proc.instrs):
-                    sb += f'{i:3}. {pp(instr)}\n'
+            for module in x.modules:
+                if module.id:
+                    sb += f'module {module.path}:\n'
+                for proc in module.procs:
+                    sb += f'proc {proc.name}:\n'
+                    for i, instr in enumerate(proc.instrs):
+                        sb += f'{i:3}. {pp(instr)}\n'
 
             return str(sb)
+
+        case ProcRef():
+            if x.module:
+                return f'{x.module}::{x.name}'
+            return x.name
 
         case Instruction():
             s = f'{x.type.name}'

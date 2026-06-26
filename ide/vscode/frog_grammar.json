@@ -22,7 +22,7 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\b(proc|macro|if|else|while|do|end|let)\\b",
+          "match": "\\b(proc|macro|from|import|as|if|else|while|do|end|let)\\b",
           "name": "keyword.control.frog"
         }
       ]

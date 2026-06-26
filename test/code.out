@@ -1159,28 +1159,28 @@ false
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:12: recursive macro expansion for loop
 [NOTE] expansion_stack:
-      0. 'loop'
-      1. 'loop'
+      0. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='loop')
+      1. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='loop')
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:12: recursive macro expansion for loop
 [NOTE] expansion_stack:
-      0. 'loop'
-      1. 'loop'
+      0. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='loop')
+      1. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='loop')
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:23: recursive macro expansion for a
 [NOTE] expansion_stack:
-      0. 'a'
-      1. 'b'
-      2. 'a'
+      0. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='a')
+      1. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='b')
+      2. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='a')
 [EXIT CODE] 1
 [CMD] py -m frog -l WARN build -r test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:23: recursive macro expansion for a
 [NOTE] expansion_stack:
-      0. 'a'
-      1. 'b'
-      2. 'a'
+      0. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='a')
+      1. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='b')
+      2. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='a')
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:13: MACRO should not be inside of another MACRO
@@ -1254,35 +1254,35 @@ false
 [EXIT CODE] 1
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog -l WARN build -r test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
-[LOC] __init__.py:334:0
+[LOC] __init__.py:680:0
 [EXIT CODE] 3
 [CMD] py -m frog run test/tmp_fs/code.frog
 [ERROR] test/tmp_fs/code.frog:1:2: unterminated string literal
@@ -1567,3 +1567,329 @@ test/tmp_fs/code.c:13:12: warning: cast from pointer to integer of different siz
 [STDOUT]:
 42
 
+[CMD] py -m frog run test/tmp_fs/import_proc/main.frog
+[PRINT] INT():42@test/tmp_fs/import_proc/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/import_proc/main.frog
+[CMD] gcc test/tmp_fs/import_proc/main.c -o test/tmp_fs/import_proc/main.exe
+[CMD] test/tmp_fs/import_proc/main.exe
+[STDOUT]:
+42
+
+[CMD] py -m frog run test/tmp_fs/import_group/main.frog
+[PRINT] INT():6@test/tmp_fs/import_group/math.frog:2:38
+[PRINT] INT():4@test/tmp_fs/import_group/math.frog:3:38
+[PRINT] INT():7@test/tmp_fs/import_group/math.frog:4:39
+[CMD] py -m frog -l WARN build -r test/tmp_fs/import_group/main.frog
+[CMD] gcc test/tmp_fs/import_group/main.c -o test/tmp_fs/import_group/main.exe
+[CMD] test/tmp_fs/import_group/main.exe
+[STDOUT]:
+6
+4
+7
+
+[CMD] py -m frog run test/tmp_fs/import_alias/main.frog
+[PRINT] INT():2@test/tmp_fs/import_alias/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/import_alias/main.frog
+[CMD] gcc test/tmp_fs/import_alias/main.c -o test/tmp_fs/import_alias/main.exe
+[CMD] test/tmp_fs/import_alias/main.exe
+[STDOUT]:
+2
+
+[CMD] py -m frog run test/tmp_fs/same_import_twice_is_ok/main.frog
+[PRINT] INT():2@test/tmp_fs/same_import_twice_is_ok/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/same_import_twice_is_ok/main.frog
+[CMD] gcc test/tmp_fs/same_import_twice_is_ok/main.c -o test/tmp_fs/same_import_twice_is_ok/main.exe
+[CMD] test/tmp_fs/same_import_twice_is_ok/main.exe
+[STDOUT]:
+2
+
+[CMD] py -m frog run test/tmp_fs/same_import_two_aliases/main.frog
+[PRINT] INT():2@test/tmp_fs/same_import_two_aliases/math.frog:1:26
+[PRINT] INT():2@test/tmp_fs/same_import_two_aliases/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/same_import_two_aliases/main.frog
+[CMD] gcc test/tmp_fs/same_import_two_aliases/main.c -o test/tmp_fs/same_import_two_aliases/main.exe
+[CMD] test/tmp_fs/same_import_two_aliases/main.exe
+[STDOUT]:
+2
+2
+
+[CMD] py -m frog run test/tmp_fs/use_before_import_declaration_should_work/main.frog
+[PRINT] INT():11@test/tmp_fs/use_before_import_declaration_should_work/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/use_before_import_declaration_should_work/main.frog
+[CMD] gcc test/tmp_fs/use_before_import_declaration_should_work/main.c -o test/tmp_fs/use_before_import_declaration_should_work/main.exe
+[CMD] test/tmp_fs/use_before_import_declaration_should_work/main.exe
+[STDOUT]:
+11
+
+[CMD] py -m frog run test/tmp_fs/import_paths_are_root_relative/main.frog
+[PRINT] INT():999@test/tmp_fs/import_paths_are_root_relative/math.frog:1:22
+[CMD] py -m frog -l WARN build -r test/tmp_fs/import_paths_are_root_relative/main.frog
+[CMD] gcc test/tmp_fs/import_paths_are_root_relative/main.c -o test/tmp_fs/import_paths_are_root_relative/main.exe
+[CMD] test/tmp_fs/import_paths_are_root_relative/main.exe
+[STDOUT]:
+999
+
+[CMD] py -m frog run test/tmp_fs/explicit_subdir_import_path/main.frog
+[PRINT] INT():7@test/tmp_fs/explicit_subdir_import_path/pkg/math.frog:1:22
+[CMD] py -m frog -l WARN build -r test/tmp_fs/explicit_subdir_import_path/main.frog
+[CMD] gcc test/tmp_fs/explicit_subdir_import_path/main.c -o test/tmp_fs/explicit_subdir_import_path/main.exe
+[CMD] test/tmp_fs/explicit_subdir_import_path/main.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp_fs/canonical_import_paths_share_module/main.frog
+[PRINT] INT():42@test/tmp_fs/canonical_import_paths_share_module/lib/math.frog:1:22
+[CMD] py -m frog -l WARN build -r test/tmp_fs/canonical_import_paths_share_module/main.frog
+[CMD] gcc test/tmp_fs/canonical_import_paths_share_module/main.c -o test/tmp_fs/canonical_import_paths_share_module/main.exe
+[CMD] test/tmp_fs/canonical_import_paths_share_module/main.exe
+[STDOUT]:
+42
+
+[CMD] py -m frog run test/tmp_fs/imported_top_level_code_does_not_run/main.frog
+[PRINT] INT():7@test/tmp_fs/imported_top_level_code_does_not_run/lib.frog:4:34
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_top_level_code_does_not_run/main.frog
+[CMD] gcc test/tmp_fs/imported_top_level_code_does_not_run/main.c -o test/tmp_fs/imported_top_level_code_does_not_run/main.exe
+[CMD] test/tmp_fs/imported_top_level_code_does_not_run/main.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp_fs/imported_proc_uses_own_module_scope/main.frog
+[PRINT] INT():7@test/tmp_fs/imported_proc_uses_own_module_scope/lib.frog:2:35
+[PRINT] INT():99@test/tmp_fs/imported_proc_uses_own_module_scope/main.frog:4:35
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_proc_uses_own_module_scope/main.frog
+[CMD] gcc test/tmp_fs/imported_proc_uses_own_module_scope/main.c -o test/tmp_fs/imported_proc_uses_own_module_scope/main.exe
+[CMD] test/tmp_fs/imported_proc_uses_own_module_scope/main.exe
+[STDOUT]:
+7
+99
+
+[CMD] py -m frog run test/tmp_fs/same_private_name_in_two_imported_modules/main.frog
+[PRINT] INT():10@test/tmp_fs/same_private_name_in_two_imported_modules/left.frog:2:35
+[PRINT] INT():20@test/tmp_fs/same_private_name_in_two_imported_modules/right.frog:2:35
+[CMD] py -m frog -l WARN build -r test/tmp_fs/same_private_name_in_two_imported_modules/main.frog
+[CMD] gcc test/tmp_fs/same_private_name_in_two_imported_modules/main.c -o test/tmp_fs/same_private_name_in_two_imported_modules/main.exe
+[CMD] test/tmp_fs/same_private_name_in_two_imported_modules/main.exe
+[STDOUT]:
+10
+20
+
+[CMD] py -m frog run test/tmp_fs/local_proc_uses_imported_proc/main.frog
+[PRINT] INT():5@test/tmp_fs/local_proc_uses_imported_proc/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/local_proc_uses_imported_proc/main.frog
+[CMD] gcc test/tmp_fs/local_proc_uses_imported_proc/main.c -o test/tmp_fs/local_proc_uses_imported_proc/main.exe
+[CMD] test/tmp_fs/local_proc_uses_imported_proc/main.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp_fs/local_macro_uses_imported_proc/main.frog
+[PRINT] INT():5@test/tmp_fs/local_macro_uses_imported_proc/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/local_macro_uses_imported_proc/main.frog
+[CMD] gcc test/tmp_fs/local_macro_uses_imported_proc/main.c -o test/tmp_fs/local_macro_uses_imported_proc/main.exe
+[CMD] test/tmp_fs/local_macro_uses_imported_proc/main.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp_fs/reexport_proc/main.frog
+[PRINT] INT():5@test/tmp_fs/reexport_proc/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reexport_proc/main.frog
+[CMD] gcc test/tmp_fs/reexport_proc/main.c -o test/tmp_fs/reexport_proc/main.exe
+[CMD] test/tmp_fs/reexport_proc/main.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp_fs/reexport_alias/main.frog
+[PRINT] INT():5@test/tmp_fs/reexport_alias/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reexport_alias/main.frog
+[CMD] gcc test/tmp_fs/reexport_alias/main.c -o test/tmp_fs/reexport_alias/main.exe
+[CMD] test/tmp_fs/reexport_alias/main.exe
+[STDOUT]:
+5
+
+[CMD] py -m frog run test/tmp_fs/module_uses_imported_proc/main.frog
+[PRINT] INT():6@test/tmp_fs/module_uses_imported_proc/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/module_uses_imported_proc/main.frog
+[CMD] gcc test/tmp_fs/module_uses_imported_proc/main.c -o test/tmp_fs/module_uses_imported_proc/main.exe
+[CMD] test/tmp_fs/module_uses_imported_proc/main.exe
+[STDOUT]:
+6
+
+[CMD] py -m frog run test/tmp_fs/diamond_reexports/main.frog
+[PRINT] INT():11@test/tmp_fs/diamond_reexports/base.frog:1:26
+[PRINT] INT():21@test/tmp_fs/diamond_reexports/base.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/diamond_reexports/main.frog
+[CMD] gcc test/tmp_fs/diamond_reexports/main.c -o test/tmp_fs/diamond_reexports/main.exe
+[CMD] test/tmp_fs/diamond_reexports/main.exe
+[STDOUT]:
+11
+21
+
+[CMD] py -m frog run test/tmp_fs/import_macro/main.frog
+[PRINT] INT():42@test/tmp_fs/import_macro/macros.frog:1:17
+[CMD] py -m frog -l WARN build -r test/tmp_fs/import_macro/main.frog
+[CMD] gcc test/tmp_fs/import_macro/main.c -o test/tmp_fs/import_macro/main.exe
+[CMD] test/tmp_fs/import_macro/main.exe
+[STDOUT]:
+42
+
+[CMD] py -m frog run test/tmp_fs/imported_macro_uses_defining_module_proc/main.frog
+[PRINT] INT():105@test/tmp_fs/imported_macro_uses_defining_module_proc/macros.frog:2:43
+[PRINT] INT():6@test/tmp_fs/imported_macro_uses_defining_module_proc/main.frog:4:41
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_macro_uses_defining_module_proc/main.frog
+[CMD] gcc test/tmp_fs/imported_macro_uses_defining_module_proc/main.c -o test/tmp_fs/imported_macro_uses_defining_module_proc/main.exe
+[CMD] test/tmp_fs/imported_macro_uses_defining_module_proc/main.exe
+[STDOUT]:
+105
+6
+
+[CMD] py -m frog run test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog
+[PRINT] INT():7@test/tmp_fs/imported_macro_uses_defining_module_macro/macros.frog:2:25
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog
+[CMD] gcc test/tmp_fs/imported_macro_uses_defining_module_macro/main.c -o test/tmp_fs/imported_macro_uses_defining_module_macro/main.exe
+[CMD] test/tmp_fs/imported_macro_uses_defining_module_macro/main.exe
+[STDOUT]:
+7
+
+[CMD] py -m frog run test/tmp_fs/imported_macro_uses_defining_module_import/main.frog
+[PRINT] INT():6@test/tmp_fs/imported_macro_uses_defining_module_import/math.frog:1:26
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_macro_uses_defining_module_import/main.frog
+[CMD] gcc test/tmp_fs/imported_macro_uses_defining_module_import/main.c -o test/tmp_fs/imported_macro_uses_defining_module_import/main.exe
+[CMD] test/tmp_fs/imported_macro_uses_defining_module_import/main.exe
+[STDOUT]:
+6
+
+[CMD] py -m frog run test/tmp_fs/reexported_macro_keeps_original_scope/main.frog
+[PRINT] INT():15@test/tmp_fs/reexported_macro_keeps_original_scope/macros.frog:2:42
+[PRINT] INT():6@test/tmp_fs/reexported_macro_keeps_original_scope/main.frog:4:41
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reexported_macro_keeps_original_scope/main.frog
+[CMD] gcc test/tmp_fs/reexported_macro_keeps_original_scope/main.c -o test/tmp_fs/reexported_macro_keeps_original_scope/main.exe
+[CMD] test/tmp_fs/reexported_macro_keeps_original_scope/main.exe
+[STDOUT]:
+15
+6
+
+[CMD] py -m frog run test/tmp_fs/imported_macro_with_blocks/main.frog
+[PRINT] INT():6@test/tmp_fs/imported_macro_with_blocks/macros.frog:1:43
+[PRINT] INT():-1@test/tmp_fs/imported_macro_with_blocks/macros.frog:1:52
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_macro_with_blocks/main.frog
+[CMD] gcc test/tmp_fs/imported_macro_with_blocks/main.c -o test/tmp_fs/imported_macro_with_blocks/main.exe
+[CMD] test/tmp_fs/imported_macro_with_blocks/main.exe
+[STDOUT]:
+6
+-1
+
+[CMD] py -m frog run test/tmp_fs/imported_macro_with_let/main.frog
+[PRINT] INT():1@test/tmp_fs/imported_macro_with_let/main.frog:4:13
+[PRINT] INT():2@test/tmp_fs/imported_macro_with_let/main.frog:4:15
+[PRINT] INT():1@test/tmp_fs/imported_macro_with_let/main.frog:4:13
+[CMD] py -m frog -l WARN build -r test/tmp_fs/imported_macro_with_let/main.frog
+[CMD] gcc test/tmp_fs/imported_macro_with_let/main.c -o test/tmp_fs/imported_macro_with_let/main.exe
+[CMD] test/tmp_fs/imported_macro_with_let/main.exe
+[STDOUT]:
+1
+2
+1
+
+[CMD] py -m frog run test/tmp_fs/missing_imported_file/main.frog
+[ERROR] test/tmp_fs/missing_imported_file/main.frog:1:1: imported file does not exist: missing.frog
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/missing_imported_file/main.frog
+[ERROR] test/tmp_fs/missing_imported_file/main.frog:1:1: imported file does not exist: missing.frog
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/missing_imported_name/main.frog
+[ERROR] test/tmp_fs/missing_imported_name/main.frog:1:15: module math.frog does not export inc
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/missing_imported_name/main.frog
+[ERROR] test/tmp_fs/missing_imported_name/main.frog:1:15: module math.frog does not export inc
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/alias_does_not_bind_original_name/main.frog
+[ERROR] test/tmp_fs/alias_does_not_bind_original_name/main.frog:4:15: unknown word inc
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/alias_does_not_bind_original_name/main.frog
+[ERROR] test/tmp_fs/alias_does_not_bind_original_name/main.frog:4:15: unknown word inc
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/conflict_import_then_local_proc/main.frog
+[ERROR] test/tmp_fs/conflict_import_then_local_proc/main.frog:2:27: name inc is already defined
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/conflict_import_then_local_proc/main.frog
+[ERROR] test/tmp_fs/conflict_import_then_local_proc/main.frog:2:27: name inc is already defined
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/conflict_local_proc_then_import/main.frog
+[ERROR] test/tmp_fs/conflict_local_proc_then_import/main.frog:4:27: name inc is already defined
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/conflict_local_proc_then_import/main.frog
+[ERROR] test/tmp_fs/conflict_local_proc_then_import/main.frog:4:27: name inc is already defined
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/conflict_import_then_local_macro/main.frog
+[ERROR] test/tmp_fs/conflict_import_then_local_macro/main.frog:2:27: name inc is already defined
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/conflict_import_then_local_macro/main.frog
+[ERROR] test/tmp_fs/conflict_import_then_local_macro/main.frog:2:27: name inc is already defined
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/conflict_two_imports_same_name/main.frog
+[ERROR] test/tmp_fs/conflict_two_imports_same_name/main.frog:3:27: name value is already defined
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/conflict_two_imports_same_name/main.frog
+[ERROR] test/tmp_fs/conflict_two_imports_same_name/main.frog:3:27: name value is already defined
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/conflict_two_imports_same_alias/main.frog
+[ERROR] test/tmp_fs/conflict_two_imports_same_alias/main.frog:3:27: name shared is already defined
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/conflict_two_imports_same_alias/main.frog
+[ERROR] test/tmp_fs/conflict_two_imports_same_alias/main.frog:3:27: name shared is already defined
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/direct_import_cycle/main.frog
+[ERROR] test/tmp_fs/direct_import_cycle/b.frog:1:1: cyclic import
+[NOTE] import_chain:
+      0. 'test/tmp_fs/direct_import_cycle/a.frog'
+      1. 'test/tmp_fs/direct_import_cycle/b.frog'
+      2. 'test/tmp_fs/direct_import_cycle/a.frog'
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/direct_import_cycle/main.frog
+[ERROR] test/tmp_fs/direct_import_cycle/b.frog:1:1: cyclic import
+[NOTE] import_chain:
+      0. 'test/tmp_fs/direct_import_cycle/a.frog'
+      1. 'test/tmp_fs/direct_import_cycle/b.frog'
+      2. 'test/tmp_fs/direct_import_cycle/a.frog'
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/self_import_cycle/main.frog
+[ERROR] test/tmp_fs/self_import_cycle/a.frog:1:1: cyclic import
+[NOTE] import_chain:
+      0. 'test/tmp_fs/self_import_cycle/a.frog'
+      1. 'test/tmp_fs/self_import_cycle/a.frog'
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/self_import_cycle/main.frog
+[ERROR] test/tmp_fs/self_import_cycle/a.frog:1:1: cyclic import
+[NOTE] import_chain:
+      0. 'test/tmp_fs/self_import_cycle/a.frog'
+      1. 'test/tmp_fs/self_import_cycle/a.frog'
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/reject_wildcard_import/main.frog
+[ERROR] test/tmp_fs/reject_wildcard_import/main.frog:1:15: wildcard imports are not supported
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reject_wildcard_import/main.frog
+[ERROR] test/tmp_fs/reject_wildcard_import/main.frog:1:15: wildcard imports are not supported
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/reject_comma_in_group_import/main.frog
+[ERROR] test/tmp_fs/reject_comma_in_group_import/main.frog:1:21: commas are not valid in import lists
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reject_comma_in_group_import/main.frog
+[ERROR] test/tmp_fs/reject_comma_in_group_import/main.frog:1:21: commas are not valid in import lists
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/reject_module_alias_form_for_now/main.frog
+[ERROR] test/tmp_fs/reject_module_alias_form_for_now/main.frog:1:1: only from path import name is supported
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reject_module_alias_form_for_now/main.frog
+[ERROR] test/tmp_fs/reject_module_alias_form_for_now/main.frog:1:1: only from path import name is supported
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/reject_import_inside_proc/main.frog
+[ERROR] test/tmp_fs/reject_import_inside_proc/main.frog:3:17: imports are only allowed at top level
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reject_import_inside_proc/main.frog
+[ERROR] test/tmp_fs/reject_import_inside_proc/main.frog:3:17: imports are only allowed at top level
+[EXIT CODE] 1
+[CMD] py -m frog run test/tmp_fs/reject_import_inside_macro/main.frog
+[ERROR] test/tmp_fs/reject_import_inside_macro/main.frog:2:23: imports are only allowed at top level
+[EXIT CODE] 1
+[CMD] py -m frog -l WARN build -r test/tmp_fs/reject_import_inside_macro/main.frog
+[ERROR] test/tmp_fs/reject_import_inside_macro/main.frog:2:23: imports are only allowed at top level
+[EXIT CODE] 1

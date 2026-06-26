@@ -269,9 +269,10 @@ file_code_examples = [
         },
     ),
     FileCodeExample(
-        name='use_before_import_declaration',
+        name='use_before_import_declaration_should_work',
         files={
             'main.frog': '''
+            // imports are collected before bodies are compiled
             10 inc print
 
             from "math.frog" import inc
@@ -280,7 +281,7 @@ file_code_examples = [
         },
     ),
     FileCodeExample(
-        name='relative_imports_are_from_importing_file',
+        name='import_paths_are_root_relative',
         files={
             'main.frog': '''
             from "pkg/use.frog" import value
@@ -290,9 +291,27 @@ file_code_examples = [
             'math.frog': 'proc value -- int do 999 end\n',
             'pkg/math.frog': 'proc value -- int do 7 end\n',
             'pkg/use.frog': '''
-            from "math.frog" import value as local_value
+            // "math.frog" resolves from the root file directory, not from pkg/
+            from "math.frog" import value as root_value
 
-            proc value -- int do local_value end
+            proc value -- int do root_value end
+            ''',
+        },
+    ),
+    FileCodeExample(
+        name='explicit_subdir_import_path',
+        files={
+            'main.frog': '''
+            from "pkg/use.frog" import value
+
+            value print
+            ''',
+            'math.frog': 'proc value -- int do 999 end\n',
+            'pkg/math.frog': 'proc value -- int do 7 end\n',
+            'pkg/use.frog': '''
+            from "pkg/math.frog" import value as pkg_value
+
+            proc value -- int do pkg_value end
             ''',
         },
     ),
@@ -687,7 +706,7 @@ file_code_examples = [
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
-]*0
+]
 cli_examples = [
     '',
     '-h',

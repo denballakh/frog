@@ -16,7 +16,7 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 FrogLang is a small stack-based, concatenative, statically typed language implemented in Python. The implementation can interpret Frog directly or translate Frog IR to C and compile it with `gcc`.
 
-The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, compile-time token macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, compile-time imports and macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
@@ -87,7 +87,7 @@ Useful direct commands:
 - `just test` is the expected and recommended full verification command
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
 - `just test` regenerates `test/*.out` by capturing stdout from many scenarios, then fails if tracked golden outputs have unstaged diffs.
-- Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and are expected to fail until imports are implemented; do not approve their golden-output changes as final behavior before the implementation exists.
+- Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and cover imported procedures, macros, reexports, root-relative paths, conflicts, cycles, and rejected syntax.
 - Use `just show-diff` to inspect golden-output changes.
 - Use `just approve-diff` to approve the golden-output diff ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated `.out` files to confirm the new output is intentional.
@@ -130,8 +130,12 @@ Subcommands:
 ## Compiler Pipeline
 
 - `tokenize(text, filename)` creates `Token` objects with `Loc` source positions and emits TRACE logs when enabled.
-- `compile(toks)` first strips and expands `macro name <body> end` declarations, then lowers tokens into an `IR` containing `Proc` objects and `Instruction` lists.
-- Macro expansion is token-based. Macro declarations are collected with whole-file scope before the remaining code is compiled, and expansion happens before intrinsic/procedure resolution, so macros can shadow intrinsics or procedures. Recursive macro expansion is rejected.
+- `compile(toks)` builds a root-relative import graph, strips import and macro declarations, resolves per-module symbol scopes, then lowers modules into an `IR` containing explicit `Module` objects and `Proc` instruction lists.
+- The supported import syntax is `from "path.frog" import name`, `from "path.frog" import name as alias`, and grouped whitespace-separated imports such as `from "path.frog" import ( x y z )`. Wildcards, commas, and `import "path.frog" as mod` are rejected for now.
+- Import paths are resolved relative to the root file being compiled, not relative to the importing module. Use explicit paths such as `"pkg/math.frog"` for subdirectory files.
+- Imported files contribute procedures and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
+- Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
+- Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
 - Top-level instructions create an implicit `main` proc; an empty program still gets an empty `main`.
 - Explicit `proc main -- do ... end` must have no inputs and no outputs.
 - `typecheck(ir)` simulates stack effects and rejects stack underflows, unknown words, wrong contracts, bad branch/loop stack states, and non-empty final stacks.
@@ -142,7 +146,7 @@ Subcommands:
 ## Language Semantics
 
 - User-facing language documentation lives in `docs/language.md`; update it when changing Frog syntax, semantics, intrinsics, examples, diagnostics that users see, or backend-visible behavior.
-- `macro name <body> end` records `<body>` as a compile-time token sequence. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc` or `macro` definitions.
+- `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 
 ## Implementation Conventions And Gotchas
@@ -155,7 +159,7 @@ Subcommands:
 - Internal consistency failures should use `unreachable`, `typecheck_has_a_bug`, or `notimplemented` from `frog/logs.py` as appropriate.
 - Do not treat generated `.c` or `.exe` files as authoritative source. They are build/test artifacts even if some currently exist in the tree.
 - `StringBuilder.__str__` mutates/collapses its internal linked chunks; copying is available through `copy()` or `[::]`.
-- Generated C uses simple structs named `ret_<proc>` and functions named `proc_<proc>`, with generated variable names globally uniqued per translation.
+- Generated C uses simple structs named `ret_<proc>` and functions named `proc_<proc>`, with imported module procedure names sanitized into module-qualified C identifiers and generated variable names globally uniqued per translation.
 
 ## VS Code Grammar
 
