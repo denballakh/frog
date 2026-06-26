@@ -1,0 +1,175 @@
+# Snapshot: examples/07_rule30
+
+### Source: `examples/07_rule30.frog`
+
+```frog
+proc setcell int ptr int -- do
+    + !u8
+end
+
+proc clear ptr -- do
+    let buf do
+        0
+        while dup 40 < do
+            dup let i do
+                0 buf i setcell
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc rendercell int -- do
+    if dup 0 == do
+        drop ' ' putc
+    else
+        drop '#' putc
+    end
+end
+
+proc render ptr -- do
+    let buf do
+        0
+        while dup 40 < do
+            dup let i do
+                buf i + @u8 rendercell
+            end
+            1 +
+        end
+        drop
+        10 putc
+    end
+end
+
+proc step ptr ptr -- do
+    let src dst do
+        0
+        while dup 40 < do
+            dup let i do
+                if i 0 > do
+                    src i 1 - + @u8
+                else
+                    0
+                end
+
+                src i + @u8
+
+                if i 1 + 40 < do
+                    src i 1 + + @u8
+                else
+                    0
+                end
+
+                | ^
+                dst i setcell
+            end
+            1 +
+        end
+        drop
+        dst render
+    end
+end
+
+proc main -- do
+    40 alloc 40 alloc
+    let a b do
+        a clear
+        b clear
+
+        1 a 20 setcell
+        a render
+
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+        b a step
+        a b step
+    end
+end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run examples/07_rule30.frog
+```
+
+Output:
+
+```text
+                    #                   
+                   ###                  
+                  ##  #                 
+                 ## ####                
+                ##  #   #               
+               ## #### ###              
+              ##  #    #  #             
+             ## ####  ######            
+            ##  #   ###     #           
+           ## #### ##  #   ###          
+          ##  #    # #### ##  #         
+         ## ####  ## #    # ####        
+        ##  #   ###  ##  ## #   #       
+       ## #### ##  ### ###  ## ###      
+      ##  #    # ###   #  ###  #  #     
+     ## ####  ## #  # #####  #######    
+    ##  #   ###  #### #    ###      #   
+   ## #### ##  ###    ##  ##  #    ###  
+  ##  #    # ###  #  ## ### ####  ##  # 
+ ## ####  ## #  ######  #   #   ### ####
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r examples/07_rule30.frog
+```
+
+Output:
+
+```text
+[CMD] gcc examples/07_rule30.c -o examples/07_rule30.exe
+[CMD] examples/07_rule30.exe
+[STDOUT]:
+                    #                   
+                   ###                  
+                  ##  #                 
+                 ## ####                
+                ##  #   #               
+               ## #### ###              
+              ##  #    #  #             
+             ## ####  ######            
+            ##  #   ###     #           
+           ## #### ##  #   ###          
+          ##  #    # #### ##  #         
+         ## ####  ## #    # ####        
+        ##  #   ###  ##  ## #   #       
+       ## #### ##  ### ###  ## ###      
+      ##  #    # ###   #  ###  #  #     
+     ## ####  ## #  # #####  #######    
+    ##  #   ###  #### #    ###      #   
+   ## #### ##  ###    ##  ##  #    ###  
+  ##  #    # ###  #  ## ### ####  ##  # 
+ ## ####  ## #  ######  #   #   ### ####
+
+```
+

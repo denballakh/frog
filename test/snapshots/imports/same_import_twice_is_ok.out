@@ -1,0 +1,53 @@
+# Snapshot: imports/same_import_twice_is_ok
+
+### Source: `test/tmp_fs/same_import_twice_is_ok/main.frog`
+
+```frog
+
+            from "math.frog" import inc
+            from "math.frog" import inc
+
+            1 inc print
+            
+```
+
+### Source: `test/tmp_fs/same_import_twice_is_ok/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Main: `test/tmp_fs/same_import_twice_is_ok/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/same_import_twice_is_ok/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():2@test/tmp_fs/same_import_twice_is_ok/math.frog:1:26
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/same_import_twice_is_ok/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/same_import_twice_is_ok/main.c -o test/tmp_fs/same_import_twice_is_ok/main.exe
+[CMD] test/tmp_fs/same_import_twice_is_ok/main.exe
+[STDOUT]:
+2
+
+```
+

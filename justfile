@@ -20,19 +20,21 @@ fmt: _black
 check: typecheck fmt
 
 [group("test")]
-test: && check
-    rm test/*.out || true
+test: check
     python -m test
-    git diff --exit-code -- test/*.out
+    git diff --exit-code HEAD -- test/snapshots
+    git status --short -- test/snapshots
+    test -z "$(git status --porcelain -- test/snapshots)"
 
 [group("test")]
 show-diff:
-    git diff -- test/*.out
+    git diff -- test/snapshots
+    git status --short -- test/snapshots
 
-# ONLY run this if you are ABSOLUTELY SURE the golden output changes are correct.
+# ONLY run this if you are ABSOLUTELY SURE the snapshot output changes are correct.
 [group("test")]
 approve-diff:
-    git add test/*.out
+    git add -A test/snapshots
 
 [group("run")]
 @repl:

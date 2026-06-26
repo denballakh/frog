@@ -1,4 +1,61 @@
-[CMD] py -m frog run examples/08_gcd_grid.frog
+# Snapshot: examples/08_gcd_grid
+
+### Source: `examples/08_gcd_grid.frog`
+
+```frog
+proc gcd int int -- int do
+    while dup 0 != do
+        let a b do
+            b
+            a b %
+        end
+    end
+    drop
+end
+
+proc render_point int int -- do
+    if dup2 gcd 1 == do
+        '#'
+    else
+        ' '
+    end
+    dup putc putc
+    drop drop
+end
+
+proc render_row int -- do
+    let y do
+        1
+        while dup 41 < do
+            dup y render_point
+            1 +
+        end
+        drop
+        10 putc
+    end
+end
+
+proc main -- do
+    1
+    while dup 41 < do
+        dup render_row
+        1 +
+    end
+    drop
+end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run examples/08_gcd_grid.frog
+```
+
+Output:
+
+```text
 ################################################################################
 ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  
 ####  ####  ####  ####  ####  ####  ####  ####  ####  ####  ####  ####  ####  ##
@@ -39,7 +96,19 @@
 ##  ##  ##  ##  ##  ##  ##  ##  ##      ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  
 ####  ####  ####  ####    ##  ####  ####  ####  ##    ####  ####  ####  ####  ##
 ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##  
-[CMD] py -m frog -l WARN build -r examples/08_gcd_grid.frog
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r examples/08_gcd_grid.frog
+```
+
+Output:
+
+```text
 [CMD] gcc examples/08_gcd_grid.c -o examples/08_gcd_grid.exe
 [CMD] examples/08_gcd_grid.exe
 [STDOUT]:
@@ -83,4 +152,6 @@
 ##  ##  ##  ##  ##  ##  ##  ##  ##      ##  ##  ##  ##  ##  ##  ##  ##  ##  ##  
 ####  ####  ####  ####    ##  ####  ####  ####  ##    ####  ####  ####  ####  ##
 ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##  
+
+```
 

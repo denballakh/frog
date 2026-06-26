@@ -1,0 +1,50 @@
+# Snapshot: code/words
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+proc
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: expected a name after PROC
+[EXIT CODE] 1
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+somerandomword
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: unknown word somerandomword
+[EXIT CODE] 1
+```
+

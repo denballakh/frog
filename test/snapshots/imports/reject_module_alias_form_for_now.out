@@ -1,0 +1,32 @@
+# Snapshot: imports/reject_module_alias_form_for_now
+
+### Source: `test/tmp_fs/reject_module_alias_form_for_now/main.frog`
+
+```frog
+import "math.frog" as math
+```
+
+### Source: `test/tmp_fs/reject_module_alias_form_for_now/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Main: `test/tmp_fs/reject_module_alias_form_for_now/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/reject_module_alias_form_for_now/main.frog
+py -m frog -l WARN build -r test/tmp_fs/reject_module_alias_form_for_now/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/reject_module_alias_form_for_now/main.frog:1:1: only from path import name is supported
+[EXIT CODE] 1
+```
+

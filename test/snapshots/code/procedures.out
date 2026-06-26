@@ -1,0 +1,407 @@
+# Snapshot: code/procedures
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int -- int do 2 * end
+    5 a print
+    
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():10@test/tmp_fs/code.frog:2:28
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+10
+
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a do 2 * end
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=test/tmp_fs/code.frog:2:12)
+[EXIT CODE] 1
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int do 2 * end
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:2:10: expected a KeywordType.TYPE_DELIM after proc args, got Token(type=<TokenType.KEYWORD: 6>, value=<KeywordType.DO: 5>, loc=test/tmp_fs/code.frog:2:16)
+[EXIT CODE] 1
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a -- do 2 * end
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:2:20: stack too small for IntrinsicType.MUL: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:2:18
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int -- do 2 * end
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:2:26: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:2:24
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int -- int int do 2 * end
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:2:34: return type mismatch: expected 2 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:2:32
+[NOTE] outs:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int -- int do drop 5 end
+    5 a print
+    
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():5@test/tmp_fs/code.frog:2:31
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+5
+
+```
+
+## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a bool -- int do drop 5 end
+    5 a print
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:3:7: stack doesnt match at 0 for a: expected BOOL() but got INT()
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:3:5
+[NOTE] ins:
+      0. BOOL()
+[EXIT CODE] 1
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int int -- int do + end
+    5 a print
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:3:7: stack too small for a: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:3:5
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a x -- y do + end
+    5 a print
+    
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:2:12: expected a type after proc name, got x
+[EXIT CODE] 1
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc a int int -- int do + end
+    5 7 a print
+    
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():12@test/tmp_fs/code.frog:2:30
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+12
+
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc ++ int -- int do 1 + end
+    5 ++ print
+    
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():6@test/tmp_fs/code.frog:2:29
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+6
+
+```
+

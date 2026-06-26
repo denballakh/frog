@@ -1,0 +1,32 @@
+# Snapshot: imports/reject_wildcard_import
+
+### Source: `test/tmp_fs/reject_wildcard_import/main.frog`
+
+```frog
+from "math.frog" import *
+```
+
+### Source: `test/tmp_fs/reject_wildcard_import/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Main: `test/tmp_fs/reject_wildcard_import/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/reject_wildcard_import/main.frog
+py -m frog -l WARN build -r test/tmp_fs/reject_wildcard_import/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/reject_wildcard_import/main.frog:1:15: wildcard imports are not supported
+[EXIT CODE] 1
+```
+

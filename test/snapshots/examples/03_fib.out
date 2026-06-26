@@ -1,4 +1,34 @@
-[CMD] py -m frog run examples/03_fib.frog
+# Snapshot: examples/03_fib
+
+### Source: `examples/03_fib.frog`
+
+```frog
+proc dec int -- int do 1 - end
+proc fib_step int int -- int int do dup rot + end
+proc main -- do
+    0 1 15
+    while dup 0 > do
+      rot rot
+      dup print
+      fib_step
+      rot
+      dec
+    end
+    drop drop drop
+end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run examples/03_fib.frog
+```
+
+Output:
+
+```text
 [PRINT] INT():1@examples/03_fib.frog:4:7
 [PRINT] INT():1@examples/03_fib.frog:2:45
 [PRINT] INT():2@examples/03_fib.frog:2:45
@@ -14,7 +44,19 @@
 [PRINT] INT():233@examples/03_fib.frog:2:45
 [PRINT] INT():377@examples/03_fib.frog:2:45
 [PRINT] INT():610@examples/03_fib.frog:2:45
-[CMD] py -m frog -l WARN build -r examples/03_fib.frog
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r examples/03_fib.frog
+```
+
+Output:
+
+```text
 [CMD] gcc examples/03_fib.c -o examples/03_fib.exe
 [CMD] examples/03_fib.exe
 [STDOUT]:
@@ -33,4 +75,6 @@
 233
 377
 610
+
+```
 

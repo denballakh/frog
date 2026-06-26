@@ -1,0 +1,37 @@
+# Snapshot: examples/00_empty
+
+### Source: `examples/00_empty.frog`
+
+```frog
+// empty file is a valid program
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run examples/00_empty.frog
+```
+
+Output:
+
+```text
+(no output)
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r examples/00_empty.frog
+```
+
+Output:
+
+```text
+[CMD] gcc examples/00_empty.c -o examples/00_empty.exe
+[CMD] examples/00_empty.exe
+```
+

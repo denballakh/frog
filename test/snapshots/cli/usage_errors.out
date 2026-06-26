@@ -1,0 +1,173 @@
+# Snapshot: cli/usage_errors
+
+## Case: `(no arguments)`
+
+### Result
+
+Command:
+
+```text
+py -m frog
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no subcommand specified
+[EXIT CODE] 2
+```
+
+## Case: `-h`
+
+### Result
+
+Command:
+
+```text
+py -m frog -h
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+
+Options:
+  -h --help                   print this help message
+  -l <level>                  log level: ERROR,WARN,INFO,TRACE
+Subcommands:
+  run [OPTIONS]             interpret
+    -c CODE                   code to interpret
+       FILE                   file to interpret
+  build [OPTIONS] FILE      build
+    FILE                      file to build
+    OPTIONS:
+      -o FILE                 where to put built binary
+      -r                      also run the binary
+  repl                      start a Read-Eval-Print-Loop
+
+
+```
+
+## Case: `--help`
+
+### Result
+
+Command:
+
+```text
+py -m frog --help
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+
+Options:
+  -h --help                   print this help message
+  -l <level>                  log level: ERROR,WARN,INFO,TRACE
+Subcommands:
+  run [OPTIONS]             interpret
+    -c CODE                   code to interpret
+       FILE                   file to interpret
+  build [OPTIONS] FILE      build
+    FILE                      file to build
+    OPTIONS:
+      -o FILE                 where to put built binary
+      -r                      also run the binary
+  repl                      start a Read-Eval-Print-Loop
+
+
+```
+
+## Case: `run`
+
+### Result
+
+Command:
+
+```text
+py -m frog run
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no file specified
+[EXIT CODE] 2
+```
+
+## Case: `run xxx`
+
+### Result
+
+Command:
+
+```text
+py -m frog run xxx
+```
+
+Output:
+
+```text
+[ERROR] file xxx does not exist
+[EXIT CODE] 1
+```
+
+## Case: `-l`
+
+### Result
+
+Command:
+
+```text
+py -m frog -l
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no log level specified
+[EXIT CODE] 2
+```
+
+## Case: `-l TRACE`
+
+### Result
+
+Command:
+
+```text
+py -m frog -l TRACE
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no subcommand specified
+[EXIT CODE] 2
+```
+
+## Case: `-l TRACE run`
+
+### Result
+
+Command:
+
+```text
+py -m frog -l TRACE run
+```
+
+Output:
+
+```text
+Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+[ERROR] no file specified
+[EXIT CODE] 2
+```
+

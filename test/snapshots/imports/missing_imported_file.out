@@ -1,0 +1,26 @@
+# Snapshot: imports/missing_imported_file
+
+### Source: `test/tmp_fs/missing_imported_file/main.frog`
+
+```frog
+from "missing.frog" import inc
+```
+
+### Main: `test/tmp_fs/missing_imported_file/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/missing_imported_file/main.frog
+py -m frog -l WARN build -r test/tmp_fs/missing_imported_file/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/missing_imported_file/main.frog:1:1: imported file does not exist: missing.frog
+[EXIT CODE] 1
+```
+

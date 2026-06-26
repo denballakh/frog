@@ -1,0 +1,242 @@
+# Snapshot: code/comparisons
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 == print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():False@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+false
+
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 != print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():True@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+true
+
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 < print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():True@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+true
+
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 > print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():False@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+false
+
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 <= print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():True@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+true
+
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 >= print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():False@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+false
+
+```
+

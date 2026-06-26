@@ -1,0 +1,66 @@
+# Snapshot: imports/reexported_macro_keeps_original_scope
+
+### Source: `test/tmp_fs/reexported_macro_keeps_original_scope/main.frog`
+
+```frog
+
+            from "facade.frog" import bump
+
+            proc helper int -- int do 1 + end
+
+            5 bump print
+            5 helper print
+            
+```
+
+### Source: `test/tmp_fs/reexported_macro_keeps_original_scope/macros.frog`
+
+```frog
+
+            proc helper int -- int do 10 + end
+            macro bump helper end
+            
+```
+
+### Source: `test/tmp_fs/reexported_macro_keeps_original_scope/facade.frog`
+
+```frog
+from "macros.frog" import bump
+```
+
+### Main: `test/tmp_fs/reexported_macro_keeps_original_scope/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/reexported_macro_keeps_original_scope/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():15@test/tmp_fs/reexported_macro_keeps_original_scope/macros.frog:2:42
+[PRINT] INT():6@test/tmp_fs/reexported_macro_keeps_original_scope/main.frog:4:41
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/reexported_macro_keeps_original_scope/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/reexported_macro_keeps_original_scope/main.c -o test/tmp_fs/reexported_macro_keeps_original_scope/main.exe
+[CMD] test/tmp_fs/reexported_macro_keeps_original_scope/main.exe
+[STDOUT]:
+15
+6
+
+```
+

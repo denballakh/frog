@@ -1,0 +1,89 @@
+# Snapshot: examples/02_while
+
+### Source: `examples/02_while.frog`
+
+```frog
+          // 
+1         //  1
+2         //  1  2
+swap      //  2  1
+dup       //  2  1  1
+print     //  2  1
+10        //  2  1 10
+*         //  2 10
++         // 12
+while
+  dup     //  n  n
+  3       //  n  n  3
+  >       //  n n>3
+do
+  if
+    dup   //  n  n
+    2     //  n  n  2
+    %     //  n n%2
+    0     //  n n%2 0
+    ==    //  n n%2==0
+  do
+    5     //  n  5
+  else
+    7     //  n  7
+  end
+          //  n int
+  print   //  n
+  1       //  n  1
+  -       //  n-1
+end
+          //  n
+drop      // 
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run examples/02_while.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():1@examples/02_while.frog:2:1
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+[PRINT] INT():7@examples/02_while.frog:24:5
+[PRINT] INT():5@examples/02_while.frog:22:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r examples/02_while.frog
+```
+
+Output:
+
+```text
+[CMD] gcc examples/02_while.c -o examples/02_while.exe
+[CMD] examples/02_while.exe
+[STDOUT]:
+1
+5
+7
+5
+7
+5
+7
+5
+7
+5
+
+```
+

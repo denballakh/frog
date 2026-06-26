@@ -1,0 +1,58 @@
+# Snapshot: imports/reexport_alias
+
+### Source: `test/tmp_fs/reexport_alias/main.frog`
+
+```frog
+
+            from "facade.frog" import bump
+
+            4 bump print
+            
+```
+
+### Source: `test/tmp_fs/reexport_alias/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Source: `test/tmp_fs/reexport_alias/facade.frog`
+
+```frog
+from "math.frog" import inc as bump
+```
+
+### Main: `test/tmp_fs/reexport_alias/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/reexport_alias/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():5@test/tmp_fs/reexport_alias/math.frog:1:26
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/reexport_alias/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/reexport_alias/main.c -o test/tmp_fs/reexport_alias/main.exe
+[CMD] test/tmp_fs/reexport_alias/main.exe
+[STDOUT]:
+5
+
+```
+

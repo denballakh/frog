@@ -1,0 +1,35 @@
+# Snapshot: imports/reject_import_inside_macro
+
+### Source: `test/tmp_fs/reject_import_inside_macro/main.frog`
+
+```frog
+
+            macro bad from "math.frog" import inc end
+            bad
+            
+```
+
+### Source: `test/tmp_fs/reject_import_inside_macro/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Main: `test/tmp_fs/reject_import_inside_macro/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/reject_import_inside_macro/main.frog
+py -m frog -l WARN build -r test/tmp_fs/reject_import_inside_macro/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/reject_import_inside_macro/main.frog:2:23: imports are only allowed at top level
+[EXIT CODE] 1
+```
+

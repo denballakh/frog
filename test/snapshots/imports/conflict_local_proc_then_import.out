@@ -1,0 +1,36 @@
+# Snapshot: imports/conflict_local_proc_then_import
+
+### Source: `test/tmp_fs/conflict_local_proc_then_import/main.frog`
+
+```frog
+
+            proc inc int -- int do 2 + end
+
+            from "math.frog" import inc
+            
+```
+
+### Source: `test/tmp_fs/conflict_local_proc_then_import/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Main: `test/tmp_fs/conflict_local_proc_then_import/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/conflict_local_proc_then_import/main.frog
+py -m frog -l WARN build -r test/tmp_fs/conflict_local_proc_then_import/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/conflict_local_proc_then_import/main.frog:4:27: name inc is already defined
+[EXIT CODE] 1
+```
+

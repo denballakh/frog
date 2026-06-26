@@ -1,0 +1,36 @@
+# Snapshot: imports/alias_does_not_bind_original_name
+
+### Source: `test/tmp_fs/alias_does_not_bind_original_name/main.frog`
+
+```frog
+
+            from "math.frog" import inc as bump
+
+            1 inc print
+            
+```
+
+### Source: `test/tmp_fs/alias_does_not_bind_original_name/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Main: `test/tmp_fs/alias_does_not_bind_original_name/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/alias_does_not_bind_original_name/main.frog
+py -m frog -l WARN build -r test/tmp_fs/alias_does_not_bind_original_name/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/alias_does_not_bind_original_name/main.frog:4:15: unknown word inc
+[EXIT CODE] 1
+```
+

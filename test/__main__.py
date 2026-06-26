@@ -9,10 +9,29 @@ from frog.__main__ import run_frog
 
 
 @dataclass(frozen=True)
+class CodeExampleGroup:
+    name: str
+    examples: list[str]
+
+
+@dataclass(frozen=True)
 class FileCodeExample:
     name: str
     files: dict[str, str]
     main: str = 'main.frog'
+
+
+@dataclass(frozen=True)
+class CliExampleGroup:
+    name: str
+    examples: list[str]
+
+
+@dataclass(frozen=True)
+class CommandResult:
+    command: str
+    body: str
+    exit_code: int
 
 
 code_examples = [
@@ -203,6 +222,25 @@ code_examples = [
     4 alloc let p do 42 p !u8 p 0 cell print end
     ''',
 ]
+
+code_example_groups = [
+    CodeExampleGroup('basics', code_examples[0:7]),
+    CodeExampleGroup('arithmetic', code_examples[7:20]),
+    CodeExampleGroup('int_bool_type_errors', code_examples[20:30]),
+    CodeExampleGroup('booleans', code_examples[30:34]),
+    CodeExampleGroup('comparisons', code_examples[34:40]),
+    CodeExampleGroup('stack_intrinsics', code_examples[40:54]),
+    CodeExampleGroup('if_blocks', code_examples[54:74]),
+    CodeExampleGroup('while_blocks', code_examples[74:87]),
+    CodeExampleGroup('macros', code_examples[87:100]),
+    CodeExampleGroup('literals_and_comments', code_examples[100:114]),
+    CodeExampleGroup('words', code_examples[114:116]),
+    CodeExampleGroup('procedures', code_examples[116:128]),
+    CodeExampleGroup('casts_and_memory', code_examples[128:140]),
+]
+
+assert sum(len(group.examples) for group in code_example_groups) == len(code_examples)
+
 file_code_examples = [
     FileCodeExample(
         name='import_proc',
@@ -707,86 +745,192 @@ file_code_examples = [
         },
     ),
 ]
-cli_examples = [
-    '',
-    '-h',
-    '--help',
-    'run',
-    'run xxx',
-    '-l',
-    '-l TRACE',
-    '-l TRACE run',
-    '-l TRACE run examples/01_simple.frog',
-    '-l LOL run examples/01_simple.frog',
-    '-l WARN run examples/01_simple.frog',
-    '-l INFO run examples/01_simple.frog',
-    '-l ERROR run examples/01_simple.frog',
-    #
-    '-l TRACE run examples/02_while.frog',
-    '-l TRACE build -r examples/02_while.frog',
+cli_example_groups = [
+    CliExampleGroup(
+        'usage_errors',
+        [
+            '',
+            '-h',
+            '--help',
+            'run',
+            'run xxx',
+            '-l',
+            '-l TRACE',
+            '-l TRACE run',
+        ],
+    ),
+    CliExampleGroup(
+        'log_levels',
+        [
+            '-l TRACE run examples/01_simple.frog',
+            '-l LOL run examples/01_simple.frog',
+            '-l WARN run examples/01_simple.frog',
+            '-l INFO run examples/01_simple.frog',
+            '-l ERROR run examples/01_simple.frog',
+        ],
+    ),
+    CliExampleGroup(
+        'trace_examples',
+        [
+            '-l TRACE run examples/02_while.frog',
+            '-l TRACE build -r examples/02_while.frog',
+        ],
+    ),
 ]
 
 ROOT = Path(__file__).parent.parent
 
 dir_examples = ROOT / 'examples'
 dir_tests = ROOT / 'test'
-
-for file_example in sorted(dir_examples.iterdir()):
-    if not file_example.is_file():
-        continue
-    if file_example.suffix != '.frog':
-        continue
-    file_example = file_example.relative_to(ROOT)
-
-    print(f'[FILE] {file_example}')
-    buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(buf):
-            res = run_frog('py', '-m', 'frog', 'run', file_example)
-            if res == 0:
-                res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', file_example)
-    finally:
-        _ = (dir_tests / file_example.name).with_suffix('.out').write_text(buf.getvalue())
-
-
-buf = io.StringIO()
-try:
-    for cli_example in cli_examples:
-        print(f'[CLI] {cli_example}')
-        with contextlib.redirect_stdout(buf):
-            res = run_frog('py', '-m', 'frog', *shlex.split(cli_example))
-finally:
-    _ = (dir_tests / 'cli.out').write_text(buf.getvalue())
-
-
+dir_snapshots = dir_tests / 'snapshots'
 tmp_fs = dir_tests / 'tmp_fs'
 
-buf = io.StringIO()
+
+def ensure_trailing_newline(text: str) -> str:
+    if text.endswith('\n'):
+        return text
+    return f'{text}\n'
+
+
+def source_fence(text: str) -> str:
+    return f'```frog\n{ensure_trailing_newline(text)}```\n'
+
+
+def output_fence(text: str) -> str:
+    if text == '':
+        text = '(no output)\n'
+    return f'```text\n{ensure_trailing_newline(text)}```\n'
+
+
+def render_source(label: str, text: str) -> str:
+    return f'### Source: `{label}`\n\n{source_fence(text)}\n'
+
+
+def split_captured_command(output: str) -> tuple[str, str]:
+    first_line, separator, rest = output.partition('\n')
+    if separator and first_line.startswith('[CMD] '):
+        return first_line.removeprefix('[CMD] '), rest
+    return '(missing command)', output
+
+
+def capture_frog(*args: str | Path) -> CommandResult:
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        exit_code = run_frog('py', '-m', 'frog', *args)
+
+    command, body = split_captured_command(buf.getvalue())
+    return CommandResult(command, body, exit_code)
+
+
+def render_result(title: str, result: CommandResult) -> str:
+    return f'### {title}\n\nCommand:\n\n{output_fence(result.command)}\nOutput:\n\n{output_fence(result.body)}\n'
+
+
+def render_run_build(run_result: CommandResult, build_result: CommandResult) -> str:
+    if run_result.body == build_result.body:
+        commands = f'{run_result.command}\n{build_result.command}\n'
+        return (
+            f'### Run and Build\n\nCommands:\n\n{output_fence(commands)}\nOutput:\n\n{output_fence(run_result.body)}\n'
+        )
+
+    return f'{render_result("Run", run_result)}{render_result("Build", build_result)}'
+
+
+def render_cli_sources(args: list[str]) -> str:
+    rendered: list[str] = []
+    for arg in args:
+        file = ROOT / arg
+        if file.is_file() and file.suffix == '.frog':
+            rendered.append(render_source(file.relative_to(ROOT).as_posix(), file.read_text()))
+
+    return ''.join(rendered)
+
+
+def write_snapshot(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _ = path.write_text(text)
+
+
+def snapshot_header(name: str) -> str:
+    return f'# Snapshot: {name}\n\n'
+
+
+shutil.rmtree(dir_snapshots, ignore_errors=True)
+dir_snapshots.mkdir(parents=True)
+
 try:
     shutil.rmtree(tmp_fs, ignore_errors=True)
     tmp_fs.mkdir(parents=True)
 
-    for code_example in code_examples:
-        print(f'[CODE] {code_example!r}')
-        with contextlib.redirect_stdout(buf):
+    for file_example in sorted(dir_examples.iterdir()):
+        if not file_example.is_file():
+            continue
+        if file_example.suffix != '.frog':
+            continue
+
+        relative_file = file_example.relative_to(ROOT)
+        print(f'[FILE] {relative_file}')
+        run_result = capture_frog('run', relative_file)
+        if run_result.exit_code == 0:
+            build_result = capture_frog('-l', 'WARN', 'build', '-r', relative_file)
+            output = render_run_build(run_result, build_result)
+        else:
+            output = render_result('Run', run_result)
+
+        snapshot_name = relative_file.with_suffix('').as_posix()
+        write_snapshot(
+            dir_snapshots / 'examples' / relative_file.with_suffix('.out').name,
+            f'{snapshot_header(snapshot_name)}{render_source(relative_file.as_posix(), file_example.read_text())}{output}',
+        )
+
+    for cli_group in cli_example_groups:
+        parts = [snapshot_header(f'cli/{cli_group.name}')]
+        for cli_example in cli_group.examples:
+            print(f'[CLI:{cli_group.name}] {cli_example}')
+            args = shlex.split(cli_example)
+            result = capture_frog(*args)
+            case_name = cli_example if cli_example else '(no arguments)'
+            parts.append(f'## Case: `{case_name}`\n\n')
+            parts.append(render_cli_sources(args))
+            parts.append(render_result('Result', result))
+
+        write_snapshot(dir_snapshots / 'cli' / f'{cli_group.name}.out', ''.join(parts))
+
+    for code_group in code_example_groups:
+        parts = [snapshot_header(f'code/{code_group.name}')]
+        for index, code_example in enumerate(code_group.examples, start=1):
+            print(f'[CODE:{code_group.name}] {index}: {code_example!r}')
             tmp = (tmp_fs / 'code.frog').relative_to(Path.cwd())
             _ = tmp.write_text(code_example)
-            res = run_frog('py', '-m', 'frog', 'run', tmp)
-            res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', tmp)
+
+            run_result = capture_frog('run', tmp)
+            build_result = capture_frog('-l', 'WARN', 'build', '-r', tmp)
+
+            parts.append(f'## Case {index:02d}\n\n')
+            parts.append(render_source(tmp.as_posix(), code_example))
+            parts.append(render_run_build(run_result, build_result))
+
+        write_snapshot(dir_snapshots / 'code' / f'{code_group.name}.out', ''.join(parts))
 
     for file_code_example in file_code_examples:
         print(f'[FILES] {file_code_example.name}')
-        with contextlib.redirect_stdout(buf):
-            tmp_fs_case = tmp_fs / file_code_example.name
-            tmp_fs_case.mkdir(parents=True)
-            for file_name, text in file_code_example.files.items():
-                file = tmp_fs_case / file_name
-                file.parent.mkdir(parents=True, exist_ok=True)
-                _ = file.write_text(text)
+        tmp_fs_case = tmp_fs / file_code_example.name
+        tmp_fs_case.mkdir(parents=True)
+        for file_name, text in file_code_example.files.items():
+            file = tmp_fs_case / file_name
+            file.parent.mkdir(parents=True, exist_ok=True)
+            _ = file.write_text(text)
 
-            main = (tmp_fs_case / file_code_example.main).relative_to(Path.cwd())
-            res = run_frog('py', '-m', 'frog', 'run', main)
-            res = run_frog('py', '-m', 'frog', '-l', 'WARN', 'build', '-r', main)
+        main = (tmp_fs_case / file_code_example.main).relative_to(Path.cwd())
+        run_result = capture_frog('run', main)
+        build_result = capture_frog('-l', 'WARN', 'build', '-r', main)
+
+        parts = [snapshot_header(f'imports/{file_code_example.name}')]
+        for file_name, text in file_code_example.files.items():
+            parts.append(render_source((tmp_fs_case / file_name).relative_to(Path.cwd()).as_posix(), text))
+
+        parts.append(f'### Main: `{main.as_posix()}`\n\n')
+        parts.append(render_run_build(run_result, build_result))
+        write_snapshot(dir_snapshots / 'imports' / f'{file_code_example.name}.out', ''.join(parts))
 finally:
-    _ = (dir_tests / 'code.out').write_text(buf.getvalue())
-shutil.rmtree(tmp_fs, ignore_errors=True)
+    shutil.rmtree(tmp_fs, ignore_errors=True)

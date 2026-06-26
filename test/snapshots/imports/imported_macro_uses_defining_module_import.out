@@ -1,0 +1,62 @@
+# Snapshot: imports/imported_macro_uses_defining_module_import
+
+### Source: `test/tmp_fs/imported_macro_uses_defining_module_import/main.frog`
+
+```frog
+
+            from "facade.frog" import bump
+
+            5 bump print
+            
+```
+
+### Source: `test/tmp_fs/imported_macro_uses_defining_module_import/math.frog`
+
+```frog
+proc inc int -- int do 1 + end
+```
+
+### Source: `test/tmp_fs/imported_macro_uses_defining_module_import/facade.frog`
+
+```frog
+
+            from "math.frog" import inc
+
+            macro bump inc end
+            
+```
+
+### Main: `test/tmp_fs/imported_macro_uses_defining_module_import/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/imported_macro_uses_defining_module_import/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():6@test/tmp_fs/imported_macro_uses_defining_module_import/math.frog:1:26
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/imported_macro_uses_defining_module_import/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/imported_macro_uses_defining_module_import/main.c -o test/tmp_fs/imported_macro_uses_defining_module_import/main.exe
+[CMD] test/tmp_fs/imported_macro_uses_defining_module_import/main.exe
+[STDOUT]:
+6
+
+```
+

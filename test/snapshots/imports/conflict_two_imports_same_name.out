@@ -1,0 +1,41 @@
+# Snapshot: imports/conflict_two_imports_same_name
+
+### Source: `test/tmp_fs/conflict_two_imports_same_name/main.frog`
+
+```frog
+
+            from "left.frog" import value
+            from "right.frog" import value
+            
+```
+
+### Source: `test/tmp_fs/conflict_two_imports_same_name/left.frog`
+
+```frog
+proc value -- int do 1 end
+```
+
+### Source: `test/tmp_fs/conflict_two_imports_same_name/right.frog`
+
+```frog
+proc value -- int do 2 end
+```
+
+### Main: `test/tmp_fs/conflict_two_imports_same_name/main.frog`
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/conflict_two_imports_same_name/main.frog
+py -m frog -l WARN build -r test/tmp_fs/conflict_two_imports_same_name/main.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/conflict_two_imports_same_name/main.frog:3:27: name value is already defined
+[EXIT CODE] 1
+```
+

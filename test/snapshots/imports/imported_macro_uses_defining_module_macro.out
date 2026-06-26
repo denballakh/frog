@@ -1,0 +1,55 @@
+# Snapshot: imports/imported_macro_uses_defining_module_macro
+
+### Source: `test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog`
+
+```frog
+
+            from "macros.frog" import add_two
+
+            5 add_two print
+            
+```
+
+### Source: `test/tmp_fs/imported_macro_uses_defining_module_macro/macros.frog`
+
+```frog
+
+            macro inc 1 + end
+            macro add_two inc inc end
+            
+```
+
+### Main: `test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():7@test/tmp_fs/imported_macro_uses_defining_module_macro/macros.frog:2:25
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/imported_macro_uses_defining_module_macro/main.c -o test/tmp_fs/imported_macro_uses_defining_module_macro/main.exe
+[CMD] test/tmp_fs/imported_macro_uses_defining_module_macro/main.exe
+[STDOUT]:
+7
+
+```
+

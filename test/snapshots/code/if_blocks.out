@@ -1,0 +1,594 @@
+# Snapshot: code/if_blocks
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 == if do 5 else 7 end print
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:11: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack:
+      0. BOOL()@test/tmp_fs/code.frog:1:5
+[NOTE] actual_stack: (empty)
+[EXIT CODE] 1
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 == do 5 else 7 end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():7@test/tmp_fs/code.frog:1:21
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+7
+
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 != do 5 else 7 end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():5@test/tmp_fs/code.frog:1:14
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+5
+
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 != do 5 else 7 8 end print
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:25: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp_fs/code.frog:1:14
+[NOTE] stack_else:
+      0. INT()@test/tmp_fs/code.frog:1:21
+      1. INT()@test/tmp_fs/code.frog:1:23
+[EXIT CODE] 1
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 != do 5 else 7 end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:21
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 != do 5 else end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:21: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp_fs/code.frog:1:14
+[NOTE] stack_else: (empty)
+[EXIT CODE] 1
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 != do 5 end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:16: both branches of InstructionType.IF must leave the stack in the same state
+[NOTE] stack_then:
+      0. INT()@test/tmp_fs/code.frog:1:14
+[NOTE] stack_else: (empty)
+[EXIT CODE] 1
+```
+
+## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 != do 5 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():5@test/tmp_fs/code.frog:1:14
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+5
+
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+5 if 1 2 == do drop 7 end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():5@test/tmp_fs/code.frog:1:1
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+5
+
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+5 if 1 2 != do drop 7 end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():7@test/tmp_fs/code.frog:1:21
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+7
+
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
+[EXIT CODE] 1
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 == do
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
+[EXIT CODE] 1
+```
+
+## Case 13
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 == do 5 print else
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1, bound_vars=[])
+[EXIT CODE] 1
+```
+
+## Case 14
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 == else 5 end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:18: if <cond> do <body> [else <body>] end
+[EXIT CODE] 1
+```
+
+## Case 15
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:4: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[EXIT CODE] 1
+```
+
+## Case 16
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:6: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items: (empty)
+[EXIT CODE] 1
+```
+
+## Case 17
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp_fs/code.frog:1:4
+[EXIT CODE] 1
+```
+
+## Case 18
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 3 do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp_fs/code.frog:1:4
+      1. INT()@test/tmp_fs/code.frog:1:6
+[EXIT CODE] 1
+```
+
+## Case 19
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if 1 2 3 == do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:13: condition part of InstructionType.IF should put exactly one BOOL on the stack
+[NOTE] expected_stack: (empty)
+[NOTE] actual_stack:
+      0. INT()@test/tmp_fs/code.frog:1:4
+[EXIT CODE] 1
+```
+
+## Case 20
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+else
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: ELSE should follow an IF
+[EXIT CODE] 1
+```
+

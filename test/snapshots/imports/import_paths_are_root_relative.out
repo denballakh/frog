@@ -1,0 +1,69 @@
+# Snapshot: imports/import_paths_are_root_relative
+
+### Source: `test/tmp_fs/import_paths_are_root_relative/main.frog`
+
+```frog
+
+            from "pkg/use.frog" import value
+
+            value print
+            
+```
+
+### Source: `test/tmp_fs/import_paths_are_root_relative/math.frog`
+
+```frog
+proc value -- int do 999 end
+```
+
+### Source: `test/tmp_fs/import_paths_are_root_relative/pkg/math.frog`
+
+```frog
+proc value -- int do 7 end
+```
+
+### Source: `test/tmp_fs/import_paths_are_root_relative/pkg/use.frog`
+
+```frog
+
+            // "math.frog" resolves from the root file directory, not from pkg/
+            from "math.frog" import value as root_value
+
+            proc value -- int do root_value end
+            
+```
+
+### Main: `test/tmp_fs/import_paths_are_root_relative/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/import_paths_are_root_relative/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():999@test/tmp_fs/import_paths_are_root_relative/math.frog:1:22
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/import_paths_are_root_relative/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/import_paths_are_root_relative/main.c -o test/tmp_fs/import_paths_are_root_relative/main.exe
+[CMD] test/tmp_fs/import_paths_are_root_relative/main.exe
+[STDOUT]:
+999
+
+```
+

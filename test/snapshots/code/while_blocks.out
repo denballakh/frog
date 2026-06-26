@@ -1,0 +1,385 @@
+# Snapshot: code/while_blocks
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+10 while dup 5 > do 1 - print ? end drop
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[INFO] test/tmp_fs/code.frog:1:31: Stack at compile time:
+[NOTE] stack: (empty)
+[ERROR] test/tmp_fs/code.frog:1:33: InstructionType.WHILE must not alter the stack state
+[EXIT CODE] 1
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:33: InstructionType.WHILE must not alter the stack state
+[EXIT CODE] 1
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+10 while dup 5 > do 1 - dup print ? end drop
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[INFO] test/tmp_fs/code.frog:1:35: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:23
+[PRINT] INT():9@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():9@test/tmp_fs/code.frog:1:23
+[PRINT] INT():8@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():8@test/tmp_fs/code.frog:1:23
+[PRINT] INT():7@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():7@test/tmp_fs/code.frog:1:23
+[PRINT] INT():6@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():6@test/tmp_fs/code.frog:1:23
+[PRINT] INT():5@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:35: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@test/tmp_fs/code.frog:1:23
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+9
+8
+7
+6
+5
+
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while else
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:7: ELSE should follow an IF, not WHILE
+[EXIT CODE] 1
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:7: while <cond> do <body> end
+[EXIT CODE] 1
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
+[EXIT CODE] 1
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while 1 2 == do
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: unclosed blocks
+[NOTE] blocks:
+      0. Block(type=<InstructionType.WHILE: 9>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
+[EXIT CODE] 1
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:7: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+[EXIT CODE] 1
+```
+
+## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while 1 do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:9: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items: (empty)
+[EXIT CODE] 1
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while 1 2 do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:11: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp_fs/code.frog:1:7
+[EXIT CODE] 1
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while 1 2 3 do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:13: InstructionType.DO expects one BOOL on the stack, but got INT()
+[NOTE] other_stack_items:
+      0. INT()@test/tmp_fs/code.frog:1:7
+      1. INT()@test/tmp_fs/code.frog:1:9
+[EXIT CODE] 1
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+while 1 2 3 == do end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:16: condition part of InstructionType.WHILE should put exactly one BOOL on the stack
+[NOTE] expected_stack: (empty)
+[NOTE] actual_stack:
+      0. INT()@test/tmp_fs/code.frog:1:7
+[EXIT CODE] 1
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+do
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: DO should follow an IF or WHILE
+[EXIT CODE] 1
+```
+
+## Case 13
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: END should follow an IF or WHILE
+[EXIT CODE] 1
+```
+

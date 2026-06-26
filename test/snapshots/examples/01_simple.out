@@ -1,4 +1,22 @@
-[CMD] py -m frog run examples/01_simple.frog
+# Snapshot: examples/01_simple
+
+### Source: `examples/01_simple.frog`
+
+```frog
+1 2 ? + ? print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run examples/01_simple.frog
+```
+
+Output:
+
+```text
 [INFO] examples/01_simple.frog:1:5: Stack at compile time:
 [NOTE] stack:
       0. INT()@examples/01_simple.frog:1:1
@@ -14,9 +32,23 @@
 [NOTE] stack:
       0. INT():3@examples/01_simple.frog:1:7
 [PRINT] INT():3@examples/01_simple.frog:1:7
-[CMD] py -m frog -l WARN build -r examples/01_simple.frog
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r examples/01_simple.frog
+```
+
+Output:
+
+```text
 [CMD] gcc examples/01_simple.c -o examples/01_simple.exe
 [CMD] examples/01_simple.exe
 [STDOUT]:
 3
+
+```
 

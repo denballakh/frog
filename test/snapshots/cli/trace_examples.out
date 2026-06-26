@@ -1,121 +1,55 @@
-[CMD] py -m frog
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
-[ERROR] no subcommand specified
-[EXIT CODE] 2
-[CMD] py -m frog -h
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+# Snapshot: cli/trace_examples
 
-Options:
-  -h --help                   print this help message
-  -l <level>                  log level: ERROR,WARN,INFO,TRACE
-Subcommands:
-  run [OPTIONS]             interpret
-    -c CODE                   code to interpret
-       FILE                   file to interpret
-  build [OPTIONS] FILE      build
-    FILE                      file to build
-    OPTIONS:
-      -o FILE                 where to put built binary
-      -r                      also run the binary
-  repl                      start a Read-Eval-Print-Loop
+## Case: `-l TRACE run examples/02_while.frog`
 
+### Source: `examples/02_while.frog`
 
-[CMD] py -m frog --help
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
+```frog
+          // 
+1         //  1
+2         //  1  2
+swap      //  2  1
+dup       //  2  1  1
+print     //  2  1
+10        //  2  1 10
+*         //  2 10
++         // 12
+while
+  dup     //  n  n
+  3       //  n  n  3
+  >       //  n n>3
+do
+  if
+    dup   //  n  n
+    2     //  n  n  2
+    %     //  n n%2
+    0     //  n n%2 0
+    ==    //  n n%2==0
+  do
+    5     //  n  5
+  else
+    7     //  n  7
+  end
+          //  n int
+  print   //  n
+  1       //  n  1
+  -       //  n-1
+end
+          //  n
+drop      // 
+```
 
-Options:
-  -h --help                   print this help message
-  -l <level>                  log level: ERROR,WARN,INFO,TRACE
-Subcommands:
-  run [OPTIONS]             interpret
-    -c CODE                   code to interpret
-       FILE                   file to interpret
-  build [OPTIONS] FILE      build
-    FILE                      file to build
-    OPTIONS:
-      -o FILE                 where to put built binary
-      -r                      also run the binary
-  repl                      start a Read-Eval-Print-Loop
+### Result
 
+Command:
 
-[CMD] py -m frog run
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
-[ERROR] no file specified
-[EXIT CODE] 2
-[CMD] py -m frog run xxx
-[ERROR] file xxx does not exist
-[EXIT CODE] 1
-[CMD] py -m frog -l
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
-[ERROR] no log level specified
-[EXIT CODE] 2
-[CMD] py -m frog -l TRACE
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
-[ERROR] no subcommand specified
-[EXIT CODE] 2
-[CMD] py -m frog -l TRACE run
-Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
-[ERROR] no file specified
-[EXIT CODE] 2
-[CMD] py -m frog -l TRACE run examples/01_simple.frog
-[TRACE] <?>:0:0: file: examples/01_simple.frog
-[NOTE] Tokens:
-      0. examples/01_simple.frog:1:1:INT:1
-      1. examples/01_simple.frog:1:3:INT:2
-      2. examples/01_simple.frog:1:5:WORD:'?'
-      3. examples/01_simple.frog:1:7:WORD:'+'
-      4. examples/01_simple.frog:1:9:WORD:'?'
-      5. examples/01_simple.frog:1:11:WORD:'print'
-[TRACE] <?>:0:0: Compiled IR
-[NOTE] IR:
-    IR:
-    proc main:
-      0. PUSH_INT:1
-      1. PUSH_INT:2
-      2. INTRINSIC:DEBUG
-      3. INTRINSIC:ADD
-      4. INTRINSIC:DEBUG
-      5. INTRINSIC:PRINT
-      6. RET
-[INFO] examples/01_simple.frog:1:5: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:1
-      1. INT()@examples/01_simple.frog:1:3
-[INFO] examples/01_simple.frog:1:9: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:7
-[INFO] examples/01_simple.frog:1:5: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:1
-      1. INT():2@examples/01_simple.frog:1:3
-[INFO] examples/01_simple.frog:1:9: Stack at runtime:
-[NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:7
-[PRINT] INT():3@examples/01_simple.frog:1:7
-[CMD] py -m frog -l LOL run examples/01_simple.frog
-[ERROR] <cli>:1:0: invalid log level: LOL, expected one of ['ERROR', 'WARN', 'INFO', 'TRACE']
-[EXIT CODE] 1
-[CMD] py -m frog -l WARN run examples/01_simple.frog
-[PRINT] INT():3@examples/01_simple.frog:1:7
-[CMD] py -m frog -l INFO run examples/01_simple.frog
-[INFO] examples/01_simple.frog:1:5: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:1
-      1. INT()@examples/01_simple.frog:1:3
-[INFO] examples/01_simple.frog:1:9: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:7
-[INFO] examples/01_simple.frog:1:5: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:1
-      1. INT():2@examples/01_simple.frog:1:3
-[INFO] examples/01_simple.frog:1:9: Stack at runtime:
-[NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:7
-[PRINT] INT():3@examples/01_simple.frog:1:7
-[CMD] py -m frog -l ERROR run examples/01_simple.frog
-[PRINT] INT():3@examples/01_simple.frog:1:7
-[CMD] py -m frog -l TRACE run examples/02_while.frog
+```text
+py -m frog -l TRACE run examples/02_while.frog
+```
+
+Output:
+
+```text
 [TRACE] <?>:0:0: file: examples/02_while.frog
 [NOTE] Tokens:
       0. examples/02_while.frog:2:1:INT:1
@@ -191,7 +125,58 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 [PRINT] INT():5@examples/02_while.frog:22:5
 [PRINT] INT():7@examples/02_while.frog:24:5
 [PRINT] INT():5@examples/02_while.frog:22:5
-[CMD] py -m frog -l TRACE build -r examples/02_while.frog
+```
+
+## Case: `-l TRACE build -r examples/02_while.frog`
+
+### Source: `examples/02_while.frog`
+
+```frog
+          // 
+1         //  1
+2         //  1  2
+swap      //  2  1
+dup       //  2  1  1
+print     //  2  1
+10        //  2  1 10
+*         //  2 10
++         // 12
+while
+  dup     //  n  n
+  3       //  n  n  3
+  >       //  n n>3
+do
+  if
+    dup   //  n  n
+    2     //  n  n  2
+    %     //  n n%2
+    0     //  n n%2 0
+    ==    //  n n%2==0
+  do
+    5     //  n  5
+  else
+    7     //  n  7
+  end
+          //  n int
+  print   //  n
+  1       //  n  1
+  -       //  n-1
+end
+          //  n
+drop      // 
+```
+
+### Result
+
+Command:
+
+```text
+py -m frog -l TRACE build -r examples/02_while.frog
+```
+
+Output:
+
+```text
 [TRACE] <?>:0:0: file: examples/02_while.frog
 [NOTE] Tokens:
       0. examples/02_while.frog:2:1:INT:1
@@ -339,4 +324,6 @@ Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>
 5
 7
 5
+
+```
 

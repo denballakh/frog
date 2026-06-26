@@ -1,0 +1,289 @@
+# Snapshot: code/basics
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 + print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():3@test/tmp_fs/code.frog:1:5
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+3
+
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 + print
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:3: stack too small for IntrinsicType.ADD: expected 2 but got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:1
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 +
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:5
+[NOTE] outs: (empty)
+[EXIT CODE] 1
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[INFO] test/tmp_fs/code.frog:1:1: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] test/tmp_fs/code.frog:1:5: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:3
+[INFO] test/tmp_fs/code.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:3
+      1. INT()@test/tmp_fs/code.frog:1:7
+[INFO] test/tmp_fs/code.frog:1:13: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:3
+      1. INT()@test/tmp_fs/code.frog:1:7
+      2. INT()@test/tmp_fs/code.frog:1:11
+[INFO] test/tmp_fs/code.frog:1:17: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:3
+      1. INT()@test/tmp_fs/code.frog:1:7
+      2. INT()@test/tmp_fs/code.frog:1:11
+      3. INT()@test/tmp_fs/code.frog:1:15
+[INFO] test/tmp_fs/code.frog:1:21: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:3
+      1. INT()@test/tmp_fs/code.frog:1:7
+      2. INT()@test/tmp_fs/code.frog:1:19
+[INFO] test/tmp_fs/code.frog:1:25: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:3
+      1. INT()@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:29: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:27
+[INFO] test/tmp_fs/code.frog:1:37: Stack at compile time:
+[NOTE] stack: (empty)
+[INFO] test/tmp_fs/code.frog:1:1: Stack at runtime:
+[NOTE] stack: (empty)
+[INFO] test/tmp_fs/code.frog:1:5: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp_fs/code.frog:1:3
+[INFO] test/tmp_fs/code.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp_fs/code.frog:1:3
+      1. INT():2@test/tmp_fs/code.frog:1:7
+[INFO] test/tmp_fs/code.frog:1:13: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp_fs/code.frog:1:3
+      1. INT():2@test/tmp_fs/code.frog:1:7
+      2. INT():3@test/tmp_fs/code.frog:1:11
+[INFO] test/tmp_fs/code.frog:1:17: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp_fs/code.frog:1:3
+      1. INT():2@test/tmp_fs/code.frog:1:7
+      2. INT():3@test/tmp_fs/code.frog:1:11
+      3. INT():4@test/tmp_fs/code.frog:1:15
+[INFO] test/tmp_fs/code.frog:1:21: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp_fs/code.frog:1:3
+      1. INT():2@test/tmp_fs/code.frog:1:7
+      2. INT():7@test/tmp_fs/code.frog:1:19
+[INFO] test/tmp_fs/code.frog:1:25: Stack at runtime:
+[NOTE] stack:
+      0. INT():1@test/tmp_fs/code.frog:1:3
+      1. INT():9@test/tmp_fs/code.frog:1:23
+[INFO] test/tmp_fs/code.frog:1:29: Stack at runtime:
+[NOTE] stack:
+      0. INT():10@test/tmp_fs/code.frog:1:27
+[PRINT] INT():10@test/tmp_fs/code.frog:1:27
+[INFO] test/tmp_fs/code.frog:1:37: Stack at runtime:
+[NOTE] stack: (empty)
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+10
+
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
++
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: stack too small for IntrinsicType.ADD: expected 2 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+~
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: stack too small for IntrinsicType.BNOT: expected 1 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+[EXIT CODE] 1
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+/%
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: stack too small for IntrinsicType.DIVMOD: expected 2 but got 0
+[NOTE] stack: (empty)
+[NOTE] ins:
+      0. INT()
+      1. INT()
+[EXIT CODE] 1
+```
+

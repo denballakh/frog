@@ -37,9 +37,10 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `examples/08_gcd_grid.frog`: Euclidean GCD rendered as a 40x40 coprimality grid using `#` for coprime coordinates and space otherwise.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
+- `docs/testing.md`: Test snapshot workflow and review process.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
-- `test/__main__.py`: Golden-output test generator/runner. It runs example files, CLI cases, inline code snippets, and multi-file import-system cases.
-- `test/*.out`: Golden output files produced by `python -m test`.
+- `test/__main__.py`: Snapshot test generator/runner. It runs example files, CLI cases, inline code snippets, and multi-file import-system cases.
+- `test/snapshots/**/*.out`: Markdown-style snapshot output files produced by `python -m test`. Snapshots embed tested source or CLI arguments with captured output.
 - `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
 - `devenv.nix`, `devenv.yaml`, `.envrc`: Nix/devenv environment setup.
@@ -59,8 +60,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Format Python with Black: `just fmt`
 - Run typecheck and format: `just check`
 - Run the full test suite, including typecheck/format first: `just test`
-- Show regenerated golden-output diffs: `just show-diff`
-- Approve regenerated golden-output diffs after careful review: `just approve-diff`
+- Show regenerated snapshot diffs: `just show-diff`
+- Approve regenerated snapshot diffs after careful review: `just approve-diff`
 - Start REPL: `just repl`
 - Run Frog CLI through just: `just cli <args>`
 - Remove generated C/exe artifacts: `just clean`
@@ -86,11 +87,13 @@ Useful direct commands:
 
 - `just test` is the expected and recommended full verification command
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
-- `just test` regenerates `test/*.out` by capturing stdout from many scenarios, then fails if tracked golden outputs have unstaged diffs.
+- `just test` regenerates `test/snapshots/**/*.out` by capturing stdout from many scenarios, then fails if the snapshot directory differs from git, including untracked files.
+- Snapshots are self-contained Markdown-style `.out` files. They embed the Frog source or CLI command under test before the captured output.
+- Inline code and multi-file import cases run both `frog run` and `frog build -r`. If the captured output body is identical after the top-level command line, the snapshot lists both commands and stores the shared output once; otherwise it keeps separate run and build outputs.
 - Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and cover imported procedures, macros, reexports, root-relative paths, conflicts, cycles, and rejected syntax.
-- Use `just show-diff` to inspect golden-output changes.
-- Use `just approve-diff` to approve the golden-output diff ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
-- After behavior changes, inspect the regenerated `.out` files to confirm the new output is intentional.
+- Use `just show-diff` to inspect snapshot changes.
+- Use `just approve-diff` to approve snapshot changes ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
+- After behavior changes, inspect the regenerated snapshot `.out` files to confirm the new output is intentional.
 - The test runner also builds and runs examples through the C backend, so `gcc` must be available.
 - `test/tmp_fs/` is created during tests and removed at the end; failed runs can leave generated artifacts there.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
@@ -171,4 +174,4 @@ Subcommands:
 
 - The repository ignores generated `*.c`, `*.exe`, Python caches, mypy cache, `.devenv*`, `.direnv`, and local env files.
 - Before finalizing code changes, prefer `just precommit` when feasible. For docs-only changes, a lighter verification may be enough.
-- If tests regenerate `test/*.out`, review those diffs carefully because they are the effective golden outputs.
+- If tests regenerate files under `test/snapshots/`, review those diffs carefully because they are the effective behavioral snapshots.

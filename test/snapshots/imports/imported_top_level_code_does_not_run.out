@@ -1,0 +1,56 @@
+# Snapshot: imports/imported_top_level_code_does_not_run
+
+### Source: `test/tmp_fs/imported_top_level_code_does_not_run/main.frog`
+
+```frog
+
+            from "lib.frog" import value
+
+            value print
+            
+```
+
+### Source: `test/tmp_fs/imported_top_level_code_does_not_run/lib.frog`
+
+```frog
+
+            99 print
+
+            proc value -- int do 7 end
+            
+```
+
+### Main: `test/tmp_fs/imported_top_level_code_does_not_run/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/imported_top_level_code_does_not_run/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():7@test/tmp_fs/imported_top_level_code_does_not_run/lib.frog:4:34
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/imported_top_level_code_does_not_run/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/imported_top_level_code_does_not_run/main.c -o test/tmp_fs/imported_top_level_code_does_not_run/main.exe
+[CMD] test/tmp_fs/imported_top_level_code_does_not_run/main.exe
+[STDOUT]:
+7
+
+```
+

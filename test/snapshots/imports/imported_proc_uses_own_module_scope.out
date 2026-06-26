@@ -1,0 +1,60 @@
+# Snapshot: imports/imported_proc_uses_own_module_scope
+
+### Source: `test/tmp_fs/imported_proc_uses_own_module_scope/main.frog`
+
+```frog
+
+            from "lib.frog" import value
+
+            proc helper -- int do 99 end
+
+            value print
+            helper print
+            
+```
+
+### Source: `test/tmp_fs/imported_proc_uses_own_module_scope/lib.frog`
+
+```frog
+
+            proc helper -- int do 7 end
+            proc value -- int do helper end
+            
+```
+
+### Main: `test/tmp_fs/imported_proc_uses_own_module_scope/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/imported_proc_uses_own_module_scope/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():7@test/tmp_fs/imported_proc_uses_own_module_scope/lib.frog:2:35
+[PRINT] INT():99@test/tmp_fs/imported_proc_uses_own_module_scope/main.frog:4:35
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/imported_proc_uses_own_module_scope/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/imported_proc_uses_own_module_scope/main.c -o test/tmp_fs/imported_proc_uses_own_module_scope/main.exe
+[CMD] test/tmp_fs/imported_proc_uses_own_module_scope/main.exe
+[STDOUT]:
+7
+99
+
+```
+

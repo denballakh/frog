@@ -1,0 +1,68 @@
+# Snapshot: imports/explicit_subdir_import_path
+
+### Source: `test/tmp_fs/explicit_subdir_import_path/main.frog`
+
+```frog
+
+            from "pkg/use.frog" import value
+
+            value print
+            
+```
+
+### Source: `test/tmp_fs/explicit_subdir_import_path/math.frog`
+
+```frog
+proc value -- int do 999 end
+```
+
+### Source: `test/tmp_fs/explicit_subdir_import_path/pkg/math.frog`
+
+```frog
+proc value -- int do 7 end
+```
+
+### Source: `test/tmp_fs/explicit_subdir_import_path/pkg/use.frog`
+
+```frog
+
+            from "pkg/math.frog" import value as pkg_value
+
+            proc value -- int do pkg_value end
+            
+```
+
+### Main: `test/tmp_fs/explicit_subdir_import_path/main.frog`
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/explicit_subdir_import_path/main.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():7@test/tmp_fs/explicit_subdir_import_path/pkg/math.frog:1:22
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/explicit_subdir_import_path/main.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/explicit_subdir_import_path/main.c -o test/tmp_fs/explicit_subdir_import_path/main.exe
+[CMD] test/tmp_fs/explicit_subdir_import_path/main.exe
+[STDOUT]:
+7
+
+```
+

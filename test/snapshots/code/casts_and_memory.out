@@ -1,0 +1,522 @@
+# Snapshot: code/casts_and_memory
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+5 int ? cast ? print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[INFO] test/tmp_fs/code.frog:1:7: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:1
+      1. TYPE(INT())@test/tmp_fs/code.frog:1:3
+[WARN] test/tmp_fs/code.frog:1:9: redundant cast INT() to INT()
+[INFO] test/tmp_fs/code.frog:1:14: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:9
+[INFO] test/tmp_fs/code.frog:1:7: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@test/tmp_fs/code.frog:1:1
+      1. TYPE(INT()):INT()@test/tmp_fs/code.frog:1:3
+[WARN] test/tmp_fs/code.frog:1:9: redundant cast INT() to INT()
+[INFO] test/tmp_fs/code.frog:1:14: Stack at runtime:
+[NOTE] stack:
+      0. INT():5@test/tmp_fs/code.frog:1:9
+[PRINT] INT():5@test/tmp_fs/code.frog:1:9
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[WARN] test/tmp_fs/code.frog:1:9: redundant cast INT() to INT()
+[WARN] test/tmp_fs/code.frog:1:9: redundant cast INT() to INT()
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+5
+
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+5 bool cast print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():True@test/tmp_fs/code.frog:1:8
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+true
+
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+0 bool cast print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():False@test/tmp_fs/code.frog:1:8
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+false
+
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+true int cast print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():1@test/tmp_fs/code.frog:1:10
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+1
+
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+false int cast print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():0@test/tmp_fs/code.frog:1:11
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+0
+
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+false bool cast print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[WARN] test/tmp_fs/code.frog:1:12: redundant cast BOOL() to BOOL()
+[WARN] test/tmp_fs/code.frog:1:12: redundant cast BOOL() to BOOL()
+[PRINT] BOOL():False@test/tmp_fs/code.frog:1:12
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[WARN] test/tmp_fs/code.frog:1:12: redundant cast BOOL() to BOOL()
+[WARN] test/tmp_fs/code.frog:1:12: redundant cast BOOL() to BOOL()
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+false
+
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 ptr cast int cast print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():1@test/tmp_fs/code.frog:1:16
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[STDERR]:
+test/tmp_fs/code.c: In function ‘proc_main’:
+test/tmp_fs/code.c:12:12: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+   12 |   cast_0 = (void*)lit_int_0;
+      |            ^
+test/tmp_fs/code.c:13:12: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
+   13 |   cast_1 = (int)cast_0;
+      |            ^
+
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+1
+
+```
+
+## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+4 alloc let p do 42 p !i8 p @i8 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():42@test/tmp_fs/code.frog:1:29
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+42
+
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+4 alloc let p do 255 p !u8 p @u8 print p @i8 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():255@test/tmp_fs/code.frog:1:30
+[PRINT] INT():-1@test/tmp_fs/code.frog:1:42
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+255
+-1
+
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():4660@test/tmp_fs/code.frog:1:32
+[PRINT] INT():18@test/tmp_fs/code.frog:1:49
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+4660
+18
+
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():127@test/tmp_fs/code.frog:1:30
+[PRINT] INT():128@test/tmp_fs/code.frog:1:52
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+127
+128
+
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+    proc cell ptr int -- int do + @u8 end
+    4 alloc let p do 42 p !u8 p 0 cell print end
+    
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():42@test/tmp_fs/code.frog:2:35
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+42
+
+```
+

@@ -1,0 +1,540 @@
+# Snapshot: code/arithmetic
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 + print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():32@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+32
+
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 - print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():18@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+18
+
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 * print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():175@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+175
+
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 / print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():3@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+3
+
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+2 0 / print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:5: division by zero
+[NOTE] a: INT():2@test/tmp_fs/code.frog:1:1
+[NOTE] b: INT():0@test/tmp_fs/code.frog:1:3
+[EXIT CODE] 1
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+[ERROR] test/tmp_fs/code.frog:1:5: division by zero
+[NOTE] a: INT():2@test/tmp_fs/code.frog:1:1
+[NOTE] b: INT():0@test/tmp_fs/code.frog:1:3
+
+[EXIT CODE] 1
+[ERROR] <cli>:1:0: test/tmp_fs/code.exe failed with exit code 1
+[EXIT CODE] 1
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 % print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():4@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+4
+
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 /% ? print print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[INFO] test/tmp_fs/code.frog:1:9: Stack at compile time:
+[NOTE] stack:
+      0. INT()@test/tmp_fs/code.frog:1:6
+      1. INT()@test/tmp_fs/code.frog:1:6
+[INFO] test/tmp_fs/code.frog:1:9: Stack at runtime:
+[NOTE] stack:
+      0. INT():3@test/tmp_fs/code.frog:1:6
+      1. INT():4@test/tmp_fs/code.frog:1:6
+[PRINT] INT():4@test/tmp_fs/code.frog:1:6
+[PRINT] INT():3@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+4
+3
+
+```
+
+## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 << print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():3200@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+3200
+
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 >> print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():0@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+0
+
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 | print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():31@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+31
+
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 & print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():1@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+1
+
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 7 ^ print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():30@test/tmp_fs/code.frog:1:6
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+30
+
+```
+
+## Case 13
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+25 ~ print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():-26@test/tmp_fs/code.frog:1:4
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+-26
+
+```
+

@@ -1,0 +1,372 @@
+# Snapshot: code/literals_and_comments
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+(no output)
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+```
+
+## Case 02
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+'
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: unterminated character literal
+[EXIT CODE] 1
+```
+
+## Case 03
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+''
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+[EXIT CODE] 1
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+'aa'
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+[EXIT CODE] 1
+```
+
+## Case 05
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+'\n'
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+[EXIT CODE] 1
+```
+
+## Case 06
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+'\t'
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+[EXIT CODE] 1
+```
+
+## Case 07
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+'\''
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:2: unterminated character literal
+[EXIT CODE] 1
+```
+
+## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: unterminated string literal
+[EXIT CODE] 1
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"" ?
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
+[LOC] __init__.py:680:0
+[EXIT CODE] 3
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"abc" ?
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
+[LOC] __init__.py:680:0
+[EXIT CODE] 3
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"abc\n" ?
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
+[LOC] __init__.py:680:0
+[EXIT CODE] 3
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"abc'" ?
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: not implemented: string literals
+[LOC] __init__.py:680:0
+[EXIT CODE] 3
+```
+
+## Case 13
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"abc\"" ?
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:2: unterminated string literal
+[EXIT CODE] 1
+```
+
+## Case 14
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 // comment 
+ print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():1@test/tmp_fs/code.frog:1:1
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+1
+
+```
+
