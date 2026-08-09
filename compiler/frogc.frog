@@ -1749,33 +1749,27 @@ proc decoded-string-unit ptr int int -- int int do
                     end
                     ctx token escape-index raw-string-byte
                     let escaped do
-                        if escaped 92 == do 92 2 else
-                            if escaped 34 == do 34 2 else
-                                if escaped 110 == do 10 2 else
-                                    if escaped 114 == do 13 2 else
-                                        if escaped 116 == do 9 2 else
-                                            if escaped 48 == do 0 2 else
-                                                if escaped 120 == do
-                                                    if escape-index 2 + ctx token raw-string-length >= do
-                                                        "incomplete hexadecimal string escape" fail
-                                                    end
-                                                    ctx token escape-index 1 + raw-string-byte
-                                                    ctx token escape-index 2 + raw-string-byte
-                                                    let high low do
-                                                        if high is-hex-digit low is-hex-digit && ! do
-                                                            "invalid hexadecimal string escape" fail
-                                                        end
-                                                        high hex-value 16 * low hex-value + 4
-                                                    end
-                                                else
-                                                    "invalid string escape" fail
-                                                    0 0
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
+                        if escaped 92 == do 92 2
+                        elif escaped 34 == do 34 2
+                        elif escaped 110 == do 10 2
+                        elif escaped 114 == do 13 2
+                        elif escaped 116 == do 9 2
+                        elif escaped 48 == do 0 2
+                        elif escaped 120 == do
+                            if escape-index 2 + ctx token raw-string-length >= do
+                                "incomplete hexadecimal string escape" fail
                             end
+                            ctx token escape-index 1 + raw-string-byte
+                            ctx token escape-index 2 + raw-string-byte
+                            let high low do
+                                if high is-hex-digit low is-hex-digit && ! do
+                                    "invalid hexadecimal string escape" fail
+                                end
+                                high hex-value 16 * low hex-value + 4
+                            end
+                        else
+                            "invalid string escape" fail
+                            0 0
                         end
                     end
                 end
@@ -2507,9 +2501,9 @@ end
 
 proc emit-c-preamble ptr -- do
     drop
-    "#include <stdint.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  Cell* values;\n  int64_t count;\n  int64_t capacity;\n} FrogStack;\n\nstatic FrogStack frog_stack = {0};\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\nvoid frog_stack_grow(void) {\n  int64_t capacity = frog_stack.capacity == 0 ? 16 : frog_stack.capacity * 2;\n  if (capacity < frog_stack.capacity || (uint64_t)capacity > SIZE_MAX / sizeof(Cell)) frog_runtime_fail();\n  Cell* values = realloc(frog_stack.values, (size_t)capacity * sizeof(Cell));\n  if (values == NULL) frog_runtime_fail();\n  frog_stack.values = values;\n  frog_stack.capacity = capacity;\n}\n\nvoid frog_push(Cell value) {\n  if (frog_stack.count == frog_stack.capacity) frog_stack_grow();\n  frog_stack.values[frog_stack.count++] = value;\n}\n\nCell frog_pop(void) {\n  if (frog_stack.count == 0) frog_runtime_fail();\n  return frog_stack.values[--frog_stack.count];\n}\n\n" emit
+    "#include <stdint.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  Cell* values;\n  int64_t count;\n  int64_t capacity;\n} FrogStack;\n\nstatic FrogStack frog_stack = {0};\nstatic int frog_argc;\nstatic char **frog_argv;\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\nvoid frog_stack_grow(void) {\n  int64_t capacity = frog_stack.capacity == 0 ? 16 : frog_stack.capacity * 2;\n  if (capacity < frog_stack.capacity || (uint64_t)capacity > SIZE_MAX / sizeof(Cell)) frog_runtime_fail();\n  Cell* values = realloc(frog_stack.values, (size_t)capacity * sizeof(Cell));\n  if (values == NULL) frog_runtime_fail();\n  frog_stack.values = values;\n  frog_stack.capacity = capacity;\n}\n\nvoid frog_push(Cell value) {\n  if (frog_stack.count == frog_stack.capacity) frog_stack_grow();\n  frog_stack.values[frog_stack.count++] = value;\n}\n\nCell frog_pop(void) {\n  if (frog_stack.count == 0) frog_runtime_fail();\n  return frog_stack.values[--frog_stack.count];\n}\n\n" emit
     "Cell frog_read_file(const void* path_bytes, Cell path_length, void** data, Cell* data_length) {\n  *data = NULL;\n  *data_length = 0;\n  if (path_length < 0 || (uint64_t)path_length >= SIZE_MAX) return 0;\n  if (path_length > 0 && path_bytes == NULL) return 0;\n  if (path_length > 0 && memchr(path_bytes, 0, (size_t)path_length) != NULL) return 0;\n  char* path = malloc((size_t)path_length + 1);\n  if (path == NULL) return 0;\n  if (path_length > 0) memcpy(path, path_bytes, (size_t)path_length);\n  path[(size_t)path_length] = '\\0';\n  FILE* file = fopen(path, \"rb\");\n  free(path);\n  if (file == NULL) return 0;\n  if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }\n  long end = ftell(file);\n  if (end < 0 || (uint64_t)end > INT64_MAX) { fclose(file); return 0; }\n  if (fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }\n  size_t size = (size_t)end;\n  unsigned char* bytes = malloc(size == 0 ? 1 : size);\n  if (bytes == NULL) { fclose(file); return 0; }\n  if (fread(bytes, 1, size, file) != size) { free(bytes); fclose(file); return 0; }\n  if (fclose(file) != 0) { free(bytes); return 0; }\n  *data = bytes;\n  *data_length = (Cell)size;\n  return 1;\n}\n\n" emit
-    "Cell frog_read_i8(const void* ptr) { int8_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i16(const void* ptr) { int16_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i32(const void* ptr) { int32_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i64(const void* ptr) { int64_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_u8(const void* ptr) { uint8_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\n\n" emit
+    "Cell frog_read_i8(const void* ptr) { int8_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i16(const void* ptr) { int16_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i32(const void* ptr) { int32_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i64(const void* ptr) { int64_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_u8(const void* ptr) { uint8_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nvoid* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }\n\n" emit
     "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i16(void* ptr, Cell value) { int16_t stored = (int16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i32(void* ptr, Cell value) { int32_t stored = (int32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i64(void* ptr, Cell value) { int64_t stored = (int64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\n\n" emit
 end
 
@@ -2701,57 +2695,35 @@ proc compile-arithmetic-intrinsic ptr int -- bool do
     let cc token-index do
         if cc cc-defining-module token-index "+" token-equals do
             cc false compile-add-sub true
+        elif cc cc-defining-module token-index "-" token-equals do
+            cc true compile-add-sub true
+        elif cc cc-defining-module token-index "*" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a * b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "/" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "%" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a % b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "/%" token-equals do
+            cc type-int type-expect
+            cc type-int type-expect
+            cc type-int type-push
+            cc type-int type-push
+            cc "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); frog_push(a % b); }" emit-line
+            true
+        elif cc cc-defining-module token-index "<<" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a << b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index ">>" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >> b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "|" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a | b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "&" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a & b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "^" token-equals do
+            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a ^ b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "~" token-equals do
+            cc type-int type-int "frog_push(~frog_pop());" compile-fixed-unary true
         else
-            if cc cc-defining-module token-index "-" token-equals do
-                cc true compile-add-sub true
-            else
-                if cc cc-defining-module token-index "*" token-equals do
-                    cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a * b); }" compile-fixed-binary true
-                else
-                    if cc cc-defining-module token-index "/" token-equals do
-                        cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); }" compile-fixed-binary true
-                    else
-                        if cc cc-defining-module token-index "%" token-equals do
-                            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a % b); }" compile-fixed-binary true
-                        else
-                            if cc cc-defining-module token-index "/%" token-equals do
-                                cc type-int type-expect
-                                cc type-int type-expect
-                                cc type-int type-push
-                                cc type-int type-push
-                                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); frog_push(a % b); }" emit-line
-                                true
-                            else
-                                if cc cc-defining-module token-index "<<" token-equals do
-                                    cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a << b); }" compile-fixed-binary true
-                                else
-                                    if cc cc-defining-module token-index ">>" token-equals do
-                                        cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >> b); }" compile-fixed-binary true
-                                    else
-                                        if cc cc-defining-module token-index "|" token-equals do
-                                            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a | b); }" compile-fixed-binary true
-                                        else
-                                            if cc cc-defining-module token-index "&" token-equals do
-                                                cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a & b); }" compile-fixed-binary true
-                                            else
-                                                if cc cc-defining-module token-index "^" token-equals do
-                                                    cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a ^ b); }" compile-fixed-binary true
-                                                else
-                                                    if cc cc-defining-module token-index "~" token-equals do
-                                                        cc type-int type-int "frog_push(~frog_pop());" compile-fixed-unary true
-                                                    else
-                                                        false
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
+            false
         end
     end
 end
@@ -2760,40 +2732,24 @@ proc compile-logic-comparison-intrinsic ptr int -- bool do
     let cc token-index do
         if cc cc-defining-module token-index "&&" token-equals do
             cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a && b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "||" token-equals do
+            cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a || b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "!" token-equals do
+            cc type-bool type-bool "frog_push(!frog_pop());" compile-fixed-unary true
+        elif cc cc-defining-module token-index "==" token-equals do
+            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "!=" token-equals do
+            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a != b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "<" token-equals do
+            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a < b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index ">" token-equals do
+            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a > b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index "<=" token-equals do
+            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a <= b); }" compile-fixed-binary true
+        elif cc cc-defining-module token-index ">=" token-equals do
+            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >= b); }" compile-fixed-binary true
         else
-            if cc cc-defining-module token-index "||" token-equals do
-                cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a || b); }" compile-fixed-binary true
-            else
-                if cc cc-defining-module token-index "!" token-equals do
-                    cc type-bool type-bool "frog_push(!frog_pop());" compile-fixed-unary true
-                else
-                    if cc cc-defining-module token-index "==" token-equals do
-                        cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }" compile-fixed-binary true
-                    else
-                        if cc cc-defining-module token-index "!=" token-equals do
-                            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a != b); }" compile-fixed-binary true
-                        else
-                            if cc cc-defining-module token-index "<" token-equals do
-                                cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a < b); }" compile-fixed-binary true
-                            else
-                                if cc cc-defining-module token-index ">" token-equals do
-                                    cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a > b); }" compile-fixed-binary true
-                                else
-                                    if cc cc-defining-module token-index "<=" token-equals do
-                                        cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a <= b); }" compile-fixed-binary true
-                                    else
-                                        if cc cc-defining-module token-index ">=" token-equals do
-                                            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >= b); }" compile-fixed-binary true
-                                        else
-                                            false
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
+            false
         end
     end
 end
@@ -2910,113 +2866,73 @@ proc compile-memory-io-intrinsic ptr int -- bool do
             true
         elif cc cc-defining-module token-index "cast" token-equals do
             cc compile-cast-intrinsic true
-        else
-            if cc cc-defining-module token-index "alloc" token-equals do
-                cc type-int type-expect cc type-ptr type-push
-                cc "frog_push((Cell)(intptr_t)frog_alloc(frog_pop()));" emit-line true
-            else
-                if cc cc-defining-module token-index "@i8" token-equals do
-                    cc token-index "frog_push(frog_read_i8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "alloc" token-equals do
+            cc type-int type-expect cc type-ptr type-push
+            cc "frog_push((Cell)(intptr_t)frog_alloc(frog_pop()));" emit-line true
+        elif cc cc-defining-module token-index "args" token-equals do
+            cc type-ptr type-push
+            cc type-int type-push
+            cc "frog_push((Cell)(intptr_t)frog_argv); frog_push((Cell)frog_argc);" emit-line true
+        elif cc cc-defining-module token-index "@ptr" token-equals do
+            cc type-ptr type-expect
+            cc type-ptr type-push
+            cc "frog_push((Cell)(intptr_t)frog_read_ptr((const void *)(intptr_t)frog_pop()));" emit-line true
+        elif cc cc-defining-module token-index "@i8" token-equals do
+            cc token-index "frog_push(frog_read_i8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@i16" token-equals do
+            cc token-index "frog_push(frog_read_i16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@i32" token-equals do
+            cc token-index "frog_push(frog_read_i32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@i64" token-equals do
+            cc token-index "frog_push(frog_read_i64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@u8" token-equals do
+            cc token-index "frog_push(frog_read_u8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@u16" token-equals do
+            cc token-index "frog_push(frog_read_u16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@u32" token-equals do
+            cc token-index "frog_push(frog_read_u32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "@u64" token-equals do
+            cc token-index "frog_push(frog_read_u64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "!i8" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i8((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!i16" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i16((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!i32" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i32((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!i64" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i64((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!u8" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u8((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!u16" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u16((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!u32" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u32((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "!u64" token-equals do
+            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u64((void *)(intptr_t)p, v); }" compile-write-memory true
+        elif cc cc-defining-module token-index "print" token-equals do
+            cc type-pop
+            let value-type do
+                if value-type type-int == do
+                    cc "printf(\"%lld\\n\", (long long)frog_pop());" emit-line
+                elif value-type type-bool == do
+                    cc "fputs(frog_pop() ? \"true\\n\" : \"false\\n\", stdout);" emit-line
                 else
-                    if cc cc-defining-module token-index "@i16" token-equals do
-                        cc token-index "frog_push(frog_read_i16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                    else
-                        if cc cc-defining-module token-index "@i32" token-equals do
-                            cc token-index "frog_push(frog_read_i32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                        else
-                            if cc cc-defining-module token-index "@i64" token-equals do
-                                cc token-index "frog_push(frog_read_i64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                            else
-                                if cc cc-defining-module token-index "@u8" token-equals do
-                                    cc token-index "frog_push(frog_read_u8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                                else
-                                    if cc cc-defining-module token-index "@u16" token-equals do
-                                        cc token-index "frog_push(frog_read_u16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                                    else
-                                        if cc cc-defining-module token-index "@u32" token-equals do
-                                            cc token-index "frog_push(frog_read_u32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                                        else
-                                            if cc cc-defining-module token-index "@u64" token-equals do
-                                                cc token-index "frog_push(frog_read_u64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-                                            else
-                                                if cc cc-defining-module token-index "!i8" token-equals do
-                                                    cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i8((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                else
-                                                    if cc cc-defining-module token-index "!i16" token-equals do
-                                                        cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i16((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                    else
-                                                        if cc cc-defining-module token-index "!i32" token-equals do
-                                                            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i32((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                        else
-                                                            if cc cc-defining-module token-index "!i64" token-equals do
-                                                                cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i64((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                            else
-                                                                if cc cc-defining-module token-index "!u8" token-equals do
-                                                                    cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u8((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                                else
-                                                                    if cc cc-defining-module token-index "!u16" token-equals do
-                                                                        cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u16((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                                    else
-                                                                        if cc cc-defining-module token-index "!u32" token-equals do
-                                                                            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u32((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                                        else
-                                                                            if cc cc-defining-module token-index "!u64" token-equals do
-                                                                                cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u64((void *)(intptr_t)p, v); }" compile-write-memory true
-                                                                            else
-                                                                                if cc cc-defining-module token-index "print" token-equals do
-                                                                                    cc type-pop
-                                                                                    let value-type do
-                                                                                        if value-type type-int == do
-                                                                                            cc "printf(\"%lld\\n\", (long long)frog_pop());" emit-line
-                                                                                        else
-                                                                                            if value-type type-bool == do
-                                                                                                cc "fputs(frog_pop() ? \"true\\n\" : \"false\\n\", stdout);" emit-line
-                                                                                            else
-                                                                                                "printing this type is not supported" fail
-                                                                                            end
-                                                                                        end
-                                                                                    end
-                                                                                    true
-                                                                                else
-                                                                                    if cc cc-defining-module token-index "putc" token-equals do
-                                                                                        cc type-int type-expect cc "putchar((int)(unsigned char)frog_pop());" emit-line true
-                                                                                    else
-                                                                                        if cc cc-defining-module token-index "getc" token-equals do
-                                                                                            cc type-int type-push cc "frog_push((Cell)getchar());" emit-line true
-                                                                                        else
-                                                                                            if cc cc-defining-module token-index "eputc" token-equals do
-                                                                                                cc type-int type-expect cc "fputc((int)(unsigned char)frog_pop(), stderr);" emit-line true
-                                                                                            else
-                                                                                                if cc cc-defining-module token-index "exit" token-equals do
-                                                                                                    cc type-int type-expect cc "exit((int)frog_pop());" emit-line true
-                                                                                                else
-                                                                                                    if cc cc-defining-module token-index "?" token-equals do
-                                                                                                        true
-                                                                                                    else
-                                                                                                        false
-                                                                                                    end
-                                                                                                end
-                                                                                            end
-                                                                                        end
-                                                                                    end
-                                                                                end
-                                                                            end
-                                                                        end
-                                                                    end
-                                                                end
-                                                            end
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
+                    "printing this type is not supported" fail
                 end
             end
+            true
+        elif cc cc-defining-module token-index "putc" token-equals do
+            cc type-int type-expect cc "putchar((int)(unsigned char)frog_pop());" emit-line true
+        elif cc cc-defining-module token-index "getc" token-equals do
+            cc type-int type-push cc "frog_push((Cell)getchar());" emit-line true
+        elif cc cc-defining-module token-index "eputc" token-equals do
+            cc type-int type-expect cc "fputc((int)(unsigned char)frog_pop(), stderr);" emit-line true
+        elif cc cc-defining-module token-index "exit" token-equals do
+            cc type-int type-expect cc "exit((int)frog_pop());" emit-line true
+        elif cc cc-defining-module token-index "?" token-equals do
+            true
+        else
+            false
         end
     end
 end
@@ -3593,7 +3509,7 @@ proc emit-main-wrapper ptr -- do
     let program do
         program program-root-module
         let ctx do
-        "int main(void) {\n  " emit
+        "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n  " emit
         ctx ctx ctx-main-proc proc-global-id-at emit-proc-name
         "();\n  if (frog_stack.count != 0) frog_runtime_fail();\n  free(frog_stack.values);\n  return 0;\n}\n" emit
         end

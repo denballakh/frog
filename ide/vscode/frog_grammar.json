@@ -38,7 +38,7 @@
     "operators": {
       "patterns": [
         { 
-          "match": "@i(8|16|32|64)|@u(8|16|32|64)|!i(8|16|32|64)|!u(8|16|32|64)|\\+|-|\\*|/|%|/%|<<|>>|\\||&|\\^|~|&&|\\|\\||!|==|!=|<=|>=|<|>",
+          "match": "@ptr|@i(8|16|32|64)|@u(8|16|32|64)|!i(8|16|32|64)|!u(8|16|32|64)|\\+|-|\\*|/|%|/%|<<|>>|\\||&|\\^|~|&&|\\|\\||!|==|!=|<=|>=|<|>",
           "name": "keyword.operator.frog"
         }
       ]
@@ -54,7 +54,7 @@
     "special": {
       "patterns": [
         {
-          "match": "\\?|\\b(dup|dup2|drop|swap|swap2|rot|cast|alloc|print|putc|getc|read-file|eputc|exit)\\b",
+          "match": "\\?|\\b(dup|dup2|drop|swap|swap2|rot|cast|alloc|args|print|putc|getc|read-file|eputc|exit)\\b",
           "name": "support.function"
         }
       ]

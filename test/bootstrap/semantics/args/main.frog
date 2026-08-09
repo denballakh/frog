@@ -1,0 +1,25 @@
+proc pointer-bytes -- int do 8 end
+
+proc argument-at ptr int -- ptr do
+    pointer-bytes * + @ptr
+end
+
+proc print-c-string ptr -- do
+    while dup @u8 0 != do
+        dup @u8 putc
+        1 +
+    end
+    drop
+    10 putc
+end
+
+proc main -- do
+    args
+    let argv argc do
+        argc print
+        argv 0 argument-at @u8 putc
+        10 putc
+        argv 1 argument-at print-c-string
+        argv 2 argument-at print-c-string
+    end
+end

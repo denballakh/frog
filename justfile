@@ -31,6 +31,9 @@ _compile-frogc source output:
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -c compiler/frogc_cli.c -o "{{output}}.cli.o"
     gcc "{{output}}.core.o" "{{output}}.cli.o" -o "{{output}}"
 
+_compile-frogc-filter source output:
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"
+
 [group("bootstrap")]
 frogc-seed:
     mkdir -p build
@@ -64,9 +67,9 @@ bootstrap-check: frogc-seed
 [group("bootstrap")]
 bootstrap-update: frogc-seed
     build/frogc < compiler/frogc.frog > build/frogc.candidate1.c
-    just _compile-frogc build/frogc.candidate1.c build/frogc.candidate1
+    just _compile-frogc-filter build/frogc.candidate1.c build/frogc.candidate1
     build/frogc.candidate1 < compiler/frogc.frog > build/frogc.candidate2.c
-    just _compile-frogc build/frogc.candidate2.c build/frogc.candidate2
+    just _compile-frogc-filter build/frogc.candidate2.c build/frogc.candidate2
     build/frogc.candidate2 < compiler/frogc.frog > build/frogc.candidate3.c
     cmp build/frogc.candidate2.c build/frogc.candidate3.c
     cp build/frogc.candidate2.c compiler/frogc.c

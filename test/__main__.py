@@ -263,6 +263,7 @@ code_examples: list[SourceInput] = [
     ),
     '"README.md" read-file let data length success do success print length 0 > print data @u8 putc 10 putc end',
     '"frog-read-file-missing" read-file let data length success do data drop length print success print end',
+    'args let argv argc do argc print argv @ptr @u8 putc 10 putc end',
     SourceSpec(raw_source=''),
     SourceSpec(raw_source='1 print\n'),
 ]
@@ -281,11 +282,12 @@ code_example_groups = [
     CodeExampleGroup('words', code_examples[124:126]),
     CodeExampleGroup('procedures', code_examples[126:138]),
     CodeExampleGroup('casts_and_memory', code_examples[138:157]),
-    CodeExampleGroup('program_structure', code_examples[157:159]),
+    CodeExampleGroup('process_arguments', code_examples[157:158]),
+    CodeExampleGroup('program_structure', code_examples[158:160]),
 ]
 
 assert sum(len(group.examples) for group in code_example_groups) == len(code_examples)
-assert len(code_examples) == 159
+assert len(code_examples) == 160
 
 file_code_examples = [
     FileCodeExample(

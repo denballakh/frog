@@ -135,6 +135,7 @@ Commands:
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
 - Generated C uses a runtime cell stack and numeric procedure symbols, so source punctuation does not become a C identifier.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
+- `bootstrap-update` compiles candidate compiler generations as standalone stdin-to-stdout filters. This keeps fixed-point regeneration independent of the temporary native CLI entrypoint ABI.
 
 ## Language Semantics
 
@@ -143,6 +144,7 @@ Commands:
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 - `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
+- `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads one pointer-sized entry as `ptr`.
 
 ## Implementation Conventions And Gotchas
 

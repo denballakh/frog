@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-int frog_compiler_main(void);
+int frog_compiler_main(int argc, char **argv);
 
 const char *const gcc_flags[] = {
     "-std=c11", "-pedantic", "-Wall", "-Wextra", "-Wconversion", "-Werror", "-O2", "-x", "c", NULL,
@@ -145,7 +145,8 @@ int compile_frog(const unsigned char *source, size_t length, const char *directo
             _exit(1);
         }
         (void)close(input[0]); (void)close(input[1]); (void)close(output_fd); (void)close(directory_fd);
-        int result = frog_compiler_main();
+        char *compiler_argv[] = {"frogc", NULL};
+        int result = frog_compiler_main(1, compiler_argv);
         if (fflush(stdout) != 0) result = 1;
         _exit(result);
     }
@@ -273,7 +274,7 @@ int build_command(int argc, char **argv) {
 
 #ifndef FROG_CLI_NO_MAIN
 int main(int argc, char **argv) {
-    if (argc == 1) return frog_compiler_main();
+    if (argc == 1) return frog_compiler_main(argc, argv);
     if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) { usage(); return 0; }
     if (strcmp(argv[1], "run") == 0) return run_command(argc - 2, argv + 2);
     if (strcmp(argv[1], "build") == 0) return build_command(argc - 2, argv + 2);

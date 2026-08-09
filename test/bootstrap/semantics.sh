@@ -14,6 +14,7 @@ mkdir -p "$output"
 run_ok() {
     local case_name=$1
     local expected=$2
+    shift 2
     local fixture="$fixtures/$case_name"
 
     (
@@ -22,7 +23,7 @@ run_ok() {
     )
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 \
         "$output/$case_name.c" -o "$output/$case_name"
-    "$output/$case_name" > "$output/$case_name.out"
+    "$output/$case_name" "$@" > "$output/$case_name.out"
     printf '%s' "$expected" | cmp - "$output/$case_name.out"
 }
 
@@ -58,6 +59,7 @@ run_ok bool_cast $'1\n0\n1\n'
 run_ok integer_max $'9223372036854775807\n'
 run_ok macro_shadow $'11\n21\n31\n'
 run_ok characters $'65\n233\n8364\n128512\n'
+run_ok args $'3\n/\nfrog\npond\n' frog pond
 
 run_error integer_overflow 'integer literal exceeds the signed 64-bit range'
 run_error character_empty 'invalid character literal'

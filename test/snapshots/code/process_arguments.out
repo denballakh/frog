@@ -1,0 +1,27 @@
+# Snapshot: code/process_arguments
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+proc main -- do
+    args let argv argc do argc print argv @ptr @u8 putc 10 putc end
+end
+```
+
+### Run
+
+Command:
+
+```text
+build/frogc run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+1
+b
+```
+

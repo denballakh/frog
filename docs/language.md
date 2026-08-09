@@ -177,6 +177,11 @@ end
 - `swap2`: `a b x y -- x y a b`
 - `rot`: `a b c -- b c a`
 
+### Process Arguments
+
+- `args`: `-- ptr int` pushes the raw C `argv` pointer followed by C `argc`. The count includes `argv[0]`.
+- `argv` points to an array of C string pointers whose byte stride is the target C platform's pointer size. Use `@ptr` to load an entry; each resulting string is NUL-terminated and can be read with `@u8`.
+
 ### Memory
 
 - `alloc`: `size_bytes -- ptr` allocates a byte buffer.
@@ -185,6 +190,7 @@ end
 - `int ptr +` is not supported.
 - Signed pointer reads: `@i8`, `@i16`, `@i32`, `@i64`, each `ptr -- int`.
 - Unsigned pointer reads: `@u8`, `@u16`, `@u32`, `@u64`, each `ptr -- int`.
+- Pointer reads: `@ptr`, with stack effect `ptr -- ptr`; it copies one target-platform pointer-sized value.
 - Signed pointer writes: `!i8`, `!i16`, `!i32`, `!i64`, each `int ptr --`.
 - Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
 - Generated C uses `malloc`, `void*`, byte pointer arithmetic, and fixed-width integer loads/stores from `<stdint.h>`.
