@@ -11,6 +11,7 @@ proc type-ptr -- int do 3 end
 proc type-type -- int do 4 end
 proc type-none -- int do 0 end
 proc type-nominal-base -- int do 1000 end
+proc type-function-base -- int do 1 32 << end
 
 proc max-int -- int do 1 62 << dup 1 - + end
 
@@ -51,7 +52,8 @@ proc program-token-count-offset -- int do 40 end
 proc program-strings-offset -- int do 48 end
 proc program-string-count-offset -- int do 56 end
 proc program-next-nominal-type-offset -- int do 72 end
-proc program-bytes -- int do 80 end
+proc program-next-function-type-offset -- int do 80 end
+proc program-bytes -- int do 88 end
 
 proc string-bytes-offset -- int do 0 end
 proc string-length-offset -- int do 8 end
@@ -99,6 +101,15 @@ proc union-case-bytes -- int do 32 end
 proc union-payload-offset -- int do cell-bytes end
 proc union-storage-bytes -- int do cell-bytes 2 * end
 
+proc function-name-start-offset -- int do 0 end
+proc function-name-length-offset -- int do 8 end
+proc function-input-start-offset -- int do 16 end
+proc function-input-count-offset -- int do 24 end
+proc function-output-start-offset -- int do 32 end
+proc function-output-count-offset -- int do 40 end
+proc function-type-offset -- int do 48 end
+proc function-bytes -- int do 56 end
+
 proc ctx-source-offset -- int do 0 end
 proc ctx-source-length-offset -- int do 8 end
 proc ctx-tokens-offset -- int do 16 end
@@ -133,7 +144,11 @@ proc ctx-unions-offset -- int do 240 end
 proc ctx-union-count-offset -- int do 248 end
 proc ctx-union-cases-offset -- int do 256 end
 proc ctx-union-case-count-offset -- int do 264 end
-proc ctx-bytes -- int do 272 end
+proc ctx-functions-offset -- int do 272 end
+proc ctx-function-count-offset -- int do 280 end
+proc ctx-function-types-offset -- int do 288 end
+proc ctx-function-type-count-offset -- int do 296 end
+proc ctx-bytes -- int do 304 end
 
 proc import-path-token-offset -- int do 0 end
 proc import-name-token-offset -- int do 8 end
@@ -155,6 +170,7 @@ proc scope-procedure -- int do 1 end
 proc scope-macro -- int do 2 end
 proc scope-record -- int do 3 end
 proc scope-union -- int do 4 end
+proc scope-function -- int do 5 end
 
 proc load-new -- int do 0 end
 proc load-loading -- int do 1 end
@@ -389,6 +405,10 @@ proc ctx-unions ptr -- ptr do ctx-unions-offset pointer-field-read end
 proc ctx-union-count ptr -- int do ctx-union-count-offset field-read end
 proc ctx-union-cases ptr -- ptr do ctx-union-cases-offset pointer-field-read end
 proc ctx-union-case-count ptr -- int do ctx-union-case-count-offset field-read end
+proc ctx-functions ptr -- ptr do ctx-functions-offset pointer-field-read end
+proc ctx-function-count ptr -- int do ctx-function-count-offset field-read end
+proc ctx-function-types ptr -- ptr do ctx-function-types-offset pointer-field-read end
+proc ctx-function-type-count ptr -- int do ctx-function-type-count-offset field-read end
 
 proc set-ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
 proc set-ctx-source-length int ptr -- do ctx-source-length-offset field-write end
@@ -423,6 +443,10 @@ proc set-ctx-unions ptr ptr -- do ctx-unions-offset pointer-field-write end
 proc set-ctx-union-count int ptr -- do ctx-union-count-offset field-write end
 proc set-ctx-union-cases ptr ptr -- do ctx-union-cases-offset pointer-field-write end
 proc set-ctx-union-case-count int ptr -- do ctx-union-case-count-offset field-write end
+proc set-ctx-functions ptr ptr -- do ctx-functions-offset pointer-field-write end
+proc set-ctx-function-count int ptr -- do ctx-function-count-offset field-write end
+proc set-ctx-function-types ptr ptr -- do ctx-function-types-offset pointer-field-write end
+proc set-ctx-function-type-count int ptr -- do ctx-function-type-count-offset field-write end
 proc set-ctx-is-root bool ptr -- do
     let value ctx do
         if value do 1 else 0 end
@@ -439,6 +463,7 @@ proc program-token-count ptr -- int do program-token-count-offset field-read end
 proc program-strings ptr -- ptr do program-strings-offset pointer-field-read end
 proc program-string-count ptr -- int do program-string-count-offset field-read end
 proc program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
+proc program-next-function-type ptr -- int do program-next-function-type-offset field-read end
 
 proc set-program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
 proc set-program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
@@ -449,6 +474,7 @@ proc set-program-token-count int ptr -- do program-token-count-offset field-writ
 proc set-program-strings ptr ptr -- do program-strings-offset pointer-field-write end
 proc set-program-string-count int ptr -- do program-string-count-offset field-write end
 proc set-program-next-nominal-type int ptr -- do program-next-nominal-type-offset field-write end
+proc set-program-next-function-type int ptr -- do program-next-function-type-offset field-write end
 
 proc string-address ptr int -- ptr do
     let program index do program program-strings index string-bytes * + end
@@ -488,6 +514,16 @@ proc program-allocate-nominal-type ptr -- int do
         let nominal-type do
             nominal-type 1 + program set-program-next-nominal-type
             nominal-type
+        end
+    end
+end
+
+proc program-allocate-function-type ptr -- int do
+    let program do
+        program program-next-function-type
+        let function-type do
+            function-type 1 + program set-program-next-function-type
+            function-type
         end
     end
 end
@@ -1005,6 +1041,51 @@ proc set-union-case-payload-type int ptr int -- do
     let value ctx index do value ctx index union-case-payload-type-offset set-union-case-entry-field end
 end
 
+proc function-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-functions index function-bytes * +
+    end
+end
+
+proc function-entry-field ptr int int -- int do
+    let ctx index offset do
+        ctx index function-address offset field-read
+    end
+end
+
+proc set-function-entry-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index function-address offset field-write
+    end
+end
+
+proc function-name-start-at ptr int -- int do function-name-start-offset function-entry-field end
+proc function-name-length-at ptr int -- int do function-name-length-offset function-entry-field end
+proc function-input-start-at ptr int -- int do function-input-start-offset function-entry-field end
+proc function-input-count-at ptr int -- int do function-input-count-offset function-entry-field end
+proc function-output-start-at ptr int -- int do function-output-start-offset function-entry-field end
+proc function-output-count-at ptr int -- int do function-output-count-offset function-entry-field end
+proc function-type-at ptr int -- int do function-type-offset function-entry-field end
+
+proc function-signature-type-at ptr int -- int do
+    let ctx index do
+        ctx ctx-function-types index cell-bytes * field-read
+    end
+end
+
+proc set-function-signature-type int ptr int -- do
+    let value ctx index do
+        value ctx ctx-function-types index cell-bytes * field-write
+    end
+end
+
+proc add-function-signature-type ptr int -- do
+    let ctx value do
+        value ctx ctx ctx-function-type-count set-function-signature-type
+        ctx ctx-function-type-count 1 + ctx set-ctx-function-type-count
+    end
+end
+
 proc type-at ptr int -- int do
     let ctx index do
         ctx ctx-types index cell-bytes * field-read
@@ -1044,6 +1125,7 @@ proc reserved-name ptr int -- bool do
         ctx token-index "record" token-equals ||
         ctx token-index "union" token-equals ||
         ctx token-index "case" token-equals ||
+        ctx token-index "fn" token-equals ||
         ctx token-index "--" token-equals ||
     end
 end
@@ -1404,6 +1486,31 @@ end
 
 proc find-union-case ptr int ptr int -- int do 0 find-union-case-from end
 
+proc function-name-equals-token ptr int int -- bool do
+    let ctx function-index token-index do
+        ctx ctx-source
+        ctx function-index function-name-start-at
+        +
+        ctx function-index function-name-length-at
+        ctx token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-function-from ptr int int -- int do
+    let ctx token-index function-index do
+        if function-index ctx ctx-function-count >= do
+            0 1 -
+        elif ctx function-index token-index function-name-equals-token do
+            function-index
+        else
+            ctx token-index function-index 1 + find-function-from
+        end
+    end
+end
+
+proc find-function ptr int -- int do 0 find-function-from end
+
 proc fail-duplicate-declaration ptr int -- do
     let ctx token-index do
         "frogc: " emit-error
@@ -1501,6 +1608,7 @@ proc scan-one-record ptr int -- int do
                 ctx name-token find-proc 0 >=
                 ctx name-token find-macro 0 >= ||
                 ctx name-token find-union 0 >= ||
+                ctx name-token find-function 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -1657,6 +1765,7 @@ proc scan-one-union ptr int -- int do
                 ctx name-token find-proc 0 >=
                 ctx name-token find-macro 0 >= ||
                 ctx name-token find-record 0 >= ||
+                ctx name-token find-function 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -1675,6 +1784,121 @@ proc scan-one-union ptr int -- int do
                 let next-token do
                     union-index 1 + ctx set-ctx-union-count
                     next-token
+                end
+            end
+        end
+    end
+end
+
+proc parse-function-signature-type-token ptr int -- int do
+    let ctx token-index do
+        ctx token-index require-word
+        if ctx token-index reserved-name do
+            "unknown type in function signature" fail
+        end
+        ctx token-index parse-type-token
+    end
+end
+
+proc scan-one-function ptr int -- int do
+    let ctx function-token do
+        function-token 1 +
+        let name-token do
+            if
+                name-token ctx ctx-token-count >=
+                if dup ! do
+                    drop
+                    ctx name-token "--" token-equals
+                    ctx name-token "end" token-equals ||
+                end
+            do
+                "expected function name" fail
+            end
+            ctx name-token require-word
+            if
+                ctx name-token identifier-token !
+                ctx name-token reserved-name ||
+                ctx name-token "int" token-equals ||
+                ctx name-token "bool" token-equals ||
+                ctx name-token "ptr" token-equals ||
+            do
+                "invalid function name" fail
+            end
+            if ctx name-token find-function 0 >= do
+                "frogc: " emit-error
+                "duplicate function name: " emit-error
+                ctx name-token token-slice emit-error
+                10 eputc
+                1 exit
+            end
+            if
+                ctx name-token find-proc 0 >=
+                ctx name-token find-macro 0 >= ||
+                ctx name-token find-record 0 >= ||
+                ctx name-token find-union 0 >= ||
+            do
+                ctx name-token fail-duplicate-declaration
+            end
+            ctx ctx-function-count
+            let function-index do
+                ctx name-token token-start-at
+                ctx function-index function-name-start-offset set-function-entry-field
+                ctx name-token token-length-at
+                ctx function-index function-name-length-offset set-function-entry-field
+                ctx ctx-program program-allocate-function-type
+                ctx function-index function-type-offset set-function-entry-field
+                ctx ctx-function-type-count
+                ctx function-index function-input-start-offset set-function-entry-field
+                name-token 1 + 0
+                while
+                    let token-index count do
+                        token-index count
+                        token-index ctx ctx-token-count <
+                        if dup do
+                            drop
+                            ctx token-index "--" token-equals !
+                            ctx token-index "end" token-equals ! &&
+                        end
+                    end
+                do
+                    let token-index count do
+                        ctx token-index parse-function-signature-type-token ctx swap add-function-signature-type
+                        token-index 1 + count 1 +
+                    end
+                end
+                let token-index input-count do
+                    if token-index ctx ctx-token-count >= do
+                        "expected -- in function signature" fail
+                    end
+                    if ctx token-index "--" token-equals ! do
+                        "expected -- in function signature" fail
+                    end
+                    input-count ctx function-index function-input-count-offset set-function-entry-field
+                    ctx ctx-function-type-count
+                    ctx function-index function-output-start-offset set-function-entry-field
+                    token-index 1 + 0
+                    while
+                        let output-token output-count do
+                            output-token output-count
+                            output-token ctx ctx-token-count <
+                            if dup do
+                                drop ctx output-token "end" token-equals !
+                            end
+                        end
+                    do
+                        let output-token output-count do
+                            ctx output-token parse-function-signature-type-token ctx swap add-function-signature-type
+                            output-token 1 + output-count 1 +
+                        end
+                    end
+                    let output-token output-count do
+                        if output-token ctx ctx-token-count >= do
+                            "expected end after function signature" fail
+                        end
+                        output-count ctx function-index function-output-count-offset set-function-entry-field
+                        function-index 1 + ctx set-ctx-function-count
+                        output-token 1 +
+                    end
                 end
             end
         end
@@ -1718,6 +1942,7 @@ proc scan-macro-body ptr int -- int do
                         ctx token-index "extern" token-equals ||
                         ctx token-index "record" token-equals ||
                         ctx token-index "union" token-equals ||
+                        ctx token-index "fn" token-equals ||
                     do
                         "declarations are not allowed in macro bodies" fail
                         token-index 1 + depth true
@@ -1764,6 +1989,7 @@ proc validate-macro-body ptr int int -- do
                                     ctx token-index "extern" token-equals ||
                                     ctx token-index "record" token-equals ||
                                     ctx token-index "union" token-equals ||
+                                    ctx token-index "fn" token-equals ||
                                 do
                                     "declarations are not allowed in macro bodies" fail
                                     token-index 1 + depth
@@ -1868,6 +2094,7 @@ proc scan-one-macro ptr int -- int do
             if
                 ctx name-token find-record 0 >=
                 ctx name-token find-union 0 >= ||
+                ctx name-token find-function 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -1913,6 +2140,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
                         ctx token-index "extern" token-equals ||
                         ctx token-index "record" token-equals ||
                         ctx token-index "union" token-equals ||
+                        ctx token-index "fn" token-equals ||
                     do
                         "declarations are only allowed at top level" fail
                         depth
@@ -1976,6 +2204,7 @@ proc allocate-proc ptr int bool -- int do
         if
             ctx name-token find-record 0 >=
             ctx name-token find-union 0 >= ||
+            ctx name-token find-function 0 >= ||
         do
             ctx name-token fail-duplicate-declaration
         end
@@ -2361,6 +2590,8 @@ proc scan-declarations ptr -- do
         0 ctx set-ctx-record-field-count
         0 ctx set-ctx-union-count
         0 ctx set-ctx-union-case-count
+        0 ctx set-ctx-function-count
+        0 ctx set-ctx-function-type-count
         0
         while dup ctx ctx-token-count < do
             let token-index do
@@ -2400,6 +2631,11 @@ proc scan-declarations ptr -- do
                     ctx token-index "union" token-equals &&
                 do
                     ctx token-index scan-one-union
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "fn" token-equals &&
+                do
+                    ctx token-index scan-one-function
                 else
                     if ctx ctx-is-root do
                         "only declarations and imports are allowed at top level" fail
@@ -3365,6 +3601,8 @@ proc initialize-module-source ptr ptr int -- do
         ctx ctx-token-count 1 + record-field-bytes * alloc ctx set-ctx-record-fields
         ctx ctx-token-count 1 + union-bytes * alloc ctx set-ctx-unions
         ctx ctx-token-count 1 + union-case-bytes * alloc ctx set-ctx-union-cases
+        ctx ctx-token-count 1 + function-bytes * alloc ctx set-ctx-functions
+        ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-function-types
         0 ctx set-ctx-scope-count
         resolve-new ctx set-ctx-resolve-state
         ctx scan-declarations
@@ -3552,10 +3790,17 @@ proc resolve-one-import ptr int -- do
                         "union import alias must be an identifier" fail
                     end
                     if
+                        target target-symbol scope-kind-at scope-function ==
+                        ctx visible-token identifier-token ! &&
+                    do
+                        "function import alias must be an identifier" fail
+                    end
+                    if
                         ctx visible-token find-proc 0 >=
                         ctx visible-token find-macro 0 >= ||
                         ctx visible-token find-record 0 >= ||
                         ctx visible-token find-union 0 >= ||
+                        ctx visible-token find-function 0 >= ||
                     do
                         "import alias conflict" fail
                     end
@@ -3628,6 +3873,22 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
+            while dup ctx ctx-function-count < do
+                dup
+                let function-index do
+                    ctx
+                    ctx
+                    ctx function-index function-name-start-at
+                    ctx function-index function-name-length-at
+                    scope-function
+                    ctx
+                    function-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            0
             while dup ctx ctx-macro-count < do
                 dup
                 let macro-index do
@@ -3693,6 +3954,10 @@ proc resolve-nominal-type-token ptr int ptr int -- int do
                         ctx symbol-index scope-definition-module-at
                         ctx symbol-index scope-definition-index-at
                         union-type-at
+                    elif kind scope-function == do
+                        ctx symbol-index scope-definition-module-at
+                        ctx symbol-index scope-definition-index-at
+                        function-type-at
                     else
                         error-message error-length fail
                         0
@@ -3772,12 +4037,36 @@ proc resolve-module-union-case-types ptr -- do
     end
 end
 
+proc resolve-module-function-signature-types ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-function-type-count < do
+            dup
+            let type-index do
+                ctx type-index function-signature-type-at
+                let value-type do
+                    if value-type 0 < do
+                        ctx
+                        value-type unresolved-type-token-index
+                        "unknown type in function signature"
+                        resolve-nominal-type-token
+                        ctx type-index set-function-signature-type
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
 proc resolve-all-types ptr -- do
     let program do
         program program-module-head
         while dup int cast 0 != do
             dup resolve-module-record-field-types
             dup resolve-module-union-case-types
+            dup resolve-module-function-signature-types
             dup resolve-module-signature-types
             ctx-next-module
         end
@@ -3836,6 +4125,83 @@ proc external-contracts-equal ptr int ptr int -- bool do
     let first first-index second second-index do
         first first-index second second-index external-inputs-equal
         first first-index second second-index external-outputs-equal &&
+    end
+end
+
+proc function-input-type-at ptr int int -- int do
+    let ctx function-index input-index do
+        ctx ctx function-index function-input-start-at input-index + function-signature-type-at
+    end
+end
+
+proc function-output-type-at ptr int int -- int do
+    let ctx function-index output-index do
+        ctx ctx function-index function-output-start-at output-index + function-signature-type-at
+    end
+end
+
+proc function-proc-inputs-equal ptr int ptr int -- bool do
+    let function-module function-index proc-module proc-index do
+        if
+            function-module function-index function-input-count-at
+            proc-module proc-index proc-input-count-at
+            !=
+        do
+            false
+        else
+            0 true
+            while
+                let input-index equal do
+                    input-index equal
+                    input-index function-module function-index function-input-count-at < equal &&
+                end
+            do
+                let input-index equal do
+                    input-index 1 +
+                    equal
+                    function-module function-index input-index function-input-type-at
+                    proc-module proc-module proc-index proc-input-start-at input-index + type-at
+                    == &&
+                end
+            end
+            let input-index equal do equal end
+        end
+    end
+end
+
+proc function-proc-outputs-equal ptr int ptr int -- bool do
+    let function-module function-index proc-module proc-index do
+        if
+            function-module function-index function-output-count-at
+            proc-module proc-index proc-output-count-at
+            !=
+        do
+            false
+        else
+            0 true
+            while
+                let output-index equal do
+                    output-index equal
+                    output-index function-module function-index function-output-count-at < equal &&
+                end
+            do
+                let output-index equal do
+                    output-index 1 +
+                    equal
+                    function-module function-index output-index function-output-type-at
+                    proc-module proc-module proc-index proc-output-start-at output-index + type-at
+                    == &&
+                end
+            end
+            let output-index equal do equal end
+        end
+    end
+end
+
+proc function-proc-contracts-equal ptr int ptr int -- bool do
+    let function-module function-index proc-module proc-index do
+        function-module function-index proc-module proc-index function-proc-inputs-equal
+        function-module function-index proc-module proc-index function-proc-outputs-equal &&
     end
 end
 
@@ -4309,6 +4675,39 @@ proc apply-proc-contract ptr ptr int -- do
     end
 end
 
+proc check-function-inputs ptr ptr int int -- do
+    let cc module function-index remaining do
+        if remaining 0 > do
+            module function-index remaining 1 - function-input-type-at
+            let expected do
+                cc expected type-expect
+                cc module function-index remaining 1 - check-function-inputs
+            end
+        end
+    end
+end
+
+proc push-function-outputs ptr ptr int int -- do
+    let cc module function-index output-index do
+        if output-index module function-index function-output-count-at < do
+            module function-index output-index function-output-type-at
+            cc swap type-push
+            cc module function-index output-index 1 + push-function-outputs
+        end
+    end
+end
+
+proc apply-function-contract ptr ptr int -- do
+    let cc module function-index do
+        cc
+        module
+        function-index
+        module function-index function-input-count-at
+        check-function-inputs
+        cc module function-index 0 push-function-outputs
+    end
+end
+
 proc compile-fixed-binary ptr int int ptr int -- do
     let cc input-type output-type code code-length do
         cc input-type type-expect
@@ -4413,7 +4812,10 @@ proc compile-logic-comparison-intrinsic ptr int -- bool do
 end
 
 proc type-literal-base -- int do 100 end
-proc type-is-nominal int -- bool do type-nominal-base >= end
+proc type-is-nominal int -- bool do
+    dup type-nominal-base >= swap type-function-base < &&
+end
+proc type-is-function int -- bool do type-function-base >= end
 
 proc compile-cast-intrinsic ptr -- do
     let cc do
@@ -4431,6 +4833,7 @@ proc compile-cast-intrinsic ptr -- do
                     target-type type-bool == ||
                     target-type type-ptr == ||
                     target-type type-is-nominal ||
+                    target-type type-is-function ||
                     !
                 do
                     "cast target is not a type literal" fail
@@ -4922,6 +5325,46 @@ proc visible-union-definition ptr ptr int -- ptr int bool do
     end
 end
 
+proc visible-function-definition ptr ptr int -- ptr int bool do
+    let scope bytes length do
+        scope bytes length 0 find-scope-symbol-from
+        let symbol-index do
+            if
+                symbol-index 0 >=
+                if dup do
+                    drop scope symbol-index scope-kind-at scope-function ==
+                end
+            do
+                scope symbol-index scope-definition-module-at
+                scope symbol-index scope-definition-index-at
+                true
+            else
+                0 ptr cast 0 1 - false
+            end
+        end
+    end
+end
+
+proc visible-procedure-definition ptr ptr int -- ptr int bool do
+    let scope bytes length do
+        scope bytes length 0 find-scope-symbol-from
+        let symbol-index do
+            if
+                symbol-index 0 >=
+                if dup do
+                    drop scope symbol-index scope-kind-at scope-procedure ==
+                end
+            do
+                scope symbol-index scope-definition-module-at
+                scope symbol-index scope-definition-index-at
+                true
+            else
+                0 ptr cast 0 1 - false
+            end
+        end
+    end
+end
+
 proc compile-record-type-word ptr int -- bool do
     let cc token-index do
         cc cc-scope-module
@@ -4953,6 +5396,29 @@ proc compile-union-type-word ptr int -- bool do
         let module union-index found do
             if found do
                 module union-index union-type-at
+                let value-type do
+                    0 value-type -
+                    let literal-type do
+                        cc literal-type type-push
+                        cc literal-type emit-push-integer
+                        true
+                    end
+                end
+            else
+                false
+            end
+        end
+    end
+end
+
+proc compile-function-type-word ptr int -- bool do
+    let cc token-index do
+        cc cc-scope-module
+        cc cc-defining-module token-index token-slice
+        visible-function-definition
+        let module function-index found do
+            if found do
+                module function-index function-type-at
                 let value-type do
                     0 value-type -
                     let literal-type do
@@ -5275,6 +5741,128 @@ proc compile-union-word ptr int -- bool do
     end
 end
 
+proc emit-function-dispatch-module ptr int ptr -- do
+    let function-module function-index proc-module do
+        0
+        while dup proc-module ctx-proc-count < do
+            dup
+            let proc-index do
+                if
+                    function-module function-index proc-module proc-index
+                    function-proc-contracts-equal
+                do
+                    " case " emit
+                    proc-module proc-index proc-global-id-at emit-unsigned
+                    ": " emit
+                    proc-module proc-index proc-global-id-at emit-proc-name
+                    "(); break;" emit
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-function-dispatch-cases ptr ptr int -- do
+    let program function-module function-index do
+        program program-module-head
+        while dup int cast 0 != do
+            let proc-module do
+                function-module function-index proc-module emit-function-dispatch-module
+                proc-module ctx-next-module
+            end
+        end
+        drop
+    end
+end
+
+proc emit-function-call ptr ptr int -- do
+    let cc function-module function-index do
+        cc emit-indent
+        "{ Cell function_id = frog_pop(); switch (function_id) {" emit
+        cc cc-program function-module function-index emit-function-dispatch-cases
+        " default: frog_runtime_fail(); } }" emit
+        10 putc
+    end
+end
+
+proc compile-function-operation ptr ptr int int -- bool do
+    let cc bytes length separator do
+        if separator 0 <= separator 1 + length >= || do
+            false
+        else
+            cc cc-scope-module bytes separator visible-function-definition
+            let function-module function-index found do
+                if found ! do
+                    false
+                else
+                    bytes separator 1 + +
+                    length separator 1 + -
+                    let operation operation-length do
+                        if operation operation-length "call" bytes-equal do
+                            cc function-module function-index function-type-at type-expect
+                            cc function-module function-index apply-function-contract
+                            cc function-module function-index emit-function-call
+                            true
+                        elif operation operation-length "ref" bytes-equal do
+                            "expected function reference target" fail
+                            false
+                        elif
+                            operation-length 4 >=
+                            if dup do
+                                drop operation 4 "ref:" bytes-equal
+                            end
+                        do
+                            if operation-length 4 == do
+                                "expected function reference target" fail
+                            end
+                            cc cc-scope-module
+                            operation 4 +
+                            operation-length 4 -
+                            visible-procedure-definition
+                            let proc-module proc-index proc-found do
+                                if proc-found ! do
+                                    "function reference target not found" fail
+                                end
+                                if
+                                    function-module function-index proc-module proc-index
+                                    function-proc-contracts-equal
+                                    !
+                                do
+                                    "function reference contract mismatch" fail
+                                end
+                                cc function-module function-index function-type-at type-push
+                                cc proc-module proc-index proc-global-id-at emit-push-integer
+                                true
+                            end
+                        else
+                            "unknown function operation" fail
+                            false
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-function-word ptr int -- bool do
+    let cc token-index do
+        cc cc-defining-module token-index token-slice
+        let bytes length do
+            bytes length 58 first-index-of-byte
+            let colon do
+                if colon 0 >= do
+                    cc bytes length colon compile-function-operation
+                else
+                    false
+                end
+            end
+        end
+    end
+end
+
 proc compile-type-word ptr int -- bool do
     let cc token-index do
         if cc cc-defining-module token-index "int" token-equals do
@@ -5293,7 +5881,11 @@ proc compile-type-word ptr int -- bool do
             if cc token-index compile-record-type-word do
                 true
             else
-                cc token-index compile-union-type-word
+                if cc token-index compile-union-type-word do
+                    true
+                else
+                    cc token-index compile-function-type-word
+                end
             end
         end
     end
@@ -5339,6 +5931,7 @@ proc compile-ordinary-word ptr int -- do
             elif cc token-index compile-type-word do
             elif cc token-index compile-record-word do
             elif cc token-index compile-union-word do
+            elif cc token-index compile-function-word do
             elif cc token-index compile-intrinsic do
             else
                 cc token-index find-local
@@ -5662,6 +6255,7 @@ proc compile-source ptr int -- do
             0 program set-program-module-count
             0 program set-program-next-proc-id
             type-nominal-base program set-program-next-nominal-type
+            type-function-base program set-program-next-function-type
             0 program set-program-token-count
             0 ptr cast program set-program-strings
             0 program set-program-string-count

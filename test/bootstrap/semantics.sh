@@ -93,10 +93,14 @@ run_ok pointer_store $'65\n'
 run_ok c_ffi $'42\n42\n711\ntrue\nfalse\n'
 run_ok records_layout $'41\ntrue\ntrue\n32\n7\n'
 run_ok unions_layout $'true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n'
+run_ok functions_layout $'42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n'
+run_ok functions_macro_shadow $'99\n'
 run_status unions_wrong_variant 1
 run_status unions_invalid_tag 1
 run_status unions_negative_tag 1
 run_status unions_null 1
+run_status functions_unknown_proc 1
+run_status functions_incompatible_proc 1
 printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
     | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
 
@@ -238,3 +242,57 @@ run_source_error union_missing_variant_name \
 run_source_error union_invalid_variant_name \
     $'union Maybe case P.Q end\nproc main -- do end\n' \
     'union variant name must be an identifier'
+run_source_error function_contract_mismatch \
+    $'fn Mapper int -- int end\nproc nope bool -- int do drop 0 end\nproc main -- do Mapper:ref:nope drop end\n' \
+    'function reference contract mismatch'
+run_source_error function_target_not_found \
+    $'fn Mapper -- end\nproc main -- do Mapper:ref:missing drop end\n' \
+    'function reference target not found'
+run_source_error function_unknown_operation \
+    $'fn Mapper -- end\nproc main -- do Mapper:nope drop end\n' \
+    'unknown function operation'
+run_source_error function_missing_target \
+    $'fn Mapper -- end\nproc main -- do Mapper:ref drop end\n' \
+    'expected function reference target'
+run_source_error function_unknown_signature_type \
+    $'fn Mapper Missing -- int end\nproc main -- do end\n' \
+    'unknown type in function signature'
+run_source_error function_missing_name \
+    $'fn -- end\nproc main -- do end\n' \
+    'expected function name'
+run_source_error function_invalid_name \
+    $'fn P.Q -- end\nproc main -- do end\n' \
+    'invalid function name'
+run_source_error function_missing_separator \
+    $'fn Mapper int end\nproc main -- do end\n' \
+    'expected -- in function signature'
+run_source_error function_missing_end \
+    $'fn Mapper -- int' \
+    'expected end after function signature'
+run_source_error function_inside_proc \
+    $'proc main -- do fn Mapper -- end end\n' \
+    'declarations are only allowed at top level'
+run_source_error function_inside_macro \
+    $'macro bad fn Mapper -- end end\nproc main -- do end\n' \
+    'declarations are not allowed in macro bodies'
+run_source_error function_call_type_mismatch \
+    $'fn Mapper int -- int end\nproc inc int -- int do 1 + end\nproc main -- do true Mapper:ref:inc Mapper:call drop end\n' \
+    'compile-time stack type mismatch'
+run_source_error function_unsupported_int_cast \
+    $'fn Mapper int -- int end\nproc main -- do 1 Mapper cast drop end\n' \
+    'unsupported cast'
+run_source_error function_unsupported_ptr_cast \
+    $'fn Mapper int -- int end\nproc main -- do 0 ptr cast Mapper cast drop end\n' \
+    'unsupported cast'
+run_source_error function_unsupported_function_cast \
+    $'fn First -- end\nfn Second -- end\nproc target -- do end\nproc main -- do First:ref:target Second cast drop end\n' \
+    'unsupported cast'
+run_source_error function_duplicate_name \
+    $'fn Mapper -- end\nfn Mapper -- end\nproc main -- do end\n' \
+    'duplicate function name: Mapper'
+run_source_error function_declaration_collision \
+    $'record Mapper value int end\nfn Mapper -- end\nproc main -- do end\n' \
+    'duplicate declaration name: Mapper'
+run_source_error function_output_contract_mismatch \
+    $'fn Pair int -- int int end\nproc one int -- int do end\nproc main -- do Pair:ref:one drop end\n' \
+    'function reference contract mismatch'

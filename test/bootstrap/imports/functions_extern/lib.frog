@@ -1,0 +1,3 @@
+extern magnitude abs c-int -- c-int end
+
+fn Magnitude int -- int end

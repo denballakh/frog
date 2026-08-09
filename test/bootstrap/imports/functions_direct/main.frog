@@ -1,0 +1,5 @@
+from "lib.frog" import ( Mapper inc )
+
+proc main -- do
+    41 Mapper:ref:inc Mapper:call print
+end

@@ -1,0 +1,5 @@
+from "lib.frog" import ( Magnitude magnitude )
+
+proc main -- do
+    0 77 - Magnitude:ref:magnitude Magnitude:call print
+end

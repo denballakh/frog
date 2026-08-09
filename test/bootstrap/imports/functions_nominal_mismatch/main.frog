@@ -1,0 +1,15 @@
+from "lib.frog" import Imported
+
+fn Local int -- int end
+fn ApplyImported Imported int -- int end
+
+proc local-inc int -- int do 1 + end
+proc apply Imported int -- int do
+    let mapper value do
+        value mapper Imported:call
+    end
+end
+
+proc main -- do
+    Local:ref:local-inc 1 ApplyImported:ref:apply ApplyImported:call print
+end

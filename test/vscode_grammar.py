@@ -55,11 +55,16 @@ def main() -> None:
     assert re.compile(keyword_pattern).fullmatch('record')
     assert re.compile(keyword_pattern).fullmatch('union')
     assert re.compile(keyword_pattern).fullmatch('case')
+    assert re.compile(keyword_pattern).fullmatch('fn')
     special_regex = re.compile(special_pattern)
     assert special_regex.fullmatch('Node:alloc')
     assert special_regex.fullmatch('Node:sizeof')
     assert special_regex.fullmatch('Maybe:some')
     assert special_regex.fullmatch('Maybe.some?')
+    assert special_regex.fullmatch('Mapper:ref:inc')
+    assert special_regex.fullmatch('F:ref:plus-one')
+    assert special_regex.fullmatch('F:ref:inc"quoted')
+    assert special_regex.fullmatch('Mapper:call')
     assert special_regex.fullmatch('?')
     assert special_regex.fullmatch('Node.bytes') is None
     assert special_regex.fullmatch('Maybe.some') is None
