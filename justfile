@@ -92,6 +92,12 @@ approve-diff:
     build/frogc "$@"
 
 [group("misc")]
+[confirm('Install vscode extension? [y/N]')]
+vscode-install:
+    mkdir -p "$HOME/.vscode/extensions"
+    ln -sfn "{{justfile_directory()}}/ide/vscode" "$HOME/.vscode/extensions/frog"
+
+[group("misc")]
 clean:
     rm *.c || true
     rm *.exe || true
