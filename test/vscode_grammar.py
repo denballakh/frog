@@ -33,10 +33,16 @@ def main() -> None:
     literal_patterns = patterns(literals['patterns'])
     string = named_pattern(literal_patterns, 'string.quoted.double.frog')
     numeric = named_pattern(literal_patterns, 'constant.numeric.frog')
+    operators = dictionary(repository['operators'])
+    operator = named_pattern(patterns(operators['patterns']), 'keyword.operator.frog')
 
     assert string['begin'] == '"'
     assert string['end'] == '"'
     assert 'match' not in string
+
+    operator_pattern = operator['match']
+    assert isinstance(operator_pattern, str)
+    assert re.compile(operator_pattern).fullmatch('!ptr')
 
     string_patterns = patterns(string['patterns'])
     assert all('include' not in pattern for pattern in string_patterns)

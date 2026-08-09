@@ -217,6 +217,7 @@ end
 - Signed pointer reads: `@i8`, `@i16`, `@i32`, `@i64`, each `ptr -- int`.
 - Unsigned pointer reads: `@u8`, `@u16`, `@u32`, `@u64`, each `ptr -- int`.
 - Pointer reads: `@ptr`, with stack effect `ptr -- ptr`; it copies one target-platform pointer-sized value.
+- Pointer writes: `!ptr`, with stack effect `ptr ptr --`; it copies the first pointer value into the address on top of the stack.
 - Signed pointer writes: `!i8`, `!i16`, `!i32`, `!i64`, each `int ptr --`.
 - Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
 - Generated C uses `malloc`, `void*`, byte pointer arithmetic, and fixed-width integer loads/stores from `<stdint.h>`.

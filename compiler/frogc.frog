@@ -3209,6 +3209,7 @@ Cell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof
 Cell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }
 Cell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }
 void* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }
+void frog_write_ptr(void* ptr, void* value) { memcpy(ptr, &value, sizeof(value)); }
 
 " emit
     "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }
@@ -3709,6 +3710,11 @@ proc compile-memory-io-intrinsic ptr int -- bool do
             cc token-index "frog_push(frog_read_u32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
         elif cc cc-defining-module token-index "@u64" token-equals do
             cc token-index "frog_push(frog_read_u64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+        elif cc cc-defining-module token-index "!ptr" token-equals do
+            cc type-ptr type-expect
+            cc type-ptr type-expect
+            cc "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_ptr((void *)(intptr_t)p, (void *)(intptr_t)v); }" emit-line
+            true
         elif cc cc-defining-module token-index "!i8" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i8((void *)(intptr_t)p, v); }" compile-write-memory true
         elif cc cc-defining-module token-index "!i16" token-equals do

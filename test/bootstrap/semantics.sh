@@ -66,6 +66,7 @@ run_ok prelude_shadow $'42\n7\n2\n1\n6\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7
 run_ok macro_shadow $'11\n21\n31\n'
 run_ok characters $'65\n233\n8364\n128512\n'
 run_ok args $'3\n/\nfrog\npond\n' frog pond
+run_ok pointer_store $'65\n'
 run_ok c_ffi $'42\n42\n711\ntrue\nfalse\n'
 printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
     | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")

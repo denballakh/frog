@@ -90,6 +90,7 @@ Cell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof
 Cell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }
 Cell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }
 void* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }
+void frog_write_ptr(void* ptr, void* value) { memcpy(ptr, &value, sizeof(value)); }
 
 void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_i16(void* ptr, Cell value) { int16_t stored = (int16_t)value; memcpy(ptr, &stored, sizeof(stored)); }
@@ -305,7 +306,7 @@ static const uint8_t frog_string_3718091418[] = "import alias conflict";
 static const uint8_t frog_string_3720022913[] = "incompatible declarations for C symbol";
 static const uint8_t frog_string_3400397397[] = "#define _POSIX_C_SOURCE 200809L\n\n#include <errno.h>\n#include <fcntl.h>\n#include <signal.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <sys/stat.h>\n#include <sys/types.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  Cell* values;\n  int64_t count;\n  int64_t capacity;\n} FrogStack;\n\nstatic FrogStack frog_stack = {0};\nstatic int frog_argc;\nstatic char **frog_argv;\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\nvoid frog_stack_grow(void) {\n  int64_t capacity = frog_stack.capacity == 0 \? 16 : frog_stack.capacity * 2;\n  if (capacity < frog_stack.capacity || (uint64_t)capacity > SIZE_MAX / sizeof(Cell)) frog_runtime_fail();\n  Cell* values = realloc(frog_stack.values, (size_t)capacity * sizeof(Cell));\n  if (values == NULL) frog_runtime_fail();\n  frog_stack.values = values;\n  frog_stack.capacity = capacity;\n}\n\nvoid frog_push(Cell value) {\n  if (frog_stack.count == frog_stack.capacity) frog_stack_grow();\n  frog_stack.values[frog_stack.count++] = value;\n}\n\nCell frog_pop(void) {\n  if (frog_stack.count == 0) frog_runtime_fail();\n  return frog_stack.values[--frog_stack.count];\n}\n\n";
 static const uint8_t frog_string_2569117768[] = "Cell frog_read_file(const void* path_bytes, Cell path_length, void** data, Cell* data_length) {\n  *data = NULL;\n  *data_length = 0;\n  if (path_length < 0 || (uint64_t)path_length >= SIZE_MAX) return 0;\n  if (path_length > 0 && path_bytes == NULL) return 0;\n  if (path_length > 0 && memchr(path_bytes, 0, (size_t)path_length) != NULL) return 0;\n  char* path = malloc((size_t)path_length + 1);\n  if (path == NULL) return 0;\n  if (path_length > 0) memcpy(path, path_bytes, (size_t)path_length);\n  path[(size_t)path_length] = '\\0';\n  FILE* file = fopen(path, \"rb\");\n  free(path);\n  if (file == NULL) return 0;\n  if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }\n  long end = ftell(file);\n  if (end < 0 || (uint64_t)end > INT64_MAX) { fclose(file); return 0; }\n  if (fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }\n  size_t size = (size_t)end;\n  unsigned char* bytes = malloc(size == 0 \? 1 : size);\n  if (bytes == NULL) { fclose(file); return 0; }\n  if (fread(bytes, 1, size, file) != size) { free(bytes); fclose(file); return 0; }\n  if (fclose(file) != 0) { free(bytes); return 0; }\n  *data = bytes;\n  *data_length = (Cell)size;\n  return 1;\n}\n\n";
-static const uint8_t frog_string_2393365299[] = "Cell frog_read_i8(const void* ptr) { int8_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i16(const void* ptr) { int16_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i32(const void* ptr) { int32_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i64(const void* ptr) { int64_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_u8(const void* ptr) { uint8_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nvoid* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }\n\n";
+static const uint8_t frog_string_925234136[] = "Cell frog_read_i8(const void* ptr) { int8_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i16(const void* ptr) { int16_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i32(const void* ptr) { int32_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i64(const void* ptr) { int64_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_u8(const void* ptr) { uint8_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nvoid* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }\nvoid frog_write_ptr(void* ptr, void* value) { memcpy(ptr, &value, sizeof(value)); }\n\n";
 static const uint8_t frog_string_3742174043[] = "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i16(void* ptr, Cell value) { int16_t stored = (int16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i32(void* ptr, Cell value) { int32_t stored = (int32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i64(void* ptr, Cell value) { int64_t stored = (int64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\n\n";
 static const uint8_t frog_string_2864356234[] = "int froglang_fork(void) {\n  if (fflush(NULL) != 0) return -1;\n  return (int)fork();\n}\nint froglang_create_file(void* path) { return open((const char*)path, O_WRONLY | O_CREAT | O_TRUNC, 0600); }\nint froglang_dup2(int old_fd, int new_fd) { return dup2(old_fd, new_fd); }\nint froglang_close(int fd) { return close(fd); }\nint froglang_chdir(void* path) { return chdir((const char*)path); }\nint froglang_execv(void* path, void* arguments) { return execv((const char*)path, (char* const*)arguments); }\nint froglang_execvp(void* file, void* arguments) { return execvp((const char*)file, (char* const*)arguments); }\n\nint froglang_ensure_directory(void* path) {\n  const char* directory = (const char*)path;\n  if (mkdir(directory, 0777) != 0 && errno != EEXIST) return -1;\n  struct stat info;\n  if (stat(directory, &info) != 0 || !S_ISDIR(info.st_mode)) return -1;\n  return 0;\n}\n\nvoid* froglang_realpath(void* path, void* resolved) {\n  return realpath((const char*)path, (char*)resolved);\n}\n\nint froglang_path_exists(void* path) {\n  struct stat info;\n  return stat((const char*)path, &info) == 0;\n}\n\nint froglang_same_file(void* first, void* second) {\n  struct stat first_info;\n  struct stat second_info;\n  return stat((const char*)first, &first_info) == 0\n      && stat((const char*)second, &second_info) == 0\n      && first_info.st_dev == second_info.st_dev\n      && first_info.st_ino == second_info.st_ino;\n}\n\nint froglang_wait_child(int child) {\n  int status;\n  while (waitpid((pid_t)child, &status, 0) < 0) {\n    if (errno != EINTR) return -1;\n  }\n  if (WIFEXITED(status)) return WEXITSTATUS(status);\n  if (WIFSIGNALED(status)) return 128 + WTERMSIG(status);\n  return 1;\n}\n\nvoid froglang_finish_child(int status) {\n  if (fflush(stdout) != 0) status = 1;\n  _exit(status);\n}\n\nvoid froglang_reset_child_signals(void) {\n  struct sigaction action;\n  memset(&action, 0, sizeof(action));\n  action.sa_handler = SIG_DFL;\n  sigemptyset(&action.sa_mask);\n  (void)sigaction(SIGINT, &action, NULL);\n  (void)sigaction(SIGTERM, &action, NULL);\n  (void)sigaction(SIGPIPE, &action, NULL);\n  (void)sigaction(SIGHUP, &action, NULL);\n}\n\n";
 static const uint8_t frog_string_2802433275[] = "\\\"";
@@ -400,6 +401,8 @@ static const uint8_t frog_string_2196264063[] = "@u32";
 static const uint8_t frog_string_4221756877[] = "frog_push(frog_read_u32((const void *)(intptr_t)frog_pop()));";
 static const uint8_t frog_string_2329646372[] = "@u64";
 static const uint8_t frog_string_3687999702[] = "frog_push(frog_read_u64((const void *)(intptr_t)frog_pop()));";
+static const uint8_t frog_string_3549836950[] = "!ptr";
+static const uint8_t frog_string_2154580546[] = "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_ptr((void *)(intptr_t)p, (void *)(intptr_t)v); }";
 static const uint8_t frog_string_2778823205[] = "!i8";
 static const uint8_t frog_string_1983458987[] = "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i8((void *)(intptr_t)p, v); }";
 static const uint8_t frog_string_3729034004[] = "!i16";
@@ -10579,8 +10582,8 @@ void p452(void) {
   frog_push((Cell)(intptr_t)frog_string_2569117768);
   frog_push(1164);
   p112();
-  frog_push((Cell)(intptr_t)frog_string_2393365299);
-  frog_push(969);
+  frog_push((Cell)(intptr_t)frog_string_925234136);
+  frog_push(1053);
   p112();
   frog_push((Cell)(intptr_t)frog_string_3742174043);
   frog_push(947);
@@ -12059,41 +12062,46 @@ void p480(void) {
                               frog_push(l1);
                               p343();
                               frog_push(l0);
-                              frog_push((Cell)(intptr_t)frog_string_2778823205);
-                              frog_push(3);
+                              frog_push((Cell)(intptr_t)frog_string_3549836950);
+                              frog_push(4);
                               p215();
                               if (frog_pop() != 0) {
                                 frog_push(l1);
-                                frog_push(l0);
-                                frog_push((Cell)(intptr_t)frog_string_1983458987);
-                                frog_push(84);
-                                p479();
+                                p3();
+                                p372();
+                                frog_push(l1);
+                                p3();
+                                p372();
+                                frog_push(l1);
+                                frog_push((Cell)(intptr_t)frog_string_2154580546);
+                                frog_push(103);
+                                p394();
                                 frog_push(1);
                               } else {
                                 frog_push(l1);
                                 p343();
                                 frog_push(l0);
-                                frog_push((Cell)(intptr_t)frog_string_3729034004);
-                                frog_push(4);
+                                frog_push((Cell)(intptr_t)frog_string_2778823205);
+                                frog_push(3);
                                 p215();
                                 if (frog_pop() != 0) {
                                   frog_push(l1);
                                   frog_push(l0);
-                                  frog_push((Cell)(intptr_t)frog_string_824092330);
-                                  frog_push(85);
+                                  frog_push((Cell)(intptr_t)frog_string_1983458987);
+                                  frog_push(84);
                                   p479();
                                   frog_push(1);
                                 } else {
                                   frog_push(l1);
                                   p343();
                                   frog_push(l0);
-                                  frog_push((Cell)(intptr_t)frog_string_3527408386);
+                                  frog_push((Cell)(intptr_t)frog_string_3729034004);
                                   frog_push(4);
                                   p215();
                                   if (frog_pop() != 0) {
                                     frog_push(l1);
                                     frog_push(l0);
-                                    frog_push((Cell)(intptr_t)frog_string_1077925440);
+                                    frog_push((Cell)(intptr_t)frog_string_824092330);
                                     frog_push(85);
                                     p479();
                                     frog_push(1);
@@ -12101,13 +12109,13 @@ void p480(void) {
                                     frog_push(l1);
                                     p343();
                                     frog_push(l0);
-                                    frog_push((Cell)(intptr_t)frog_string_1647873773);
+                                    frog_push((Cell)(intptr_t)frog_string_3527408386);
                                     frog_push(4);
                                     p215();
                                     if (frog_pop() != 0) {
                                       frog_push(l1);
                                       frog_push(l0);
-                                      frog_push((Cell)(intptr_t)frog_string_2970334945);
+                                      frog_push((Cell)(intptr_t)frog_string_1077925440);
                                       frog_push(85);
                                       p479();
                                       frog_push(1);
@@ -12115,41 +12123,41 @@ void p480(void) {
                                       frog_push(l1);
                                       p343();
                                       frog_push(l0);
-                                      frog_push((Cell)(intptr_t)frog_string_2647853657);
-                                      frog_push(3);
+                                      frog_push((Cell)(intptr_t)frog_string_1647873773);
+                                      frog_push(4);
                                       p215();
                                       if (frog_pop() != 0) {
                                         frog_push(l1);
                                         frog_push(l0);
-                                        frog_push((Cell)(intptr_t)frog_string_2287529775);
-                                        frog_push(84);
+                                        frog_push((Cell)(intptr_t)frog_string_2970334945);
+                                        frog_push(85);
                                         p479();
                                         frog_push(1);
                                       } else {
                                         frog_push(l1);
                                         p343();
                                         frog_push(l0);
-                                        frog_push((Cell)(intptr_t)frog_string_3762991800);
-                                        frog_push(4);
+                                        frog_push((Cell)(intptr_t)frog_string_2647853657);
+                                        frog_push(3);
                                         p215();
                                         if (frog_pop() != 0) {
                                           frog_push(l1);
                                           frog_push(l0);
-                                          frog_push((Cell)(intptr_t)frog_string_3292284558);
-                                          frog_push(85);
+                                          frog_push((Cell)(intptr_t)frog_string_2287529775);
+                                          frog_push(84);
                                           p479();
                                           frog_push(1);
                                         } else {
                                           frog_push(l1);
                                           p343();
                                           frog_push(l0);
-                                          frog_push((Cell)(intptr_t)frog_string_1548051902);
+                                          frog_push((Cell)(intptr_t)frog_string_3762991800);
                                           frog_push(4);
                                           p215();
                                           if (frog_pop() != 0) {
                                             frog_push(l1);
                                             frog_push(l0);
-                                            frog_push((Cell)(intptr_t)frog_string_110831148);
+                                            frog_push((Cell)(intptr_t)frog_string_3292284558);
                                             frog_push(85);
                                             p479();
                                             frog_push(1);
@@ -12157,13 +12165,13 @@ void p480(void) {
                                             frog_push(l1);
                                             p343();
                                             frog_push(l0);
-                                            frog_push((Cell)(intptr_t)frog_string_1414669593);
+                                            frog_push((Cell)(intptr_t)frog_string_1548051902);
                                             frog_push(4);
                                             p215();
                                             if (frog_pop() != 0) {
                                               frog_push(l1);
                                               frog_push(l0);
-                                              frog_push((Cell)(intptr_t)frog_string_528336333);
+                                              frog_push((Cell)(intptr_t)frog_string_110831148);
                                               frog_push(85);
                                               p479();
                                               frog_push(1);
@@ -12171,115 +12179,130 @@ void p480(void) {
                                               frog_push(l1);
                                               p343();
                                               frog_push(l0);
-                                              frog_push((Cell)(intptr_t)frog_string_372738696);
-                                              frog_push(5);
+                                              frog_push((Cell)(intptr_t)frog_string_1414669593);
+                                              frog_push(4);
                                               p215();
                                               if (frog_pop() != 0) {
                                                 frog_push(l1);
-                                                p371();
-                                                {
-                                                  Cell l2 = frog_pop();
-                                                  (void)l2;
-                                                  frog_push(l2);
-                                                  p1();
-                                                  { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }
-                                                  if (frog_pop() != 0) {
-                                                    frog_push(l1);
-                                                    frog_push((Cell)(intptr_t)frog_string_3159309411);
-                                                    frog_push(40);
-                                                    p394();
-                                                  } else {
-                                                    frog_push(l2);
-                                                    p2();
-                                                    { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }
-                                                    if (frog_pop() != 0) {
-                                                      frog_push(l1);
-                                                      frog_push((Cell)(intptr_t)frog_string_3051301883);
-                                                      frog_push(49);
-                                                      p394();
-                                                    } else {
-                                                      frog_push((Cell)(intptr_t)frog_string_152415155);
-                                                      frog_push(35);
-                                                      p114();
-                                                    }
-                                                  }
-                                                }
+                                                frog_push(l0);
+                                                frog_push((Cell)(intptr_t)frog_string_528336333);
+                                                frog_push(85);
+                                                p479();
                                                 frog_push(1);
                                               } else {
                                                 frog_push(l1);
                                                 p343();
                                                 frog_push(l0);
-                                                frog_push((Cell)(intptr_t)frog_string_2355607799);
-                                                frog_push(4);
+                                                frog_push((Cell)(intptr_t)frog_string_372738696);
+                                                frog_push(5);
                                                 p215();
                                                 if (frog_pop() != 0) {
                                                   frog_push(l1);
-                                                  p1();
-                                                  p372();
-                                                  frog_push(l1);
-                                                  frog_push((Cell)(intptr_t)frog_string_3171111379);
-                                                  frog_push(40);
-                                                  p394();
+                                                  p371();
+                                                  {
+                                                    Cell l2 = frog_pop();
+                                                    (void)l2;
+                                                    frog_push(l2);
+                                                    p1();
+                                                    { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }
+                                                    if (frog_pop() != 0) {
+                                                      frog_push(l1);
+                                                      frog_push((Cell)(intptr_t)frog_string_3159309411);
+                                                      frog_push(40);
+                                                      p394();
+                                                    } else {
+                                                      frog_push(l2);
+                                                      p2();
+                                                      { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }
+                                                      if (frog_pop() != 0) {
+                                                        frog_push(l1);
+                                                        frog_push((Cell)(intptr_t)frog_string_3051301883);
+                                                        frog_push(49);
+                                                        p394();
+                                                      } else {
+                                                        frog_push((Cell)(intptr_t)frog_string_152415155);
+                                                        frog_push(35);
+                                                        p114();
+                                                      }
+                                                    }
+                                                  }
                                                   frog_push(1);
                                                 } else {
                                                   frog_push(l1);
                                                   p343();
                                                   frog_push(l0);
-                                                  frog_push((Cell)(intptr_t)frog_string_2213230300);
+                                                  frog_push((Cell)(intptr_t)frog_string_2355607799);
                                                   frog_push(4);
                                                   p215();
                                                   if (frog_pop() != 0) {
                                                     frog_push(l1);
                                                     p1();
-                                                    p370();
+                                                    p372();
                                                     frog_push(l1);
-                                                    frog_push((Cell)(intptr_t)frog_string_3809401502);
-                                                    frog_push(27);
+                                                    frog_push((Cell)(intptr_t)frog_string_3171111379);
+                                                    frog_push(40);
                                                     p394();
                                                     frog_push(1);
                                                   } else {
                                                     frog_push(l1);
                                                     p343();
                                                     frog_push(l0);
-                                                    frog_push((Cell)(intptr_t)frog_string_3770167894);
-                                                    frog_push(5);
+                                                    frog_push((Cell)(intptr_t)frog_string_2213230300);
+                                                    frog_push(4);
                                                     p215();
                                                     if (frog_pop() != 0) {
                                                       frog_push(l1);
                                                       p1();
-                                                      p372();
+                                                      p370();
                                                       frog_push(l1);
-                                                      frog_push((Cell)(intptr_t)frog_string_958277568);
-                                                      frog_push(46);
+                                                      frog_push((Cell)(intptr_t)frog_string_3809401502);
+                                                      frog_push(27);
                                                       p394();
                                                       frog_push(1);
                                                     } else {
                                                       frog_push(l1);
                                                       p343();
                                                       frog_push(l0);
-                                                      frog_push((Cell)(intptr_t)frog_string_3454868101);
-                                                      frog_push(4);
+                                                      frog_push((Cell)(intptr_t)frog_string_3770167894);
+                                                      frog_push(5);
                                                       p215();
                                                       if (frog_pop() != 0) {
                                                         frog_push(l1);
                                                         p1();
                                                         p372();
                                                         frog_push(l1);
-                                                        frog_push((Cell)(intptr_t)frog_string_3751827260);
-                                                        frog_push(22);
+                                                        frog_push((Cell)(intptr_t)frog_string_958277568);
+                                                        frog_push(46);
                                                         p394();
                                                         frog_push(1);
                                                       } else {
                                                         frog_push(l1);
                                                         p343();
                                                         frog_push(l0);
-                                                        frog_push((Cell)(intptr_t)frog_string_973910158);
-                                                        frog_push(1);
+                                                        frog_push((Cell)(intptr_t)frog_string_3454868101);
+                                                        frog_push(4);
                                                         p215();
                                                         if (frog_pop() != 0) {
+                                                          frog_push(l1);
+                                                          p1();
+                                                          p372();
+                                                          frog_push(l1);
+                                                          frog_push((Cell)(intptr_t)frog_string_3751827260);
+                                                          frog_push(22);
+                                                          p394();
                                                           frog_push(1);
                                                         } else {
-                                                          frog_push(0);
+                                                          frog_push(l1);
+                                                          p343();
+                                                          frog_push(l0);
+                                                          frog_push((Cell)(intptr_t)frog_string_973910158);
+                                                          frog_push(1);
+                                                          p215();
+                                                          if (frog_pop() != 0) {
+                                                            frog_push(1);
+                                                          } else {
+                                                            frog_push(0);
+                                                          }
                                                         }
                                                       }
                                                     }
@@ -14696,7 +14719,7 @@ int main(int argc, char **argv) {
   (void)frog_string_3720022913;
   (void)frog_string_3400397397;
   (void)frog_string_2569117768;
-  (void)frog_string_2393365299;
+  (void)frog_string_925234136;
   (void)frog_string_3742174043;
   (void)frog_string_2864356234;
   (void)frog_string_2802433275;
@@ -14791,6 +14814,8 @@ int main(int argc, char **argv) {
   (void)frog_string_4221756877;
   (void)frog_string_2329646372;
   (void)frog_string_3687999702;
+  (void)frog_string_3549836950;
+  (void)frog_string_2154580546;
   (void)frog_string_2778823205;
   (void)frog_string_1983458987;
   (void)frog_string_3729034004;
