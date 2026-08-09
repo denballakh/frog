@@ -47,5 +47,22 @@ gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 compiler/frogc.c -
 build/frogc < compiler/frogc.frog > build/frogc.next.c
 ```
 
+# VS Code extension
+
+The dependency-free extension in `ide/vscode` provides syntax highlighting and associates `.frog` files with FrogLang. To install it from a source checkout, run these commands from the repository root on the machine where the VS Code extension host runs:
+
+```sh
+mkdir -p "$HOME/.vscode/extensions"
+ln -s "$(pwd)/ide/vscode" "$HOME/.vscode/extensions/froglang-local"
+```
+
+Restart VS Code or run **Developer: Reload Window** from the command palette. Because the installation is a symbolic link, later changes in the same checkout become available after another reload.
+
+To uninstall it:
+
+```sh
+unlink "$HOME/.vscode/extensions/froglang-local"
+```
+
 # Examples
 -> [/examples/](./examples/)
