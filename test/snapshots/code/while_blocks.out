@@ -111,6 +111,46 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+0 while dup 3 < if dup do drop true end do 1 + end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():3@test/tmp_fs/code.frog:1:46
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+3
+
+```
+
+## Case 04
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
 while else
 ```
 
@@ -130,7 +170,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 04
+## Case 05
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -154,7 +194,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 05
+## Case 06
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -180,7 +220,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 06
+## Case 07
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -206,7 +246,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 07
+## Case 08
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -230,7 +270,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 08
+## Case 09
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -255,7 +295,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 09
+## Case 10
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -281,7 +321,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 10
+## Case 11
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -308,7 +348,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 11
+## Case 12
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -335,7 +375,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 12
+## Case 13
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -359,7 +399,7 @@ Output:
 [EXIT CODE] 1
 ```
 
-## Case 13
+## Case 14
 
 ### Source: `test/tmp_fs/code.frog`
 

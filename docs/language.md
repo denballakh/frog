@@ -102,7 +102,7 @@ end
 
 ## Control Flow
 
-- `if <cond> do <then> [else <else>] end` requires the condition to preserve the stack from before `if` and add exactly one `bool`. The `do` consumes that bool. Both branches must leave the same stack shape.
+- `if <cond> do <then> [elif <cond> do <body> ...] [else <else>] end` requires every condition to preserve the stack from before `if` and add exactly one `bool`. Each arm, including the implicit no-op path when there is no `else`, must leave the same stack shape.
 - `while <cond> do <body> end` requires the condition to preserve the stack from before `while` and add exactly one `bool`. The loop body must preserve the original loop stack shape.
 
 ## Language Constructs
@@ -113,7 +113,7 @@ end
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
 - `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures or macros from another file.
-- `if ... do ... else ... end` selects one of two branches. `else` is optional.
+- `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
 - `//` starts a line comment only when it appears as its own whitespace-delimited token.

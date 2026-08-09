@@ -269,9 +269,14 @@ Output:
       int64_t lit_int_5;
       int64_t eq_0;
       int64_t lit_int_6;
+      int64_t stack_merge_0;
+      int64_t stack_merge_1;
       int64_t lit_int_7;
+      int64_t stack_copy_0;
+      int64_t stack_copy_1;
       int64_t lit_int_8;
       int64_t sub_0;
+      int64_t stack_copy_2;
       lit_int_0 = 1;
       lit_int_1 = 2;
       dup_0 = lit_int_0;
@@ -297,14 +302,20 @@ Output:
           eq_0 = mod_0 == lit_int_5;
           if (eq_0) {
             lit_int_6 = 5;
+            stack_merge_0 = add_0;
+            stack_merge_1 = lit_int_6;
           } else {
             lit_int_7 = 7;
-            lit_int_6 = lit_int_7;
+            stack_copy_0 = add_0;
+            stack_copy_1 = lit_int_7;
+            stack_merge_0 = stack_copy_0;
+            stack_merge_1 = stack_copy_1;
           }
-          printf("%lld\n", (long long)lit_int_6);
+          printf("%lld\n", (long long)stack_merge_1);
           lit_int_8 = 1;
-          sub_0 = add_0 - lit_int_8;
-          add_0 = sub_0;
+          sub_0 = stack_merge_0 - lit_int_8;
+          stack_copy_2 = sub_0;
+          add_0 = stack_copy_2;
         } else break;
       }
       return (ret_main){ ._unused = 0 };

@@ -151,6 +151,7 @@ Subcommands:
 - User-facing language documentation lives in `docs/language.md`; update it when changing Frog syntax, semantics, intrinsics, examples, diagnostics that users see, or backend-visible behavior.
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
+- `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 
 ## Implementation Conventions And Gotchas
 

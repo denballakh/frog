@@ -435,7 +435,7 @@ py -m frog -l WARN build -r test/tmp_fs/code.frog
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:18: if <cond> do <body> [else <body>] end
+[ERROR] test/tmp_fs/code.frog:1:18: if <cond> do <body> [elif <cond> do <body>] [else <body>] end
 [EXIT CODE] 1
 ```
 
@@ -589,6 +589,280 @@ Output:
 
 ```text
 [ERROR] test/tmp_fs/code.frog:1:1: ELSE should follow an IF
+[EXIT CODE] 1
+```
+
+## Case 21
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+1 2 if true do swap else end print print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():1@test/tmp_fs/code.frog:1:1
+[PRINT] INT():2@test/tmp_fs/code.frog:1:3
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+1
+2
+
+```
+
+## Case 22
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if false do 1 elif true do 2 else 3 end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():2@test/tmp_fs/code.frog:1:28
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+2
+
+```
+
+## Case 23
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if false do 1 elif false do 2 elif true do 3 else 4 end print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():3@test/tmp_fs/code.frog:1:44
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+3
+
+```
+
+## Case 24
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if false do 1 print elif true do 2 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():2@test/tmp_fs/code.frog:1:34
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+2
+
+```
+
+## Case 25
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+macro choose if false do 1 elif true do 2 else 3 end end choose print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():2@test/tmp_fs/code.frog:1:41
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+2
+
+```
+
+## Case 26
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+elif true do 1 end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:1: ELIF should follow an active IF chain
+[EXIT CODE] 1
+```
+
+## Case 27
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if false do 1 else 2 elif true do 3 end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:22: ELIF cannot follow ELSE
+[EXIT CODE] 1
+```
+
+## Case 28
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+if false do 1 elif do 2 end
+```
+
+### Run and Build
+
+Commands:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[ERROR] test/tmp_fs/code.frog:1:20: ELIF must have a condition before DO
 [EXIT CODE] 1
 ```
 

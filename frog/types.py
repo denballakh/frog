@@ -58,6 +58,7 @@ class KeywordType(Enum):
     FROM = auto()
     IMPORT = auto()
     AS = auto()
+    ELIF = auto()
 
 
 KW_TO_KWT = {
@@ -73,6 +74,7 @@ KW_TO_KWT = {
     'from': KeywordType.FROM,
     'import': KeywordType.IMPORT,
     'as': KeywordType.AS,
+    'elif': KeywordType.ELIF,
 }
 assert len(KW_TO_KWT) == len(KeywordType)
 

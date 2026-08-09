@@ -511,6 +511,13 @@ def _validate_macro_body(macro: Macro) -> None:
                 if not block.has_do or block.has_else:
                     error(tok, f'ELSE should follow an IF')
                 block.has_else = True
+            case KeywordType.ELIF:
+                if not blocks or blocks[-1].type != KeywordType.IF:
+                    error(tok, 'ELIF should follow an IF')
+                block = blocks[-1]
+                if not block.has_do or block.has_else:
+                    error(tok, 'ELIF should follow an IF arm before ELSE')
+                block.has_do = False
             case KeywordType.END:
                 if not blocks:
                     error(tok, f'END should follow an IF or WHILE')
@@ -673,9 +680,28 @@ def _compile_module_source(
         ip2: int = -1
         ip3: int = -1
         ip4: int = -1
+        elif_parent: bool = field(default=False, repr=False)
         bound_vars: list[str] = field(default_factory=list)
 
     block_stack: list[Block] = []
+
+    def close_if(tok: Token, b: Block) -> None:
+        if b.ip1 == -1:
+            unreachable(tok, f'somehow the IF doesnt have an IF-instruction address saved')
+        if b.ip2 == -1:
+            if b.elif_parent:
+                error(tok, 'elif <cond> do <body> [elif <cond> do <body>] [else <body>] end')
+            error(tok, 'if <cond> do <body> [elif <cond> do <body>] [else <body>] end')
+
+        if b.ip3 == -1:
+            b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+
+        assert cur_proc is not None
+        b.ip4 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=-1))
+        cur_proc.instrs[-1].arg1 = b.ip4 + 1
+
+        cur_proc.instrs[b.ip2].arg1 = b.ip3
+        cur_proc.instrs[b.ip3].arg1 = b.ip4
 
     def parse_type(tok: Token) -> ValueCls:
         if tok.type != TokenType.WORD:
@@ -733,7 +759,26 @@ def _compile_module_source(
                             b = block_stack[-1]
                             if b.type != InstructionType.IF:
                                 error(tok, f'ELSE should follow an IF, not {pp(b.type)}')
+                            if b.ip2 == -1 and b.elif_parent:
+                                error(tok, 'ELSE should follow an IF condition and DO')
+                            if b.ip3 != -1:
+                                error(tok, 'ELSE should appear at most once in an IF chain')
                             b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+
+                        case KeywordType.ELIF:
+                            if not block_stack:
+                                error(tok, 'ELIF should follow an active IF chain')
+                            b = block_stack[-1]
+                            if b.type != InstructionType.IF:
+                                error(tok, f'ELIF should follow an IF, not {pp(b.type)}')
+                            if b.ip2 == -1:
+                                error(tok, 'ELIF should follow an IF condition and DO')
+                            if b.ip3 != -1:
+                                error(tok, 'ELIF cannot follow ELSE')
+                            b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
+                            elif_block = Block(InstructionType.IF, elif_parent=True)
+                            block_stack.append(elif_block)
+                            elif_block.ip1 = add_instr(Instruction(type=InstructionType.IF, tok=tok))
 
                         case KeywordType.WHILE:
                             b = Block(InstructionType.WHILE)
@@ -748,6 +793,11 @@ def _compile_module_source(
                                 b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                             elif b.type == InstructionType.IF:
+                                assert cur_proc is not None
+                                if b.ip1 == len(cur_proc.instrs) - 1 and b.elif_parent:
+                                    error(tok, 'ELIF must have a condition before DO')
+                                if b.ip2 != -1:
+                                    error(tok, 'DO should follow an IF condition only once')
                                 b.ip2 = add_instr(Instruction(type=InstructionType.DO, tok=tok, arg1=missing))
 
                             else:
@@ -782,20 +832,12 @@ def _compile_module_source(
 
                             match b.type:
                                 case InstructionType.IF:
-                                    if b.ip1 == -1:
-                                        unreachable(tok, f'somehow the IF doesnt have an IF-instruction address saved')
-                                    if b.ip2 == -1:
-                                        error(tok, f'if <cond> do <body> [else <body>] end')
-
-                                    if b.ip3 == -1:
-                                        b.ip3 = add_instr(Instruction(type=InstructionType.ELSE, tok=tok, arg1=missing))
-
-                                    assert cur_proc is not None
-                                    b.ip4 = add_instr(Instruction(type=InstructionType.END, tok=tok, arg1=-1))
-                                    cur_proc.instrs[-1].arg1 = b.ip4 + 1
-
-                                    cur_proc.instrs[b.ip2].arg1 = b.ip3
-                                    cur_proc.instrs[b.ip3].arg1 = b.ip4
+                                    close_if(tok, b)
+                                    while b.elif_parent:
+                                        if not block_stack:
+                                            unreachable(tok, 'ELIF chain does not have its parent IF')
+                                        b = block_stack.pop()
+                                        close_if(tok, b)
 
                                 case InstructionType.WHILE:
                                     if b.ip1 == -1:
@@ -2231,6 +2273,7 @@ def translate(ir: IR) -> str:
     class Block:
         type: InstructionType
         stack: Stack | None = None
+        exit_stack: Stack | None = None
 
     _used_names: set[str] = set()
     sb: StringBuilder
@@ -2289,6 +2332,7 @@ def translate(ir: IR) -> str:
         sb.add(f'{'':{indent}}}}\n')
 
     def copy_stacks(src: Stack, dst: Stack) -> None:
+        assignments: list[tuple[str, str]] = []
         for a, b in zip(src, dst):
             if a.type != b.type:
                 unreachable(instr)
@@ -2297,17 +2341,34 @@ def translate(ir: IR) -> str:
                 continue
 
             expect_enum_size(ValueClsType, 4)
-            if a.type.type == b.type.type == ValueClsType.INT:
-                sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
+            match a.type.type:
+                case ValueClsType.INT | ValueClsType.BOOL | ValueClsType.PTR:
+                    temporary = get_varname('stack_copy')
+                    declare_var(temporary, a.type)
+                    sb.add(f'{'':{indent}}{temporary} = {a.val};\n')
+                    assignments.append((b.val, temporary))
+                case ValueClsType.TYPE:
+                    unreachable(instr)
+                case _:
+                    assert_never(a.type.type)
 
-            elif a.type.type == b.type.type == ValueClsType.BOOL:
-                sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
+        for destination, temporary in assignments:
+            sb.add(f'{'':{indent}}{destination} = {temporary};\n')
 
-            elif a.type.type == b.type.type == ValueClsType.PTR:
-                sb.add(f'{'':{indent}}{b.val} = {a.val};\n')
-
-            else:
-                unreachable(instr)
+    def copy_stack_to_fresh(src: Stack) -> Stack:
+        dst: Stack = []
+        for entry in src:
+            match entry.type.type:
+                case ValueClsType.INT | ValueClsType.BOOL | ValueClsType.PTR:
+                    variable = get_varname('stack_merge')
+                    declare_var(variable, entry.type)
+                    sb.add(f'{'':{indent}}{variable} = {entry.val};\n')
+                    dst.append(StackEntry(entry.type, variable, entry.tok))
+                case ValueClsType.TYPE:
+                    dst.append(entry)
+                case _:
+                    assert_never(entry.type.type)
+        return dst
 
     sb_global = StringBuilder()
     sb_global += f'#include <stdio.h>\n'
@@ -2490,8 +2551,7 @@ def translate(ir: IR) -> str:
                     if block.stack is None:
                         unreachable(instr)
 
-                    copy_stacks(stack, block.stack)
-                    stack_copy = stack.copy()
+                    stack_copy = copy_stack_to_fresh(stack)
                     stack = block.stack
                     block.stack = stack_copy
                     indent -= 2
@@ -2510,11 +2570,11 @@ def translate(ir: IR) -> str:
                         sb += f'{'':{indent}}}}\n'
 
                     elif block.type == InstructionType.WHILE:
-                        if block.stack is None:
+                        if block.stack is None or block.exit_stack is None:
                             unreachable(instr)
 
                         copy_stacks(stack, block.stack)
-                        stack = block.stack
+                        stack = block.exit_stack
                         indent -= 2
                         sb += f'{'':{indent}}}} else break;\n'
                         indent -= 2
@@ -2529,6 +2589,7 @@ def translate(ir: IR) -> str:
 
                 case InstructionType.WHILE:
                     block = Block(InstructionType.WHILE)
+                    block.stack = stack.copy()
                     block_stack.append(block)
                     sb += f'{'':{indent}}while (true) {{\n'
                     indent += 2
@@ -2548,8 +2609,7 @@ def translate(ir: IR) -> str:
                         elif block.type == InstructionType.WHILE:
                             sb += f'{'':{indent}}if ({var}) {{\n'
                             indent += 2
-                            stack_copy = stack.copy()
-                            block.stack = stack_copy
+                            block.exit_stack = stack.copy()
 
                         else:
                             unreachable(instr)
