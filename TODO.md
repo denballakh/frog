@@ -6,14 +6,9 @@ When an item from this list is fixed/implemented - remove it from this list.
 
 ## New language features
 
-- Add multiline string literals so large templates, including generated C fragments, do not need to be encoded as long single-line literals.
 - Support binary (`0b111`), octal (`0o222`), and hexadecimal (`0x333`) integer literals.
 - Move intrinsics that can be expressed as standard macros plus `let`, such as `drop`, into a minimal standard prelude/library and remove their compiler special cases.
 - Add compile-time constants that evaluate expressions during compilation and expand into one or more literals instead of reevaluating the expression at every runtime use.
-
-## Tooling
-
-- Parse escaped and multiline Frog string literals correctly in the VS Code grammar.
 
 ## Diagnostics And Debugging
 

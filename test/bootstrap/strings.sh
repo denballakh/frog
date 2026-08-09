@@ -18,10 +18,10 @@ mkdir -p "$output"
 gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 \
     "$output/strings.c" -o "$output/strings"
 "$output/strings" > "$output/strings.out"
-printf 'true\ntrue\ntrue\ntrue\ntrue\ntrue\n178\n239\n9\n65\n34\n92\n10\n0\n255\n63\n63\n47\n' \
+printf 'true\ntrue\ntrue\ntrue\ntrue\ntrue\n178\n239\n9\n65\n34\n92\n10\n0\n255\n63\n63\n47\n33\n10\n47\n34\n34\n' \
     | cmp - "$output/strings.out"
 
-test "$(grep -c '^static const uint8_t frog_string_' "$output/strings.c")" -eq 6
+test "$(grep -c '^static const uint8_t frog_string_' "$output/strings.c")" -eq 7
 test "$(grep -c '= "same";' "$output/strings.c")" -eq 1
 test "$(grep -c '= "a";' "$output/strings.c")" -eq 1
 grep -q '^static const uint8_t frog_string_2771466528\[\] = ' "$output/strings.c"

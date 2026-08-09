@@ -97,8 +97,8 @@ static const uint8_t frog_string_2371146793[] = "source exceeds max-source-bytes
 static const uint8_t frog_string_1020491445[] = "integer literal exceeds the signed 64-bit range";
 static const uint8_t frog_string_1303515621[] = "true";
 static const uint8_t frog_string_184981848[] = "false";
-static const uint8_t frog_string_2936507147[] = "unterminated string literal";
 static const uint8_t frog_string_173830071[] = "unterminated string escape";
+static const uint8_t frog_string_2936507147[] = "unterminated string literal";
 static const uint8_t frog_string_803365811[] = "unterminated character literal";
 static const uint8_t frog_string_3480181788[] = "invalid character literal";
 static const uint8_t frog_string_2731697891[] = "//";
@@ -2598,14 +2598,6 @@ void p222(void) {
             if (frog_pop() != 0) {
               frog_push(1);
             } else {
-              frog_push(l7);
-              frog_push(10);
-              { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }
-              if (frog_pop() != 0) {
-                frog_push((Cell)(intptr_t)frog_string_2936507147);
-                frog_push(27);
-                p114();
-              }
               frog_push(l7);
               frog_push(92);
               { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }
@@ -13883,8 +13875,8 @@ int main(int argc, char **argv) {
   (void)frog_string_1020491445;
   (void)frog_string_1303515621;
   (void)frog_string_184981848;
-  (void)frog_string_2936507147;
   (void)frog_string_173830071;
+  (void)frog_string_2936507147;
   (void)frog_string_803365811;
   (void)frog_string_3480181788;
   (void)frog_string_2731697891;

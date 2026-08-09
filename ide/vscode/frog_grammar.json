@@ -62,6 +62,27 @@
     "literals": {
       "patterns": [
         {
+          "begin": "\"",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.frog" }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.frog" }
+          },
+          "name": "string.quoted.double.frog",
+          "patterns": [
+            {
+              "match": "\\\\(?:[\\\\\"nrt0]|x[0-9A-Fa-f]{2})",
+              "name": "constant.character.escape.frog"
+            },
+            {
+              "match": "\\\\(?:x[^\"\\\\\\r\\n]{0,2}|[^\"\\r\\n])?",
+              "name": "invalid.illegal.escape.frog"
+            }
+          ]
+        },
+        {
           "match": "\\b\\d+\\b",
           "name": "constant.numeric.frog"
         },

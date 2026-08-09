@@ -12,12 +12,15 @@
 @_black:
     black .
 
+@_vscode-grammar:
+    python test/vscode_grammar.py
+
 [group("test")]
 typecheck: _mypy _basedpyright
 [group("test")]
 fmt: _black
 [group("test")]
-check: typecheck fmt
+check: typecheck fmt _vscode-grammar
 
 [group("test")]
 test: check bootstrap-check

@@ -43,4 +43,14 @@ proc main -- do
         bytes 7 + @u8 print
         bytes 8 + @u8 print
     end
+
+    "line one
+// still string \"quoted\""
+    let multiline multiline-length do
+        multiline-length print
+        multiline 8 + @u8 print
+        multiline 9 + @u8 print
+        multiline 25 + @u8 print
+        multiline 32 + @u8 print
+    end
 end
