@@ -3,13 +3,13 @@
 ### Source: `test/tmp_fs/local_proc_uses_imported_proc/main.frog`
 
 ```frog
+from "math.frog" import inc
 
-            from "math.frog" import inc
+proc add_two int -- int do inc inc end
 
-            proc add_two int -- int do inc inc end
-
-            3 add_two print
-            
+proc main -- do
+    3 add_two print
+end
 ```
 
 ### Source: `test/tmp_fs/local_proc_uses_imported_proc/math.frog`
@@ -25,30 +25,12 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/local_proc_uses_imported_proc/main.frog
+python -m frog run test/tmp_fs/local_proc_uses_imported_proc/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():5@test/tmp_fs/local_proc_uses_imported_proc/math.frog:1:26
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/local_proc_uses_imported_proc/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/local_proc_uses_imported_proc/main.c -o test/tmp_fs/local_proc_uses_imported_proc/main.exe
-[CMD] test/tmp_fs/local_proc_uses_imported_proc/main.exe
-[STDOUT]:
 5
-
 ```
 

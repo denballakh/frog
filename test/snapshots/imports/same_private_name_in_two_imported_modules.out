@@ -3,13 +3,13 @@
 ### Source: `test/tmp_fs/same_private_name_in_two_imported_modules/main.frog`
 
 ```frog
+from "left.frog" import value as left
+from "right.frog" import value as right
 
-            from "left.frog" import value as left
-            from "right.frog" import value as right
-
-            left print
-            right print
-            
+proc main -- do
+    left print
+    right print
+end
 ```
 
 ### Source: `test/tmp_fs/same_private_name_in_two_imported_modules/left.frog`
@@ -37,32 +37,13 @@
 Command:
 
 ```text
-py -m frog run test/tmp_fs/same_private_name_in_two_imported_modules/main.frog
+python -m frog run test/tmp_fs/same_private_name_in_two_imported_modules/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():10@test/tmp_fs/same_private_name_in_two_imported_modules/left.frog:2:35
-[PRINT] INT():20@test/tmp_fs/same_private_name_in_two_imported_modules/right.frog:2:35
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/same_private_name_in_two_imported_modules/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/same_private_name_in_two_imported_modules/main.c -o test/tmp_fs/same_private_name_in_two_imported_modules/main.exe
-[CMD] test/tmp_fs/same_private_name_in_two_imported_modules/main.exe
-[STDOUT]:
 10
 20
-
 ```
 

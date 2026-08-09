@@ -3,11 +3,11 @@
 ### Source: `test/tmp_fs/import_alias/main.frog`
 
 ```frog
+from "math.frog" import inc as bump
 
-            from "math.frog" import inc as bump
-
-            1 bump print
-            
+proc main -- do
+    1 bump print
+end
 ```
 
 ### Source: `test/tmp_fs/import_alias/math.frog`
@@ -23,30 +23,12 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/import_alias/main.frog
+python -m frog run test/tmp_fs/import_alias/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():2@test/tmp_fs/import_alias/math.frog:1:26
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/import_alias/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/import_alias/main.c -o test/tmp_fs/import_alias/main.exe
-[CMD] test/tmp_fs/import_alias/main.exe
-[STDOUT]:
 2
-
 ```
 

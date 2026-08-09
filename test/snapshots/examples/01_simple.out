@@ -3,7 +3,9 @@
 ### Source: `examples/01_simple.frog`
 
 ```frog
-1 2 ? + ? print
+proc main -- do
+  1 2 ? + ? print
+end
 ```
 
 ### Run
@@ -11,44 +13,12 @@
 Command:
 
 ```text
-py -m frog run examples/01_simple.frog
+python -m frog run examples/01_simple.frog
 ```
 
 Output:
 
 ```text
-[INFO] examples/01_simple.frog:1:5: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:1
-      1. INT()@examples/01_simple.frog:1:3
-[INFO] examples/01_simple.frog:1:9: Stack at compile time:
-[NOTE] stack:
-      0. INT()@examples/01_simple.frog:1:7
-[INFO] examples/01_simple.frog:1:5: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@examples/01_simple.frog:1:1
-      1. INT():2@examples/01_simple.frog:1:3
-[INFO] examples/01_simple.frog:1:9: Stack at runtime:
-[NOTE] stack:
-      0. INT():3@examples/01_simple.frog:1:7
-[PRINT] INT():3@examples/01_simple.frog:1:7
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r examples/01_simple.frog
-```
-
-Output:
-
-```text
-[CMD] gcc examples/01_simple.c -o examples/01_simple.exe
-[CMD] examples/01_simple.exe
-[STDOUT]:
 3
-
 ```
 

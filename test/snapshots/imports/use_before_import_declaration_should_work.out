@@ -3,12 +3,12 @@
 ### Source: `test/tmp_fs/use_before_import_declaration_should_work/main.frog`
 
 ```frog
+proc main -- do
+    // imports are collected before bodies are compiled
+    10 inc print
+end
 
-            // imports are collected before bodies are compiled
-            10 inc print
-
-            from "math.frog" import inc
-            
+from "math.frog" import inc
 ```
 
 ### Source: `test/tmp_fs/use_before_import_declaration_should_work/math.frog`
@@ -24,30 +24,12 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/use_before_import_declaration_should_work/main.frog
+python -m frog run test/tmp_fs/use_before_import_declaration_should_work/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():11@test/tmp_fs/use_before_import_declaration_should_work/math.frog:1:26
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/use_before_import_declaration_should_work/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/use_before_import_declaration_should_work/main.c -o test/tmp_fs/use_before_import_declaration_should_work/main.exe
-[CMD] test/tmp_fs/use_before_import_declaration_should_work/main.exe
-[STDOUT]:
 11
-
 ```
 

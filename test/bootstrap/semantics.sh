@@ -68,3 +68,12 @@ run_source_error character_malformed_utf8 \
 run_source_error character_truncated_utf8 \
     $'proc main -- do \'\xE2\x82\' drop end\n' \
     'invalid character literal'
+run_source_error if_without_do \
+    $'proc main -- do if true end end\n' \
+    'if requires do before end'
+run_source_error else_without_do \
+    $'proc main -- do if true else end end\n' \
+    'else requires a preceding if arm and do'
+run_source_error while_without_do \
+    $'proc main -- do while end end\n' \
+    'while requires do before end'

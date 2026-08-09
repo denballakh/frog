@@ -5,7 +5,8 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-
+proc main -- do
+end
 ```
 
 ### Run
@@ -13,7 +14,7 @@
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -22,42 +23,28 @@ Output:
 (no output)
 ```
 
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-```
-
 ## Case 02
 
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-'
+proc main -- do
+    '
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: unterminated character literal
+frogc: unterminated character literal
 [EXIT CODE] 1
 ```
 
@@ -66,22 +53,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-''
+proc main -- do
+    ''
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+frogc: invalid character literal
 [EXIT CODE] 1
 ```
 
@@ -90,22 +78,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-'aa'
+proc main -- do
+    'aa'
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+frogc: invalid character literal
 [EXIT CODE] 1
 ```
 
@@ -114,22 +103,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-'\n'
+proc main -- do
+    '\n'
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+frogc: invalid character literal
 [EXIT CODE] 1
 ```
 
@@ -138,22 +128,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-'\t'
+proc main -- do
+    '\t'
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: invalid character literal
+frogc: invalid character literal
 [EXIT CODE] 1
 ```
 
@@ -162,22 +153,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-'\''
+proc main -- do
+    '\''
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:2: unterminated character literal
+frogc: unterminated character literal
 [EXIT CODE] 1
 ```
 
@@ -186,22 +178,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"
+proc main -- do
+    "
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: unterminated string literal
+frogc: unterminated string literal
 [EXIT CODE] 1
 ```
 
@@ -210,7 +203,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"" ? drop drop
+proc main -- do
+    "" ? drop drop
+end
 ```
 
 ### Run
@@ -218,35 +213,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:3: Stack at compile time:
-[NOTE] stack:
-      0. PTR()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:3: Stack at runtime:
-[NOTE] stack:
-      0. PTR():MemoryPtr(buf=bytearray(b''), offset=0)@test/tmp_fs/code.frog:1:1
-      1. INT():0@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
+(no output)
 ```
 
 ## Case 10
@@ -254,7 +227,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"abc" ? drop drop
+proc main -- do
+    "abc" ? drop drop
+end
 ```
 
 ### Run
@@ -262,35 +237,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:3: Stack at compile time:
-[NOTE] stack:
-      0. PTR()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:3: Stack at runtime:
-[NOTE] stack:
-      0. PTR():MemoryPtr(buf=bytearray(b'abc'), offset=0)@test/tmp_fs/code.frog:1:1
-      1. INT():3@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
+(no output)
 ```
 
 ## Case 11
@@ -298,7 +251,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"abc\n" ? drop drop
+proc main -- do
+    "abc\n" ? drop drop
+end
 ```
 
 ### Run
@@ -306,35 +261,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:3: Stack at compile time:
-[NOTE] stack:
-      0. PTR()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:3: Stack at runtime:
-[NOTE] stack:
-      0. PTR():MemoryPtr(buf=bytearray(b'abc\n'), offset=0)@test/tmp_fs/code.frog:1:1
-      1. INT():4@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
+(no output)
 ```
 
 ## Case 12
@@ -342,7 +275,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"abc'" ? drop drop
+proc main -- do
+    "abc'" ? drop drop
+end
 ```
 
 ### Run
@@ -350,35 +285,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:3: Stack at compile time:
-[NOTE] stack:
-      0. PTR()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:3: Stack at runtime:
-[NOTE] stack:
-      0. PTR():MemoryPtr(buf=bytearray(b"abc\'"), offset=0)@test/tmp_fs/code.frog:1:1
-      1. INT():4@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
+(no output)
 ```
 
 ## Case 13
@@ -386,7 +299,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"abc\"" ? drop drop
+proc main -- do
+    "abc\"" ? drop drop
+end
 ```
 
 ### Run
@@ -394,35 +309,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:3: Stack at compile time:
-[NOTE] stack:
-      0. PTR()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:3: Stack at runtime:
-[NOTE] stack:
-      0. PTR():MemoryPtr(buf=bytearray(b'abc"'), offset=0)@test/tmp_fs/code.frog:1:1
-      1. INT():4@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
+(no output)
 ```
 
 ## Case 14
@@ -430,7 +323,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-"A\n\x42\0é" let p n do n print p @u8 print p 1 + @u8 print p 2 + @u8 print p 3 + @u8 print p 4 + @u8 print end
+proc main -- do
+    "A\n\x42\0é" let p n do n print p @u8 print p 1 + @u8 print p 2 + @u8 print p 3 + @u8 print p 4 + @u8 print end
+end
 ```
 
 ### Run
@@ -438,41 +333,18 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():6@test/tmp_fs/code.frog:1:1
-[PRINT] INT():65@test/tmp_fs/code.frog:1:24
-[PRINT] INT():10@test/tmp_fs/code.frog:1:40
-[PRINT] INT():66@test/tmp_fs/code.frog:1:56
-[PRINT] INT():0@test/tmp_fs/code.frog:1:72
-[PRINT] INT():195@test/tmp_fs/code.frog:1:88
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 6
 65
 10
 66
 0
 195
-
 ```
 
 ## Case 15
@@ -480,8 +352,10 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 // comment 
- print
+proc main -- do
+    1 // comment
+     print
+end
 ```
 
 ### Run
@@ -489,30 +363,12 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
-
 ```
 

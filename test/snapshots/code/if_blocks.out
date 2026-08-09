@@ -5,25 +5,23 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 == if do 5 else 7 end print
+proc main -- do
+    1 2 == if do 5 else 7 end print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:11: condition part of InstructionType.IF should put exactly one BOOL on the stack
-[NOTE] expected_stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:5
-[NOTE] actual_stack: (empty)
+frogc: if or while requires a condition before do
 [EXIT CODE] 1
 ```
 
@@ -32,7 +30,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 == do 5 else 7 end print
+proc main -- do
+    if 1 2 == do 5 else 7 end print
+end
 ```
 
 ### Run
@@ -40,31 +40,13 @@ if 1 2 == do 5 else 7 end print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():7@test/tmp_fs/code.frog:1:21
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 7
-
 ```
 
 ## Case 03
@@ -72,7 +54,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 != do 5 else 7 end print
+proc main -- do
+    if 1 2 != do 5 else 7 end print
+end
 ```
 
 ### Run
@@ -80,31 +64,13 @@ if 1 2 != do 5 else 7 end print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():5@test/tmp_fs/code.frog:1:14
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 5
-
 ```
 
 ## Case 04
@@ -112,27 +78,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 != do 5 else 7 8 end print
+proc main -- do
+    if 1 2 != do 5 else 7 8 end print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:25: both branches of InstructionType.IF must leave the stack in the same state
-[NOTE] stack_then:
-      0. INT()@test/tmp_fs/code.frog:1:14
-[NOTE] stack_else:
-      0. INT()@test/tmp_fs/code.frog:1:21
-      1. INT()@test/tmp_fs/code.frog:1:23
+frogc: if branches leave different stack shapes
 [EXIT CODE] 1
 ```
 
@@ -141,25 +103,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 != do 5 else 7 end
+proc main -- do
+    if 1 2 != do 5 else 7 end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] <?>:0:0: return type mismatch: expected 0 items on the stack, got 1
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:21
-[NOTE] outs: (empty)
+frogc: procedure output stack depth mismatch
 [EXIT CODE] 1
 ```
 
@@ -168,25 +128,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 != do 5 else end
+proc main -- do
+    if 1 2 != do 5 else end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:21: both branches of InstructionType.IF must leave the stack in the same state
-[NOTE] stack_then:
-      0. INT()@test/tmp_fs/code.frog:1:14
-[NOTE] stack_else: (empty)
+frogc: if branches leave different stack shapes
 [EXIT CODE] 1
 ```
 
@@ -195,25 +153,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 != do 5 end
+proc main -- do
+    if 1 2 != do 5 end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:16: both branches of InstructionType.IF must leave the stack in the same state
-[NOTE] stack_then:
-      0. INT()@test/tmp_fs/code.frog:1:14
-[NOTE] stack_else: (empty)
+frogc: control-flow stack shape mismatch
 [EXIT CODE] 1
 ```
 
@@ -222,7 +178,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 != do 5 print end
+proc main -- do
+    if 1 2 != do 5 print end
+end
 ```
 
 ### Run
@@ -230,31 +188,13 @@ if 1 2 != do 5 print end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():5@test/tmp_fs/code.frog:1:14
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 5
-
 ```
 
 ## Case 09
@@ -262,7 +202,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-5 if 1 2 == do drop 7 end print
+proc main -- do
+    5 if 1 2 == do drop 7 end print
+end
 ```
 
 ### Run
@@ -270,31 +212,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():5@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 5
-
 ```
 
 ## Case 10
@@ -302,7 +226,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-5 if 1 2 != do drop 7 end print
+proc main -- do
+    5 if 1 2 != do drop 7 end print
+end
 ```
 
 ### Run
@@ -310,31 +236,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():7@test/tmp_fs/code.frog:1:21
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 7
-
 ```
 
 ## Case 11
@@ -342,24 +250,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if
+proc main -- do
+    if
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] <?>:0:0: unclosed blocks
-[NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=-1, ip3=-1, ip4=-1, bound_vars=[])
+frogc: unterminated procedure body
 [EXIT CODE] 1
 ```
 
@@ -368,24 +275,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 == do
+proc main -- do
+    if 1 2 == do
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] <?>:0:0: unclosed blocks
-[NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=-1, ip4=-1, bound_vars=[])
+frogc: unterminated procedure body
 [EXIT CODE] 1
 ```
 
@@ -394,24 +300,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 == do 5 print else
+proc main -- do
+    if 1 2 == do 5 print else
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] <?>:0:0: unclosed blocks
-[NOTE] blocks:
-      0. Block(type=<InstructionType.IF: 7>, ip1=0, ip2=4, ip3=7, ip4=-1, bound_vars=[])
+frogc: unterminated procedure body
 [EXIT CODE] 1
 ```
 
@@ -420,22 +325,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 == else 5 end
+proc main -- do
+    if 1 2 == else 5 end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:18: if <cond> do <body> [elif <cond> do <body>] [else <body>] end
+frogc: else requires a preceding if arm and do
 [EXIT CODE] 1
 ```
 
@@ -444,22 +350,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if do end
+proc main -- do
+    if do end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:4: not enough items on the stack for InstructionType.DO: it expects one BOOL on the stack
+frogc: if or while requires a condition before do
 [EXIT CODE] 1
 ```
 
@@ -468,23 +375,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 do end
+proc main -- do
+    if 1 do end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:6: InstructionType.DO expects one BOOL on the stack, but got INT()
-[NOTE] other_stack_items: (empty)
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -493,24 +400,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 do end
+proc main -- do
+    if 1 2 do end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: InstructionType.DO expects one BOOL on the stack, but got INT()
-[NOTE] other_stack_items:
-      0. INT()@test/tmp_fs/code.frog:1:4
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -519,25 +425,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 3 do end
+proc main -- do
+    if 1 2 3 do end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:10: InstructionType.DO expects one BOOL on the stack, but got INT()
-[NOTE] other_stack_items:
-      0. INT()@test/tmp_fs/code.frog:1:4
-      1. INT()@test/tmp_fs/code.frog:1:6
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -546,25 +450,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if 1 2 3 == do end
+proc main -- do
+    if 1 2 3 == do end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:13: condition part of InstructionType.IF should put exactly one BOOL on the stack
-[NOTE] expected_stack: (empty)
-[NOTE] actual_stack:
-      0. INT()@test/tmp_fs/code.frog:1:4
+frogc: control-flow stack shape mismatch
 [EXIT CODE] 1
 ```
 
@@ -573,22 +475,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-else
+proc main -- do
+    else
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: ELSE should follow an IF
+frogc: control-flow block stack underflow
 [EXIT CODE] 1
 ```
 
@@ -597,7 +500,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 if true do swap else end print print
+proc main -- do
+    1 2 if true do swap else end print print
+end
 ```
 
 ### Run
@@ -605,33 +510,14 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
 2
-
 ```
 
 ## Case 22
@@ -639,7 +525,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if false do 1 elif true do 2 else 3 end print
+proc main -- do
+    if false do 1 elif true do 2 else 3 end print
+end
 ```
 
 ### Run
@@ -647,31 +535,13 @@ if false do 1 elif true do 2 else 3 end print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():2@test/tmp_fs/code.frog:1:28
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 2
-
 ```
 
 ## Case 23
@@ -679,7 +549,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if false do 1 elif false do 2 elif true do 3 else 4 end print
+proc main -- do
+    if false do 1 elif false do 2 elif true do 3 else 4 end print
+end
 ```
 
 ### Run
@@ -687,31 +559,13 @@ if false do 1 elif false do 2 elif true do 3 else 4 end print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():3@test/tmp_fs/code.frog:1:44
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 3
-
 ```
 
 ## Case 24
@@ -719,7 +573,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if false do 1 print elif true do 2 print end
+proc main -- do
+    if false do 1 print elif true do 2 print end
+end
 ```
 
 ### Run
@@ -727,31 +583,13 @@ if false do 1 print elif true do 2 print end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():2@test/tmp_fs/code.frog:1:34
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 2
-
 ```
 
 ## Case 25
@@ -759,7 +597,11 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro choose if false do 1 elif true do 2 else 3 end end choose print
+macro choose if false do 1 elif true do 2 else 3 end end
+
+proc main -- do
+    choose print
+end
 ```
 
 ### Run
@@ -767,31 +609,13 @@ macro choose if false do 1 elif true do 2 else 3 end end choose print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():2@test/tmp_fs/code.frog:1:41
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 2
-
 ```
 
 ## Case 26
@@ -799,22 +623,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-elif true do 1 end
+proc main -- do
+    elif true do 1 end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: ELIF should follow an active IF chain
+frogc: elif outside active if
 [EXIT CODE] 1
 ```
 
@@ -823,22 +648,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if false do 1 else 2 elif true do 3 end
+proc main -- do
+    if false do 1 else 2 elif true do 3 end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:22: ELIF cannot follow ELSE
+frogc: elif after else
 [EXIT CODE] 1
 ```
 
@@ -847,22 +673,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-if false do 1 elif do 2 end
+proc main -- do
+    if false do 1 elif do 2 end
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:20: ELIF must have a condition before DO
+frogc: elif requires a condition before do
 [EXIT CODE] 1
 ```
 

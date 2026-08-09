@@ -5,7 +5,11 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro dup let x do x x end end 1 dup ? print print
+macro dup let x do x x end end
+
+proc main -- do
+    1 dup ? print print
+end
 ```
 
 ### Run
@@ -13,41 +17,14 @@ macro dup let x do x x end end 1 dup ? print print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:38: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:32
-      1. INT()@test/tmp_fs/code.frog:1:32
-[INFO] test/tmp_fs/code.frog:1:38: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:32
-      1. INT():1@test/tmp_fs/code.frog:1:32
-[PRINT] INT():1@test/tmp_fs/code.frog:1:32
-[PRINT] INT():1@test/tmp_fs/code.frog:1:32
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
 1
-
 ```
 
 ## Case 02
@@ -55,7 +32,11 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro swap let x y do y x end end 1 2 swap ? print print
+macro swap let x y do y x end end
+
+proc main -- do
+    1 2 swap ? print print
+end
 ```
 
 ### Run
@@ -63,41 +44,14 @@ macro swap let x y do y x end end 1 2 swap ? print print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:44: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:37
-      1. INT()@test/tmp_fs/code.frog:1:35
-[INFO] test/tmp_fs/code.frog:1:44: Stack at runtime:
-[NOTE] stack:
-      0. INT():2@test/tmp_fs/code.frog:1:37
-      1. INT():1@test/tmp_fs/code.frog:1:35
-[PRINT] INT():1@test/tmp_fs/code.frog:1:35
-[PRINT] INT():2@test/tmp_fs/code.frog:1:37
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
 2
-
 ```
 
 ## Case 03
@@ -105,7 +59,11 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro double dup + end 5 double print
+macro double dup + end
+
+proc main -- do
+    5 double print
+end
 ```
 
 ### Run
@@ -113,31 +71,13 @@ macro double dup + end 5 double print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():10@test/tmp_fs/code.frog:1:18
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 10
-
 ```
 
 ## Case 04
@@ -145,7 +85,11 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro inc 1 + end 5 inc print
+macro inc 1 + end
+
+proc main -- do
+    5 inc print
+end
 ```
 
 ### Run
@@ -153,31 +97,13 @@ macro inc 1 + end 5 inc print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():6@test/tmp_fs/code.frog:1:13
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 6
-
 ```
 
 ## Case 05
@@ -185,7 +111,11 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-5 later print macro later 1 + end
+proc main -- do
+    5 later print
+end
+
+macro later 1 + end
 ```
 
 ### Run
@@ -193,31 +123,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():6@test/tmp_fs/code.frog:1:29
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 6
-
 ```
 
 ## Case 06
@@ -225,7 +137,11 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro choose if 1 2 == do 5 else 7 end end choose print
+macro choose if 1 2 == do 5 else 7 end end
+
+proc main -- do
+    choose print
+end
 ```
 
 ### Run
@@ -233,31 +149,13 @@ macro choose if 1 2 == do 5 else 7 end end choose print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():7@test/tmp_fs/code.frog:1:34
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 7
-
 ```
 
 ## Case 07
@@ -265,7 +163,12 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro one 1 + end macro two one one end 5 two print
+macro one 1 + end
+macro two one one end
+
+proc main -- do
+    5 two print
+end
 ```
 
 ### Run
@@ -273,31 +176,13 @@ macro one 1 + end macro two one one end 5 two print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():7@test/tmp_fs/code.frog:1:13
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 7
-
 ```
 
 ## Case 08
@@ -305,25 +190,25 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro loop loop end loop
+macro loop loop end
+
+proc main -- do
+    loop
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:12: recursive macro expansion for loop
-[NOTE] expansion_stack:
-      0. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='loop')
-      1. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='loop')
+frogc: recursive macro expansion
 [EXIT CODE] 1
 ```
 
@@ -332,26 +217,26 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-macro a b end macro b a end a
+macro a b end
+macro b a end
+
+proc main -- do
+    a
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:23: recursive macro expansion for a
-[NOTE] expansion_stack:
-      0. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='a')
-      1. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='b')
-      2. Symbol(type=<SymbolType.MACRO: 'macro'>, module='', name='a')
+frogc: recursive macro expansion
 [EXIT CODE] 1
 ```
 
@@ -361,21 +246,23 @@ Output:
 
 ```frog
 macro outer macro inner 1 end end
+
+proc main -- do
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:13: MACRO should not be inside of another MACRO
+frogc: declarations are not allowed in macro bodies
 [EXIT CODE] 1
 ```
 
@@ -385,21 +272,23 @@ Output:
 
 ```frog
 macro m else end
+
+proc main -- do
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:9: ELSE should follow an IF
+frogc: else outside macro if block
 [EXIT CODE] 1
 ```
 
@@ -411,19 +300,18 @@ Output:
 macro
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: expected a name after MACRO
+frogc: expected macro name
 [EXIT CODE] 1
 ```
 
@@ -433,21 +321,23 @@ Output:
 
 ```frog
 macro 123 end
+
+proc main -- do
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:7: expected a name after MACRO, got TokenType.INT
+frogc: expected word token
 [EXIT CODE] 1
 ```
 

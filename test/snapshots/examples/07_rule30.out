@@ -108,7 +108,7 @@ end
 Command:
 
 ```text
-py -m frog run examples/07_rule30.frog
+python -m frog run examples/07_rule30.frog
 ```
 
 Output:
@@ -134,42 +134,5 @@ Output:
    ## #### ##  ###    ##  ##  #    ###  
   ##  #    # ###  #  ## ### ####  ##  # 
  ## ####  ## #  ######  #   #   ### ####
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r examples/07_rule30.frog
-```
-
-Output:
-
-```text
-[CMD] gcc examples/07_rule30.c -o examples/07_rule30.exe
-[CMD] examples/07_rule30.exe
-[STDOUT]:
-                    #                   
-                   ###                  
-                  ##  #                 
-                 ## ####                
-                ##  #   #               
-               ## #### ###              
-              ##  #    #  #             
-             ## ####  ######            
-            ##  #   ###     #           
-           ## #### ##  #   ###          
-          ##  #    # #### ##  #         
-         ## ####  ## #    # ####        
-        ##  #   ###  ##  ## #   #       
-       ## #### ##  ### ###  ## ###      
-      ##  #    # ###   #  ###  #  #     
-     ## ####  ## #  # #####  #######    
-    ##  #   ###  #### #    ###      #   
-   ## #### ##  ###    ##  ##  #    ###  
-  ##  #    # ###  #  ## ### ####  ##  # 
- ## ####  ## #  ######  #   #   ### ####
-
 ```
 

@@ -3,13 +3,13 @@
 ### Source: `test/tmp_fs/import_group/main.frog`
 
 ```frog
+from "math.frog" import ( inc dec add2 )
 
-            from "math.frog" import ( inc dec add2 )
-
-            5 inc print
-            5 dec print
-            5 add2 print
-            
+proc main -- do
+    5 inc print
+    5 dec print
+    5 add2 print
+end
 ```
 
 ### Source: `test/tmp_fs/import_group/math.frog`
@@ -29,34 +29,14 @@
 Command:
 
 ```text
-py -m frog run test/tmp_fs/import_group/main.frog
+python -m frog run test/tmp_fs/import_group/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():6@test/tmp_fs/import_group/math.frog:2:38
-[PRINT] INT():4@test/tmp_fs/import_group/math.frog:3:38
-[PRINT] INT():7@test/tmp_fs/import_group/math.frog:4:39
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/import_group/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/import_group/main.c -o test/tmp_fs/import_group/main.exe
-[CMD] test/tmp_fs/import_group/main.exe
-[STDOUT]:
 6
 4
 7
-
 ```
 

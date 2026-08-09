@@ -4,6 +4,9 @@
 
 ```frog
 from "math.frog" import *
+
+proc main -- do
+end
 ```
 
 ### Source: `test/tmp_fs/reject_wildcard_import/math.frog`
@@ -14,19 +17,18 @@ proc inc int -- int do 1 + end
 
 ### Main: `test/tmp_fs/reject_wildcard_import/main.frog`
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/reject_wildcard_import/main.frog
-py -m frog -l WARN build -r test/tmp_fs/reject_wildcard_import/main.frog
+python -m frog run test/tmp_fs/reject_wildcard_import/main.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/reject_wildcard_import/main.frog:1:15: wildcard imports are not supported
+frogc: wildcard imports are not supported
 [EXIT CODE] 1
 ```
 

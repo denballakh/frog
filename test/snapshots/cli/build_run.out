@@ -1,0 +1,24 @@
+# Snapshot: cli/build_run
+
+### Source: `test/tmp_fs/build_run/main.frog`
+
+```frog
+proc main -- do
+    40 2 + print
+end
+```
+
+### Build and Run
+
+Command:
+
+```text
+python -m frog build -r test/tmp_fs/build_run/main.frog
+```
+
+Output:
+
+```text
+42
+```
+

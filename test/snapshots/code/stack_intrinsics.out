@@ -5,7 +5,9 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 ? print print
+proc main -- do
+    1 2 ? print print
+end
 ```
 
 ### Run
@@ -13,41 +15,14 @@
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:5: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:3
-[INFO] test/tmp_fs/code.frog:1:5: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:1
-      1. INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 2
 1
-
 ```
 
 ## Case 02
@@ -55,7 +30,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 dup ? print print
+proc main -- do
+    1 dup ? print print
+end
 ```
 
 ### Run
@@ -63,41 +40,14 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:7: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:7: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:1
-      1. INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
 1
-
 ```
 
 ## Case 03
@@ -105,7 +55,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 dup2 ? print print print print
+proc main -- do
+    1 2 dup2 ? print print print print
+end
 ```
 
 ### Run
@@ -113,49 +65,16 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:10: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:3
-      2. INT()@test/tmp_fs/code.frog:1:1
-      3. INT()@test/tmp_fs/code.frog:1:3
-[INFO] test/tmp_fs/code.frog:1:10: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:1
-      1. INT():2@test/tmp_fs/code.frog:1:3
-      2. INT():1@test/tmp_fs/code.frog:1:1
-      3. INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 2
 1
 2
 1
-
 ```
 
 ## Case 04
@@ -163,7 +82,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 drop ? print
+proc main -- do
+    1 2 drop ? print
+end
 ```
 
 ### Run
@@ -171,37 +92,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:10: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:10: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
-
 ```
 
 ## Case 05
@@ -209,7 +106,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 swap ? print print
+proc main -- do
+    1 2 swap ? print print
+end
 ```
 
 ### Run
@@ -217,41 +116,14 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:10: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:3
-      1. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:10: Stack at runtime:
-[NOTE] stack:
-      0. INT():2@test/tmp_fs/code.frog:1:3
-      1. INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
 2
-
 ```
 
 ## Case 06
@@ -259,7 +131,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 3 ? print print print
+proc main -- do
+    1 2 3 ? print print print
+end
 ```
 
 ### Run
@@ -267,45 +141,15 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:7: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:3
-      2. INT()@test/tmp_fs/code.frog:1:5
-[INFO] test/tmp_fs/code.frog:1:7: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:1
-      1. INT():2@test/tmp_fs/code.frog:1:3
-      2. INT():3@test/tmp_fs/code.frog:1:5
-[PRINT] INT():3@test/tmp_fs/code.frog:1:5
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 3
 2
 1
-
 ```
 
 ## Case 07
@@ -313,7 +157,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 3 rot ? print print print
+proc main -- do
+    1 2 3 rot ? print print print
+end
 ```
 
 ### Run
@@ -321,45 +167,15 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:11: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:3
-      1. INT()@test/tmp_fs/code.frog:1:5
-      2. INT()@test/tmp_fs/code.frog:1:1
-[INFO] test/tmp_fs/code.frog:1:11: Stack at runtime:
-[NOTE] stack:
-      0. INT():2@test/tmp_fs/code.frog:1:3
-      1. INT():3@test/tmp_fs/code.frog:1:5
-      2. INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():3@test/tmp_fs/code.frog:1:5
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 1
 3
 2
-
 ```
 
 ## Case 08
@@ -367,7 +183,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 3 4 ? swap2 ? print print print print
+proc main -- do
+    1 2 3 4 ? swap2 ? print print print print
+end
 ```
 
 ### Run
@@ -375,61 +193,16 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:9: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:3
-      2. INT()@test/tmp_fs/code.frog:1:5
-      3. INT()@test/tmp_fs/code.frog:1:7
-[INFO] test/tmp_fs/code.frog:1:17: Stack at compile time:
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:5
-      1. INT()@test/tmp_fs/code.frog:1:7
-      2. INT()@test/tmp_fs/code.frog:1:1
-      3. INT()@test/tmp_fs/code.frog:1:3
-[INFO] test/tmp_fs/code.frog:1:9: Stack at runtime:
-[NOTE] stack:
-      0. INT():1@test/tmp_fs/code.frog:1:1
-      1. INT():2@test/tmp_fs/code.frog:1:3
-      2. INT():3@test/tmp_fs/code.frog:1:5
-      3. INT():4@test/tmp_fs/code.frog:1:7
-[INFO] test/tmp_fs/code.frog:1:17: Stack at runtime:
-[NOTE] stack:
-      0. INT():3@test/tmp_fs/code.frog:1:5
-      1. INT():4@test/tmp_fs/code.frog:1:7
-      2. INT():1@test/tmp_fs/code.frog:1:1
-      3. INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():2@test/tmp_fs/code.frog:1:3
-[PRINT] INT():1@test/tmp_fs/code.frog:1:1
-[PRINT] INT():4@test/tmp_fs/code.frog:1:7
-[PRINT] INT():3@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 2
 1
 4
 3
-
 ```
 
 ## Case 09
@@ -437,23 +210,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-print
+proc main -- do
+    print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: not enough items on stack for IntrinsicType.PRINT: it expects one item on the stack
-[NOTE] stack: (empty)
+frogc: compile-time stack underflow
 [EXIT CODE] 1
 ```
 
@@ -462,7 +235,9 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-?
+proc main -- do
+    ?
+end
 ```
 
 ### Run
@@ -470,31 +245,13 @@ Output:
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[INFO] test/tmp_fs/code.frog:1:1: Stack at compile time:
-[NOTE] stack: (empty)
-[INFO] test/tmp_fs/code.frog:1:1: Stack at runtime:
-[NOTE] stack: (empty)
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
+(no output)
 ```
 
 ## Case 11
@@ -502,23 +259,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-dup
+proc main -- do
+    dup
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: not enough items on stack for IntrinsicType.DUP: it expects one item on the stack
-[NOTE] stack: (empty)
+frogc: compile-time stack underflow
 [EXIT CODE] 1
 ```
 
@@ -527,23 +284,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-swap
+proc main -- do
+    swap
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: not enough items on stack for IntrinsicType.SWAP: it expects two items on the stack
-[NOTE] stack: (empty)
+frogc: compile-time stack underflow
 [EXIT CODE] 1
 ```
 
@@ -552,23 +309,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-drop
+proc main -- do
+    drop
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: not enough items on stack for IntrinsicType.DROP: it expects one item on the stack
-[NOTE] stack: (empty)
+frogc: compile-time stack underflow
 [EXIT CODE] 1
 ```
 
@@ -577,23 +334,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-rot
+proc main -- do
+    rot
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:1: not enough items on stack for IntrinsicType.ROT: it expects three items on the stack
-[NOTE] stack: (empty)
+frogc: compile-time stack underflow
 [EXIT CODE] 1
 ```
 

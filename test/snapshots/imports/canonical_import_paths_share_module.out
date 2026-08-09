@@ -3,12 +3,12 @@
 ### Source: `test/tmp_fs/canonical_import_paths_share_module/main.frog`
 
 ```frog
+from "lib/math.frog" import value
+from "lib/../lib/math.frog" import value
 
-            from "lib/math.frog" import value
-            from "lib/../lib/math.frog" import value
-
-            value print
-            
+proc main -- do
+    value print
+end
 ```
 
 ### Source: `test/tmp_fs/canonical_import_paths_share_module/lib/math.frog`
@@ -24,30 +24,12 @@ proc value -- int do 42 end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/canonical_import_paths_share_module/main.frog
+python -m frog run test/tmp_fs/canonical_import_paths_share_module/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():42@test/tmp_fs/canonical_import_paths_share_module/lib/math.frog:1:22
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/canonical_import_paths_share_module/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/canonical_import_paths_share_module/main.c -o test/tmp_fs/canonical_import_paths_share_module/main.exe
-[CMD] test/tmp_fs/canonical_import_paths_share_module/main.exe
-[STDOUT]:
 42
-
 ```
 

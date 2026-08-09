@@ -17,8 +17,6 @@ in
     pkgs.git
     pkgs.basedpyright
     (py.withPackages (python-pkgs: [
-      python-pkgs.types-tqdm
-      python-pkgs.tqdm
       python-pkgs.mypy
       python-pkgs.black
     ]))

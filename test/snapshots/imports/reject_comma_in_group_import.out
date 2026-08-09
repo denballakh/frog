@@ -4,6 +4,9 @@
 
 ```frog
 from "math.frog" import ( inc , dec )
+
+proc main -- do
+end
 ```
 
 ### Source: `test/tmp_fs/reject_comma_in_group_import/math.frog`
@@ -17,19 +20,18 @@ from "math.frog" import ( inc , dec )
 
 ### Main: `test/tmp_fs/reject_comma_in_group_import/main.frog`
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/reject_comma_in_group_import/main.frog
-py -m frog -l WARN build -r test/tmp_fs/reject_comma_in_group_import/main.frog
+python -m frog run test/tmp_fs/reject_comma_in_group_import/main.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/reject_comma_in_group_import/main.frog:1:21: commas are not valid in import lists
+frogc: commas are not valid in import lists
 [EXIT CODE] 1
 ```
 

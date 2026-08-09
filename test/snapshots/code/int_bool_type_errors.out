@@ -5,28 +5,23 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 + print
+proc main -- do
+    true 5 + print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.ADD: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: invalid operand types for pointer/integer arithmetic
 [EXIT CODE] 1
 ```
 
@@ -35,28 +30,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 * print
+proc main -- do
+    true 5 * print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.MUL: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -65,28 +55,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 % print
+proc main -- do
+    true 5 % print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.MOD: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -95,28 +80,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 | print
+proc main -- do
+    true 5 | print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.BOR: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -125,28 +105,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 << print
+proc main -- do
+    true 5 << print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.SHL: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -155,28 +130,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 && print
+proc main -- do
+    true 5 && print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 1 for IntrinsicType.AND: expected BOOL() but got INT()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. BOOL()
-      1. BOOL()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -185,27 +155,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 ! print
+proc main -- do
+    true 5 ! print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.NOT: expected BOOL() but got INT()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. BOOL()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -214,27 +180,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 swap ~ print
+proc main -- do
+    true 5 swap ~ print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:13: stack doesnt match at 0 for IntrinsicType.BNOT: expected INT() but got BOOL()
-[NOTE] stack:
-      0. INT()@test/tmp_fs/code.frog:1:6
-      1. BOOL()@test/tmp_fs/code.frog:1:1
-[NOTE] ins:
-      0. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -243,28 +205,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 == print
+proc main -- do
+    true 5 == print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.EQ: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 
@@ -273,28 +230,23 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true 5 < print
+proc main -- do
+    true 5 < print
+end
 ```
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
-py -m frog -l WARN build -r test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/code.frog:1:8: stack doesnt match at 0 for IntrinsicType.LT: expected INT() but got BOOL()
-[NOTE] stack:
-      0. BOOL()@test/tmp_fs/code.frog:1:1
-      1. INT()@test/tmp_fs/code.frog:1:6
-[NOTE] ins:
-      0. INT()
-      1. INT()
+frogc: compile-time stack type mismatch
 [EXIT CODE] 1
 ```
 

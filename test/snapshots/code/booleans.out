@@ -5,7 +5,9 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true false && print
+proc main -- do
+    true false && print
+end
 ```
 
 ### Run
@@ -13,31 +15,13 @@ true false && print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():False@test/tmp_fs/code.frog:1:12
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 false
-
 ```
 
 ## Case 02
@@ -45,7 +29,9 @@ false
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true false || print
+proc main -- do
+    true false || print
+end
 ```
 
 ### Run
@@ -53,31 +39,13 @@ true false || print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():True@test/tmp_fs/code.frog:1:12
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 true
-
 ```
 
 ## Case 03
@@ -85,7 +53,9 @@ true
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-true ! print
+proc main -- do
+    true ! print
+end
 ```
 
 ### Run
@@ -93,31 +63,13 @@ true ! print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():False@test/tmp_fs/code.frog:1:6
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 false
-
 ```
 
 ## Case 04
@@ -125,7 +77,9 @@ false
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-false ! print
+proc main -- do
+    false ! print
+end
 ```
 
 ### Run
@@ -133,30 +87,12 @@ false ! print
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():True@test/tmp_fs/code.frog:1:7
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 true
-
 ```
 

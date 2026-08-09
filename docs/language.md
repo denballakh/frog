@@ -2,13 +2,15 @@
 
 FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, imports, macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
+`compiler/frogc.frog` is the sole Frog compiler and typechecker. It emits C, which is compiled to the executable program; there is no separate interpreter or Python language implementation.
+
 ## Values And Literals
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, and `type`.
 - Procedure signatures and casts can name `int`, `bool`, and `ptr`.
-- `int` is a signed 64-bit integer in the C backend. Integer literals are non-negative decimal chunks and must not exceed `9223372036854775807`; negative values are produced by operations, not by signed literal syntax.
+- `int` is a signed 64-bit integer in generated C. Integer literals are non-negative decimal chunks and must not exceed `9223372036854775807`; negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
-- Character literals push integer codepoints and are supported by both interpretation and C codegen.
+- Character literals push integer codepoints.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.
 - String literals push `ptr int`: a pointer to their bytes followed by their byte length. Their bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
@@ -30,7 +32,7 @@ proc inc int -- int do
 end
 ```
 
-Procedure calls are statically checked against declared stack contracts. Return values are modeled as struct fields in generated C.
+Procedure calls are statically checked against declared stack contracts and use the generated runtime cell stack.
 
 ## Macros
 
@@ -40,7 +42,9 @@ Macros are compile-time token substitutions:
 macro dup let x do x x end end
 macro swap let x y do y x end end
 
-1 2 swap
+proc main -- do
+    1 2 swap drop drop
+end
 ```
 
 `macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. Whenever `name` appears as a word in the remaining code, it is expanded before normal word resolution, so macros can shadow intrinsics or procedures with the same name.
@@ -56,14 +60,18 @@ from "math.frog" import inc
 from "math.frog" import inc as bump
 from "math.frog" import ( inc dec add2 )
 
-41 inc print
+proc main -- do
+    41 inc print
+end
 ```
 
 Only `from "path" import ...` is supported. Module alias imports such as `import "math.frog" as math` and wildcard imports are not supported. Grouped imports are whitespace-separated; commas are rejected.
 
-Import declarations are collected before procedure bodies and top-level code are compiled, so imported names can be used before the import declaration appears in the file.
+Import declarations are collected before procedure bodies are compiled, so imported names can be used before the import declaration appears in the file.
 
 Import paths are resolved relative to the root file being compiled, not relative to the importing module. For example, inside `pkg/use.frog`, `from "math.frog" import value` refers to the root-level `math.frog`; use `from "pkg/math.frog" import value` for the file under `pkg/`.
+
+If the root source path is a symbolic link, imports are resolved from the lexical directory containing that link, not from the linked file's physical directory.
 
 Imported files may reexport imported names:
 
@@ -75,6 +83,10 @@ from "math.frog" import inc as bump
 ```frog
 // main.frog
 from "facade.frog" import bump
+
+proc main -- do
+    41 bump print
+end
 ```
 
 Imported top-level code is ignored. Imported files contribute procedure and macro definitions, but only the root module's `main` runs.
@@ -92,11 +104,13 @@ Inside the implementation, bindings are emitted in reverse word order so the top
 Example:
 
 ```frog
-1 2 3
-let a b c do
-    a print // 1
-    b print // 2
-    c print // 3
+proc main -- do
+    1 2 3
+    let a b c do
+        a print // 1
+        b print // 2
+        c print // 3
+    end
 end
 ```
 
@@ -108,8 +122,9 @@ end
 ## Language Constructs
 
 - `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
-- Top-level instructions are compiled into an implicit `main` procedure.
-- `proc main -- do ... end` may be defined explicitly, but it must have no inputs and no outputs.
+- A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
+- Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid rather than being wrapped in a generated `main`.
+- Only procedure, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
 - `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures or macros from another file.
@@ -172,7 +187,6 @@ end
 - Unsigned pointer reads: `@u8`, `@u16`, `@u32`, `@u64`, each `ptr -- int`.
 - Signed pointer writes: `!i8`, `!i16`, `!i32`, `!i64`, each `int ptr --`.
 - Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
-- The interpreter models allocated memory as bytearray-backed pointers and checks bounds/fit for memory access.
 - Generated C uses `malloc`, `void*`, byte pointer arithmetic, and fixed-width integer loads/stores from `<stdint.h>`.
 - Generated C memory reads and writes use `memcpy`, so unaligned accesses do not violate C alignment or strict-aliasing rules.
 
@@ -186,12 +200,12 @@ end
 ### Output And Debugging
 
 - `print`: `a --`, prints one value with a newline.
-- `putc`: `int --`, writes a single character without an added newline or interpreter prefix. Generated C implements `putc` using `putchar`.
+- `putc`: `int --`, writes a single byte without an added newline. Generated C implements it using `putchar`.
 - `getc`: `-- int`, reads one byte from standard input, or pushes `-1` at EOF.
 - `eputc`: `int --`, writes one byte to standard error.
 - `exit`: `int --`, terminates execution with the supplied exit status.
-- `?`: `--`, logs the stack at compile time during typechecking and at runtime during interpretation; it is omitted in C codegen.
+- `?`: `--`, a no-op debugging marker that is omitted from generated C.
 
-## C Backend Limits
+## Generated C Limits
 
-The interpreter uses Python integers, but generated C uses signed 64-bit arithmetic. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined by the C backend. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`.
+Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`.

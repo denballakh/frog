@@ -4,6 +4,9 @@
 
 ```frog
 import "math.frog" as math
+
+proc main -- do
+end
 ```
 
 ### Source: `test/tmp_fs/reject_module_alias_form_for_now/math.frog`
@@ -14,19 +17,18 @@ proc inc int -- int do 1 + end
 
 ### Main: `test/tmp_fs/reject_module_alias_form_for_now/main.frog`
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/reject_module_alias_form_for_now/main.frog
-py -m frog -l WARN build -r test/tmp_fs/reject_module_alias_form_for_now/main.frog
+python -m frog run test/tmp_fs/reject_module_alias_form_for_now/main.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/reject_module_alias_form_for_now/main.frog:1:1: only from path import name is supported
+frogc: module aliases are not supported
 [EXIT CODE] 1
 ```
 

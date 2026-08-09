@@ -1,280 +1,407 @@
+from collections.abc import Generator
+from contextlib import contextmanager
+import fcntl
+import hashlib
 import os
-import subprocess
 from pathlib import Path
+import subprocess
 import sys
-import traceback
+import tempfile
+from typing import IO
 
-from . import tokenize
-from . import compile
-from . import typecheck
-from . import interpret
-from . import translate
-from .types import Loc
-from .logs import error, LL, LL_DEFAULT
-from .logs import logging_cfg
-from .logs import RC_OK, RC_USAGE, RC_ERROR, RC_INTERNAL_ERROR
+GCC_FLAGS = ('-std=c11', '-pedantic', '-Wall', '-Wextra', '-Wconversion', '-Werror', '-O2')
+COMPILER_PREPARE_ATTEMPTS = 3
+USAGE = """Usage: python -m frog <command> [options]
 
-
-def repl() -> None:
-    import traceback
-
-    try:
-        import readline  # pyright: ignore[reportUnusedImport]
-    except ImportError:
-        pass
-
-    while True:
-        try:
-            line = input('> ')
-            if line == 'q':
-                break
-
-            toks = tokenize(line, filename='<repl>')
-            ir = compile(toks)
-            typecheck(ir)
-            interpret(ir)
-
-        except EOFError:
-            break
-        except SystemExit:
-            pass
-        except Exception:
-            traceback.print_exc()
-
-
-def run_cmd(*cmds: str | os.PathLike[str]) -> int:
-
-    cmd = subprocess.list2cmdline(cmds)
-    print(f'[CMD] {cmd}')
-
-    res = subprocess.run(
-        cmds,
-        capture_output=True,
-        universal_newlines=True,
-    )
-    out = res.stdout
-    err = res.stderr
-    if out:
-        print(f'[STDOUT]:')
-        print(out)
-    if err:
-        print(f'[STDERR]:')
-        print(err)
-
-    if res.returncode != RC_OK:
-        print(f'[EXIT CODE] {res.returncode}')
-
-    return res.returncode
-
-
-def run_frog(*args: str | os.PathLike[str]) -> int:
-
-    cmd = subprocess.list2cmdline([*args])
-    print(f'[CMD] {cmd}')
-
-    try:
-        main([str(x) for x in args[3:]])
-
-    except SystemExit as e:
-        code = e.code
-        assert isinstance(code, int), f'unknown exit code: {code!r}'
-    else:
-        code = RC_OK
-
-    if code != RC_OK:
-        print(f'[EXIT CODE] {code}')
-
-    return code
-
-
-USAGE = """
-Options:
-  -h --help                   print this help message
-  -l <level>                  log level: ERROR,WARN,INFO,TRACE
-Subcommands:
-  run [OPTIONS]             interpret
-    -c CODE                   code to interpret
-       FILE                   file to interpret
-  build [OPTIONS] FILE      build
-    FILE                      file to build
-    OPTIONS:
-      -o FILE                 where to put built binary
-      -r                      also run the binary
-  repl                      start a Read-Eval-Print-Loop
-
+Commands:
+  run [-c CODE | FILE]       compile and run Frog source
+  build [-o FILE] [-r] FILE  compile Frog source to a binary
 """
 
 
-def main(argv: list[str]) -> None:
-    def usage_short() -> None:
-        print(f'Usage: py -m frog [OPTIONS] SUBCOMMAND <ARGS>')
+def repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
 
-    def usage() -> None:
-        usage_short()
-        print(USAGE)
 
-    logging_cfg.log_level = LL_DEFAULT
+def usage_error(message: str) -> int:
+    print(f'frog: {message}', file=sys.stderr)
+    print('Try `python -m frog --help`.', file=sys.stderr)
+    return 2
 
-    while argv:
-        if argv[0] == '-h' or argv[0] == '--help':
-            usage()
-            sys.exit(RC_OK)
 
-        elif argv[0] == '-l':
-            _, *argv = argv
-            if len(argv) < 1:
-                usage_short()
-                print(f'[ERROR] no log level specified')
-                sys.exit(RC_USAGE)
-
-            ll_str, *argv = argv
-            if ll_str not in LL:
-                error(Loc('<cli>', 1, 0), f'invalid log level: {ll_str}, expected one of {list(LL)}')
-            logging_cfg.log_level = LL[ll_str]
-
-        else:
-            break
-
-    if len(argv) < 1:
-        usage_short()
-        print(f'[ERROR] no subcommand specified')
-        sys.exit(RC_USAGE)
-
-    subcmd, *argv = argv
-
-    if subcmd == 'run':
-        code_src: str | None = None
-        filename: str
-
-        while len(argv) > 0:
-            if argv[0] == '-h':
-                usage()
-                sys.exit(RC_OK)
-
-            elif argv[0] == '-c':
-                _, *argv = argv
-                if len(argv) < 1:
-                    usage_short()
-                    print(f'[ERROR] no code specified')
-                    sys.exit(RC_USAGE)
-
-                code_src = argv[0]
-                argv = argv[1:]
-
-            else:
-                break
-
-        if code_src is None:
-            if len(argv) < 1:
-                usage_short()
-                print(f'[ERROR] no file specified')
-                sys.exit(RC_USAGE)
-
-            file_src = Path(argv[0])
-            argv = argv[1:]
-
-            if not file_src.exists():
-                print(f'[ERROR] file {file_src} does not exist')
-                sys.exit(RC_ERROR)
-
-            code_src = file_src.read_text()
-            filename = str(file_src)
-
-        else:
-            filename = '<cli>'
-
-        if len(argv) > 0:
-            usage_short()
-            print(f'[ERROR] unrecognized arguments: {argv}')
-            sys.exit(RC_USAGE)
-
-        toks = tokenize(code_src, filename=filename)
-        ir = compile(toks)
-        typecheck(ir)
-
+def release_locks(locks: list[IO[bytes]]) -> None:
+    for lock in reversed(locks):
         try:
-            interpret(ir)
-        except Exception:
-            traceback.print_exc()
-            sys.exit(RC_INTERNAL_ERROR)
+            fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+        except OSError as error:
+            print(f'frog: unable to release output lock: {error}', file=sys.stderr)
+        finally:
+            try:
+                lock.close()
+            except OSError as error:
+                print(f'frog: unable to close output lock: {error}', file=sys.stderr)
 
-        sys.exit(RC_OK)
 
-    elif subcmd == 'build':
-        file_out: Path | None = None
-        should_run = False
+@contextmanager
+def output_locks(destinations: tuple[Path, ...]) -> Generator[bool]:
+    lock_directory = repo_root() / 'build' / 'locks'
+    locks: list[IO[bytes]] = []
+    try:
+        lock_directory.mkdir(parents=True, exist_ok=True)
+        lock_paths: set[Path] = set()
+        for destination in destinations:
+            absolute = destination.absolute()
+            identity = absolute.parent.resolve() / absolute.name
+            digest = hashlib.sha256(os.fsencode(identity)).hexdigest()
+            lock_paths.add(lock_directory / f'{digest}.lock')
+        for lock_path in sorted(lock_paths):
+            lock = lock_path.open('a+b')
+            try:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            except OSError:
+                lock.close()
+                raise
+            locks.append(lock)
+    except OSError as error:
+        release_locks(locks)
+        print(f'frog: unable to acquire output lock: {error}', file=sys.stderr)
+        yield False
+        return
 
-        while len(argv) > 0:
-            if argv[0] == '-h':
-                usage()
-                sys.exit(RC_OK)
+    try:
+        yield True
+    finally:
+        release_locks(locks)
 
-            elif argv[0] == '-o':
-                _, *argv = argv
-                if len(argv) < 1:
-                    usage_short()
-                    print(f'[ERROR] no output file specified')
-                    sys.exit(RC_USAGE)
-                file_out = Path(argv[0])
-                argv = argv[1:]
 
-            elif argv[0] == '-r':
-                should_run = True
-                argv = argv[1:]
+def compiler_paths() -> tuple[Path, Path, Path]:
+    root = repo_root()
+    return root / 'compiler' / 'frogc.c', root / 'build' / 'frogc', root / 'build' / 'frogc.sha256'
 
-            else:
-                break
 
-        if len(argv) < 1:
-            usage_short()
-            print(f'[ERROR] no file specified')
-            sys.exit(RC_USAGE)
+def compiler_path() -> Path | None:
+    source, compiler, stamp = compiler_paths()
+    with output_locks((compiler, stamp)) as locked:
+        if not locked:
+            return None
+        for _ in range(COMPILER_PREPARE_ATTEMPTS):
+            try:
+                source_bytes = source.read_bytes()
+            except FileNotFoundError:
+                print(f'frog: checked compiler source not found: {source}', file=sys.stderr)
+                return None
+            except OSError as error:
+                print(f'frog: unable to read checked compiler source {source}: {error}', file=sys.stderr)
+                return None
 
-        file_src = Path(argv[0])
-        argv = argv[1:]
-        file_c = file_src.with_suffix('.c')
+            digest = hashlib.sha256(source_bytes)
+            for flag in GCC_FLAGS:
+                digest.update(b'\0')
+                digest.update(flag.encode('ascii'))
+            source_stamp = digest.hexdigest().encode('ascii')
 
-        if file_out is None:
-            file_out = file_src.with_suffix('.exe')
+            try:
+                if compiler.is_file() and os.access(compiler, os.X_OK) and stamp.read_bytes() == source_stamp:
+                    return compiler.resolve()
+            except OSError:
+                pass
 
-        if len(argv) > 0:
-            usage_short()
-            print(f'[ERROR] unrecognized arguments: {argv}')
-            sys.exit(RC_USAGE)
+            try:
+                compiler.parent.mkdir(parents=True, exist_ok=True)
+                with tempfile.TemporaryDirectory(prefix='frogc-', dir=compiler.parent) as directory:
+                    candidate = Path(directory) / 'frogc'
+                    stamp_candidate = Path(directory) / 'frogc.sha256'
+                    result = subprocess.run(
+                        ['gcc', *GCC_FLAGS, '-x', 'c', '-', '-o', str(candidate)],
+                        input=source_bytes,
+                    )
+                    if result.returncode != 0:
+                        return None
+                    if source.read_bytes() != source_bytes:
+                        continue
+                    _ = stamp_candidate.write_bytes(source_stamp)
+                    os.replace(candidate, compiler)
+                    os.replace(stamp_candidate, stamp)
+                    if source.read_bytes() == source_bytes:
+                        return compiler.resolve()
+            except OSError as error:
+                print(f'frog: unable to prepare native compiler: {error}', file=sys.stderr)
+                return None
+        print('frog: checked compiler source kept changing while preparing the native compiler', file=sys.stderr)
+        return None
 
-        if not file_src.exists():
-            print(f'[ERROR] file {file_src} does not exist')
-            sys.exit(RC_ERROR)
 
-        text = file_src.read_text()
-        toks = tokenize(text, filename=str(file_src))
-        ir = compile(toks)
-        typecheck(ir)
+def temporary_sibling(destination: Path) -> Path | None:
+    try:
+        descriptor, name = tempfile.mkstemp(prefix=f'.{destination.name}.', dir=destination.parent)
+    except OSError as error:
+        print(f'frog: unable to create output beside {destination}: {error}', file=sys.stderr)
+        return None
+    os.close(descriptor)
+    return Path(name)
 
-        code = translate(ir)
-        with open(file_c, 'wt') as f:
-            _ = f.write(code)
 
-        ret = run_cmd('gcc', file_c, '-o', file_out)
-        if ret != 0:
-            error(Loc('<cli>', 1, 0), f'gcc failed with exit code {ret}')
+def generate_c(compiler: Path, source: bytes, source_directory: Path, generated_c: Path) -> int:
+    candidate = temporary_sibling(generated_c)
+    if candidate is None:
+        return 1
+    try:
+        with candidate.open('wb') as output:
+            result = subprocess.run([str(compiler)], input=source, stdout=output, cwd=source_directory)
+    except OSError as error:
+        print(f'frog: unable to run compiler: {error}', file=sys.stderr)
+        candidate.unlink(missing_ok=True)
+        return 1
+    if result.returncode != 0:
+        candidate.unlink(missing_ok=True)
+        return 1
+    try:
+        os.replace(candidate, generated_c)
+    except OSError as error:
+        print(f'frog: unable to write generated C to {generated_c}: {error}', file=sys.stderr)
+        candidate.unlink(missing_ok=True)
+        return 1
+    return 0
 
+
+def compile_c(generated_c: Path, executable: Path) -> int:
+    try:
+        result = subprocess.run(['gcc', *GCC_FLAGS, '-x', 'c', str(generated_c), '-o', str(executable)])
+    except OSError as error:
+        print(f'frog: unable to run gcc: {error}', file=sys.stderr)
+        return 1
+    return result.returncode
+
+
+def destination_exists(path: Path) -> bool:
+    return path.exists() or path.is_symlink()
+
+
+def publish_build(
+    generated_c_candidate: Path,
+    generated_c: Path,
+    executable_candidate: Path,
+    executable: Path,
+) -> int:
+    artifacts = (
+        (generated_c_candidate, generated_c),
+        (executable_candidate, executable),
+    )
+    for _, destination in artifacts:
+        if destination.is_dir():
+            print(f'frog: output path is a directory: {destination}', file=sys.stderr)
+            return 1
+
+    backups: list[tuple[Path, Path]] = []
+    for _, destination in artifacts:
+        if not destination_exists(destination):
+            continue
+        backup = temporary_sibling(destination)
+        if backup is None:
+            for existing_backup, _ in backups:
+                existing_backup.unlink(missing_ok=True)
+            return 1
+        try:
+            backup.unlink()
+        except OSError as error:
+            print(f'frog: unable to prepare build-artifact backup {backup}: {error}', file=sys.stderr)
+            for existing_backup, _ in backups:
+                existing_backup.unlink(missing_ok=True)
+            return 1
+        backups.append((backup, destination))
+
+    moved_backups: list[tuple[Path, Path]] = []
+    published: list[Path] = []
+    try:
+        for backup, destination in backups:
+            os.replace(destination, backup)
+            moved_backups.append((backup, destination))
+        for candidate, destination in artifacts:
+            os.replace(candidate, destination)
+            published.append(destination)
+    except OSError as error:
+        print(f'frog: unable to publish build artifacts: {error}', file=sys.stderr)
+        rollback_errors: list[OSError] = []
+        for destination in reversed(published):
+            try:
+                destination.unlink(missing_ok=True)
+            except OSError as cleanup_error:
+                rollback_errors.append(cleanup_error)
+        for backup, destination in reversed(moved_backups):
+            try:
+                os.replace(backup, destination)
+            except OSError as restore_error:
+                rollback_errors.append(restore_error)
+        for reported_error in rollback_errors:
+            print(f'frog: unable to restore a prior build artifact: {reported_error}', file=sys.stderr)
+        return 1
+
+    for backup, _ in moved_backups:
+        try:
+            backup.unlink()
+        except OSError as error:
+            print(f'frog: warning: unable to remove build-artifact backup {backup}: {error}', file=sys.stderr)
+    return 0
+
+
+def build_source(
+    compiler: Path,
+    source: bytes,
+    source_directory: Path,
+    generated_c: Path,
+    executable: Path,
+) -> int:
+    generated_c_candidate = temporary_sibling(generated_c)
+    if generated_c_candidate is None:
+        return 1
+    executable_candidate: Path | None = None
+    try:
+        if generate_c(compiler, source, source_directory, generated_c_candidate) != 0:
+            return 1
+        executable_candidate = temporary_sibling(executable)
+        if executable_candidate is None:
+            return 1
+        if compile_c(generated_c_candidate, executable_candidate) != 0:
+            return 1
+        return publish_build(generated_c_candidate, generated_c, executable_candidate, executable)
+    finally:
+        generated_c_candidate.unlink(missing_ok=True)
+        if executable_candidate is not None:
+            executable_candidate.unlink(missing_ok=True)
+
+
+def run_executable(executable: Path) -> int:
+    try:
+        result = subprocess.run([str(executable.resolve())])
+    except OSError as error:
+        print(f'frog: unable to run {executable}: {error}', file=sys.stderr)
+        return 1
+    if result.returncode < 0:
+        return 128 - result.returncode
+    return result.returncode
+
+
+def run_source(source: bytes, source_directory: Path) -> int:
+    compiler = compiler_path()
+    if compiler is None:
+        return 1
+    with tempfile.TemporaryDirectory(prefix='frog-run-') as directory:
+        temporary = Path(directory)
+        generated_c = temporary / 'program.c'
+        executable = temporary / 'program'
+        if generate_c(compiler, source, source_directory, generated_c) != 0:
+            return 1
+        if compile_c(generated_c, executable) != 0:
+            return 1
+        return run_executable(executable)
+
+
+def read_source(file: Path) -> bytes | None:
+    if not file.is_file():
+        print(f'frog: source file not found: {file}', file=sys.stderr)
+        return None
+    try:
+        return file.read_bytes()
+    except OSError as error:
+        print(f'frog: unable to read {file}: {error}', file=sys.stderr)
+        return None
+
+
+def paths_alias(first: Path, second: Path) -> bool:
+    try:
+        if first.exists() and second.exists() and os.path.samefile(first, second):
+            return True
+        return first.resolve() == second.resolve()
+    except OSError:
+        return first.absolute() == second.absolute()
+
+
+def run_command(argv: list[str]) -> int:
+    if argv == ['-h'] or argv == ['--help']:
+        print('Usage: python -m frog run [-c CODE | FILE]')
+        return 0
+    if not argv:
+        return usage_error('run requires a source file or -c CODE')
+    if argv[0] == '-c':
+        if len(argv) != 2:
+            return usage_error('run -c requires exactly one CODE argument')
+        return run_source(argv[1].encode(), Path.cwd())
+    if argv[0].startswith('-'):
+        return usage_error(f'unknown run option: {argv[0]}')
+    if len(argv) != 1:
+        return usage_error('run accepts exactly one source file')
+    source_file = Path(argv[0])
+    source = read_source(source_file)
+    if source is None:
+        return 1
+    return run_source(source, source_file.absolute().parent)
+
+
+def build_command(argv: list[str]) -> int:
+    output: Path | None = None
+    should_run = False
+    while argv and argv[0].startswith('-'):
+        option = argv.pop(0)
+        if option in {'-h', '--help'}:
+            print('Usage: python -m frog build [-o FILE] [-r] FILE')
+            return 0
+        if option == '-r':
+            should_run = True
+            continue
+        if option == '-o':
+            if not argv:
+                return usage_error('build -o requires an output file')
+            output = Path(argv.pop(0))
+            continue
+        return usage_error(f'unknown build option: {option}')
+
+    if len(argv) != 1:
+        return usage_error('build requires exactly one source file')
+    source_file = Path(argv[0])
+    source = read_source(source_file)
+    if source is None:
+        return 1
+
+    generated_c = source_file.with_suffix('.c')
+    executable = output if output is not None else source_file.with_suffix('.exe')
+    if paths_alias(source_file, generated_c):
+        return usage_error('generated C path aliases the source file')
+    if paths_alias(source_file, executable):
+        return usage_error('executable path aliases the source file')
+    if paths_alias(generated_c, executable):
+        return usage_error('executable path aliases the generated C file')
+    _, cached_compiler, compiler_stamp = compiler_paths()
+    for artifact in (generated_c, executable):
+        if paths_alias(artifact, cached_compiler) or paths_alias(artifact, compiler_stamp):
+            return usage_error('build output aliases the native compiler cache')
+
+    compiler = compiler_path()
+    if compiler is None:
+        return 1
+    with output_locks((generated_c, executable)) as locked:
+        if not locked:
+            return 1
+        if build_source(compiler, source, source_file.absolute().parent, generated_c, executable) != 0:
+            return 1
         if should_run:
-            ret = run_cmd(file_out)
-            if ret != 0:
-                error(Loc('<cli>', 1, 0), f'{file_out} failed with exit code {ret}')
+            return run_executable(executable)
+        return 0
 
-        sys.exit(RC_OK)
 
-    elif subcmd == 'repl':
-        repl()
-        sys.exit(RC_OK)
+def main(argv: list[str]) -> int:
+    if not argv:
+        return usage_error('missing command')
+    if argv[0] in {'-h', '--help'}:
+        print(USAGE, end='')
+        return 0
 
-    else:
-        usage_short()
-        print(f'[ERROR] unknown subcommand: {subcmd}')
-        sys.exit(RC_USAGE)
+    command, *arguments = argv
+    if command == 'run':
+        return run_command(arguments)
+    if command == 'build':
+        return build_command(arguments)
+    return usage_error(f'unknown command: {command}')
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    raise SystemExit(main(sys.argv[1:]))

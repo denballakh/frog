@@ -3,13 +3,13 @@
 ### Source: `test/tmp_fs/diamond_reexports/main.frog`
 
 ```frog
+from "left.frog" import value as left
+from "right.frog" import value as right
 
-            from "left.frog" import value as left
-            from "right.frog" import value as right
-
-            left print
-            right print
-            
+proc main -- do
+    left print
+    right print
+end
 ```
 
 ### Source: `test/tmp_fs/diamond_reexports/base.frog`
@@ -45,32 +45,13 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/diamond_reexports/main.frog
+python -m frog run test/tmp_fs/diamond_reexports/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():11@test/tmp_fs/diamond_reexports/base.frog:1:26
-[PRINT] INT():21@test/tmp_fs/diamond_reexports/base.frog:1:26
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/diamond_reexports/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/diamond_reexports/main.c -o test/tmp_fs/diamond_reexports/main.exe
-[CMD] test/tmp_fs/diamond_reexports/main.exe
-[STDOUT]:
 11
 21
-
 ```
 

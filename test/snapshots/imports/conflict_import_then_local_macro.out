@@ -3,11 +3,12 @@
 ### Source: `test/tmp_fs/conflict_import_then_local_macro/main.frog`
 
 ```frog
+from "math.frog" import inc
 
-            from "math.frog" import inc
+macro inc 2 + end
 
-            macro inc 2 + end
-            
+proc main -- do
+end
 ```
 
 ### Source: `test/tmp_fs/conflict_import_then_local_macro/math.frog`
@@ -18,19 +19,18 @@ proc inc int -- int do 1 + end
 
 ### Main: `test/tmp_fs/conflict_import_then_local_macro/main.frog`
 
-### Run and Build
+### Run
 
-Commands:
+Command:
 
 ```text
-py -m frog run test/tmp_fs/conflict_import_then_local_macro/main.frog
-py -m frog -l WARN build -r test/tmp_fs/conflict_import_then_local_macro/main.frog
+python -m frog run test/tmp_fs/conflict_import_then_local_macro/main.frog
 ```
 
 Output:
 
 ```text
-[ERROR] test/tmp_fs/conflict_import_then_local_macro/main.frog:2:27: name inc is already defined
+frogc: import alias conflict
 [EXIT CODE] 1
 ```
 

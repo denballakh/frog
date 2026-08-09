@@ -5,7 +5,9 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 == print
+proc main -- do
+    1 2 == print
+end
 ```
 
 ### Run
@@ -13,31 +15,13 @@
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():False@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 false
-
 ```
 
 ## Case 02
@@ -45,7 +29,9 @@ false
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 != print
+proc main -- do
+    1 2 != print
+end
 ```
 
 ### Run
@@ -53,31 +39,13 @@ false
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():True@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 true
-
 ```
 
 ## Case 03
@@ -85,7 +53,9 @@ true
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 < print
+proc main -- do
+    1 2 < print
+end
 ```
 
 ### Run
@@ -93,31 +63,13 @@ true
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():True@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 true
-
 ```
 
 ## Case 04
@@ -125,7 +77,9 @@ true
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 > print
+proc main -- do
+    1 2 > print
+end
 ```
 
 ### Run
@@ -133,31 +87,13 @@ true
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():False@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 false
-
 ```
 
 ## Case 05
@@ -165,7 +101,9 @@ false
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 <= print
+proc main -- do
+    1 2 <= print
+end
 ```
 
 ### Run
@@ -173,31 +111,13 @@ false
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():True@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 true
-
 ```
 
 ## Case 06
@@ -205,7 +125,9 @@ true
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-1 2 >= print
+proc main -- do
+    1 2 >= print
+end
 ```
 
 ### Run
@@ -213,30 +135,12 @@ true
 Command:
 
 ```text
-py -m frog run test/tmp_fs/code.frog
+python -m frog run test/tmp_fs/code.frog
 ```
 
 Output:
 
 ```text
-[PRINT] BOOL():False@test/tmp_fs/code.frog:1:5
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/code.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[CMD] test/tmp_fs/code.exe
-[STDOUT]:
 false
-
 ```
 

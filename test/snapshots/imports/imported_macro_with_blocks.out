@@ -3,12 +3,12 @@
 ### Source: `test/tmp_fs/imported_macro_with_blocks/main.frog`
 
 ```frog
+from "macros.frog" import move_away_from_zero
 
-            from "macros.frog" import move_away_from_zero
-
-            5 move_away_from_zero print
-            0 move_away_from_zero print
-            
+proc main -- do
+    5 move_away_from_zero print
+    0 move_away_from_zero print
+end
 ```
 
 ### Source: `test/tmp_fs/imported_macro_with_blocks/macros.frog`
@@ -24,32 +24,13 @@ macro move_away_from_zero if dup 0 > do 1 + else 1 - end end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/imported_macro_with_blocks/main.frog
+python -m frog run test/tmp_fs/imported_macro_with_blocks/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():6@test/tmp_fs/imported_macro_with_blocks/macros.frog:1:43
-[PRINT] INT():-1@test/tmp_fs/imported_macro_with_blocks/macros.frog:1:52
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/imported_macro_with_blocks/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/imported_macro_with_blocks/main.c -o test/tmp_fs/imported_macro_with_blocks/main.exe
-[CMD] test/tmp_fs/imported_macro_with_blocks/main.exe
-[STDOUT]:
 6
 -1
-
 ```
 

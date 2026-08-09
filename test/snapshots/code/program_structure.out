@@ -1,11 +1,11 @@
-# Snapshot: code/words
+# Snapshot: code/program_structure
 
 ## Case 01
 
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-proc
+
 ```
 
 ### Run
@@ -19,7 +19,7 @@ python -m frog run test/tmp_fs/code.frog
 Output:
 
 ```text
-frogc: expected procedure name
+frogc: missing main procedure
 [EXIT CODE] 1
 ```
 
@@ -28,9 +28,7 @@ frogc: expected procedure name
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
-proc main -- do
-    somerandomword
-end
+1 print
 ```
 
 ### Run
@@ -44,7 +42,7 @@ python -m frog run test/tmp_fs/code.frog
 Output:
 
 ```text
-frogc: unknown word
+frogc: only declarations and imports are allowed at top level
 [EXIT CODE] 1
 ```
 

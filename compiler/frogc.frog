@@ -3139,6 +3139,9 @@ proc compile-else ptr -- do
             if block block-has-else-offset block-field 0 != do
                 "duplicate else" fail
             end
+            if block block-has-do-offset block-field 0 == do
+                "else requires a preceding if arm and do" fail
+            end
             cc type-snapshot
             let then-types then-count do
                 then-types block block-then-types-offset set-block-pointer-field
@@ -3180,6 +3183,9 @@ end
 
 proc close-if-block ptr ptr -- do
     let cc block do
+        if block block-has-do-offset block-field 0 == do
+            "if requires do before end" fail
+        end
         if block block-has-else-offset block-field 0 == do
             cc block require-block-types
         else
@@ -3199,6 +3205,9 @@ end
 
 proc close-while-block ptr ptr -- do
     let cc block do
+        if block block-has-do-offset block-field 0 == do
+            "while requires do before end" fail
+        end
         cc block require-block-types
         cc indent-less
         cc "}" emit-line

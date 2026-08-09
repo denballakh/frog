@@ -3,11 +3,11 @@
 ### Source: `test/tmp_fs/reexport_alias/main.frog`
 
 ```frog
+from "facade.frog" import bump
 
-            from "facade.frog" import bump
-
-            4 bump print
-            
+proc main -- do
+    4 bump print
+end
 ```
 
 ### Source: `test/tmp_fs/reexport_alias/math.frog`
@@ -29,30 +29,12 @@ from "math.frog" import inc as bump
 Command:
 
 ```text
-py -m frog run test/tmp_fs/reexport_alias/main.frog
+python -m frog run test/tmp_fs/reexport_alias/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():5@test/tmp_fs/reexport_alias/math.frog:1:26
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/reexport_alias/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/reexport_alias/main.c -o test/tmp_fs/reexport_alias/main.exe
-[CMD] test/tmp_fs/reexport_alias/main.exe
-[STDOUT]:
 5
-
 ```
 

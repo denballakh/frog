@@ -76,10 +76,6 @@ approve-diff:
     git add -A test/snapshots
 
 [group("run")]
-@repl:
-    python -m frog repl
-
-[group("run")]
 [positional-arguments]
 @cli *args:
     python -m frog "$@"

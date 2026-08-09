@@ -3,11 +3,11 @@
 ### Source: `test/tmp_fs/import_macro/main.frog`
 
 ```frog
+from "macros.frog" import twice
 
-            from "macros.frog" import twice
-
-            21 twice print
-            
+proc main -- do
+    21 twice print
+end
 ```
 
 ### Source: `test/tmp_fs/import_macro/macros.frog`
@@ -23,30 +23,12 @@ macro twice dup + end
 Command:
 
 ```text
-py -m frog run test/tmp_fs/import_macro/main.frog
+python -m frog run test/tmp_fs/import_macro/main.frog
 ```
 
 Output:
 
 ```text
-[PRINT] INT():42@test/tmp_fs/import_macro/macros.frog:1:17
-```
-
-### Build
-
-Command:
-
-```text
-py -m frog -l WARN build -r test/tmp_fs/import_macro/main.frog
-```
-
-Output:
-
-```text
-[CMD] gcc test/tmp_fs/import_macro/main.c -o test/tmp_fs/import_macro/main.exe
-[CMD] test/tmp_fs/import_macro/main.exe
-[STDOUT]:
 42
-
 ```
 

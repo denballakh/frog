@@ -1,0 +1,18 @@
+# Snapshot: cli/run_code
+
+## Case: `run -c "proc main -- do 42 print end"`
+
+### Result
+
+Command:
+
+```text
+python -m frog run -c 'proc main -- do 42 print end'
+```
+
+Output:
+
+```text
+42
+```
+

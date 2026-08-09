@@ -1,6 +1,7 @@
 # Examples
 
-- `00_empty.frog`: Empty program smoke test.
+Every example is a complete program with an explicit `proc main -- do ... end`. Run one with `python -m frog run examples/01_simple.frog`; the CLI compiles it to C and executes the compiled binary.
+
 - `01_simple.frog`: Basic stack arithmetic, debug, and print demo.
 - `02_while.frog`: While loop, nested if/else, and arithmetic demo.
 - `03_fib.frog`: Fibonacci sequence using procedures and stack rotation.

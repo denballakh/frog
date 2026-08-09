@@ -1,24 +1,72 @@
+from collections.abc import Mapping
 import contextlib
 from dataclasses import dataclass
-from pathlib import Path
 import io
-import shutil
+import os
+from pathlib import Path
 import shlex
+import shutil
+import signal
+import subprocess
+import sys
+import textwrap
+from typing import assert_never
 
-from frog.__main__ import run_frog
+from frog import __main__ as frog_cli
+
+
+@dataclass(frozen=True)
+class SourceSpec:
+    body: str = ''
+    before_main: str = ''
+    after_main: str = ''
+    raw_source: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.raw_source is not None and (self.body or self.before_main or self.after_main):
+            raise ValueError('raw_source cannot be combined with structural source fields')
+
+    def materialize(self) -> str:
+        if self.raw_source is not None:
+            return self.raw_source
+
+        before_main = textwrap.dedent(self.before_main).strip('\n')
+        body = textwrap.dedent(self.body).strip('\n')
+        after_main = textwrap.dedent(self.after_main).strip('\n')
+
+        sections: list[str] = []
+        if before_main:
+            sections.append(before_main)
+
+        main_lines = ['proc main -- do']
+        main_lines.extend(f'    {line}' if line else '' for line in body.splitlines())
+        main_lines.append('end')
+        sections.append('\n'.join(main_lines))
+
+        if after_main:
+            sections.append(after_main)
+        return '\n\n'.join(sections) + '\n'
+
+
+type SourceInput = str | SourceSpec
 
 
 @dataclass(frozen=True)
 class CodeExampleGroup:
     name: str
-    examples: list[str]
+    examples: list[SourceInput]
 
 
 @dataclass(frozen=True)
 class FileCodeExample:
     name: str
-    files: dict[str, str]
+    root: SourceSpec
+    files: Mapping[str, str]
     main: str = 'main.frog'
+
+    def __post_init__(self) -> None:
+        if self.main in self.files:
+            raise ValueError('the root source must be provided through root')
 
 
 @dataclass(frozen=True)
@@ -34,7 +82,7 @@ class CommandResult:
     exit_code: int
 
 
-code_examples = [
+code_examples: list[SourceInput] = [
     '1 2 + print',
     '1 + print',
     '1 2 +',
@@ -119,7 +167,10 @@ code_examples = [
     'if false do 1 elif true do 2 else 3 end print',
     'if false do 1 elif false do 2 elif true do 3 else 4 end print',
     'if false do 1 print elif true do 2 print end',
-    'macro choose if false do 1 elif true do 2 else 3 end end choose print',
+    SourceSpec(
+        before_main='macro choose if false do 1 elif true do 2 else 3 end end',
+        body='choose print',
+    ),
     'elif true do 1 end',
     'if false do 1 else 2 elif true do 3 end',
     'if false do 1 elif do 2 end',
@@ -139,19 +190,19 @@ code_examples = [
     'do',
     'end',
     #
-    'macro dup let x do x x end end 1 dup ? print print',
-    'macro swap let x y do y x end end 1 2 swap ? print print',
-    'macro double dup + end 5 double print',
-    'macro inc 1 + end 5 inc print',
-    '5 later print macro later 1 + end',
-    'macro choose if 1 2 == do 5 else 7 end end choose print',
-    'macro one 1 + end macro two one one end 5 two print',
-    'macro loop loop end loop',
-    'macro a b end macro b a end a',
-    'macro outer macro inner 1 end end',
-    'macro m else end',
-    'macro',
-    'macro 123 end',
+    SourceSpec(before_main='macro dup let x do x x end end', body='1 dup ? print print'),
+    SourceSpec(before_main='macro swap let x y do y x end end', body='1 2 swap ? print print'),
+    SourceSpec(before_main='macro double dup + end', body='5 double print'),
+    SourceSpec(before_main='macro inc 1 + end', body='5 inc print'),
+    SourceSpec(body='5 later print', after_main='macro later 1 + end'),
+    SourceSpec(before_main='macro choose if 1 2 == do 5 else 7 end end', body='choose print'),
+    SourceSpec(before_main='macro one 1 + end\nmacro two one one end', body='5 two print'),
+    SourceSpec(before_main='macro loop loop end', body='loop'),
+    SourceSpec(before_main='macro a b end\nmacro b a end', body='a'),
+    SourceSpec(raw_source='macro outer macro inner 1 end end\n\nproc main -- do\nend\n'),
+    SourceSpec(raw_source='macro m else end\n\nproc main -- do\nend\n'),
+    SourceSpec(raw_source='macro'),
+    SourceSpec(raw_source='macro 123 end\n\nproc main -- do\nend\n'),
     #
     '',
     "'",
@@ -167,54 +218,23 @@ code_examples = [
     '"abc\'" ? drop drop',
     '"abc\\"" ? drop drop',
     '"A\\n\\x42\\0é" let p n do n print p @u8 print p 1 + @u8 print p 2 + @u8 print p 3 + @u8 print p 4 + @u8 print end',
-    '1 // comment \n print',
+    '1 // comment\n print',
     #
-    'proc',
+    SourceSpec(raw_source='proc'),
     'somerandomword',
     #
-    '''
-    proc a int -- int do 2 * end
-    5 a print
-    ''',
-    '''
-    proc a do 2 * end
-    ''',
-    '''
-    proc a int do 2 * end
-    ''',
-    '''
-    proc a -- do 2 * end
-    ''',
-    '''
-    proc a int -- do 2 * end
-    ''',
-    '''
-    proc a int -- int int do 2 * end
-    ''',
-    '''
-    proc a int -- int do drop 5 end
-    5 a print
-    ''',
-    '''
-    proc a bool -- int do drop 5 end
-    5 a print
-    ''',
-    '''
-    proc a int int -- int do + end
-    5 a print
-    ''',
-    '''
-    proc a x -- y do + end
-    5 a print
-    ''',
-    '''
-    proc a int int -- int do + end
-    5 7 a print
-    ''',
-    '''
-    proc ++ int -- int do 1 + end
-    5 ++ print
-    ''',
+    SourceSpec(before_main='proc a int -- int do 2 * end', body='5 a print'),
+    SourceSpec(before_main='proc a do 2 * end'),
+    SourceSpec(before_main='proc a int do 2 * end'),
+    SourceSpec(before_main='proc a -- do 2 * end'),
+    SourceSpec(before_main='proc a int -- do 2 * end'),
+    SourceSpec(before_main='proc a int -- int int do 2 * end'),
+    SourceSpec(before_main='proc a int -- int do drop 5 end', body='5 a print'),
+    SourceSpec(before_main='proc a bool -- int do drop 5 end', body='5 a print'),
+    SourceSpec(before_main='proc a int int -- int do + end', body='5 a print'),
+    SourceSpec(before_main='proc a x -- y do + end', body='5 a print'),
+    SourceSpec(before_main='proc a int int -- int do + end', body='5 7 a print'),
+    SourceSpec(before_main='proc ++ int -- int do 1 + end', body='5 ++ print'),
     #
     '5 int ? cast ? print',
     '5 bool cast print',
@@ -225,19 +245,31 @@ code_examples = [
     '1 ptr cast int cast print',
     '9223372036854775807 print',
     '9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end',
-    'proc forward -- int do later end\nproc later -- int do 42 end\nforward print\n',
-    'proc sink int -- do drop end\n1 sink\n',
-    'proc countdown int -- int do\n    if dup 0 == do drop 0 else 1 - countdown end\nend\n3 countdown print\n',
+    SourceSpec(
+        before_main='proc forward -- int do later end\nproc later -- int do 42 end',
+        body='forward print',
+    ),
+    SourceSpec(before_main='proc sink int -- do drop end', body='1 sink'),
+    SourceSpec(
+        before_main='''
+        proc countdown int -- int do
+            if dup 0 == do drop 0 else 1 - countdown end
+        end
+        ''',
+        body='3 countdown print',
+    ),
     '4 alloc let p do 42 p !i8 p @i8 print end',
     '4 alloc let p do 255 p !u8 p @u8 print p @i8 print end',
     '4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end',
     '4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end',
-    '''
-    proc cell ptr int -- int do + @u8 end
-    4 alloc let p do 42 p !u8 p 0 cell print end
-    ''',
+    SourceSpec(
+        before_main='proc cell ptr int -- int do + @u8 end',
+        body='4 alloc let p do 42 p !u8 p 0 cell print end',
+    ),
     '"README.md" read-file let data length success do success print length 0 > print data @u8 putc 10 putc end',
     '"frog-read-file-missing" read-file let data length success do data drop length print success print end',
+    SourceSpec(raw_source=''),
+    SourceSpec(raw_source='1 print\n'),
 ]
 
 code_example_groups = [
@@ -254,32 +286,31 @@ code_example_groups = [
     CodeExampleGroup('words', code_examples[124:126]),
     CodeExampleGroup('procedures', code_examples[126:138]),
     CodeExampleGroup('casts_and_memory', code_examples[138:157]),
+    CodeExampleGroup('program_structure', code_examples[157:159]),
 ]
 
 assert sum(len(group.examples) for group in code_example_groups) == len(code_examples)
+assert len(code_examples) == 159
 
 file_code_examples = [
     FileCodeExample(
         name='import_proc',
+        root=SourceSpec(before_main='from "math.frog" import inc', body='41 inc print'),
         files={
-            'main.frog': '''
-            from "math.frog" import inc
-
-            41 inc print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='import_group',
-        files={
-            'main.frog': '''
-            from "math.frog" import ( inc dec add2 )
-
+        root=SourceSpec(
+            before_main='from "math.frog" import ( inc dec add2 )',
+            body='''
             5 inc print
             5 dec print
             5 add2 print
             ''',
+        ),
+        files={
             'math.frog': '''
             proc inc int -- int do 1 + end
             proc dec int -- int do 1 - end
@@ -289,60 +320,57 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='import_alias',
+        root=SourceSpec(before_main='from "math.frog" import inc as bump', body='1 bump print'),
         files={
-            'main.frog': '''
-            from "math.frog" import inc as bump
-
-            1 bump print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='same_import_twice_is_ok',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "math.frog" import inc
             from "math.frog" import inc
-
-            1 inc print
             ''',
+            body='1 inc print',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='same_import_two_aliases',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "math.frog" import inc
             from "math.frog" import inc as bump
-
+            ''',
+            body='''
             1 inc print
             1 bump print
             ''',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='use_before_import_declaration_should_work',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            body='''
             // imports are collected before bodies are compiled
             10 inc print
-
-            from "math.frog" import inc
             ''',
+            after_main='from "math.frog" import inc',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='import_paths_are_root_relative',
+        root=SourceSpec(before_main='from "pkg/use.frog" import value', body='value print'),
         files={
-            'main.frog': '''
-            from "pkg/use.frog" import value
-
-            value print
-            ''',
             'math.frog': 'proc value -- int do 999 end\n',
             'pkg/math.frog': 'proc value -- int do 7 end\n',
             'pkg/use.frog': '''
@@ -355,12 +383,8 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='explicit_subdir_import_path',
+        root=SourceSpec(before_main='from "pkg/use.frog" import value', body='value print'),
         files={
-            'main.frog': '''
-            from "pkg/use.frog" import value
-
-            value print
-            ''',
             'math.frog': 'proc value -- int do 999 end\n',
             'pkg/math.frog': 'proc value -- int do 7 end\n',
             'pkg/use.frog': '''
@@ -372,24 +396,21 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='canonical_import_paths_share_module',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "lib/math.frog" import value
             from "lib/../lib/math.frog" import value
-
-            value print
             ''',
+            body='value print',
+        ),
+        files={
             'lib/math.frog': 'proc value -- int do 42 end\n',
         },
     ),
     FileCodeExample(
         name='imported_top_level_code_does_not_run',
+        root=SourceSpec(before_main='from "lib.frog" import value', body='value print'),
         files={
-            'main.frog': '''
-            from "lib.frog" import value
-
-            value print
-            ''',
             'lib.frog': '''
             99 print
 
@@ -399,15 +420,18 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='imported_proc_uses_own_module_scope',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "lib.frog" import value
 
             proc helper -- int do 99 end
-
+            ''',
+            body='''
             value print
             helper print
             ''',
+        ),
+        files={
             'lib.frog': '''
             proc helper -- int do 7 end
             proc value -- int do helper end
@@ -416,14 +440,17 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='same_private_name_in_two_imported_modules',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "left.frog" import value as left
             from "right.frog" import value as right
-
+            ''',
+            body='''
             left print
             right print
             ''',
+        ),
+        files={
             'left.frog': '''
             proc helper -- int do 10 end
             proc value -- int do helper end
@@ -436,62 +463,52 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='local_proc_uses_imported_proc',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "math.frog" import inc
 
             proc add_two int -- int do inc inc end
-
-            3 add_two print
             ''',
+            body='3 add_two print',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='local_macro_uses_imported_proc',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "math.frog" import inc
 
             macro add_two inc inc end
-
-            3 add_two print
             ''',
+            body='3 add_two print',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='reexport_proc',
+        root=SourceSpec(before_main='from "facade.frog" import inc', body='4 inc print'),
         files={
-            'main.frog': '''
-            from "facade.frog" import inc
-
-            4 inc print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
             'facade.frog': 'from "math.frog" import inc\n',
         },
     ),
     FileCodeExample(
         name='reexport_alias',
+        root=SourceSpec(before_main='from "facade.frog" import bump', body='4 bump print'),
         files={
-            'main.frog': '''
-            from "facade.frog" import bump
-
-            4 bump print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
             'facade.frog': 'from "math.frog" import inc as bump\n',
         },
     ),
     FileCodeExample(
         name='module_uses_imported_proc',
+        root=SourceSpec(before_main='from "facade.frog" import add_two', body='4 add_two print'),
         files={
-            'main.frog': '''
-            from "facade.frog" import add_two
-
-            4 add_two print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
             'facade.frog': '''
             from "math.frog" import inc
@@ -502,14 +519,17 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='diamond_reexports',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "left.frog" import value as left
             from "right.frog" import value as right
-
+            ''',
+            body='''
             left print
             right print
             ''',
+        ),
+        files={
             'base.frog': 'proc inc int -- int do 1 + end\n',
             'left.frog': '''
             from "base.frog" import inc
@@ -525,26 +545,25 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='import_macro',
+        root=SourceSpec(before_main='from "macros.frog" import twice', body='21 twice print'),
         files={
-            'main.frog': '''
-            from "macros.frog" import twice
-
-            21 twice print
-            ''',
             'macros.frog': 'macro twice dup + end\n',
         },
     ),
     FileCodeExample(
         name='imported_macro_uses_defining_module_proc',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "macros.frog" import use_secret
 
             proc secret int -- int do 1 + end
-
+            ''',
+            body='''
             5 use_secret print
             5 secret print
             ''',
+        ),
+        files={
             'macros.frog': '''
             proc secret int -- int do 100 + end
             macro use_secret secret end
@@ -553,12 +572,8 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='imported_macro_uses_defining_module_macro',
+        root=SourceSpec(before_main='from "macros.frog" import add_two', body='5 add_two print'),
         files={
-            'main.frog': '''
-            from "macros.frog" import add_two
-
-            5 add_two print
-            ''',
             'macros.frog': '''
             macro inc 1 + end
             macro add_two inc inc end
@@ -567,12 +582,8 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='imported_macro_uses_defining_module_import',
+        root=SourceSpec(before_main='from "facade.frog" import bump', body='5 bump print'),
         files={
-            'main.frog': '''
-            from "facade.frog" import bump
-
-            5 bump print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
             'facade.frog': '''
             from "math.frog" import inc
@@ -583,15 +594,18 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='reexported_macro_keeps_original_scope',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "facade.frog" import bump
 
             proc helper int -- int do 1 + end
-
+            ''',
+            body='''
             5 bump print
             5 helper print
             ''',
+        ),
+        files={
             'macros.frog': '''
             proc helper int -- int do 10 + end
             macro bump helper end
@@ -601,132 +615,134 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='imported_macro_with_blocks',
-        files={
-            'main.frog': '''
-            from "macros.frog" import move_away_from_zero
-
+        root=SourceSpec(
+            before_main='from "macros.frog" import move_away_from_zero',
+            body='''
             5 move_away_from_zero print
             0 move_away_from_zero print
             ''',
+        ),
+        files={
             'macros.frog': 'macro move_away_from_zero if dup 0 > do 1 + else 1 - end end\n',
         },
     ),
     FileCodeExample(
         name='imported_macro_with_let',
+        root=SourceSpec(
+            before_main='from "macros.frog" import over',
+            body='1 2 over print print print',
+        ),
         files={
-            'main.frog': '''
-            from "macros.frog" import over
-
-            1 2 over print print print
-            ''',
             'macros.frog': 'macro over let a b do a b a end end\n',
         },
     ),
     FileCodeExample(
         name='missing_imported_file',
-        files={
-            'main.frog': 'from "missing.frog" import inc\n',
-        },
+        root=SourceSpec(before_main='from "missing.frog" import inc'),
+        files={},
     ),
     FileCodeExample(
         name='missing_imported_name',
+        root=SourceSpec(before_main='from "math.frog" import inc'),
         files={
-            'main.frog': 'from "math.frog" import inc\n',
             'math.frog': 'proc dec int -- int do 1 - end\n',
         },
     ),
     FileCodeExample(
         name='alias_does_not_bind_original_name',
+        root=SourceSpec(before_main='from "math.frog" import inc as bump', body='1 inc print'),
         files={
-            'main.frog': '''
-            from "math.frog" import inc as bump
-
-            1 inc print
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='conflict_import_then_local_proc',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "math.frog" import inc
 
             proc inc int -- int do 2 + end
             ''',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='conflict_local_proc_then_import',
+        root=SourceSpec(
+            before_main='proc inc int -- int do 2 + end',
+            after_main='from "math.frog" import inc',
+        ),
         files={
-            'main.frog': '''
-            proc inc int -- int do 2 + end
-
-            from "math.frog" import inc
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='conflict_import_then_local_macro',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "math.frog" import inc
 
             macro inc 2 + end
             ''',
+        ),
+        files={
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='conflict_two_imports_same_name',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "left.frog" import value
             from "right.frog" import value
             ''',
+        ),
+        files={
             'left.frog': 'proc value -- int do 1 end\n',
             'right.frog': 'proc value -- int do 2 end\n',
         },
     ),
     FileCodeExample(
         name='conflict_two_imports_same_alias',
-        files={
-            'main.frog': '''
+        root=SourceSpec(
+            before_main='''
             from "left.frog" import value as shared
             from "right.frog" import other as shared
             ''',
+        ),
+        files={
             'left.frog': 'proc value -- int do 1 end\n',
             'right.frog': 'proc other -- int do 2 end\n',
         },
     ),
     FileCodeExample(
         name='direct_import_cycle',
+        root=SourceSpec(before_main='from "a.frog" import value'),
         files={
-            'main.frog': 'from "a.frog" import value\n',
             'a.frog': 'from "b.frog" import value\n',
             'b.frog': 'from "a.frog" import value\n',
         },
     ),
     FileCodeExample(
         name='self_import_cycle',
+        root=SourceSpec(before_main='from "a.frog" import value'),
         files={
-            'main.frog': 'from "a.frog" import value\n',
             'a.frog': 'from "a.frog" import value\n',
         },
     ),
     FileCodeExample(
         name='reject_wildcard_import',
+        root=SourceSpec(before_main='from "math.frog" import *'),
         files={
-            'main.frog': 'from "math.frog" import *\n',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='reject_comma_in_group_import',
+        root=SourceSpec(before_main='from "math.frog" import ( inc , dec )'),
         files={
-            'main.frog': 'from "math.frog" import ( inc , dec )\n',
             'math.frog': '''
             proc inc int -- int do 1 + end
             proc dec int -- int do 1 - end
@@ -735,65 +751,54 @@ file_code_examples = [
     ),
     FileCodeExample(
         name='reject_module_alias_form_for_now',
+        root=SourceSpec(before_main='import "math.frog" as math'),
         files={
-            'main.frog': 'import "math.frog" as math\n',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='reject_import_inside_proc',
+        root=SourceSpec(
+            raw_source='proc main -- do\n    from "math.frog" import inc\nend\n',
+        ),
         files={
-            'main.frog': '''
-            proc main -- do
-                from "math.frog" import inc
-            end
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
     FileCodeExample(
         name='reject_import_inside_macro',
+        root=SourceSpec(
+            raw_source='''macro bad from "math.frog" import inc end
+
+proc main -- do
+    bad
+end
+''',
+        ),
         files={
-            'main.frog': '''
-            macro bad from "math.frog" import inc end
-            bad
-            ''',
             'math.frog': 'proc inc int -- int do 1 + end\n',
         },
     ),
 ]
 cli_example_groups = [
     CliExampleGroup(
-        'usage_errors',
+        'usage',
         [
             '',
-            '-h',
             '--help',
-            'run',
-            'run xxx',
-            '-l',
-            '-l TRACE',
-            '-l TRACE run',
+            'run test/tmp_fs/missing.frog',
+            '--unknown',
+            'unknown',
+            'build -o build/frogc examples/01_simple.frog',
         ],
     ),
     CliExampleGroup(
-        'log_levels',
-        [
-            '-l TRACE run examples/01_simple.frog',
-            '-l LOL run examples/01_simple.frog',
-            '-l WARN run examples/01_simple.frog',
-            '-l INFO run examples/01_simple.frog',
-            '-l ERROR run examples/01_simple.frog',
-        ],
-    ),
-    CliExampleGroup(
-        'trace_examples',
-        [
-            '-l TRACE run examples/02_while.frog',
-            '-l TRACE build -r examples/02_while.frog',
-        ],
+        'run_code',
+        ['run -c "proc main -- do 42 print end"'],
     ),
 ]
+
+assert len(file_code_examples) == 40
 
 ROOT = Path(__file__).parent.parent
 
@@ -801,6 +806,29 @@ dir_examples = ROOT / 'examples'
 dir_tests = ROOT / 'test'
 dir_snapshots = dir_tests / 'snapshots'
 tmp_fs = dir_tests / 'tmp_fs'
+COMMAND_TIMEOUT_SECONDS = 30
+COMMAND_TERMINATION_GRACE_SECONDS = 2
+
+
+def as_source_spec(source: SourceInput) -> SourceSpec:
+    match source:
+        case str():
+            return SourceSpec(body=source)
+        case SourceSpec():
+            return source
+        case _:
+            assert_never(source)
+
+
+def materialize_source(source: SourceInput) -> str:
+    return as_source_spec(source).materialize()
+
+
+def assert_structural_main(source: SourceInput) -> None:
+    spec = as_source_spec(source)
+    if spec.raw_source is not None:
+        return
+    assert '\nproc main -- do\n' in f'\n{spec.materialize()}'
 
 
 def ensure_trailing_newline(text: str) -> str:
@@ -823,34 +851,44 @@ def render_source(label: str, text: str) -> str:
     return f'### Source: `{label}`\n\n{source_fence(text)}\n'
 
 
-def split_captured_command(output: str) -> tuple[str, str]:
-    first_line, separator, rest = output.partition('\n')
-    if separator and first_line.startswith('[CMD] '):
-        return first_line.removeprefix('[CMD] '), rest
-    return '(missing command)', output
-
-
-def capture_frog(*args: str | Path) -> CommandResult:
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        exit_code = run_frog('py', '-m', 'frog', *args)
-
-    command, body = split_captured_command(buf.getvalue())
-    return CommandResult(command, body, exit_code)
+def capture_frog(*args: str | Path, env: Mapping[str, str] | None = None) -> CommandResult:
+    command_args = [str(arg) for arg in args]
+    command = shlex.join(['python', '-m', 'frog', *command_args])
+    process = subprocess.Popen(
+        [sys.executable, '-m', 'frog', *command_args],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        encoding='utf-8',
+        env=env,
+        start_new_session=True,
+    )
+    try:
+        body, _ = process.communicate(timeout=COMMAND_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGINT)
+        except ProcessLookupError:
+            pass
+        try:
+            body, _ = process.communicate(timeout=COMMAND_TERMINATION_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            body, _ = process.communicate()
+        details = f'\n{body}' if body else ''
+        raise TimeoutError(f'{command} exceeded {COMMAND_TIMEOUT_SECONDS} seconds{details}') from None
+    assert process.returncode is not None
+    return CommandResult(command, body, process.returncode)
 
 
 def render_result(title: str, result: CommandResult) -> str:
-    return f'### {title}\n\nCommand:\n\n{output_fence(result.command)}\nOutput:\n\n{output_fence(result.body)}\n'
-
-
-def render_run_build(run_result: CommandResult, build_result: CommandResult) -> str:
-    if run_result.body == build_result.body:
-        commands = f'{run_result.command}\n{build_result.command}\n'
-        return (
-            f'### Run and Build\n\nCommands:\n\n{output_fence(commands)}\nOutput:\n\n{output_fence(run_result.body)}\n'
-        )
-
-    return f'{render_result("Run", run_result)}{render_result("Build", build_result)}'
+    body = result.body
+    if result.exit_code != 0:
+        body = f'{ensure_trailing_newline(body)}[EXIT CODE] {result.exit_code}\n'
+    return f'### {title}\n\nCommand:\n\n{output_fence(result.command)}\nOutput:\n\n{output_fence(body)}\n'
 
 
 def render_cli_sources(args: list[str]) -> str:
@@ -872,6 +910,12 @@ def snapshot_header(name: str) -> str:
     return f'# Snapshot: {name}\n\n'
 
 
+for code_example in code_examples:
+    assert_structural_main(code_example)
+for file_code_example in file_code_examples:
+    assert_structural_main(file_code_example.root)
+
+
 shutil.rmtree(dir_snapshots, ignore_errors=True)
 dir_snapshots.mkdir(parents=True)
 
@@ -888,16 +932,17 @@ try:
         relative_file = file_example.relative_to(ROOT)
         print(f'[FILE] {relative_file}')
         run_result = capture_frog('run', relative_file)
-        if run_result.exit_code == 0:
-            build_result = capture_frog('-l', 'WARN', 'build', '-r', relative_file)
-            output = render_run_build(run_result, build_result)
-        else:
-            output = render_result('Run', run_result)
 
         snapshot_name = relative_file.with_suffix('').as_posix()
         write_snapshot(
             dir_snapshots / 'examples' / relative_file.with_suffix('.out').name,
-            f'{snapshot_header(snapshot_name)}{render_source(relative_file.as_posix(), file_example.read_text())}{output}',
+            ''.join(
+                [
+                    snapshot_header(snapshot_name),
+                    render_source(relative_file.as_posix(), file_example.read_text()),
+                    render_result('Run', run_result),
+                ]
+            ),
         )
 
     for cli_group in cli_example_groups:
@@ -913,19 +958,103 @@ try:
 
         write_snapshot(dir_snapshots / 'cli' / f'{cli_group.name}.out', ''.join(parts))
 
+    build_case = tmp_fs / 'build_run'
+    build_case.mkdir()
+    build_source = SourceSpec(body='40 2 + print').materialize()
+    build_main = build_case / 'main.frog'
+    _ = build_main.write_text(build_source)
+    build_main_relative = build_main.relative_to(ROOT)
+    print(f'[CLI:build_run] {build_main_relative}')
+    build_result = capture_frog('build', '-r', build_main_relative)
+    write_snapshot(
+        dir_snapshots / 'cli' / 'build_run.out',
+        ''.join(
+            [
+                snapshot_header('cli/build_run'),
+                render_source(build_main_relative.as_posix(), build_source),
+                render_result('Build and Run', build_result),
+            ]
+        ),
+    )
+
+    assert build_result.exit_code == 0
+    built_c = build_main.with_suffix('.c')
+    built_executable = build_main.with_suffix('.exe')
+    original_c = built_c.read_bytes()
+    original_executable = built_executable.read_bytes()
+
+    _ = build_main.write_text(SourceSpec(body='43 print').materialize())
+    fake_bin = build_case / 'fake-bin'
+    fake_bin.mkdir()
+    false_executable = shutil.which('false')
+    assert false_executable is not None
+    (fake_bin / 'gcc').symlink_to(false_executable)
+    failing_environment = os.environ.copy()
+    assert 'PATH' in failing_environment
+    failing_environment['PATH'] = f'{fake_bin}{os.pathsep}{failing_environment["PATH"]}'
+    failed_build = capture_frog('build', build_main_relative, env=failing_environment)
+    assert failed_build.exit_code != 0
+    assert built_c.read_bytes() == original_c
+    assert built_executable.read_bytes() == original_executable
+
+    updated_build = capture_frog('build', build_main_relative)
+    assert updated_build.exit_code == 0
+    assert built_c.read_bytes() != original_c
+    assert built_executable.read_bytes() != original_executable
+
+    symlink_case = tmp_fs / 'symlink_root'
+    real_directory = symlink_case / 'real'
+    lexical_directory = symlink_case / 'lexical'
+    real_directory.mkdir(parents=True)
+    lexical_directory.mkdir()
+    real_main = real_directory / 'main.frog'
+    _ = real_main.write_text(SourceSpec(before_main='from "value.frog" import value', body='value print').materialize())
+    _ = (real_directory / 'value.frog').write_text('proc value -- int do 99 end\n')
+    _ = (lexical_directory / 'value.frog').write_text('proc value -- int do 42 end\n')
+    lexical_main = lexical_directory / 'main.frog'
+    lexical_main.symlink_to(real_main)
+    symlink_result = capture_frog('run', lexical_main.relative_to(ROOT))
+    assert symlink_result.exit_code == 0
+    assert symlink_result.body == '42\n'
+
+    rollback_case = tmp_fs / 'publication_rollback'
+    rollback_case.mkdir()
+    rollback_c = rollback_case / 'program.c'
+    rollback_executable = rollback_case / 'program.exe'
+    rollback_c_candidate = rollback_case / 'program.c.candidate'
+    missing_executable_candidate = rollback_case / 'missing.exe.candidate'
+    _ = rollback_c.write_bytes(b'old C')
+    _ = rollback_executable.write_bytes(b'old executable')
+    _ = rollback_c_candidate.write_bytes(b'new C')
+    error_output = io.StringIO()
+    with contextlib.redirect_stderr(error_output):
+        publish_result = frog_cli.publish_build(
+            rollback_c_candidate,
+            rollback_c,
+            missing_executable_candidate,
+            rollback_executable,
+        )
+    assert publish_result != 0
+    assert 'unable to publish build artifacts' in error_output.getvalue()
+    assert rollback_c.read_bytes() == b'old C'
+    assert rollback_executable.read_bytes() == b'old executable'
+    assert not rollback_c_candidate.exists()
+    assert not list(rollback_case.glob('.*'))
+
     for code_group in code_example_groups:
         parts = [snapshot_header(f'code/{code_group.name}')]
         for index, code_example in enumerate(code_group.examples, start=1):
             print(f'[CODE:{code_group.name}] {index}: {code_example!r}')
-            tmp = (tmp_fs / 'code.frog').relative_to(Path.cwd())
-            _ = tmp.write_text(code_example)
+            materialized = materialize_source(code_example)
+            tmp = tmp_fs / 'code.frog'
+            _ = tmp.write_text(materialized)
+            relative_tmp = tmp.relative_to(ROOT)
 
-            run_result = capture_frog('run', tmp)
-            build_result = capture_frog('-l', 'WARN', 'build', '-r', tmp)
+            run_result = capture_frog('run', relative_tmp)
 
             parts.append(f'## Case {index:02d}\n\n')
-            parts.append(render_source(tmp.as_posix(), code_example))
-            parts.append(render_run_build(run_result, build_result))
+            parts.append(render_source(relative_tmp.as_posix(), materialized))
+            parts.append(render_result('Run', run_result))
 
         write_snapshot(dir_snapshots / 'code' / f'{code_group.name}.out', ''.join(parts))
 
@@ -933,21 +1062,25 @@ try:
         print(f'[FILES] {file_code_example.name}')
         tmp_fs_case = tmp_fs / file_code_example.name
         tmp_fs_case.mkdir(parents=True)
+        main_file = tmp_fs_case / file_code_example.main
+        main_source = file_code_example.root.materialize()
+        main_file.parent.mkdir(parents=True, exist_ok=True)
+        _ = main_file.write_text(main_source)
         for file_name, text in file_code_example.files.items():
             file = tmp_fs_case / file_name
             file.parent.mkdir(parents=True, exist_ok=True)
             _ = file.write_text(text)
 
-        main = (tmp_fs_case / file_code_example.main).relative_to(Path.cwd())
+        main = main_file.relative_to(ROOT)
         run_result = capture_frog('run', main)
-        build_result = capture_frog('-l', 'WARN', 'build', '-r', main)
 
         parts = [snapshot_header(f'imports/{file_code_example.name}')]
+        parts.append(render_source(main.as_posix(), main_source))
         for file_name, text in file_code_example.files.items():
-            parts.append(render_source((tmp_fs_case / file_name).relative_to(Path.cwd()).as_posix(), text))
+            parts.append(render_source((tmp_fs_case / file_name).relative_to(ROOT).as_posix(), text))
 
         parts.append(f'### Main: `{main.as_posix()}`\n\n')
-        parts.append(render_run_build(run_result, build_result))
+        parts.append(render_result('Run', run_result))
         write_snapshot(dir_snapshots / 'imports' / f'{file_code_example.name}.out', ''.join(parts))
 finally:
     shutil.rmtree(tmp_fs, ignore_errors=True)
