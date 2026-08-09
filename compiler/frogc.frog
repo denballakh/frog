@@ -4436,44 +4436,43 @@ end
 // END BODY COMPILER
 
 
-proc main -- do
-    program-bytes alloc
-    let program do
-        0 ptr cast program set-program-root-module
-        0 ptr cast program set-program-module-head
-        0 ptr cast program set-program-module-tail
-        0 program set-program-module-count
-        0 program set-program-next-proc-id
-        0 program set-program-token-count
-        0 ptr cast program set-program-strings
-        0 program set-program-string-count
-        0 ptr cast program set-program-prelude-module
-        ctx-bytes alloc
-        let ctx do
-            0 ptr cast ctx set-ctx-canonical-path
-            0 ctx set-ctx-canonical-path-length
-            0 ptr cast ctx set-ctx-imports
-            0 ctx set-ctx-import-count
-            0 ptr cast ctx set-ctx-scope
-            0 ctx set-ctx-scope-count
-            load-loading ctx set-ctx-load-state
-            resolve-new ctx set-ctx-resolve-state
-            true ctx set-ctx-is-root
-            program ctx program-add-module
-            ctx program set-program-root-module
-            read-source
-            let source source-length do
-            ctx source source-length initialize-module-source
-            program ctx load-module-imports
-            load-loaded ctx set-ctx-load-state
-            program initialize-prelude
-            program initialize-string-pool
-            program resolve-all-module-scopes
-            program validate-external-declarations
+proc compile-source ptr int -- do
+    let source source-length do
+        program-bytes alloc
+        let program do
+            0 ptr cast program set-program-root-module
+            0 ptr cast program set-program-module-head
+            0 ptr cast program set-program-module-tail
+            0 program set-program-module-count
+            0 program set-program-next-proc-id
+            0 program set-program-token-count
+            0 ptr cast program set-program-strings
+            0 program set-program-string-count
+            0 ptr cast program set-program-prelude-module
+            ctx-bytes alloc
+            let ctx do
+                0 ptr cast ctx set-ctx-canonical-path
+                0 ctx set-ctx-canonical-path-length
+                0 ptr cast ctx set-ctx-imports
+                0 ctx set-ctx-import-count
+                0 ptr cast ctx set-ctx-scope
+                0 ctx set-ctx-scope-count
+                load-loading ctx set-ctx-load-state
+                resolve-new ctx set-ctx-resolve-state
+                true ctx set-ctx-is-root
+                program ctx program-add-module
+                ctx program set-program-root-module
+                ctx source source-length initialize-module-source
+                program ctx load-module-imports
+                load-loaded ctx set-ctx-load-state
+                program initialize-prelude
+                program initialize-string-pool
+                program resolve-all-module-scopes
+                program validate-external-declarations
 
-            program emit-c-emitter-support
-            program compile-all-procedures
-            program emit-main-wrapper
+                program emit-c-emitter-support
+                program compile-all-procedures
+                program emit-main-wrapper
             end
         end
     end
@@ -4530,6 +4529,570 @@ proc compile-prelude-macro ptr int -- bool do
                     prelude symbol-index scope-definition-index-at
                     compile-macro
                     true
+                end
+            end
+        end
+    end
+end
+
+extern cli-fork froglang_fork -- c-int end
+extern cli-create-file froglang_create_file c-ptr -- c-int end
+extern cli-dup2 froglang_dup2 c-int c-int -- c-int end
+extern cli-close froglang_close c-int -- c-int end
+extern cli-chdir froglang_chdir c-ptr -- c-int end
+extern cli-execv froglang_execv c-ptr c-ptr -- c-int end
+extern cli-execvp froglang_execvp c-ptr c-ptr -- c-int end
+extern cli-ensure-directory froglang_ensure_directory c-ptr -- c-int end
+extern cli-realpath froglang_realpath c-ptr c-ptr -- c-ptr end
+extern cli-path-exists froglang_path_exists c-ptr -- c-bool end
+extern cli-same-file froglang_same_file c-ptr c-ptr -- c-bool end
+extern cli-wait-child froglang_wait_child c-int -- c-int end
+extern cli-finish-child froglang_finish_child c-int -- end
+extern cli-reset-child-signals froglang_reset_child_signals -- end
+
+proc max-cli-path-bytes -- int do 4096 end
+proc null-pointer -- ptr do 0 ptr cast end
+
+proc cstring-length ptr -- int do
+    let bytes do
+        0
+        while dup bytes swap + @u8 0 != do
+            1 +
+        end
+    end
+end
+
+proc cstring-equals ptr ptr int -- bool do
+    let cstring bytes length do
+        cstring cstring-length
+        let cstring-byte-count do
+            cstring cstring-byte-count bytes length bytes-equal
+        end
+    end
+end
+
+proc cstrings-equal ptr ptr -- bool do
+    let first second do
+        first first cstring-length second second cstring-length bytes-equal
+    end
+end
+
+proc argv-at ptr int -- ptr do cell-bytes * + @ptr end
+
+proc copy-cstring ptr int -- ptr do
+    let bytes length do
+        length 1 + alloc
+        let result do
+            bytes result length memory-copy
+            0 result length byte-write
+            result
+        end
+    end
+end
+
+proc last-index-of-byte ptr int int -- int do
+    let bytes length value do
+        0 0 1 -
+        while
+            let index last-index do
+                index last-index index length <
+            end
+        do
+            let index last-index do
+                index 1 +
+                if bytes index byte-read value == do index else last-index end
+            end
+        end
+        let index last-index do last-index end
+    end
+end
+
+proc parent-path ptr -- ptr do
+    let path do
+        path cstring-length
+        let length do
+            path length 47 last-index-of-byte
+            let slash do
+                if slash 0 < do
+                    "." drop
+                elif slash 0 == do
+                    "/" drop
+                else
+                    path slash copy-cstring
+                end
+            end
+        end
+    end
+end
+
+proc replace-path-suffix ptr ptr int -- ptr do
+    let path suffix suffix-length do
+        path cstring-length
+        let path-length do
+            path path-length 47 last-index-of-byte 1 +
+            path path-length 46 last-index-of-byte
+            let base dot do
+                if dot base > do dot else path-length end
+                let prefix-length do
+                    prefix-length suffix-length + 1 + alloc
+                    let result do
+                        path result prefix-length memory-copy
+                        suffix result prefix-length + suffix-length memory-copy
+                        0 result prefix-length suffix-length + byte-write
+                        result
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc path-identity ptr -- ptr int bool do
+    let path do
+        max-cli-path-bytes alloc
+        let resolved do
+            path resolved cli-realpath
+            let existing do
+                if existing int cast 0 != do
+                    resolved resolved cstring-length true
+                else
+                    path parent-path
+                    let parent do
+                        parent resolved cli-realpath
+                        let resolved-parent do
+                            if resolved-parent int cast 0 == do
+                                null-pointer 0 false
+                            else
+                                path cstring-length
+                                let path-length do
+                                    path path-length 47 last-index-of-byte 1 +
+                                    let name-start do
+                                        path-length name-start -
+                                        resolved cstring-length
+                                        let name-length resolved-length do
+                                            resolved-length 1 + name-length +
+                                            let identity-length do
+                                                if identity-length 1 + max-cli-path-bytes > do
+                                                    null-pointer 0 false
+                                                else
+                                                    47 resolved resolved-length byte-write
+                                                    path name-start + resolved resolved-length 1 + + name-length memory-copy
+                                                    0 resolved identity-length byte-write
+                                                    resolved identity-length true
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc paths-alias ptr ptr -- bool do
+    let first second do
+        if first second cli-same-file do
+            true
+        else
+            first path-identity
+            let first-identity first-length first-known do
+                second path-identity
+                let second-identity second-length second-known do
+                    if first-known second-known && do
+                        first-identity first-length second-identity second-length bytes-equal
+                    else
+                        false
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc set-pointer-at ptr int ptr -- do
+    let array index value do
+        value array index cell-bytes * + !ptr
+    end
+end
+
+proc allocate-pointer-array int -- ptr do
+    let count do
+        count 1 + cell-bytes * alloc
+        let array do
+            array count null-pointer set-pointer-at
+            array
+        end
+    end
+end
+
+proc cli-error ptr int -- do
+    let message length do
+        "frogc: " emit-error
+        message length emit-error
+        10 eputc
+    end
+end
+
+proc cli-error-path ptr int ptr -- do
+    let message message-length path do
+        "frogc: " emit-error
+        message message-length emit-error
+        ": " emit-error
+        path path cstring-length emit-error
+        10 eputc
+    end
+end
+
+proc cli-usage-error ptr int -- do
+    cli-error
+    "Try `frogc --help`.\n" emit-error
+    2 exit
+end
+
+proc cli-usage-error-value ptr int ptr -- do
+    let message message-length value do
+        "frogc: " emit-error
+        message message-length emit-error
+        value value cstring-length emit-error
+        10 eputc
+        "Try `frogc --help`.\n" emit-error
+        2 exit
+    end
+end
+
+proc cli-usage -- do
+    "Usage:
+  frogc < source.frog > source.c
+  frogc <command> [options]
+
+Commands:
+  run [-c CODE | FILE]       compile and run Frog source
+  build [-o FILE] [-r] FILE  compile Frog source to a binary
+" emit
+end
+
+proc read-source-path ptr -- ptr int do
+    let path do
+        path path cstring-length read-file
+        let source source-length success do
+            if success do
+                source source-length
+            else
+                if path cli-path-exists do
+                    "unable to read" path cli-error-path
+                else
+                    "source file not found" path cli-error-path
+                end
+                1 exit
+                null-pointer 0
+            end
+        end
+    end
+end
+
+proc wait-for-child int -- int do
+    cli-wait-child
+    let status do
+        if status 0 < do
+            "unable to wait for child" cli-error
+            1
+        else
+            status
+        end
+    end
+end
+
+proc compile-frog-source ptr int ptr ptr -- int do
+    let source source-length directory output do
+        output cli-create-file
+        let output-fd do
+            if output-fd 0 < do
+                "unable to prepare compiler input or output" cli-error
+                1
+            else
+                cli-fork
+                let child do
+                    if child 0 < do
+                        output-fd cli-close drop
+                        "unable to fork compiler" cli-error
+                        1
+                    elif child 0 == do
+                        cli-reset-child-signals
+                        output-fd 1 cli-dup2 0 <
+                        directory cli-chdir 0 != ||
+                        let preparation-failed do
+                            output-fd cli-close drop
+                            if preparation-failed do
+                                "unable to prepare compiler child" cli-error
+                                1 cli-finish-child
+                                1
+                            else
+                                source source-length compile-source
+                                0 cli-finish-child
+                                0
+                            end
+                        end
+                    else
+                        output-fd cli-close drop
+                        child wait-for-child
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-c-source ptr ptr -- int do
+    let source executable do
+        13 allocate-pointer-array
+        let arguments do
+            arguments 0 "gcc" drop set-pointer-at
+            arguments 1 "-std=c11" drop set-pointer-at
+            arguments 2 "-pedantic" drop set-pointer-at
+            arguments 3 "-Wall" drop set-pointer-at
+            arguments 4 "-Wextra" drop set-pointer-at
+            arguments 5 "-Wconversion" drop set-pointer-at
+            arguments 6 "-Werror" drop set-pointer-at
+            arguments 7 "-O2" drop set-pointer-at
+            arguments 8 "-x" drop set-pointer-at
+            arguments 9 "c" drop set-pointer-at
+            arguments 10 source set-pointer-at
+            arguments 11 "-o" drop set-pointer-at
+            arguments 12 executable set-pointer-at
+            cli-fork
+            let child do
+                if child 0 < do
+                    "unable to fork gcc" cli-error
+                    1
+                elif child 0 == do
+                    cli-reset-child-signals
+                    "gcc" drop arguments cli-execvp drop
+                    "unable to run gcc" cli-error
+                    127 cli-finish-child
+                    127
+                else
+                    child wait-for-child
+                end
+            end
+        end
+    end
+end
+
+proc run-executable ptr -- int do
+    let executable do
+        1 allocate-pointer-array
+        let arguments do
+            arguments 0 executable set-pointer-at
+            cli-fork
+            let child do
+                if child 0 < do
+                    "unable to fork executable" cli-error
+                    1
+                elif child 0 == do
+                    cli-reset-child-signals
+                    executable arguments cli-execv drop
+                    "unable to run " emit-error
+                    executable executable cstring-length emit-error
+                    10 eputc
+                    127 cli-finish-child
+                    127
+                else
+                    child wait-for-child
+                end
+            end
+        end
+    end
+end
+
+proc run-source ptr int ptr -- int do
+    let source source-length directory do
+        if "build" drop cli-ensure-directory 0 != do
+            "unable to create build directory" cli-error
+            1
+        else
+            source source-length directory "build/frog-run.c" drop compile-frog-source
+            let compile-status do
+                if compile-status 0 != do
+                    compile-status
+                else
+                    "build/frog-run.c" drop "build/frog-run.exe" drop compile-c-source
+                    let c-status do
+                        if c-status 0 != do
+                            c-status
+                        else
+                            "build/frog-run.exe" drop run-executable
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc run-file ptr -- int do
+    let path do
+        path read-source-path
+        let source source-length do
+            path parent-path
+            let directory do
+                source source-length directory run-source
+            end
+        end
+    end
+end
+
+proc reject-path-alias ptr ptr ptr int -- do
+    let first second message message-length do
+        if first second paths-alias do
+            message message-length cli-usage-error
+        end
+    end
+end
+
+proc build-file ptr ptr bool -- int do
+    let path requested-output should-run do
+        path ".c" replace-path-suffix
+        let c-file do
+            if requested-output int cast 0 == do
+                path ".exe" replace-path-suffix
+            else
+                requested-output
+            end
+            let executable do
+                path read-source-path
+                let source source-length do
+                    path c-file "generated C path aliases the source file" reject-path-alias
+                    path executable "executable path aliases the source file" reject-path-alias
+                    c-file executable "executable path aliases the generated C file" reject-path-alias
+                    c-file "/proc/self/exe" drop "build output aliases the running compiler" reject-path-alias
+                    executable "/proc/self/exe" drop "build output aliases the running compiler" reject-path-alias
+                    path parent-path
+                    let directory do
+                        source source-length directory c-file compile-frog-source
+                        let frog-status do
+                            if frog-status 0 != do
+                                frog-status
+                            else
+                                c-file executable compile-c-source
+                                let c-status do
+                                    if c-status 0 != do
+                                        c-status
+                                    elif should-run do
+                                        executable run-executable
+                                    else
+                                        0
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc run-command ptr int -- do
+    let argv argc do
+        if argc 2 <= do
+            "run requires a source file or -c CODE" cli-usage-error
+        end
+        argv 2 argv-at
+        let argument do
+            if
+                argc 3 ==
+                argument "-h" cstring-equals argument "--help" cstring-equals || &&
+            do
+                "Usage: frogc run [-c CODE | FILE]\n" emit
+            elif argument "-c" cstring-equals do
+                if argc 4 != do
+                    "run -c requires exactly one CODE argument" cli-usage-error
+                end
+                argv 3 argv-at
+                let code do
+                    code code cstring-length "." drop run-source exit
+                end
+            elif argument @u8 45 == do
+                "unknown run option: " argument cli-usage-error-value
+            elif argc 3 != do
+                "run accepts exactly one source file" cli-usage-error
+            else
+                argument run-file exit
+            end
+        end
+    end
+end
+
+proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
+    let argv argc index output should-run do
+        if index argc >= do
+            "build requires exactly one source file" cli-usage-error
+            null-pointer null-pointer false
+        else
+            argv index argv-at
+            let argument do
+                if argument @u8 45 == do
+                    if
+                        argument "-h" cstring-equals
+                        argument "--help" cstring-equals ||
+                    do
+                        "Usage: frogc build [-o FILE] [-r] FILE\n" emit
+                        0 exit
+                        null-pointer null-pointer false
+                    elif argument "-r" cstring-equals do
+                        argv argc index 1 + output true parse-build-options
+                    elif argument "-o" cstring-equals do
+                        if index 1 + argc >= do
+                            "build -o requires an output file" cli-usage-error
+                        end
+                        argv argc index 2 + argv index 1 + argv-at should-run parse-build-options
+                    else
+                        "unknown build option: " argument cli-usage-error-value
+                        null-pointer null-pointer false
+                    end
+                else
+                    if argc index - 1 != do
+                        "build requires exactly one source file" cli-usage-error
+                    end
+                    argument output should-run
+                end
+            end
+        end
+    end
+end
+
+proc build-command ptr int -- do
+    let argv argc do
+        argv argc 2 null-pointer false parse-build-options
+        let source output should-run do
+            source output should-run build-file exit
+        end
+    end
+end
+
+proc main -- do
+    args
+    let argv argc do
+        if argc 1 == do
+            read-source compile-source
+        else
+            argv 1 argv-at
+            let command do
+                if
+                    command "-h" cstring-equals
+                    command "--help" cstring-equals ||
+                do
+                    cli-usage
+                elif command "run" cstring-equals do
+                    argv argc run-command
+                elif command "build" cstring-equals do
+                    argv argc build-command
+                else
+                    "unknown command: " command cli-usage-error-value
                 end
             end
         end

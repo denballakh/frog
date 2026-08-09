@@ -15,7 +15,7 @@ build/frogc -h
 build/frogc run examples/01_simple.frog
 ```
 
-`compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. The native CLI contains only process and file orchestration: it invokes the checked compiler and `gcc`. Python is test-only.
+`compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI. Python is test-only.
 
 Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 
@@ -43,9 +43,7 @@ To bootstrap manually without Python:
 
 ```sh
 mkdir -p build
-gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -Dmain=frog_compiler_main -c compiler/frogc.c -o build/frogc_compiler.o
-gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -c compiler/frogc_cli.c -o build/frogc_cli.o
-gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc_compiler.o build/frogc_cli.o -o build/frogc
+gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 compiler/frogc.c -o build/frogc
 build/frogc < compiler/frogc.frog > build/frogc.next.c
 ```
 

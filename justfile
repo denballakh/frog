@@ -30,9 +30,7 @@ test: check bootstrap-check
     test -z "$(git status --porcelain -- test/snapshots)"
 
 _compile-frogc source output:
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -Dmain=frog_compiler_main -c "{{source}}" -o "{{output}}.core.o"
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -c compiler/frogc_cli.c -o "{{output}}.cli.o"
-    gcc "{{output}}.core.o" "{{output}}.cli.o" -o "{{output}}"
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"
 
 _compile-frogc-filter source output:
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"

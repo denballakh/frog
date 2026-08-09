@@ -8,7 +8,7 @@ just test
 
 `just test` runs formatting, Python typechecking, native bootstrap checks, and snapshot generation. It fails if `test/snapshots/` has tracked or untracked changes afterward.
 
-`compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. `compiler/frogc_cli.c` orchestrates native processes and files, while `test/__main__.py` materializes cases, invokes the CLI in subprocesses, and renders snapshots. Python is test-only; there is no Python language implementation or interpreter.
+`compiler/frogc.frog` implements the compiler, typechecker, C emitter, and process/file CLI orchestration. `test/__main__.py` materializes cases, invokes the Frog-written CLI in subprocesses, and renders snapshots. Python is test-only; there is no Python language implementation or interpreter.
 
 `just bootstrap-check` verifies that `compiler/frogc.c` is a fixed-point bootstrap seed and compiles and runs focused native compiler fixtures under `test/bootstrap/` with strict C11 warnings.
 

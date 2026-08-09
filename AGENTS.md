@@ -14,15 +14,14 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 ## Project Overview
 
-FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. The native `compiler/frogc_cli.c` provides CLI process and file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
+FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI process/file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
 
 The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, compile-time imports and macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
-- `compiler/frogc.frog`: The sole Frog compiler, typechecker, and deterministic C emitter. It reads the root source from stdin and resolves imports from the compiler process's working directory.
+- `compiler/frogc.frog`: The Frog-written compiler, typechecker, deterministic C emitter, and CLI. Filter mode reads the root source from stdin; file commands preserve lexical source-relative import resolution.
 - `compiler/frogc.c`: Checked-in fixed-point C bootstrap seed generated from `compiler/frogc.frog`; this is an authoritative bootstrap artifact, not a disposable build output.
-- `compiler/frogc_cli.c`: Native CLI process and file orchestration. It invokes the checked compiler and `gcc`; it contains no language semantics.
 - `examples/*.frog`: Example Frog programs. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
 - `examples/01_simple.frog`: Basic stack arithmetic, debug, and print demo.
 - `examples/02_while.frog`: While loop, nested if/else, and arithmetic demo.
@@ -36,7 +35,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/testing.md`: Test snapshot workflow and review process.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
-- `test/__main__.py`: Snapshot orchestration for example files, CLI cases, inline snippets, and multi-file imports, plus black-box build-artifact assertions. It invokes the native CLI in subprocesses and contains no language implementation.
+- `test/__main__.py`: Snapshot orchestration for example files, CLI cases, inline snippets, and multi-file imports, plus black-box build-artifact assertions. It invokes the Frog-written CLI in subprocesses and contains no language implementation.
 - `test/bootstrap/`: Focused native compiler fixtures and shell harnesses run by `just bootstrap-check`.
 - `test/snapshots/**/*.out`: Markdown-style snapshot output files produced by `python -m test`. Snapshots embed tested source or CLI arguments with captured output.
 - `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
@@ -48,7 +47,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 
 - Python requirement is `>=3.13`.
 - The devenv shell provides optimized Python 3.13 plus `mypy`, `basedpyright`, `black`, `git`, and Nix language support.
-- Running or building Frog files requires `gcc`: the native CLI compiles Frog to C and then compiles the C program.
+- Running or building Frog files requires `gcc`: the Frog-written CLI compiles Frog to C and then compiles the C program.
 
 ## Common Commands
 
@@ -88,7 +87,7 @@ Useful direct commands:
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
 - `just test` regenerates `test/snapshots/**/*.out` by capturing stdout from many scenarios, then fails if the snapshot directory differs from git, including untracked files.
 - Snapshots are self-contained Markdown-style `.out` files. They embed the Frog source or CLI command under test before the captured output.
-- Each example, inline, and multi-file corpus case runs once through the native `build/frogc run` path.
+- Each example, inline, and multi-file corpus case runs once through the `build/frogc run` path.
 - Inline cases use immutable `SourceSpec` values to materialize an explicit `proc main -- do ... end`; declaration-order and malformed-structure cases use the appropriate structural fields or verbatim raw source.
 - Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and cover imported procedures, macros, reexports, root-relative paths, conflicts, cycles, and rejected syntax.
 - Use `just show-diff` to inspect snapshot changes.
@@ -104,10 +103,10 @@ Useful direct commands:
 - Entrypoint is `build/frogc` (or `just cli <args>`).
 - With no arguments, it is a compiler filter: it reads Frog source from standard input and writes generated C to standard output.
 - Subcommands are `run` and `build`; each has `-h`/`--help`.
-- `run` accepts `-c CODE` or one file path. It invokes the native Frog compiler, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
+- `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
 - `build -r FILE` runs the resulting executable.
-- `compiler/frogc_cli.c` manages the minimal native process/file calls and forwards process exit status. It must not implement Frog syntax or semantics.
+- CLI argument parsing, path construction, build policy, process setup, and exit-status forwarding are implemented in Frog in `compiler/frogc.frog`. Generated-C runtime adapters expose only the POSIX ABI details that the scalar C FFI cannot represent directly.
 
 Current CLI help output:
 
@@ -135,7 +134,7 @@ Commands:
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
 - Generated C uses a runtime cell stack and numeric procedure symbols, so source punctuation does not become a C identifier.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
-- `bootstrap-update` compiles candidate compiler generations as standalone stdin-to-stdout filters. This keeps fixed-point regeneration independent of the temporary native CLI entrypoint ABI.
+- `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
 
 ## Language Semantics
 
@@ -144,11 +143,11 @@ Commands:
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 - `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
-- `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads one pointer-sized entry as `ptr`.
+- `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 
 ## Implementation Conventions And Gotchas
 
-- Keep language semantics in `compiler/frogc.frog`. Do not add tokenization, parsing, typechecking, evaluation, or C emission to the native CLI.
+- Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
 - When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and snapshot coverage, user-facing docs, and optionally the VS Code grammar.
 - String literals lower to a UTF-8 byte pointer and byte length (`ptr int`); generated globals and macro expansion must retain the defining module's literal identity.
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
@@ -167,6 +166,6 @@ Commands:
 ## Working Tree Hygiene
 
 - The repository ignores generated `*.c`, `*.exe`, Python caches, mypy cache, `.devenv*`, `.direnv`, and local env files.
-- `compiler/frogc.c` and `compiler/frogc_cli.c` are explicit exceptions to the generated-C ignore rule. Update the generated seed only with `just bootstrap-update`, whose fixed-point comparison must pass first.
+- `compiler/frogc.c` is the explicit exception to the generated-C ignore rule. Update the generated seed only with `just bootstrap-update`, whose fixed-point comparison must pass first.
 - Before finalizing code changes, run `just test` when feasible. For docs-only changes, a lighter verification may be enough.
 - If tests regenerate files under `test/snapshots/`, review those diffs carefully because they are the effective behavioral snapshots.
