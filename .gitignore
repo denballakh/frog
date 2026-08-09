@@ -1,6 +1,7 @@
 # generated C files and compiled binaries:
 *.c
 *.exe
+!compiler/frogc.c
 
 scratch.frog
 

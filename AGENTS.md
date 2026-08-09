@@ -25,6 +25,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `frog/types.py`: Core dataclasses/enums for tokens, instructions, value classes, contracts, procedures, stacks, and pretty-printing.
 - `frog/logs.py`: Logging, diagnostics, exit codes, source locations, and fatal helper functions.
 - `frog/sb.py`: Persistent-ish `StringBuilder` used by pretty-printing and C code generation.
+- `compiler/frogc.frog`: Self-hosted Frog compiler source. It reads Frog source from stdin and emits deterministic C to stdout.
+- `compiler/frogc.c`: Checked-in fixed-point C seed generated from `compiler/frogc.frog`; this is the bootstrap artifact, not a disposable build output.
 - `examples/*.frog`: Example Frog programs. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
 - `examples/00_empty.frog`: Empty program smoke test.
 - `examples/01_simple.frog`: Basic stack arithmetic, debug, and print demo.
@@ -60,6 +62,9 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Format Python with Black: `just fmt`
 - Run typecheck and format: `just check`
 - Run the full test suite, including typecheck/format first: `just test`
+- Build the checked-in self-hosting seed: `just frogc-seed`
+- Verify the checked seed, source, and next two generations are byte-identical: `just bootstrap-check`
+- Regenerate the checked seed after a verified compiler-source change: `just bootstrap-update`
 - Show regenerated snapshot diffs: `just show-diff`
 - Approve regenerated snapshot diffs after careful review: `just approve-diff`
 - Start REPL: `just repl`
@@ -145,6 +150,7 @@ Subcommands:
 - `interpret(ir)` executes the IR directly and prints debug/runtime output.
 - `translate(ir)` emits C code using `StringBuilder`, then the CLI compiles it with `gcc`.
 - Generated C sanitizes Frog procedure names into valid C identifiers for `proc_*`, `ret_*`, and related result variable prefixes, so punctuation in procedure names does not directly leak into C symbols.
+- The migration compiler in `compiler/frogc.frog` directly typechecks and emits a numeric-symbol stack-machine C backend. `compiler/frogc.c` must always be a fixed point: compiling the Frog source with it and recompiling with the result must reproduce the checked C byte-for-byte.
 
 ## Language Semantics
 
@@ -163,7 +169,7 @@ Subcommands:
 - When adding a keyword, update `KeywordType`, `KW_TO_KWT`, parser/compiler handling, macro body validation if the keyword affects block syntax, tests, docs, and `ide/vscode/frog_grammar.json`.
 - Error paths often call `error(...)`, which prints diagnostics then `sys.exit(...)`; tests rely on captured stdout and exit-code lines from helpers.
 - Internal consistency failures should use `unreachable`, `typecheck_has_a_bug`, or `notimplemented` from `frog/logs.py` as appropriate.
-- Do not treat generated `.c` or `.exe` files as authoritative source. They are build/test artifacts even if some currently exist in the tree.
+- Do not treat generated `.c` or `.exe` files as authoritative source, except for the intentional bootstrap seed `compiler/frogc.c`. Other generated files remain disposable build/test artifacts.
 - `StringBuilder.__str__` mutates/collapses its internal linked chunks; copying is available through `copy()` or `[::]`.
 - Generated C uses simple structs named `ret_<proc>` and functions named `proc_<proc>`, with imported module procedure names sanitized into module-qualified C identifiers and generated variable names globally uniqued per translation.
 
@@ -176,5 +182,6 @@ Subcommands:
 ## Working Tree Hygiene
 
 - The repository ignores generated `*.c`, `*.exe`, Python caches, mypy cache, `.devenv*`, `.direnv`, and local env files.
+- `compiler/frogc.c` is the explicit exception to the generated-C ignore rule. Update it only with `just bootstrap-update`, whose fixed-point comparison must pass first.
 - Before finalizing code changes, prefer `just precommit` when feasible. For docs-only changes, a lighter verification may be enough.
 - If tests regenerate files under `test/snapshots/`, review those diffs carefully because they are the effective behavioral snapshots.

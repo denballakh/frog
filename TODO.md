@@ -7,6 +7,7 @@ When an item from this list is fixed/implemented - remove it from this list.
 ## New language features
 
 - support including other source files
+- Add multiline string literals so large templates, including generated C fragments, do not need to be encoded as long single-line literals.
 
 ## Diagnostics And Debugging
 

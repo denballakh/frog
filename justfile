@@ -20,11 +20,34 @@ fmt: _black
 check: typecheck fmt
 
 [group("test")]
-test: check
+test: check bootstrap-check
     python -m test
     git diff --exit-code HEAD -- test/snapshots
     git status --short -- test/snapshots
     test -z "$(git status --porcelain -- test/snapshots)"
+
+[group("bootstrap")]
+frogc-seed:
+    mkdir -p build
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 compiler/frogc.c -o build/frogc
+
+[group("bootstrap")]
+bootstrap-check: frogc-seed
+    build/frogc < compiler/frogc.frog > build/frogc.stage2.c
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.stage2.c -o build/frogc.stage2
+    build/frogc.stage2 < compiler/frogc.frog > build/frogc.stage3.c
+    cmp compiler/frogc.c build/frogc.stage2.c
+    cmp build/frogc.stage2.c build/frogc.stage3.c
+
+[group("bootstrap")]
+bootstrap-update: frogc-seed
+    build/frogc < compiler/frogc.frog > build/frogc.candidate1.c
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.candidate1.c -o build/frogc.candidate1
+    build/frogc.candidate1 < compiler/frogc.frog > build/frogc.candidate2.c
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.candidate2.c -o build/frogc.candidate2
+    build/frogc.candidate2 < compiler/frogc.frog > build/frogc.candidate3.c
+    cmp build/frogc.candidate2.c build/frogc.candidate3.c
+    cp build/frogc.candidate2.c compiler/frogc.c
 
 [group("test")]
 show-diff:

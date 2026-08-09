@@ -1,0 +1,2169 @@
+// FrogLang compiler, written in FrogLang.
+//
+// The bootstrap compiler deliberately uses only the bootstrap-v1 language
+// profile.  It reads one Frog source file from stdin and writes C to stdout.
+
+proc cell-bytes -- int do 8 end
+
+proc type-int -- int do 1 end
+proc type-bool -- int do 2 end
+proc type-ptr -- int do 3 end
+proc type-type -- int do 4 end
+
+proc token-int -- int do 1 end
+proc token-bool -- int do 2 end
+proc token-char -- int do 3 end
+proc token-string -- int do 4 end
+proc token-word -- int do 5 end
+
+proc token-kind-offset -- int do 0 end
+proc token-start-offset -- int do 8 end
+proc token-length-offset -- int do 16 end
+proc token-value-offset -- int do 24 end
+proc token-line-offset -- int do 32 end
+proc token-column-offset -- int do 40 end
+proc token-bytes -- int do 48 end
+
+proc proc-name-start-offset -- int do 0 end
+proc proc-name-length-offset -- int do 8 end
+proc proc-body-start-offset -- int do 16 end
+proc proc-body-end-offset -- int do 24 end
+proc proc-input-start-offset -- int do 32 end
+proc proc-input-count-offset -- int do 40 end
+proc proc-output-start-offset -- int do 48 end
+proc proc-output-count-offset -- int do 56 end
+proc proc-index-offset -- int do 64 end
+proc proc-bytes -- int do 72 end
+
+proc ctx-source-offset -- int do 0 end
+proc ctx-source-length-offset -- int do 8 end
+proc ctx-tokens-offset -- int do 16 end
+proc ctx-token-count-offset -- int do 24 end
+proc ctx-procs-offset -- int do 32 end
+proc ctx-proc-count-offset -- int do 40 end
+proc ctx-types-offset -- int do 48 end
+proc ctx-type-count-offset -- int do 56 end
+proc ctx-lex-index-offset -- int do 64 end
+proc ctx-lex-line-offset -- int do 72 end
+proc ctx-lex-column-offset -- int do 80 end
+proc ctx-main-proc-offset -- int do 88 end
+proc ctx-bytes -- int do 96 end
+
+proc max-source-bytes -- int do 4194304 end
+
+proc field-read ptr int -- int do + @i64 end
+
+proc field-write int ptr int -- do
+    + !i64
+end
+
+proc pointer-field-read ptr int -- ptr do
+    field-read ptr cast
+end
+
+proc pointer-field-write ptr ptr int -- do
+    let value base offset do
+        value int cast base offset field-write
+    end
+end
+
+proc byte-read ptr int -- int do
+    + @u8
+end
+
+proc byte-write int ptr int -- do
+    + !u8
+end
+
+proc memory-copy ptr ptr int -- do
+    let source destination count do
+        0
+        while dup count < do
+            dup let index do
+                source index byte-read
+                destination index byte-write
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit ptr int -- do
+    let bytes length do
+        0
+        while dup length < do
+            dup bytes swap + @u8 putc
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-error ptr int -- do
+    let bytes length do
+        0
+        while dup length < do
+            dup bytes swap + @u8 eputc
+            1 +
+        end
+        drop
+    end
+end
+
+proc fail ptr int -- do
+    "frogc: " emit-error
+    emit-error
+    10 eputc
+    1 exit
+end
+
+proc emit-unsigned int -- do
+    let value do
+        if value 10 >= do
+            value 10 / emit-unsigned
+        end
+        value 10 % 48 + putc
+    end
+end
+
+proc emit-integer int -- do
+    if dup 0 < do
+        45 putc
+        0 swap -
+    end
+    emit-unsigned
+end
+
+proc is-space int -- bool do
+    let byte do
+        byte 32 ==
+        byte 9 == ||
+        byte 10 == ||
+        byte 13 == ||
+    end
+end
+
+proc is-digit int -- bool do
+    let byte do
+        byte 48 >= byte 57 <= &&
+    end
+end
+
+proc is-hex-digit int -- bool do
+    let byte do
+        byte is-digit
+        byte 65 >= byte 70 <= && ||
+        byte 97 >= byte 102 <= && ||
+    end
+end
+
+proc hex-value int -- int do
+    let byte do
+        if byte is-digit do
+            byte 48 -
+        elif byte 65 >= byte 70 <= && do
+            byte 65 - 10 +
+        elif byte 97 >= byte 102 <= && do
+            byte 97 - 10 +
+        else
+            "invalid hexadecimal digit" fail
+            0
+        end
+    end
+end
+
+proc bytes-equal ptr int ptr int -- bool do
+    let first first-length second second-length do
+        if first-length second-length != do
+            false
+        else
+            0 true
+            while
+                let index equal do
+                    index equal
+                    index first-length < equal &&
+                end
+            do
+                let index equal do
+                    index 1 +
+                    equal
+                    first index byte-read second index byte-read == &&
+                end
+            end
+            let index equal do equal end
+        end
+    end
+end
+
+proc read-source -- ptr int do
+    max-source-bytes alloc
+    let source do
+        0 getc
+        while dup 0 >= do
+            let length byte do
+                if length max-source-bytes >= do
+                    "source exceeds max-source-bytes" fail
+                end
+                byte source length byte-write
+                length 1 +
+                getc
+            end
+        end
+        drop
+        source swap
+    end
+end
+
+proc ctx-source ptr -- ptr do ctx-source-offset pointer-field-read end
+proc ctx-source-length ptr -- int do ctx-source-length-offset field-read end
+proc ctx-tokens ptr -- ptr do ctx-tokens-offset pointer-field-read end
+proc ctx-token-count ptr -- int do ctx-token-count-offset field-read end
+proc ctx-procs ptr -- ptr do ctx-procs-offset pointer-field-read end
+proc ctx-proc-count ptr -- int do ctx-proc-count-offset field-read end
+proc ctx-types ptr -- ptr do ctx-types-offset pointer-field-read end
+proc ctx-type-count ptr -- int do ctx-type-count-offset field-read end
+proc ctx-lex-index ptr -- int do ctx-lex-index-offset field-read end
+proc ctx-lex-line ptr -- int do ctx-lex-line-offset field-read end
+proc ctx-lex-column ptr -- int do ctx-lex-column-offset field-read end
+proc ctx-main-proc ptr -- int do ctx-main-proc-offset field-read end
+
+proc set-ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
+proc set-ctx-source-length int ptr -- do ctx-source-length-offset field-write end
+proc set-ctx-tokens ptr ptr -- do ctx-tokens-offset pointer-field-write end
+proc set-ctx-token-count int ptr -- do ctx-token-count-offset field-write end
+proc set-ctx-procs ptr ptr -- do ctx-procs-offset pointer-field-write end
+proc set-ctx-proc-count int ptr -- do ctx-proc-count-offset field-write end
+proc set-ctx-types ptr ptr -- do ctx-types-offset pointer-field-write end
+proc set-ctx-type-count int ptr -- do ctx-type-count-offset field-write end
+proc set-ctx-lex-index int ptr -- do ctx-lex-index-offset field-write end
+proc set-ctx-lex-line int ptr -- do ctx-lex-line-offset field-write end
+proc set-ctx-lex-column int ptr -- do ctx-lex-column-offset field-write end
+proc set-ctx-main-proc int ptr -- do ctx-main-proc-offset field-write end
+
+proc token-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-tokens index token-bytes * +
+    end
+end
+
+proc token-field ptr int int -- int do
+    let ctx index offset do
+        ctx index token-address offset field-read
+    end
+end
+
+proc set-token-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index token-address offset field-write
+    end
+end
+
+proc token-kind-at ptr int -- int do token-kind-offset token-field end
+proc token-start-at ptr int -- int do token-start-offset token-field end
+proc token-length-at ptr int -- int do token-length-offset token-field end
+proc token-value-at ptr int -- int do token-value-offset token-field end
+proc token-line-at ptr int -- int do token-line-offset token-field end
+proc token-column-at ptr int -- int do token-column-offset token-field end
+
+proc token-slice ptr int -- ptr int do
+    let ctx index do
+        ctx ctx-source
+        ctx index token-start-at +
+        ctx index token-length-at
+    end
+end
+
+proc token-equals ptr int ptr int -- bool do
+    let ctx index bytes length do
+        ctx index token-slice bytes length bytes-equal
+    end
+end
+
+proc add-token ptr int int int int int int -- do
+    let ctx kind start length value line column do
+        ctx ctx-token-count
+        let index do
+            kind ctx index token-kind-offset set-token-field
+            start ctx index token-start-offset set-token-field
+            length ctx index token-length-offset set-token-field
+            value ctx index token-value-offset set-token-field
+            line ctx index token-line-offset set-token-field
+            column ctx index token-column-offset set-token-field
+            index 1 + ctx set-ctx-token-count
+        end
+    end
+end
+
+proc source-byte ptr int -- int do
+    let ctx index do
+        ctx ctx-source index byte-read
+    end
+end
+
+proc lex-advance ptr -- do
+    let ctx do
+        ctx ctx-lex-index
+        let index do
+            ctx index source-byte
+            let byte do
+                index 1 + ctx set-ctx-lex-index
+                if byte 10 == do
+                    ctx ctx-lex-line 1 + ctx set-ctx-lex-line
+                    1 ctx set-ctx-lex-column
+                else
+                    ctx ctx-lex-column 1 + ctx set-ctx-lex-column
+                end
+            end
+        end
+    end
+end
+
+proc all-digits ptr int int -- bool do
+    let source start length do
+        0 true
+        while
+            let index valid do
+                index valid
+                index length < valid &&
+            end
+        do
+            let index valid do
+                index 1 +
+                valid source start index + byte-read is-digit &&
+            end
+        end
+        let index valid do
+            valid length 0 > &&
+        end
+    end
+end
+
+proc parse-decimal ptr int int -- int do
+    let source start length do
+        0 0
+        while
+            let index value do
+                index value index length <
+            end
+        do
+            let index value do
+                index 1 +
+                value 10 * source start index + byte-read 48 - +
+            end
+        end
+        let index value do value end
+    end
+end
+
+proc classify-word ptr int int -- int int do
+    let source start length do
+        if source start + length "true" bytes-equal do
+            token-bool 1
+        elif source start + length "false" bytes-equal do
+            token-bool 0
+        elif source start length all-digits do
+            token-int source start length parse-decimal
+        else
+            token-word 0
+        end
+    end
+end
+
+proc skip-comment ptr -- do
+    let ctx do
+        while
+            ctx ctx-lex-index ctx ctx-source-length <
+            if dup do
+                drop ctx ctx ctx-lex-index source-byte 10 !=
+            end
+        do
+            ctx lex-advance
+        end
+    end
+end
+
+proc lex-string ptr int int int -- do
+    let ctx start line column do
+        ctx lex-advance
+        ctx ctx-lex-index
+        let content-start do
+            false
+            while
+                let done do
+                    done done !
+                    ctx ctx-lex-index ctx ctx-source-length < &&
+                end
+            do
+                let done do
+                    ctx ctx ctx-lex-index source-byte
+                    let byte do
+                        if byte 34 == do
+                            true
+                        else
+                            if byte 10 == do
+                                "unterminated string literal" fail
+                            end
+                            if byte 92 == do
+                                ctx lex-advance
+                                if ctx ctx-lex-index ctx ctx-source-length >= do
+                                    "unterminated string escape" fail
+                                end
+                            end
+                            ctx lex-advance
+                            false
+                        end
+                    end
+                end
+            end
+            drop
+            if ctx ctx-lex-index ctx ctx-source-length >= do
+                "unterminated string literal" fail
+            end
+            ctx ctx-lex-index content-start -
+            let content-length do
+                ctx token-string content-start content-length 0 line column add-token
+            end
+            ctx lex-advance
+        end
+    end
+end
+
+proc lex-character ptr int int int -- do
+    let ctx start line column do
+        ctx lex-advance
+        if ctx ctx-lex-index ctx ctx-source-length >= do
+            "unterminated character literal" fail
+        end
+        ctx ctx ctx-lex-index source-byte
+        let value do
+            ctx lex-advance
+            if ctx ctx-lex-index ctx ctx-source-length >= do
+                "unterminated character literal" fail
+            end
+            if ctx ctx ctx-lex-index source-byte 39 != do
+                "character literal must contain one byte" fail
+            end
+            ctx lex-advance
+            ctx token-char start 3 value line column add-token
+        end
+    end
+end
+
+proc lex-word ptr int int int -- do
+    let ctx start line column do
+        while
+            ctx ctx-lex-index ctx ctx-source-length <
+            if dup do
+                drop ctx ctx ctx-lex-index source-byte is-space !
+            end
+        do
+            ctx lex-advance
+        end
+        ctx ctx-lex-index start -
+        let length do
+            if ctx ctx-source start + length "//" bytes-equal do
+                ctx skip-comment
+            else
+                ctx ctx-source start length classify-word
+                let kind value do
+                    ctx kind start length value line column add-token
+                end
+            end
+        end
+    end
+end
+
+proc lex ptr -- do
+    let ctx do
+        0 ctx set-ctx-token-count
+        0 ctx set-ctx-lex-index
+        1 ctx set-ctx-lex-line
+        1 ctx set-ctx-lex-column
+
+        while ctx ctx-lex-index ctx ctx-source-length < do
+            ctx ctx ctx-lex-index source-byte
+            let byte do
+                if byte is-space do
+                    ctx lex-advance
+                else
+                    ctx ctx-lex-index
+                    ctx ctx-lex-line
+                    ctx ctx-lex-column
+                    let start line column do
+                        if byte 34 == do
+                            ctx start line column lex-string
+                        else
+                            if byte 39 == do
+                                ctx start line column lex-character
+                            else
+                                ctx start line column lex-word
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc proc-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-procs index proc-bytes * +
+    end
+end
+
+proc proc-field ptr int int -- int do
+    let ctx index offset do
+        ctx index proc-address offset field-read
+    end
+end
+
+proc set-proc-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index proc-address offset field-write
+    end
+end
+
+proc proc-name-start-at ptr int -- int do proc-name-start-offset proc-field end
+proc proc-name-length-at ptr int -- int do proc-name-length-offset proc-field end
+proc proc-body-start-at ptr int -- int do proc-body-start-offset proc-field end
+proc proc-body-end-at ptr int -- int do proc-body-end-offset proc-field end
+proc proc-input-start-at ptr int -- int do proc-input-start-offset proc-field end
+proc proc-input-count-at ptr int -- int do proc-input-count-offset proc-field end
+proc proc-output-start-at ptr int -- int do proc-output-start-offset proc-field end
+proc proc-output-count-at ptr int -- int do proc-output-count-offset proc-field end
+proc proc-index-at ptr int -- int do proc-index-offset proc-field end
+
+proc type-at ptr int -- int do
+    let ctx index do
+        ctx ctx-types index cell-bytes * field-read
+    end
+end
+
+proc add-type ptr int -- do
+    let ctx value do
+        value ctx ctx-types ctx ctx-type-count cell-bytes * field-write
+        ctx ctx-type-count 1 + ctx set-ctx-type-count
+    end
+end
+
+proc require-word ptr int -- do
+    let ctx token-index do
+        if ctx token-index token-kind-at token-word != do
+            "expected word token" fail
+        end
+    end
+end
+
+proc parse-type-token ptr int -- int do
+    let ctx token-index do
+        ctx token-index require-word
+        if ctx token-index "int" token-equals do
+            type-int
+        elif ctx token-index "bool" token-equals do
+            type-bool
+        elif ctx token-index "ptr" token-equals do
+            type-ptr
+        else
+            "unknown type in procedure signature" fail
+            0
+        end
+    end
+end
+
+proc proc-name-equals-token ptr int int -- bool do
+    let ctx proc-index token-index do
+        ctx ctx-source
+        ctx proc-index proc-name-start-at
+        +
+        ctx proc-index proc-name-length-at
+        ctx token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-proc-from ptr int int -- int do
+    let ctx token-index proc-index do
+        if proc-index ctx ctx-proc-count >= do
+            0 1 -
+        elif ctx proc-index token-index proc-name-equals-token do
+            proc-index
+        else
+            ctx token-index proc-index 1 + find-proc-from
+        end
+    end
+end
+
+proc find-proc ptr int -- int do
+    0 find-proc-from
+end
+
+proc scan-block-end ptr int -- int do
+    let ctx body-start do
+        body-start 1
+        while
+            let token-index depth do
+                token-index depth
+                depth 0 >
+                token-index ctx ctx-token-count < &&
+            end
+        do
+            let token-index depth do
+                if ctx token-index token-kind-at token-word == do
+                    if ctx token-index "elif" token-equals do
+                        if depth 1 <= do
+                            "elif outside active if" fail
+                        end
+                        depth
+                    else
+                        if
+                            ctx token-index "if" token-equals
+                            ctx token-index "while" token-equals ||
+                            ctx token-index "let" token-equals ||
+                        do
+                            depth 1 +
+                        else
+                            if ctx token-index "end" token-equals do
+                                depth 1 -
+                            else
+                                depth
+                            end
+                        end
+                    end
+                else
+                    depth
+                end
+                token-index 1 +
+                swap
+            end
+        end
+        let token-index depth do
+            if depth 0 != do
+                "unterminated procedure body" fail
+            end
+            token-index
+        end
+    end
+end
+
+proc scan-one-proc ptr int -- int do
+    let ctx proc-token do
+        proc-token 1 +
+        let name-token do
+            if name-token ctx ctx-token-count >= do
+                "expected procedure name" fail
+            end
+            ctx name-token require-word
+            ctx name-token find-proc
+            let existing-proc do
+                if existing-proc 0 >= do
+                    "duplicate procedure name: " emit-error
+                    ctx name-token token-slice emit-error
+                    10 eputc
+                    1 exit
+                end
+            end
+
+            ctx ctx-proc-count
+            let proc-index do
+                ctx name-token token-start-at ctx proc-index proc-name-start-offset set-proc-field
+                ctx name-token token-length-at ctx proc-index proc-name-length-offset set-proc-field
+                proc-index ctx proc-index proc-index-offset set-proc-field
+
+                ctx ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
+                name-token 1 + 0
+                while
+                    let token-index count do
+                        token-index count
+                        token-index ctx ctx-token-count <
+                        if dup do
+                            drop ctx token-index "--" token-equals !
+                        end
+                    end
+                do
+                    let token-index count do
+                        ctx token-index parse-type-token ctx swap add-type
+                        token-index 1 + count 1 +
+                    end
+                end
+                let token-index input-count do
+                    if token-index ctx ctx-token-count >= do
+                        "expected -- in procedure signature" fail
+                    end
+                    input-count ctx proc-index proc-input-count-offset set-proc-field
+                    token-index 1 +
+                end
+
+                ctx ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
+                0
+                while
+                    let token-index count do
+                        token-index count
+                        token-index ctx ctx-token-count <
+                        if dup do
+                            drop ctx token-index "do" token-equals !
+                        end
+                    end
+                do
+                    let token-index count do
+                        ctx token-index parse-type-token ctx swap add-type
+                        token-index 1 + count 1 +
+                    end
+                end
+                let token-index output-count do
+                    if token-index ctx ctx-token-count >= do
+                        "expected do after procedure signature" fail
+                    end
+                    output-count ctx proc-index proc-output-count-offset set-proc-field
+                    token-index 1 +
+                end
+                let body-start do
+                    body-start ctx proc-index proc-body-start-offset set-proc-field
+                    ctx body-start scan-block-end
+                    let next-token do
+                        next-token 1 - ctx proc-index proc-body-end-offset set-proc-field
+                        proc-index 1 + ctx set-ctx-proc-count
+
+                        if ctx name-token "main" token-equals do
+                            if ctx ctx-main-proc 0 >= do
+                                "duplicate main procedure" fail
+                            end
+                            if
+                                ctx proc-index proc-input-count-at 0 !=
+                                ctx proc-index proc-output-count-at 0 != ||
+                            do
+                                "main must have an empty stack contract" fail
+                            end
+                            proc-index ctx set-ctx-main-proc
+                        end
+                        next-token
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc scan-procedures ptr -- do
+    let ctx do
+        0 ctx set-ctx-proc-count
+        0 ctx set-ctx-type-count
+        0
+        while dup ctx ctx-token-count < do
+            let token-index do
+                if
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "proc" token-equals &&
+                do
+                    ctx token-index scan-one-proc
+                else
+                    "only procedure declarations are allowed at bootstrap top level" fail
+                    token-index 1 +
+                end
+            end
+        end
+        drop
+        if ctx ctx-main-proc 0 < do
+            "missing main procedure" fail
+        end
+    end
+end
+
+proc cc-root-offset -- int do 0 end
+proc cc-proc-offset -- int do 8 end
+proc cc-type-stack-offset -- int do 16 end
+proc cc-type-count-offset -- int do 24 end
+proc cc-blocks-offset -- int do 32 end
+proc cc-block-count-offset -- int do 40 end
+proc cc-locals-offset -- int do 48 end
+proc cc-local-count-offset -- int do 56 end
+proc cc-next-local-offset -- int do 64 end
+proc cc-indent-offset -- int do 72 end
+proc cc-bytes -- int do 80 end
+
+proc block-if -- int do 1 end
+proc block-while -- int do 2 end
+proc block-let -- int do 3 end
+
+proc block-kind-offset -- int do 0 end
+proc block-base-types-offset -- int do 8 end
+proc block-base-count-offset -- int do 16 end
+proc block-then-types-offset -- int do 24 end
+proc block-then-count-offset -- int do 32 end
+proc block-local-base-offset -- int do 40 end
+proc block-has-else-offset -- int do 48 end
+proc block-has-do-offset -- int do 56 end
+proc block-elif-parent-offset -- int do 64 end
+proc block-bytes -- int do 72 end
+
+proc local-name-start-offset -- int do 0 end
+proc local-name-length-offset -- int do 8 end
+proc local-type-offset -- int do 16 end
+proc local-id-offset -- int do 24 end
+proc local-bytes -- int do 32 end
+
+proc cc-root ptr -- ptr do cc-root-offset pointer-field-read end
+proc cc-proc ptr -- int do cc-proc-offset field-read end
+proc cc-type-stack ptr -- ptr do cc-type-stack-offset pointer-field-read end
+proc cc-type-count ptr -- int do cc-type-count-offset field-read end
+proc cc-blocks ptr -- ptr do cc-blocks-offset pointer-field-read end
+proc cc-block-count ptr -- int do cc-block-count-offset field-read end
+proc cc-locals ptr -- ptr do cc-locals-offset pointer-field-read end
+proc cc-local-count ptr -- int do cc-local-count-offset field-read end
+proc cc-next-local ptr -- int do cc-next-local-offset field-read end
+proc cc-indent ptr -- int do cc-indent-offset field-read end
+
+proc set-cc-root ptr ptr -- do cc-root-offset pointer-field-write end
+proc set-cc-proc int ptr -- do cc-proc-offset field-write end
+proc set-cc-type-stack ptr ptr -- do cc-type-stack-offset pointer-field-write end
+proc set-cc-type-count int ptr -- do cc-type-count-offset field-write end
+proc set-cc-blocks ptr ptr -- do cc-blocks-offset pointer-field-write end
+proc set-cc-block-count int ptr -- do cc-block-count-offset field-write end
+proc set-cc-locals ptr ptr -- do cc-locals-offset pointer-field-write end
+proc set-cc-local-count int ptr -- do cc-local-count-offset field-write end
+proc set-cc-next-local int ptr -- do cc-next-local-offset field-write end
+proc set-cc-indent int ptr -- do cc-indent-offset field-write end
+
+proc cc-type-address ptr int -- ptr do
+    let cc index do
+        cc cc-type-stack index cell-bytes * +
+    end
+end
+
+proc type-push ptr int -- do
+    let cc value do
+        value cc cc cc-type-count cc-type-address 0 field-write
+        cc cc-type-count 1 + cc set-cc-type-count
+    end
+end
+
+proc type-pop ptr -- int do
+    let cc do
+        if cc cc-type-count 0 <= do
+            "compile-time stack underflow" fail
+        end
+        cc cc-type-count 1 -
+        let index do
+            index cc set-cc-type-count
+            cc index cc-type-address 0 field-read
+        end
+    end
+end
+
+proc type-expect ptr int -- do
+    let cc expected do
+        if cc type-pop expected != do
+            "compile-time stack type mismatch" fail
+        end
+    end
+end
+
+proc type-at-depth ptr int -- int do
+    let cc index do
+        cc index cc-type-address 0 field-read
+    end
+end
+
+proc type-snapshot ptr -- ptr int do
+    let cc do
+        cc cc-type-count 1 + cell-bytes * alloc
+        let snapshot do
+            cc cc-type-stack snapshot cc cc-type-count cell-bytes * memory-copy
+            snapshot cc cc-type-count
+        end
+    end
+end
+
+proc restore-type-snapshot ptr ptr int -- do
+    let cc snapshot count do
+        snapshot cc cc-type-stack count cell-bytes * memory-copy
+        count cc set-cc-type-count
+    end
+end
+
+proc types-match-from ptr ptr int int -- bool do
+    let cc snapshot count index do
+        if index count >= do
+            true
+        else
+            if cc index type-at-depth snapshot index cell-bytes * field-read != do
+                false
+            else
+                cc snapshot count index 1 + types-match-from
+            end
+        end
+    end
+end
+
+proc types-match ptr ptr int -- bool do
+    let cc snapshot count do
+        if cc cc-type-count count != do
+            false
+        else
+            cc snapshot count 0 types-match-from
+        end
+    end
+end
+
+proc block-address ptr int -- ptr do
+    let cc index do
+        cc cc-blocks index block-bytes * +
+    end
+end
+
+proc block-field ptr int -- int do field-read end
+proc set-block-field int ptr int -- do field-write end
+proc block-pointer-field ptr int -- ptr do pointer-field-read end
+proc set-block-pointer-field ptr ptr int -- do pointer-field-write end
+
+proc push-block ptr int -- ptr do
+    let cc kind do
+        cc cc cc-block-count block-address
+        let block do
+            kind block block-kind-offset set-block-field
+            cc type-snapshot
+            let snapshot count do
+                snapshot block block-base-types-offset set-block-pointer-field
+                count block block-base-count-offset set-block-field
+            end
+            0 block block-then-types-offset set-block-field
+            0 block block-then-count-offset set-block-field
+            cc cc-local-count block block-local-base-offset set-block-field
+            0 block block-has-else-offset set-block-field
+            0 block block-has-do-offset set-block-field
+            0 block block-elif-parent-offset set-block-field
+            cc cc-block-count 1 + cc set-cc-block-count
+            block
+        end
+    end
+end
+
+proc top-block ptr -- ptr do
+    let cc do
+        if cc cc-block-count 0 <= do
+            "control-flow block stack underflow" fail
+        end
+        cc cc cc-block-count 1 - block-address
+    end
+end
+
+proc pop-block ptr -- ptr do
+    let cc do
+        cc top-block
+        cc cc-block-count 1 - cc set-cc-block-count
+    end
+end
+
+proc local-address ptr int -- ptr do
+    let cc index do
+        cc cc-locals index local-bytes * +
+    end
+end
+
+proc local-field ptr int -- int do field-read end
+proc set-local-field int ptr int -- do field-write end
+
+proc add-local ptr int int -- int do
+    let cc name-token value-type do
+        cc cc cc-local-count local-address
+        let local do
+            cc cc-root name-token token-start-at local local-name-start-offset set-local-field
+            cc cc-root name-token token-length-at local local-name-length-offset set-local-field
+            value-type local local-type-offset set-local-field
+            cc cc-next-local local local-id-offset set-local-field
+            cc cc-local-count 1 + cc set-cc-local-count
+            cc cc-next-local
+            cc cc-next-local 1 + cc set-cc-next-local
+        end
+    end
+end
+
+proc local-name-equals ptr ptr int -- bool do
+    let cc local token-index do
+        cc cc-root ctx-source
+        local local-name-start-offset local-field +
+        local local-name-length-offset local-field
+        cc cc-root token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-local-from ptr int int -- int do
+    let cc token-index local-index do
+        if local-index 0 < do
+            0 1 -
+        else
+            cc local-index local-address
+            let local do
+                if cc local token-index local-name-equals do
+                    local-index
+                else
+                    cc token-index local-index 1 - find-local-from
+                end
+            end
+        end
+    end
+end
+
+proc find-local ptr int -- int do
+    let cc token-index do
+        cc token-index cc cc-local-count 1 - find-local-from
+    end
+end
+
+proc emit-indent ptr -- do
+    let cc do
+        0
+        while dup cc cc-indent < do
+            "  " emit
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-line ptr ptr int -- do
+    let cc bytes length do
+        cc emit-indent
+        bytes length emit
+        10 putc
+    end
+end
+
+proc indent-more ptr -- do
+    let cc do cc cc-indent 1 + cc set-cc-indent end
+end
+
+proc indent-less ptr -- do
+    let cc do
+        if cc cc-indent 0 <= do
+            "C emitter indentation underflow" fail
+        end
+        cc cc-indent 1 - cc set-cc-indent
+    end
+end
+
+// BEGIN C EMITTER SUPPORT
+proc raw-string-byte ptr int int -- int do
+    let ctx token raw-index do
+        ctx ctx-source
+        ctx token token-start-at
+        raw-index +
+        byte-read
+    end
+end
+
+proc raw-string-length ptr int -- int do
+    let ctx token do ctx token token-length-at end
+end
+
+proc decoded-string-unit ptr int int -- int int do
+    let ctx token raw-index do
+        ctx token raw-index raw-string-byte
+        let byte do
+            if byte 92 != do
+                byte 1
+            else
+                raw-index 1 +
+                let escape-index do
+                    if escape-index ctx token raw-string-length >= do
+                        "unterminated string escape" fail
+                    end
+                    ctx token escape-index raw-string-byte
+                    let escaped do
+                        if escaped 92 == do 92 2 else
+                            if escaped 34 == do 34 2 else
+                                if escaped 110 == do 10 2 else
+                                    if escaped 114 == do 13 2 else
+                                        if escaped 116 == do 9 2 else
+                                            if escaped 48 == do 0 2 else
+                                                if escaped 120 == do
+                                                    if escape-index 2 + ctx token raw-string-length >= do
+                                                        "incomplete hexadecimal string escape" fail
+                                                    end
+                                                    ctx token escape-index 1 + raw-string-byte
+                                                    ctx token escape-index 2 + raw-string-byte
+                                                    let high low do
+                                                        if high is-hex-digit low is-hex-digit && ! do
+                                                            "invalid hexadecimal string escape" fail
+                                                        end
+                                                        high hex-value 16 * low hex-value + 4
+                                                    end
+                                                else
+                                                    "invalid string escape" fail
+                                                    0 0
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc decoded-string-length ptr int -- int do
+    let ctx token do
+        0 0
+        while
+            let raw-index count do
+                raw-index count
+                raw-index ctx token raw-string-length <
+            end
+        do
+            let raw-index count do
+                ctx token raw-index decoded-string-unit
+                let ignored width do
+                    raw-index width + count 1 +
+                end
+            end
+        end
+        let raw-index count do count end
+    end
+end
+
+proc decoded-string-byte-from ptr int int int -- int do
+    let ctx token raw-index byte-index do
+        if raw-index ctx token raw-string-length >= do
+            "decoded string byte index out of bounds" fail
+        end
+        ctx token raw-index decoded-string-unit
+        let value width do
+            if byte-index 0 == do
+                value
+            else
+                ctx token raw-index width + byte-index 1 - decoded-string-byte-from
+            end
+        end
+    end
+end
+
+proc decoded-string-byte ptr int int -- int do
+    let ctx token byte-index do
+        ctx token 0 byte-index decoded-string-byte-from
+    end
+end
+
+proc emit-c-preamble ptr -- do
+    drop
+    "#include <stdint.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  Cell* values;\n  int64_t count;\n  int64_t capacity;\n} FrogStack;\n\nstatic FrogStack frog_stack = {0};\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\nvoid frog_stack_grow(void) {\n  int64_t capacity = frog_stack.capacity == 0 ? 16 : frog_stack.capacity * 2;\n  if (capacity < frog_stack.capacity || (uint64_t)capacity > SIZE_MAX / sizeof(Cell)) frog_runtime_fail();\n  Cell* values = realloc(frog_stack.values, (size_t)capacity * sizeof(Cell));\n  if (values == NULL) frog_runtime_fail();\n  frog_stack.values = values;\n  frog_stack.capacity = capacity;\n}\n\nvoid frog_push(Cell value) {\n  if (frog_stack.count == frog_stack.capacity) frog_stack_grow();\n  frog_stack.values[frog_stack.count++] = value;\n}\n\nCell frog_pop(void) {\n  if (frog_stack.count == 0) frog_runtime_fail();\n  return frog_stack.values[--frog_stack.count];\n}\n\n" emit
+    "Cell frog_read_i8(const void* ptr) { int8_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i16(const void* ptr) { int16_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i32(const void* ptr) { int32_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i64(const void* ptr) { int64_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_u8(const void* ptr) { uint8_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\n\n" emit
+    "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i16(void* ptr, Cell value) { int16_t stored = (int16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i32(void* ptr, Cell value) { int32_t stored = (int32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i64(void* ptr, Cell value) { int64_t stored = (int64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\n\n" emit
+end
+
+proc emit-c-string-bytes ptr int int int -- do
+    let ctx token byte-index length do
+        if byte-index length >= do
+        else
+            if byte-index 0 != do ", " emit end
+            ctx token byte-index decoded-string-byte emit-unsigned
+            ctx token byte-index 1 + length emit-c-string-bytes
+        end
+    end
+end
+
+proc emit-c-string-literal ptr int -- do
+    let ctx token do
+        "static const uint8_t frog_string_" emit
+        token emit-unsigned
+        "[] = {" emit
+        ctx token decoded-string-length
+        let length do
+            if length 0 == do
+                "0" emit
+            else
+                ctx token 0 length emit-c-string-bytes
+            end
+        end
+        "};\n" emit
+    end
+end
+
+proc emit-string-globals ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-token-count < do
+            dup
+            let token-index do
+                if ctx token-index token-kind-at token-string == do
+                    ctx token-index emit-c-string-literal
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-c-prototype ptr int -- do
+    let ctx proc-index do
+        "void p" emit
+        ctx proc-index proc-index-at emit-unsigned
+        "(void);\n" emit
+    end
+end
+
+proc emit-prototypes ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-proc-count < do
+            dup
+            let proc-index do
+                ctx proc-index emit-c-prototype
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-c-emitter-support ptr -- do
+    let ctx do
+        ctx emit-c-preamble
+        ctx emit-string-globals
+        ctx emit-prototypes
+    end
+end
+// END C EMITTER SUPPORT
+
+// BEGIN BODY COMPILER
+proc emit-proc-name int -- do
+    112 putc
+    emit-unsigned
+end
+
+proc emit-local-name int -- do
+    108 putc
+    emit-unsigned
+end
+
+proc check-proc-inputs ptr int int -- do
+    let cc proc-index remaining do
+        if remaining 0 > do
+            cc cc-root
+            cc cc-root proc-index proc-input-start-at
+            remaining 1 - +
+            type-at
+            let expected do
+                cc expected type-expect
+                cc proc-index remaining 1 - check-proc-inputs
+            end
+        end
+    end
+end
+
+proc push-proc-outputs ptr int int -- do
+    let cc proc-index output-index do
+        if output-index cc cc-root proc-index proc-output-count-at < do
+            cc cc-root
+            cc cc-root proc-index proc-output-start-at
+            output-index +
+            type-at
+            cc swap type-push
+            cc proc-index output-index 1 + push-proc-outputs
+        end
+    end
+end
+
+proc apply-proc-contract ptr int -- do
+    let cc proc-index do
+        cc proc-index cc cc-root proc-index proc-input-count-at check-proc-inputs
+        cc proc-index 0 push-proc-outputs
+    end
+end
+
+proc compile-fixed-binary ptr int int ptr int -- do
+    let cc input-type output-type code code-length do
+        cc input-type type-expect
+        cc input-type type-expect
+        cc output-type type-push
+        cc code code-length emit-line
+    end
+end
+
+proc compile-fixed-unary ptr int int ptr int -- do
+    let cc input-type output-type code code-length do
+        cc input-type type-expect
+        cc output-type type-push
+        cc code code-length emit-line
+    end
+end
+
+proc compile-add-sub ptr bool -- do
+    let cc subtract do
+        cc type-pop
+        cc type-pop
+        let right-type left-type do
+            if left-type type-int == right-type type-int == && do
+                cc type-int type-push
+            else
+                if left-type type-ptr == right-type type-int == && do
+                    cc type-ptr type-push
+                else
+                    "invalid operand types for pointer/integer arithmetic" fail
+                end
+            end
+            if subtract do
+                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a - b); }" emit-line
+            else
+                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a + b); }" emit-line
+            end
+        end
+    end
+end
+
+proc compile-arithmetic-intrinsic ptr int -- bool do
+    let cc token-index do
+        if cc cc-root token-index "+" token-equals do
+            cc false compile-add-sub true
+        else
+            if cc cc-root token-index "-" token-equals do
+                cc true compile-add-sub true
+            else
+                if cc cc-root token-index "*" token-equals do
+                    cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a * b); }" compile-fixed-binary true
+                else
+                    if cc cc-root token-index "/" token-equals do
+                        cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); }" compile-fixed-binary true
+                    else
+                        if cc cc-root token-index "%" token-equals do
+                            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a % b); }" compile-fixed-binary true
+                        else
+                            if cc cc-root token-index "/%" token-equals do
+                                cc type-int type-expect
+                                cc type-int type-expect
+                                cc type-int type-push
+                                cc type-int type-push
+                                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); frog_push(a % b); }" emit-line
+                                true
+                            else
+                                if cc cc-root token-index "<<" token-equals do
+                                    cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a << b); }" compile-fixed-binary true
+                                else
+                                    if cc cc-root token-index ">>" token-equals do
+                                        cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >> b); }" compile-fixed-binary true
+                                    else
+                                        if cc cc-root token-index "|" token-equals do
+                                            cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a | b); }" compile-fixed-binary true
+                                        else
+                                            if cc cc-root token-index "&" token-equals do
+                                                cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a & b); }" compile-fixed-binary true
+                                            else
+                                                if cc cc-root token-index "^" token-equals do
+                                                    cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a ^ b); }" compile-fixed-binary true
+                                                else
+                                                    if cc cc-root token-index "~" token-equals do
+                                                        cc type-int type-int "frog_push(~frog_pop());" compile-fixed-unary true
+                                                    else
+                                                        false
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-logic-comparison-intrinsic ptr int -- bool do
+    let cc token-index do
+        if cc cc-root token-index "&&" token-equals do
+            cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a && b); }" compile-fixed-binary true
+        else
+            if cc cc-root token-index "||" token-equals do
+                cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a || b); }" compile-fixed-binary true
+            else
+                if cc cc-root token-index "!" token-equals do
+                    cc type-bool type-bool "frog_push(!frog_pop());" compile-fixed-unary true
+                else
+                    if cc cc-root token-index "==" token-equals do
+                        cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }" compile-fixed-binary true
+                    else
+                        if cc cc-root token-index "!=" token-equals do
+                            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a != b); }" compile-fixed-binary true
+                        else
+                            if cc cc-root token-index "<" token-equals do
+                                cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a < b); }" compile-fixed-binary true
+                            else
+                                if cc cc-root token-index ">" token-equals do
+                                    cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a > b); }" compile-fixed-binary true
+                                else
+                                    if cc cc-root token-index "<=" token-equals do
+                                        cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a <= b); }" compile-fixed-binary true
+                                    else
+                                        if cc cc-root token-index ">=" token-equals do
+                                            cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >= b); }" compile-fixed-binary true
+                                        else
+                                            false
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-stack-intrinsic ptr int -- bool do
+    let cc token-index do
+        if cc cc-root token-index "dup" token-equals do
+            cc type-pop let value-type do
+                cc value-type type-push cc value-type type-push
+                cc "{ Cell a = frog_pop(); frog_push(a); frog_push(a); }" emit-line
+            end
+            true
+        elif cc cc-root token-index "dup2" token-equals do
+            cc type-pop cc type-pop
+            let right-type left-type do
+                cc left-type type-push cc right-type type-push
+                cc left-type type-push cc right-type type-push
+                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a); frog_push(b); frog_push(a); frog_push(b); }" emit-line
+            end
+            true
+        elif cc cc-root token-index "drop" token-equals do
+            cc type-pop drop cc "(void)frog_pop();" emit-line true
+        elif cc cc-root token-index "swap" token-equals do
+            cc type-pop cc type-pop
+            let right-type left-type do
+                cc right-type type-push cc left-type type-push
+                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(b); frog_push(a); }" emit-line
+            end
+            true
+        elif cc cc-root token-index "swap2" token-equals do
+            cc type-pop cc type-pop cc type-pop cc type-pop
+            let fourth-type third-type second-type first-type do
+                cc third-type type-push cc fourth-type type-push
+                cc first-type type-push cc second-type type-push
+                cc "{ Cell d = frog_pop(); Cell c = frog_pop(); Cell b = frog_pop(); Cell a = frog_pop(); frog_push(c); frog_push(d); frog_push(a); frog_push(b); }" emit-line
+            end
+            true
+        elif cc cc-root token-index "rot" token-equals do
+            cc type-pop cc type-pop cc type-pop
+            let third-type second-type first-type do
+                cc second-type type-push cc third-type type-push cc first-type type-push
+                cc "{ Cell c = frog_pop(); Cell b = frog_pop(); Cell a = frog_pop(); frog_push(b); frog_push(c); frog_push(a); }" emit-line
+            end
+            true
+        else
+            false
+        end
+    end
+end
+
+proc type-literal-base -- int do 100 end
+
+proc compile-cast-intrinsic ptr -- do
+    let cc do
+        cc type-pop
+        cc type-pop
+        let target-literal source-type do
+            target-literal type-literal-base -
+            let target-type do
+                if
+                    target-type type-int ==
+                    target-type type-bool == ||
+                    target-type type-ptr == ||
+                    !
+                do
+                    "cast target is not a type literal" fail
+                end
+                if
+                    source-type target-type ==
+                    source-type type-int == target-type type-bool == && ||
+                    source-type type-bool == target-type type-int == && ||
+                    source-type type-int == target-type type-ptr == && ||
+                    source-type type-ptr == target-type type-int == && ||
+                    !
+                do
+                    "unsupported cast" fail
+                end
+                cc target-type type-push
+                cc "(void)frog_pop();" emit-line
+            end
+        end
+    end
+end
+
+proc compile-read-memory ptr int ptr int -- do
+    let cc token-index code code-length do
+        cc type-ptr type-expect
+        cc type-int type-push
+        cc code code-length emit-line
+    end
+end
+
+proc compile-write-memory ptr int ptr int -- do
+    let cc token-index code code-length do
+        cc type-ptr type-expect
+        cc type-int type-expect
+        cc code code-length emit-line
+    end
+end
+
+proc compile-memory-io-intrinsic ptr int -- bool do
+    let cc token-index do
+        if cc cc-root token-index "cast" token-equals do
+            cc compile-cast-intrinsic true
+        else
+            if cc cc-root token-index "alloc" token-equals do
+                cc type-int type-expect cc type-ptr type-push
+                cc "frog_push((Cell)(intptr_t)frog_alloc(frog_pop()));" emit-line true
+            else
+                if cc cc-root token-index "@i8" token-equals do
+                    cc token-index "frog_push(frog_read_i8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                else
+                    if cc cc-root token-index "@i16" token-equals do
+                        cc token-index "frog_push(frog_read_i16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                    else
+                        if cc cc-root token-index "@i32" token-equals do
+                            cc token-index "frog_push(frog_read_i32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                        else
+                            if cc cc-root token-index "@i64" token-equals do
+                                cc token-index "frog_push(frog_read_i64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                            else
+                                if cc cc-root token-index "@u8" token-equals do
+                                    cc token-index "frog_push(frog_read_u8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                                else
+                                    if cc cc-root token-index "@u16" token-equals do
+                                        cc token-index "frog_push(frog_read_u16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                                    else
+                                        if cc cc-root token-index "@u32" token-equals do
+                                            cc token-index "frog_push(frog_read_u32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                                        else
+                                            if cc cc-root token-index "@u64" token-equals do
+                                                cc token-index "frog_push(frog_read_u64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
+                                            else
+                                                if cc cc-root token-index "!i8" token-equals do
+                                                    cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i8((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                else
+                                                    if cc cc-root token-index "!i16" token-equals do
+                                                        cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i16((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                    else
+                                                        if cc cc-root token-index "!i32" token-equals do
+                                                            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i32((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                        else
+                                                            if cc cc-root token-index "!i64" token-equals do
+                                                                cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i64((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                            else
+                                                                if cc cc-root token-index "!u8" token-equals do
+                                                                    cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u8((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                                else
+                                                                    if cc cc-root token-index "!u16" token-equals do
+                                                                        cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u16((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                                    else
+                                                                        if cc cc-root token-index "!u32" token-equals do
+                                                                            cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u32((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                                        else
+                                                                            if cc cc-root token-index "!u64" token-equals do
+                                                                                cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u64((void *)(intptr_t)p, v); }" compile-write-memory true
+                                                                            else
+                                                                                if cc cc-root token-index "print" token-equals do
+                                                                                    cc type-pop
+                                                                                    let value-type do
+                                                                                        if value-type type-int == do
+                                                                                            cc "printf(\"%lld\\n\", (long long)frog_pop());" emit-line
+                                                                                        else
+                                                                                            if value-type type-bool == do
+                                                                                                cc "fputs(frog_pop() ? \"true\\n\" : \"false\\n\", stdout);" emit-line
+                                                                                            else
+                                                                                                "printing this type is not supported" fail
+                                                                                            end
+                                                                                        end
+                                                                                    end
+                                                                                    true
+                                                                                else
+                                                                                    if cc cc-root token-index "putc" token-equals do
+                                                                                        cc type-int type-expect cc "putchar((int)(unsigned char)frog_pop());" emit-line true
+                                                                                    else
+                                                                                        if cc cc-root token-index "getc" token-equals do
+                                                                                            cc type-int type-push cc "frog_push((Cell)getchar());" emit-line true
+                                                                                        else
+                                                                                            if cc cc-root token-index "eputc" token-equals do
+                                                                                                cc type-int type-expect cc "fputc((int)(unsigned char)frog_pop(), stderr);" emit-line true
+                                                                                            else
+                                                                                                if cc cc-root token-index "exit" token-equals do
+                                                                                                    cc type-int type-expect cc "exit((int)frog_pop());" emit-line true
+                                                                                                else
+                                                                                                    if cc cc-root token-index "?" token-equals do
+                                                                                                        true
+                                                                                                    else
+                                                                                                        false
+                                                                                                    end
+                                                                                                end
+                                                                                            end
+                                                                                        end
+                                                                                    end
+                                                                                end
+                                                                            end
+                                                                        end
+                                                                    end
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-intrinsic ptr int -- bool do
+    let cc token-index do
+        if cc token-index compile-arithmetic-intrinsic do
+            true
+        elif cc token-index compile-logic-comparison-intrinsic do
+            true
+        elif cc token-index compile-stack-intrinsic do
+            true
+        else
+            cc token-index compile-memory-io-intrinsic
+        end
+    end
+end
+
+proc emit-push-integer ptr int -- do
+    let cc value do
+        cc emit-indent
+        "frog_push(" emit value emit-integer ");" emit 10 putc
+    end
+end
+
+proc emit-push-string ptr int -- do
+    let cc token-index do
+        cc emit-indent
+        "frog_push((Cell)(intptr_t)frog_string_" emit
+        token-index emit-unsigned
+        ");" emit 10 putc
+        cc emit-indent
+        "frog_push(" emit
+        cc cc-root token-index decoded-string-length emit-unsigned
+        ");" emit 10 putc
+    end
+end
+
+proc emit-call ptr int -- do
+    let cc proc-index do
+        cc emit-indent
+        proc-index emit-proc-name
+        "();" emit 10 putc
+    end
+end
+
+proc emit-local-load ptr int -- do
+    let cc local-id do
+        cc emit-indent
+        "frog_push(" emit local-id emit-local-name ");" emit 10 putc
+    end
+end
+
+proc compile-if ptr -- do
+    block-if push-block drop
+end
+
+proc compile-while ptr -- do
+    let cc do
+        cc block-while push-block drop
+        cc "while (1) {" emit-line
+        cc indent-more
+    end
+end
+
+proc require-block-types ptr ptr -- do
+    let cc block do
+        block block-base-types-offset block-pointer-field
+        block block-base-count-offset block-field
+        cc rot rot types-match
+        let matches do
+            if matches ! do
+                "control-flow stack shape mismatch" fail
+            end
+        end
+    end
+end
+
+proc compile-do ptr -- do
+    let cc do
+        cc top-block
+        let block do
+            if block block-has-do-offset block-field 0 != do
+                "duplicate do in control-flow block" fail
+            end
+            if cc cc-type-count block block-base-count-offset block-field <= do
+                if block block-elif-parent-offset block-field 0 != do
+                    "elif requires a condition before do" fail
+                else
+                    "if or while requires a condition before do" fail
+                end
+            end
+            cc type-bool type-expect
+            cc block require-block-types
+            block block-kind-offset block-field
+            let kind do
+                if kind block-if == do
+                    cc "if (frog_pop() != 0) {" emit-line
+                    cc indent-more
+                else
+                    if kind block-while == do
+                        cc "if (frog_pop() == 0) break;" emit-line
+                    else
+                        "do does not close an if or while condition" fail
+                    end
+                end
+            end
+            1 block block-has-do-offset set-block-field
+        end
+    end
+end
+
+proc compile-else ptr -- do
+    let cc do
+        cc top-block
+        let block do
+            if block block-kind-offset block-field block-if != do
+                "else outside if" fail
+            end
+            if block block-has-else-offset block-field 0 != do
+                "duplicate else" fail
+            end
+            cc type-snapshot
+            let then-types then-count do
+                then-types block block-then-types-offset set-block-pointer-field
+                then-count block block-then-count-offset set-block-field
+            end
+            cc
+            block block-base-types-offset block-pointer-field
+            block block-base-count-offset block-field
+            restore-type-snapshot
+            1 block block-has-else-offset set-block-field
+            cc indent-less
+            cc "} else {" emit-line
+            cc indent-more
+        end
+    end
+end
+
+proc compile-elif ptr -- do
+    let cc do
+        cc top-block
+        let block do
+            if block block-kind-offset block-field block-if != do
+                "elif outside if" fail
+            end
+            if block block-has-do-offset block-field 0 == do
+                "elif requires a preceding if arm and do" fail
+            end
+            if block block-has-else-offset block-field 0 != do
+                "elif after else" fail
+            end
+            cc compile-else
+            cc block-if push-block
+            let nested do
+                1 nested block-elif-parent-offset set-block-field
+            end
+        end
+    end
+end
+
+proc close-if-block ptr ptr -- do
+    let cc block do
+        if block block-has-else-offset block-field 0 == do
+            cc block require-block-types
+        else
+            block block-then-types-offset block-pointer-field
+            block block-then-count-offset block-field
+            let then-types then-count do
+                if cc then-types then-count types-match ! do
+                    "if branches leave different stack shapes" fail
+                end
+                cc then-types then-count restore-type-snapshot
+            end
+        end
+        cc indent-less
+        cc "}" emit-line
+    end
+end
+
+proc close-while-block ptr ptr -- do
+    let cc block do
+        cc block require-block-types
+        cc indent-less
+        cc "}" emit-line
+    end
+end
+
+proc close-let-block ptr ptr -- do
+    let cc block do
+        block block-local-base-offset block-field cc set-cc-local-count
+        cc indent-less
+        cc "}" emit-line
+    end
+end
+
+proc close-end-chain ptr ptr -- do
+    let cc block do
+        block block-kind-offset block-field
+        let kind do
+            if kind block-if == do
+                cc block close-if-block
+            elif kind block-while == do
+                cc block close-while-block
+            elif kind block-let == do
+                cc block close-let-block
+            else
+                "unknown block kind" fail
+            end
+        end
+        if block block-elif-parent-offset block-field 0 != do
+            cc pop-block
+            let parent do
+                cc parent close-end-chain
+            end
+        end
+    end
+end
+
+proc compile-end ptr -- do
+    let cc do
+        cc pop-block
+        let block do
+            cc block close-end-chain
+        end
+    end
+end
+
+proc find-let-do ptr int -- int do
+    let cc token-index do
+        if token-index cc cc-root ctx-token-count >= do
+            "unterminated let binding" fail
+            token-index
+        elif cc cc-root token-index "do" token-equals do
+            token-index
+        else
+            cc cc-root token-index require-word
+            cc token-index 1 + find-let-do
+        end
+    end
+end
+
+proc bind-let-names ptr int int -- do
+    let cc first-token count do
+        if count 0 > do
+            first-token count 1 - +
+            let name-token do
+                cc type-pop
+                let value-type do
+                    cc name-token value-type add-local
+                    let local-id do
+                        cc emit-indent
+                        "Cell " emit local-id emit-local-name
+                        " = frog_pop();" emit 10 putc
+                        cc emit-indent
+                        "(void)" emit local-id emit-local-name ";" emit 10 putc
+                    end
+                end
+                cc first-token count 1 - bind-let-names
+            end
+        end
+    end
+end
+
+proc compile-let ptr int -- int do
+    let cc let-token do
+        cc let-token 1 + find-let-do
+        let do-token do
+            do-token let-token 1 + -
+            let name-count do
+                if name-count 0 <= do
+                    "let requires at least one name" fail
+                end
+                cc block-let push-block drop
+                cc "{" emit-line
+                cc indent-more
+                cc let-token 1 + name-count bind-let-names
+                do-token 1 +
+            end
+        end
+    end
+end
+
+proc compile-local-reference ptr int int -- do
+    let cc token-index local-index do
+        cc local-index local-address
+        let local do
+            local local-type-offset local-field cc swap type-push
+            cc local local-id-offset local-field emit-local-load
+        end
+    end
+end
+
+proc compile-procedure-call ptr int int -- do
+    let cc token-index proc-index do
+        cc proc-index apply-proc-contract
+        cc proc-index emit-call
+    end
+end
+
+proc compile-type-word ptr int -- bool do
+    let cc token-index do
+        if cc cc-root token-index "int" token-equals do
+            cc type-literal-base type-int + type-push
+            cc type-literal-base type-int + emit-push-integer
+            true
+        elif cc cc-root token-index "bool" token-equals do
+            cc type-literal-base type-bool + type-push
+            cc type-literal-base type-bool + emit-push-integer
+            true
+        elif cc cc-root token-index "ptr" token-equals do
+            cc type-literal-base type-ptr + type-push
+            cc type-literal-base type-ptr + emit-push-integer
+            true
+        else
+            false
+        end
+    end
+end
+
+proc compile-ordinary-word ptr int -- do
+    let cc token-index do
+        if cc token-index compile-type-word do
+        else
+            if cc token-index compile-intrinsic do
+            else
+                cc token-index find-local
+                let local-index do
+                    if local-index 0 >= do
+                        cc token-index local-index compile-local-reference
+                    else
+                        cc cc-root token-index find-proc
+                        let proc-index do
+                            if proc-index 0 < do
+                                "unknown word" fail
+                            end
+                            cc token-index proc-index compile-procedure-call
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-word-token ptr int -- int do
+    let cc token-index do
+        if cc cc-root token-index "if" token-equals do
+            cc compile-if token-index 1 +
+        elif cc cc-root token-index "while" token-equals do
+            cc compile-while token-index 1 +
+        elif cc cc-root token-index "do" token-equals do
+            cc compile-do token-index 1 +
+        elif cc cc-root token-index "else" token-equals do
+            cc compile-else token-index 1 +
+        elif cc cc-root token-index "elif" token-equals do
+            cc compile-elif token-index 1 +
+        elif cc cc-root token-index "end" token-equals do
+            cc compile-end token-index 1 +
+        elif cc cc-root token-index "let" token-equals do
+            cc token-index compile-let
+        else
+            cc token-index compile-ordinary-word
+            token-index 1 +
+        end
+    end
+end
+
+proc compile-token ptr int -- int do
+    let cc token-index do
+        cc cc-root token-index token-kind-at
+        let kind do
+            if kind token-int == do
+                cc type-int type-push
+                cc cc-root token-index token-value-at cc swap emit-push-integer
+                token-index 1 +
+            elif kind token-bool == do
+                cc type-bool type-push
+                cc cc-root token-index token-value-at cc swap emit-push-integer
+                token-index 1 +
+            elif kind token-char == do
+                cc type-int type-push
+                cc cc-root token-index token-value-at cc swap emit-push-integer
+                token-index 1 +
+            elif kind token-string == do
+                cc type-ptr type-push
+                cc type-int type-push
+                cc token-index emit-push-string
+                token-index 1 +
+            elif kind token-word == do
+                cc token-index compile-word-token
+            else
+                "unknown token kind" fail
+                token-index 1 +
+            end
+        end
+    end
+end
+
+proc initialize-proc-inputs ptr int -- do
+    let cc input-index do
+        if input-index cc cc-root cc cc-proc proc-input-count-at < do
+            cc cc-root
+            cc cc-root cc cc-proc proc-input-start-at
+            input-index +
+            type-at
+            cc swap type-push
+            cc input-index 1 + initialize-proc-inputs
+        end
+    end
+end
+
+proc outputs-match-from ptr int -- bool do
+    let cc output-index do
+        if output-index cc cc-type-count >= do
+            true
+        else
+            cc output-index type-at-depth
+            cc cc-root
+            cc cc-root cc cc-proc proc-output-start-at
+            output-index +
+            type-at
+            ==
+            let matches do
+                if matches do
+                    cc output-index 1 + outputs-match-from
+                else
+                    false
+                end
+            end
+        end
+    end
+end
+
+proc require-proc-outputs ptr -- do
+    let cc do
+        if cc cc-type-count cc cc-root cc cc-proc proc-output-count-at != do
+            "procedure output stack depth mismatch" fail
+        end
+        if cc 0 outputs-match-from ! do
+            "procedure output stack type mismatch" fail
+        end
+    end
+end
+
+proc compile-body-range ptr int int -- do
+    let cc token-index body-end do
+        token-index
+        while dup body-end < do
+            cc swap compile-token
+        end
+        drop
+    end
+end
+
+proc create-compile-context ptr int -- ptr do
+    let ctx proc-index do
+        cc-bytes alloc
+        let cc do
+            ctx cc set-cc-root
+            proc-index cc set-cc-proc
+            ctx ctx-token-count 1 + cell-bytes * alloc cc set-cc-type-stack
+            0 cc set-cc-type-count
+            ctx ctx-token-count 1 + block-bytes * alloc cc set-cc-blocks
+            0 cc set-cc-block-count
+            ctx ctx-token-count 1 + local-bytes * alloc cc set-cc-locals
+            0 cc set-cc-local-count
+            0 cc set-cc-next-local
+            0 cc set-cc-indent
+            cc
+        end
+    end
+end
+
+proc compile-procedure ptr int -- do
+    let ctx proc-index do
+        ctx proc-index create-compile-context
+        let cc do
+            cc 0 initialize-proc-inputs
+            "void " emit
+            ctx proc-index proc-index-at emit-proc-name
+            "(void) {" emit 10 putc
+            1 cc set-cc-indent
+            cc
+            ctx proc-index proc-body-start-at
+            ctx proc-index proc-body-end-at
+            compile-body-range
+            if cc cc-block-count 0 != do
+                "unclosed control-flow block" fail
+            end
+            if cc cc-local-count 0 != do
+                "unclosed local scope" fail
+            end
+            cc require-proc-outputs
+            "}" emit 10 putc
+        end
+    end
+end
+
+proc compile-all-procedures ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-proc-count < do
+            dup ctx swap compile-procedure
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-main-wrapper ptr -- do
+    let ctx do
+        "int main(void) {\n  " emit
+        ctx ctx-main-proc emit-proc-name
+        "();\n  if (frog_stack.count != 0) frog_runtime_fail();\n  free(frog_stack.values);\n  return 0;\n}\n" emit
+    end
+end
+// END BODY COMPILER
+
+
+proc main -- do
+    ctx-bytes alloc
+    let ctx do
+        read-source
+        let source source-length do
+            source ctx set-ctx-source
+            source-length ctx set-ctx-source-length
+            source-length 1 + token-bytes * alloc ctx set-ctx-tokens
+            0 ctx set-ctx-token-count
+            0 1 - ctx set-ctx-main-proc
+            ctx lex
+
+            ctx ctx-token-count 1 + proc-bytes * alloc ctx set-ctx-procs
+            ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-types
+            ctx scan-procedures
+
+            ctx emit-c-emitter-support
+            ctx compile-all-procedures
+            ctx emit-main-wrapper
+        end
+    end
+end
