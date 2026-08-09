@@ -231,6 +231,17 @@ code_examples: list[SourceInput] = [
     SourceSpec(before_main='proc a int int -- int do + end', body='5 7 a print'),
     SourceSpec(before_main='proc ++ int -- int do 1 + end', body='5 ++ print'),
     #
+    SourceSpec(
+        before_main='''
+        extern magnitude abs c-int -- c-int end
+        extern release free c-ptr -- end
+        ''',
+        body='''
+        0 9 - magnitude print
+        8 alloc release
+        ''',
+    ),
+    #
     '5 int ? cast ? print',
     '5 bool cast print',
     '0 bool cast print',
@@ -281,13 +292,14 @@ code_example_groups = [
     CodeExampleGroup('literals_and_comments', code_examples[109:124]),
     CodeExampleGroup('words', code_examples[124:126]),
     CodeExampleGroup('procedures', code_examples[126:138]),
-    CodeExampleGroup('casts_and_memory', code_examples[138:157]),
-    CodeExampleGroup('process_arguments', code_examples[157:158]),
-    CodeExampleGroup('program_structure', code_examples[158:160]),
+    CodeExampleGroup('c_ffi', code_examples[138:139]),
+    CodeExampleGroup('casts_and_memory', code_examples[139:158]),
+    CodeExampleGroup('process_arguments', code_examples[158:159]),
+    CodeExampleGroup('program_structure', code_examples[159:161]),
 ]
 
 assert sum(len(group.examples) for group in code_example_groups) == len(code_examples)
-assert len(code_examples) == 160
+assert len(code_examples) == 161
 
 file_code_examples = [
     FileCodeExample(

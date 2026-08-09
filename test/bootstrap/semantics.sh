@@ -21,8 +21,12 @@ run_ok() {
         cd "$fixture"
         "$compiler" < main.frog > "$output/$case_name.c"
     )
+    local sources=("$output/$case_name.c")
+    if [[ -f "$fixture/helper.c" ]]; then
+        sources+=("$fixture/helper.c")
+    fi
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 \
-        "$output/$case_name.c" -o "$output/$case_name"
+        "${sources[@]}" -o "$output/$case_name"
     "$output/$case_name" "$@" > "$output/$case_name.out"
     printf '%s' "$expected" | cmp - "$output/$case_name.out"
 }
@@ -60,6 +64,9 @@ run_ok integer_max $'9223372036854775807\n'
 run_ok macro_shadow $'11\n21\n31\n'
 run_ok characters $'65\n233\n8364\n128512\n'
 run_ok args $'3\n/\nfrog\npond\n' frog pond
+run_ok c_ffi $'42\n42\n711\ntrue\nfalse\n'
+printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
+    | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
 
 run_error integer_overflow 'integer literal exceeds the signed 64-bit range'
 run_error character_empty 'invalid character literal'
@@ -79,3 +86,39 @@ run_source_error else_without_do \
 run_source_error while_without_do \
     $'proc main -- do while end end\n' \
     'while requires do before end'
+run_source_error extern_invalid_c_symbol \
+    $'extern magnitude not-valid c-int -- c-int end\nproc main -- do end\n' \
+    'invalid C symbol'
+run_source_error extern_c_keyword \
+    $'extern invalid int -- c-int end\nproc main -- do end\n' \
+    'invalid C symbol'
+run_source_error extern_internal_symbol \
+    $'extern invalid frog_push c-int -- end\nproc main -- do end\n' \
+    'invalid C symbol'
+run_source_error extern_generated_proc_symbol \
+    $'extern invalid p0 -- c-int end\nproc main -- do end\n' \
+    'invalid C symbol'
+run_source_error extern_unknown_abi_type \
+    $'extern magnitude abs int -- c-int end\nproc main -- do end\n' \
+    'unknown C ABI type'
+run_source_error extern_multiple_outputs \
+    $'extern pair abs c-int -- c-int c-int end\nproc main -- do end\n' \
+    'external procedure may return at most one value'
+run_source_error extern_missing_end \
+    $'extern magnitude abs c-int -- c-int\n' \
+    'expected end after external signature'
+run_source_error extern_main \
+    $'extern main abs c-int -- c-int end\n' \
+    'main cannot be external'
+run_source_error extern_inside_proc \
+    $'proc main -- do extern magnitude abs c-int -- c-int end end\n' \
+    'declarations are only allowed at top level'
+run_source_error extern_inside_macro \
+    $'macro bad extern magnitude abs c-int -- c-int end end\nproc main -- do end\n' \
+    'declarations are not allowed in macro bodies'
+run_source_error extern_contract_type \
+    $'extern magnitude abs c-int -- c-int end\nproc main -- do true magnitude drop end\n' \
+    'compile-time stack type mismatch'
+run_source_error extern_incompatible_contract \
+    $'extern as-int abs c-int -- c-int end\nextern as-ptr abs c-int -- c-ptr end\nproc main -- do end\n' \
+    'incompatible declarations for C symbol'

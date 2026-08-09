@@ -1,0 +1,18 @@
+extern ffi-answer ffi_test_answer -- c-int end
+extern ffi-mix ffi_test_mix c-int c-bool c-ptr -- c-int end
+extern ffi-truth ffi_test_truth c-int -- c-bool end
+extern ffi-identity ffi_test_identity c-ptr -- c-ptr end
+extern ffi-free free c-ptr -- end
+extern ffi-answer-again ffi_test_answer -- c-int end
+
+proc main -- do
+    ffi-answer print
+    ffi-answer-again print
+    8 alloc
+    let memory do
+        7 true memory ffi-mix print
+        17 ffi-truth print
+        0 ffi-truth print
+        memory ffi-identity ffi-free
+    end
+end

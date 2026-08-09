@@ -37,7 +37,7 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The compiler supports module-aware macros and root-relative imports of procedures and macros, including aliases, grouped imports, and reexports.
+The compiler supports module-aware macros, scalar C foreign-function declarations, and root-relative imports of procedures, external functions, and macros, including aliases, grouped imports, and reexports.
 
 To bootstrap manually without Python:
 

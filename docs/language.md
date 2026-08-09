@@ -1,6 +1,6 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect procedure signatures, imports, macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, imports, macros, external C functions, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 `compiler/frogc.frog` is the sole Frog compiler and typechecker. It emits C, which is compiled to the executable program; there is no separate interpreter or Python language implementation.
 
@@ -34,6 +34,26 @@ end
 
 Procedure calls are statically checked against declared stack contracts and use the generated runtime cell stack.
 
+## C Foreign Functions
+
+External C functions use an explicit Frog name, C linker symbol, and scalar ABI contract:
+
+```frog
+extern magnitude abs c-int -- c-int end
+extern release free c-ptr -- end
+
+proc main -- do
+    0 9 - magnitude print
+    8 alloc release
+end
+```
+
+The supported ABI types are `c-int` (Frog `int`, C `int`), `c-bool` (Frog `bool`, C `int` normalized to zero or one), and `c-ptr` (Frog `ptr`, C `void *`). An external function may consume any number of values and return zero or one value. It cannot be variadic.
+
+The C symbol must be an ASCII C identifier that is not a C11 keyword or a generated-C name. The `frog_` prefix, numeric wrapper names such as `p0`, `main`, `Cell`, and `FrogStack` are reserved. Generated code declares and calls the symbol directly, so it must be provided by the C implementation or supplied when the generated C is linked. Frog does not load libraries dynamically or process C headers.
+
+External functions use normal Frog name resolution and static stack-contract checking. They can be imported, aliased, and reexported like Frog procedures. Multiple Frog names may bind the same C symbol only when every declaration has the same ABI contract.
+
 ## Macros
 
 Macros are compile-time token substitutions:
@@ -49,11 +69,11 @@ end
 
 `macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. Whenever `name` appears as a word in the remaining code, it is expanded before normal word resolution, so macros can shadow intrinsics or procedures with the same name.
 
-Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc` and nested `macro` definitions are not valid inside a macro body. Recursive macro expansion is rejected.
+Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
 
 ## Imports
 
-Imports make procedures and macros from another Frog file visible in the importing module:
+Imports make procedures, external functions, and macros from another Frog file visible in the importing module:
 
 ```frog
 from "math.frog" import inc
@@ -89,7 +109,7 @@ proc main -- do
 end
 ```
 
-Imported top-level code is ignored. Imported files contribute procedure and macro definitions, but only the root module's `main` runs.
+Imported top-level code is ignored. Imported files contribute procedure, external-function, and macro definitions, but only the root module's `main` runs.
 
 Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 
@@ -122,12 +142,13 @@ end
 ## Language Constructs
 
 - `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
+- `extern frog-name c-symbol <c-inputs> -- [c-output] end` declares a non-variadic C function with zero or one output.
 - A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
 - Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid rather than being wrapped in a generated `main`.
-- Only procedure, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
+- Only procedure, external-function, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
-- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures or macros from another file.
+- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, external functions, or macros from another file.
 - `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
@@ -214,4 +235,4 @@ end
 
 ## Generated C Limits
 
-Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`.
+Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`. Passing a Frog `int` outside the C implementation's `int` range through `c-int` is also implementation-defined.

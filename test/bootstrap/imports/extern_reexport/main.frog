@@ -1,0 +1,5 @@
+from "facade.frog" import magnitude
+
+proc main -- do
+    0 9 - magnitude print
+end

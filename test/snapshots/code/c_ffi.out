@@ -1,0 +1,30 @@
+# Snapshot: code/c_ffi
+
+## Case 01
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+extern magnitude abs c-int -- c-int end
+extern release free c-ptr -- end
+
+proc main -- do
+    0 9 - magnitude print
+    8 alloc release
+end
+```
+
+### Run
+
+Command:
+
+```text
+build/frogc run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+9
+```
+

@@ -36,7 +36,9 @@ proc proc-output-start-offset -- int do 48 end
 proc proc-output-count-offset -- int do 56 end
 proc proc-index-offset -- int do 64 end
 proc proc-global-id-offset -- int do 72 end
-proc proc-bytes -- int do 80 end
+proc proc-external-offset -- int do 80 end
+proc proc-c-symbol-token-offset -- int do 88 end
+proc proc-bytes -- int do 96 end
 
 proc program-root-module-offset -- int do 0 end
 proc program-module-head-offset -- int do 8 end
@@ -207,6 +209,25 @@ end
 proc is-digit int -- bool do
     let byte do
         byte 48 >= byte 57 <= &&
+    end
+end
+
+proc is-ascii-letter int -- bool do
+    let byte do
+        byte 65 >= byte 90 <= &&
+        byte 97 >= byte 122 <= && ||
+    end
+end
+
+proc is-c-identifier-start int -- bool do
+    let byte do
+        byte is-ascii-letter byte 95 == ||
+    end
+end
+
+proc is-c-identifier-byte int -- bool do
+    let byte do
+        byte is-c-identifier-start byte is-digit ||
     end
 end
 
@@ -684,6 +705,15 @@ proc proc-output-start-at ptr int -- int do proc-output-start-offset proc-field 
 proc proc-output-count-at ptr int -- int do proc-output-count-offset proc-field end
 proc proc-index-at ptr int -- int do proc-index-offset proc-field end
 proc proc-global-id-at ptr int -- int do proc-global-id-offset proc-field end
+proc proc-external-at ptr int -- bool do proc-external-offset proc-field 0 != end
+proc proc-c-symbol-token-at ptr int -- int do proc-c-symbol-token-offset proc-field end
+
+proc set-proc-external bool ptr int -- do
+    let value ctx index do
+        if value do 1 else 0 end
+        ctx index proc-external-offset set-proc-field
+    end
+end
 
 proc macro-address ptr int -- ptr do
     let ctx index do
@@ -751,7 +781,163 @@ proc reserved-name ptr int -- bool do
         ctx token-index "from" token-equals ||
         ctx token-index "import" token-equals ||
         ctx token-index "as" token-equals ||
+        ctx token-index "extern" token-equals ||
         ctx token-index "--" token-equals ||
+    end
+end
+
+proc parse-c-abi-type-token ptr int -- int do
+    let ctx token-index do
+        ctx token-index require-word
+        if ctx token-index "c-int" token-equals do
+            type-int
+        elif ctx token-index "c-bool" token-equals do
+            type-bool
+        elif ctx token-index "c-ptr" token-equals do
+            type-ptr
+        else
+            "unknown C ABI type" fail
+            0
+        end
+    end
+end
+
+proc c-identifier-suffix-valid ptr int int -- bool do
+    let bytes length index do
+        if index length >= do
+            true
+        elif bytes index byte-read is-c-identifier-byte do
+            bytes length index 1 + c-identifier-suffix-valid
+        else
+            false
+        end
+    end
+end
+
+proc c-keyword ptr int -- bool do
+    let ctx token-index do
+        ctx token-index "auto" token-equals
+        ctx token-index "break" token-equals ||
+        ctx token-index "case" token-equals ||
+        ctx token-index "char" token-equals ||
+        ctx token-index "const" token-equals ||
+        ctx token-index "continue" token-equals ||
+        ctx token-index "default" token-equals ||
+        ctx token-index "do" token-equals ||
+        ctx token-index "double" token-equals ||
+        ctx token-index "else" token-equals ||
+        ctx token-index "enum" token-equals ||
+        ctx token-index "extern" token-equals ||
+        ctx token-index "float" token-equals ||
+        ctx token-index "for" token-equals ||
+        ctx token-index "goto" token-equals ||
+        ctx token-index "if" token-equals ||
+        ctx token-index "inline" token-equals ||
+        ctx token-index "int" token-equals ||
+        ctx token-index "long" token-equals ||
+        ctx token-index "register" token-equals ||
+        ctx token-index "restrict" token-equals ||
+        ctx token-index "return" token-equals ||
+        ctx token-index "short" token-equals ||
+        ctx token-index "signed" token-equals ||
+        ctx token-index "sizeof" token-equals ||
+        ctx token-index "static" token-equals ||
+        ctx token-index "struct" token-equals ||
+        ctx token-index "switch" token-equals ||
+        ctx token-index "typedef" token-equals ||
+        ctx token-index "union" token-equals ||
+        ctx token-index "unsigned" token-equals ||
+        ctx token-index "void" token-equals ||
+        ctx token-index "volatile" token-equals ||
+        ctx token-index "while" token-equals ||
+        ctx token-index "_Alignas" token-equals ||
+        ctx token-index "_Alignof" token-equals ||
+        ctx token-index "_Atomic" token-equals ||
+        ctx token-index "_Bool" token-equals ||
+        ctx token-index "_Complex" token-equals ||
+        ctx token-index "_Generic" token-equals ||
+        ctx token-index "_Imaginary" token-equals ||
+        ctx token-index "_Noreturn" token-equals ||
+        ctx token-index "_Static_assert" token-equals ||
+        ctx token-index "_Thread_local" token-equals ||
+    end
+end
+
+proc bytes-are-digits-from ptr int int -- bool do
+    let bytes length start do
+        start true
+        while
+            let index valid do
+                index valid
+                index length < valid &&
+            end
+        do
+            let index valid do
+                index 1 +
+                valid bytes index byte-read is-digit &&
+            end
+        end
+        let index valid do valid end
+    end
+end
+
+proc generated-proc-symbol ptr int -- bool do
+    let ctx token-index do
+        ctx token-index token-slice
+        let bytes length do
+            if length 1 <= do
+                false
+            elif bytes 0 byte-read 112 != do
+                false
+            else
+                bytes length 1 bytes-are-digits-from
+            end
+        end
+    end
+end
+
+proc frog-internal-symbol ptr int -- bool do
+    let ctx token-index do
+        ctx token-index token-slice
+        let bytes length do
+            if length 5 < do
+                false
+            else
+                bytes 0 byte-read 102 ==
+                bytes 1 byte-read 114 == &&
+                bytes 2 byte-read 111 == &&
+                bytes 3 byte-read 103 == &&
+                bytes 4 byte-read 95 == &&
+            end
+        end
+    end
+end
+
+proc reserved-c-symbol ptr int -- bool do
+    let ctx token-index do
+        ctx token-index c-keyword
+        ctx token-index "main" token-equals ||
+        ctx token-index "Cell" token-equals ||
+        ctx token-index "FrogStack" token-equals ||
+        ctx token-index generated-proc-symbol ||
+        ctx token-index frog-internal-symbol ||
+    end
+end
+
+proc valid-c-symbol ptr int -- bool do
+    let ctx token-index do
+        ctx token-index token-slice
+        let bytes length do
+            if length 0 == do
+                false
+            elif bytes 0 byte-read is-c-identifier-start ! do
+                false
+            elif ctx token-index reserved-c-symbol do
+                false
+            else
+                bytes length 1 c-identifier-suffix-valid
+            end
+        end
     end
 end
 
@@ -859,6 +1045,7 @@ proc scan-macro-body ptr int -- int do
                     elif
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
+                        ctx token-index "extern" token-equals ||
                     do
                         "declarations are not allowed in macro bodies" fail
                         token-index 1 + depth true
@@ -902,6 +1089,7 @@ proc validate-macro-body ptr int int -- do
                                 elif
                                     ctx token-index "proc" token-equals
                                     ctx token-index "macro" token-equals ||
+                                    ctx token-index "extern" token-equals ||
                                 do
                                     "declarations are not allowed in macro bodies" fail
                                     token-index 1 + depth
@@ -1042,6 +1230,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
                     elif
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
+                        ctx token-index "extern" token-equals ||
                     do
                         "declarations are only allowed at top level" fail
                         depth
@@ -1084,34 +1273,43 @@ end
 proc scan-block-end ptr int -- int do false scan-block-end-with-outer-elif end
 proc scan-ignored-block-end ptr int -- int do true scan-block-end-with-outer-elif end
 
+proc allocate-proc ptr int bool -- int do
+    let ctx name-token external do
+        if name-token ctx ctx-token-count >= do
+            "expected procedure name" fail
+        end
+        ctx name-token require-word
+        if ctx name-token reserved-name do
+            "reserved keyword cannot be a procedure name" fail
+        end
+        ctx name-token find-proc
+        let existing-proc do
+            if existing-proc 0 >= do
+                "duplicate procedure name: " emit-error
+                ctx name-token token-slice emit-error
+                10 eputc
+                1 exit
+            end
+        end
+
+        ctx ctx-proc-count
+        let proc-index do
+            ctx name-token token-start-at ctx proc-index proc-name-start-offset set-proc-field
+            ctx name-token token-length-at ctx proc-index proc-name-length-offset set-proc-field
+            proc-index ctx proc-index proc-index-offset set-proc-field
+            ctx ctx-program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
+            external ctx proc-index set-proc-external
+            proc-index
+        end
+    end
+end
+
 proc scan-one-proc ptr int -- int do
     let ctx proc-token do
         proc-token 1 +
         let name-token do
-            if name-token ctx ctx-token-count >= do
-                "expected procedure name" fail
-            end
-            ctx name-token require-word
-            if ctx name-token reserved-name do
-                "reserved keyword cannot be a procedure name" fail
-            end
-            ctx name-token find-proc
-            let existing-proc do
-                if existing-proc 0 >= do
-                    "duplicate procedure name: " emit-error
-                    ctx name-token token-slice emit-error
-                    10 eputc
-                    1 exit
-                end
-            end
-
-            ctx ctx-proc-count
+            ctx name-token false allocate-proc
             let proc-index do
-                ctx name-token token-start-at ctx proc-index proc-name-start-offset set-proc-field
-                ctx name-token token-length-at ctx proc-index proc-name-length-offset set-proc-field
-                proc-index ctx proc-index proc-index-offset set-proc-field
-                ctx ctx-program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
-
                 ctx ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
                 name-token 1 + 0
                 while
@@ -1179,6 +1377,83 @@ proc scan-one-proc ptr int -- int do
                             proc-index ctx set-ctx-main-proc
                         end
                         next-token
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc scan-one-extern ptr int -- int do
+    let ctx extern-token do
+        extern-token 1 +
+        let name-token do
+            ctx name-token true allocate-proc
+            let proc-index do
+                if ctx name-token "main" token-equals do
+                    "main cannot be external" fail
+                end
+                name-token 1 +
+                let symbol-token do
+                    if symbol-token ctx ctx-token-count >= do
+                        "expected C symbol" fail
+                    end
+                    ctx symbol-token require-word
+                    if ctx symbol-token valid-c-symbol ! do
+                        "invalid C symbol" fail
+                    end
+                    symbol-token ctx proc-index proc-c-symbol-token-offset set-proc-field
+
+                    ctx ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
+                    symbol-token 1 + 0
+                    while
+                        let token-index count do
+                            token-index count
+                            token-index ctx ctx-token-count <
+                            if dup do
+                                drop ctx token-index "--" token-equals !
+                            end
+                        end
+                    do
+                        let token-index count do
+                            ctx token-index parse-c-abi-type-token ctx swap add-type
+                            token-index 1 + count 1 +
+                        end
+                    end
+                    let token-index input-count do
+                        if token-index ctx ctx-token-count >= do
+                            "expected -- in external signature" fail
+                        end
+                        input-count ctx proc-index proc-input-count-offset set-proc-field
+                        token-index 1 +
+                    end
+
+                    ctx ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
+                    0
+                    while
+                        let token-index count do
+                            token-index count
+                            token-index ctx ctx-token-count <
+                            if dup do
+                                drop ctx token-index "end" token-equals !
+                            end
+                        end
+                    do
+                        let token-index count do
+                            ctx token-index parse-c-abi-type-token ctx swap add-type
+                            token-index 1 + count 1 +
+                        end
+                    end
+                    let token-index output-count do
+                        if token-index ctx ctx-token-count >= do
+                            "expected end after external signature" fail
+                        end
+                        if output-count 1 > do
+                            "external procedure may return at most one value" fail
+                        end
+                        output-count ctx proc-index proc-output-count-offset set-proc-field
+                        proc-index 1 + ctx set-ctx-proc-count
+                        token-index 1 +
                     end
                 end
             end
@@ -1415,6 +1690,11 @@ proc scan-declarations ptr -- do
                     ctx token-index "proc" token-equals &&
                 do
                     ctx token-index scan-one-proc
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "extern" token-equals &&
+                do
+                    ctx token-index scan-one-extern
                 else
                     if ctx ctx-is-root do
                         "only declarations and imports are allowed at top level" fail
@@ -2499,6 +2779,122 @@ proc resolve-all-module-scopes ptr -- do
     end
 end
 
+proc external-symbols-equal ptr int ptr int -- bool do
+    let first first-index second second-index do
+        first first first-index proc-c-symbol-token-at token-slice
+        second second second-index proc-c-symbol-token-at token-slice
+        bytes-equal
+    end
+end
+
+proc external-inputs-equal ptr int ptr int -- bool do
+    let first first-index second second-index do
+        if first first-index proc-input-count-at second second-index proc-input-count-at != do
+            false
+        else
+            0 true
+            while
+                let input-index equal do
+                    input-index equal
+                    input-index first first-index proc-input-count-at < equal &&
+                end
+            do
+                let input-index equal do
+                    input-index 1 +
+                    equal
+                    first first first-index proc-input-start-at input-index + type-at
+                    second second second-index proc-input-start-at input-index + type-at
+                    == &&
+                end
+            end
+            let input-index equal do equal end
+        end
+    end
+end
+
+proc external-outputs-equal ptr int ptr int -- bool do
+    let first first-index second second-index do
+        if first first-index proc-output-count-at second second-index proc-output-count-at != do
+            false
+        elif first first-index proc-output-count-at 0 == do
+            true
+        else
+            first first first-index proc-output-start-at type-at
+            second second second-index proc-output-start-at type-at
+            ==
+        end
+    end
+end
+
+proc external-contracts-equal ptr int ptr int -- bool do
+    let first first-index second second-index do
+        first first-index second second-index external-inputs-equal
+        first first-index second second-index external-outputs-equal &&
+    end
+end
+
+proc require-external-compatible-with-module ptr int ptr int -- do
+    let ctx proc-index other limit do
+        0
+        while dup limit < do
+            dup
+            let other-index do
+                if other other-index proc-external-at do
+                    if ctx proc-index other other-index external-symbols-equal do
+                        if ctx proc-index other other-index external-contracts-equal ! do
+                            "incompatible declarations for C symbol" fail
+                        end
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc require-external-compatible-with-earlier ptr ptr int -- do
+    let program ctx proc-index do
+        program program-module-head
+        while dup int cast ctx int cast != do
+            dup
+            let other do
+                ctx proc-index other other ctx-proc-count require-external-compatible-with-module
+            end
+            ctx-next-module
+        end
+        drop
+        ctx proc-index ctx proc-index require-external-compatible-with-module
+    end
+end
+
+proc validate-module-external-declarations ptr ptr -- do
+    let program ctx do
+        0
+        while dup ctx ctx-proc-count < do
+            dup
+            let proc-index do
+                if ctx proc-index proc-external-at do
+                    program ctx proc-index require-external-compatible-with-earlier
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc validate-external-declarations ptr -- do
+    let program do
+        program program-module-head
+        while dup int cast 0 != do
+            dup program swap validate-module-external-declarations
+            ctx-next-module
+        end
+        drop
+    end
+end
+
 proc emit-c-preamble ptr -- do
     drop
     "#include <stdint.h>\n#include <stddef.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  Cell* values;\n  int64_t count;\n  int64_t capacity;\n} FrogStack;\n\nstatic FrogStack frog_stack = {0};\nstatic int frog_argc;\nstatic char **frog_argv;\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\nvoid frog_stack_grow(void) {\n  int64_t capacity = frog_stack.capacity == 0 ? 16 : frog_stack.capacity * 2;\n  if (capacity < frog_stack.capacity || (uint64_t)capacity > SIZE_MAX / sizeof(Cell)) frog_runtime_fail();\n  Cell* values = realloc(frog_stack.values, (size_t)capacity * sizeof(Cell));\n  if (values == NULL) frog_runtime_fail();\n  frog_stack.values = values;\n  frog_stack.capacity = capacity;\n}\n\nvoid frog_push(Cell value) {\n  if (frog_stack.count == frog_stack.capacity) frog_stack_grow();\n  frog_stack.values[frog_stack.count++] = value;\n}\n\nCell frog_pop(void) {\n  if (frog_stack.count == 0) frog_runtime_fail();\n  return frog_stack.values[--frog_stack.count];\n}\n\n" emit
@@ -2564,8 +2960,61 @@ proc emit-string-globals ptr -- do
     end
 end
 
+proc emit-c-abi-type int -- do
+    let value-type do
+        if value-type type-int == do
+            "int" emit
+        elif value-type type-bool == do
+            "int" emit
+        elif value-type type-ptr == do
+            "void *" emit
+        else
+            "internal unknown C ABI type" fail
+        end
+    end
+end
+
+proc emit-c-symbol ptr int -- do
+    let ctx proc-index do
+        ctx ctx proc-index proc-c-symbol-token-at token-slice emit
+    end
+end
+
+proc emit-c-parameter-types ptr int int -- do
+    let ctx proc-index input-index do
+        if input-index ctx proc-index proc-input-count-at < do
+            if input-index 0 != do ", " emit end
+            ctx
+            ctx proc-index proc-input-start-at input-index +
+            type-at emit-c-abi-type
+            ctx proc-index input-index 1 + emit-c-parameter-types
+        end
+    end
+end
+
+proc emit-external-c-prototype ptr int -- do
+    let ctx proc-index do
+        "extern " emit
+        if ctx proc-index proc-output-count-at 0 == do
+            "void" emit
+        else
+            ctx ctx proc-index proc-output-start-at type-at emit-c-abi-type
+        end
+        " " emit ctx proc-index emit-c-symbol "(" emit
+        if ctx proc-index proc-input-count-at 0 == do
+            "void" emit
+        else
+            ctx proc-index 0 emit-c-parameter-types
+        end
+        ");\n" emit
+    end
+end
+
 proc emit-c-prototype ptr int -- do
     let ctx proc-index do
+        if ctx proc-index proc-external-at do
+            ctx proc-index emit-external-c-prototype
+        end
         "void p" emit
         ctx proc-index proc-global-id-at emit-unsigned
         "(void);\n" emit
@@ -3458,27 +3907,118 @@ proc create-compile-context ptr ptr int -- ptr do
     end
 end
 
+proc proc-input-type-at ptr int int -- int do
+    let ctx proc-index input-index do
+        ctx ctx proc-index proc-input-start-at input-index + type-at
+    end
+end
+
+proc emit-ffi-argument-name int -- do
+    "frog_ffi_arg_" emit emit-unsigned
+end
+
+proc emit-external-input-locals ptr int int -- do
+    let ctx proc-index remaining do
+        if remaining 0 > do
+            remaining 1 -
+            let input-index do
+                "  Cell " emit input-index emit-ffi-argument-name " = frog_pop();\n" emit
+                ctx proc-index input-index emit-external-input-locals
+            end
+        end
+    end
+end
+
+proc emit-external-argument ptr int int -- do
+    let ctx proc-index input-index do
+        ctx proc-index input-index proc-input-type-at
+        let input-type do
+            if input-type type-int == do
+                "(int)" emit input-index emit-ffi-argument-name
+            elif input-type type-bool == do
+                "(int)(" emit input-index emit-ffi-argument-name " != 0)" emit
+            elif input-type type-ptr == do
+                "(void *)(intptr_t)" emit input-index emit-ffi-argument-name
+            else
+                "internal unknown C ABI argument type" fail
+            end
+        end
+    end
+end
+
+proc emit-external-arguments ptr int int -- do
+    let ctx proc-index input-index do
+        if input-index ctx proc-index proc-input-count-at < do
+            if input-index 0 != do ", " emit end
+            ctx proc-index input-index emit-external-argument
+            ctx proc-index input-index 1 + emit-external-arguments
+        end
+    end
+end
+
+proc emit-external-call-expression ptr int -- do
+    let ctx proc-index do
+        ctx proc-index emit-c-symbol "(" emit
+        ctx proc-index 0 emit-external-arguments
+        ")" emit
+    end
+end
+
+proc compile-external-procedure ptr int -- do
+    let ctx proc-index do
+        "void " emit ctx proc-index proc-global-id-at emit-proc-name "(void) {\n" emit
+        ctx proc-index ctx proc-index proc-input-count-at emit-external-input-locals
+        if ctx proc-index proc-output-count-at 0 == do
+            "  " emit ctx proc-index emit-external-call-expression ";\n" emit
+        else
+            ctx ctx proc-index proc-output-start-at type-at
+            let output-type do
+                if output-type type-int == do
+                    "  frog_push((Cell)" emit
+                    ctx proc-index emit-external-call-expression
+                    ");\n" emit
+                elif output-type type-bool == do
+                    "  frog_push((Cell)(" emit
+                    ctx proc-index emit-external-call-expression
+                    " != 0));\n" emit
+                elif output-type type-ptr == do
+                    "  frog_push((Cell)(intptr_t)" emit
+                    ctx proc-index emit-external-call-expression
+                    ");\n" emit
+                else
+                    "internal unknown C ABI return type" fail
+                end
+            end
+        end
+        "}\n" emit
+    end
+end
+
 proc compile-procedure ptr ptr int -- do
     let program ctx proc-index do
-        program ctx proc-index create-compile-context
-        let cc do
-            cc 0 initialize-proc-inputs
-            "void " emit
-            ctx proc-index proc-global-id-at emit-proc-name
-            "(void) {" emit 10 putc
-            1 cc set-cc-indent
-            cc
-            ctx proc-index proc-body-start-at
-            ctx proc-index proc-body-end-at
-            compile-body-range
-            if cc cc-block-count 0 != do
-                "unclosed control-flow block" fail
+        if ctx proc-index proc-external-at do
+            ctx proc-index compile-external-procedure
+        else
+            program ctx proc-index create-compile-context
+            let cc do
+                cc 0 initialize-proc-inputs
+                "void " emit
+                ctx proc-index proc-global-id-at emit-proc-name
+                "(void) {" emit 10 putc
+                1 cc set-cc-indent
+                cc
+                ctx proc-index proc-body-start-at
+                ctx proc-index proc-body-end-at
+                compile-body-range
+                if cc cc-block-count 0 != do
+                    "unclosed control-flow block" fail
+                end
+                if cc cc-local-count 0 != do
+                    "unclosed local scope" fail
+                end
+                cc require-proc-outputs
+                "}" emit 10 putc
             end
-            if cc cc-local-count 0 != do
-                "unclosed local scope" fail
-            end
-            cc require-proc-outputs
-            "}" emit 10 putc
         end
     end
 end
@@ -3546,6 +4086,7 @@ proc main -- do
             program ctx load-module-imports
             load-loaded ctx set-ctx-load-state
             program resolve-all-module-scopes
+            program validate-external-declarations
 
             program emit-c-emitter-support
             program compile-all-procedures
