@@ -940,7 +940,7 @@ def _compile_module_source(
                         compile_stream(macro.body, macro_source, [*expansion_stack, symbol])
                         continue
 
-                    expect_enum_size(IntrinsicType, 51)
+                    expect_enum_size(IntrinsicType, 52)
                     match tok.value:
                         case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
                             _ = add_instr(
@@ -1635,6 +1635,20 @@ def typecheck(ir: IR) -> None:
                                 Contract(ins=[], outs=[ValueCls(ValueClsType.INT)]),
                             )
 
+                        case IntrinsicType.READ_FILE:
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(
+                                    ins=[ValueCls(ValueClsType.PTR), ValueCls(ValueClsType.INT)],
+                                    outs=[
+                                        ValueCls(ValueClsType.PTR),
+                                        ValueCls(ValueClsType.INT),
+                                        ValueCls(ValueClsType.BOOL),
+                                    ],
+                                ),
+                            )
+
                         case IntrinsicType.EPUTC | IntrinsicType.EXIT:
                             typecheck_contract(
                                 instr,
@@ -2239,6 +2253,31 @@ def interpret(ir: IR) -> None:
                         bs = sys.stdin.buffer.read(1)
                         stack.append(StackEntry(ValueCls(ValueClsType.INT), bs[0] if bs else -1, tok=instr.tok))
 
+                    case IntrinsicType.READ_FILE:
+                        if len(stack) < 2:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        length = stack.pop()
+                        path = stack.pop()
+                        if path.type.type != ValueClsType.PTR or length.type.type != ValueClsType.INT:
+                            typecheck_has_a_bug(instr, f'expected PTR INT, got {pp(path.type)} and {pp(length.type)}')
+                        if not isinstance(path.val, MemoryPtr):
+                            error(instr, f'cannot read a path from non-allocated pointer {path.val}')
+                        if length.val < 0 or path.val.offset < 0 or path.val.offset + length.val > len(path.val.buf):
+                            error(instr, f'path pointer is out of bounds: offset {path.val.offset}, size {length.val}')
+                        path_bytes = bytes(path.val.buf[path.val.offset : path.val.offset + length.val])
+                        try:
+                            contents = Path(path_bytes.decode('utf-8')).read_bytes()
+                        except (OSError, UnicodeError, ValueError):
+                            contents = b''
+                            success = False
+                        else:
+                            success = True
+                        stack.append(
+                            StackEntry(ValueCls(ValueClsType.PTR), MemoryPtr(bytearray(contents)), tok=instr.tok)
+                        )
+                        stack.append(StackEntry(ValueCls(ValueClsType.INT), len(contents), tok=instr.tok))
+                        stack.append(StackEntry(ValueCls(ValueClsType.BOOL), success, tok=instr.tok))
+
                     case IntrinsicType.EPUTC:
                         if len(stack) < 1:
                             typecheck_has_a_bug(instr, 'not enough items on stack')
@@ -2376,6 +2415,41 @@ def translate(ir: IR) -> str:
     sb_global += f'#include <stdlib.h>\n'
     sb_global += f'#include <stdint.h>\n'
     sb_global += f'#include <string.h>\n'
+
+    if any(
+        instr.type == InstructionType.INTRINSIC and instr.arg1 == IntrinsicType.READ_FILE
+        for proc in ir.procs
+        for instr in proc.instrs
+    ):
+        sb_global += (
+            'static bool frog_read_file(const void* path_bytes, int64_t path_length, '
+            'void** data, int64_t* data_length) {\n'
+            '  *data = NULL;\n'
+            '  *data_length = 0;\n'
+            '  if (path_length < 0 || (uint64_t)path_length >= SIZE_MAX) return false;\n'
+            '  if (path_length > 0 && path_bytes == NULL) return false;\n'
+            '  if (path_length > 0 && memchr(path_bytes, 0, (size_t)path_length) != NULL) return false;\n'
+            '  char* path = malloc((size_t)path_length + 1);\n'
+            '  if (path == NULL) return false;\n'
+            '  if (path_length > 0) memcpy(path, path_bytes, (size_t)path_length);\n'
+            "  path[(size_t)path_length] = '\\0';\n"
+            '  FILE* file = fopen(path, "rb");\n'
+            '  free(path);\n'
+            '  if (file == NULL) return false;\n'
+            '  if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return false; }\n'
+            '  long end = ftell(file);\n'
+            '  if (end < 0 || (uint64_t)end > INT64_MAX) { fclose(file); return false; }\n'
+            '  if (fseek(file, 0, SEEK_SET) != 0) { fclose(file); return false; }\n'
+            '  size_t size = (size_t)end;\n'
+            '  unsigned char* bytes = malloc(size == 0 ? 1 : size);\n'
+            '  if (bytes == NULL) { fclose(file); return false; }\n'
+            '  if (fread(bytes, 1, size, file) != size) { free(bytes); fclose(file); return false; }\n'
+            '  if (fclose(file) != 0) { free(bytes); return false; }\n'
+            '  *data = bytes;\n'
+            '  *data_length = (int64_t)size;\n'
+            '  return true;\n'
+            '}\n'
+        )
 
     used_memory_intrinsics: set[IntrinsicType] = set()
     for proc in ir.procs:
@@ -3129,6 +3203,30 @@ def translate(ir: IR) -> str:
                             declare_var(var, typ)
                             stack.append(StackEntry(typ, var, tok=instr.tok))
                             sb += f'{'':{indent}}{var} = getchar();\n'
+
+                        case IntrinsicType.READ_FILE:
+                            length = stack.pop()
+                            path = stack.pop()
+
+                            data_var = get_varname('file_data')
+                            data_type = ValueCls(ValueClsType.PTR)
+                            declare_var(data_var, data_type)
+
+                            length_var = get_varname('file_length')
+                            length_type = ValueCls(ValueClsType.INT)
+                            declare_var(length_var, length_type)
+
+                            success_var = get_varname('file_success')
+                            success_type = ValueCls(ValueClsType.BOOL)
+                            declare_var(success_var, success_type)
+
+                            stack.append(StackEntry(data_type, data_var, tok=instr.tok))
+                            stack.append(StackEntry(length_type, length_var, tok=instr.tok))
+                            stack.append(StackEntry(success_type, success_var, tok=instr.tok))
+                            sb += (
+                                f'{'':{indent}}{success_var} = frog_read_file('
+                                f'{path.val}, {length.val}, &{data_var}, &{length_var});\n'
+                            )
 
                         case IntrinsicType.EPUTC:
                             a = stack.pop()

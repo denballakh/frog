@@ -1,0 +1,28 @@
+proc main -- do
+    "README.md" read-file
+    let data length success do
+        if success do
+            data @u8 putc
+            10 putc
+            length 0 > print
+        else
+            1 exit
+        end
+    end
+
+    "frog-read-file-missing" read-file
+    let data length success do
+        data drop
+        length print
+        success print
+    end
+
+    0 ptr cast 0 read-file
+    let data length success do
+        data drop
+        if length 0 == success ! && do
+        else
+            1 exit
+        end
+    end
+end

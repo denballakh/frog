@@ -236,6 +236,8 @@ code_examples = [
     proc cell ptr int -- int do + @u8 end
     4 alloc let p do 42 p !u8 p 0 cell print end
     ''',
+    '"README.md" read-file let data length success do success print length 0 > print data @u8 putc 10 putc end',
+    '"frog-read-file-missing" read-file let data length success do data drop length print success print end',
 ]
 
 code_example_groups = [
@@ -251,7 +253,7 @@ code_example_groups = [
     CodeExampleGroup('literals_and_comments', code_examples[109:124]),
     CodeExampleGroup('words', code_examples[124:126]),
     CodeExampleGroup('procedures', code_examples[126:138]),
-    CodeExampleGroup('casts_and_memory', code_examples[138:155]),
+    CodeExampleGroup('casts_and_memory', code_examples[138:157]),
 ]
 
 assert sum(len(group.examples) for group in code_example_groups) == len(code_examples)

@@ -8,6 +8,8 @@ just test
 
 `just test` runs formatting and typechecking, regenerates snapshots under `test/snapshots/`, and fails if the snapshot directory has any tracked or untracked changes afterward.
 
+`just bootstrap-check` also compiles and runs focused self-hosted compiler fixtures under `test/bootstrap/` with strict C warnings.
+
 Snapshots are Markdown-style `.out` files. They embed the Frog source or CLI command being tested, followed by captured output, so a snapshot diff can usually be reviewed without opening the fixture source separately.
 
 Snapshot groups:

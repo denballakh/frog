@@ -714,3 +714,89 @@ Output:
 
 ```
 
+## Case 18
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"README.md" read-file let data length success do success print length 0 > print data @u8 putc 10 putc end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] BOOL():True@test/tmp_fs/code.frog:1:3
+[PRINT] BOOL():True@test/tmp_fs/code.frog:1:63
+#
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+true
+true
+#
+
+```
+
+## Case 19
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+"frog-read-file-missing" read-file let data length success do data drop length print success print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():0@test/tmp_fs/code.frog:1:3
+[PRINT] BOOL():False@test/tmp_fs/code.frog:1:3
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+0
+false
+
+```
+

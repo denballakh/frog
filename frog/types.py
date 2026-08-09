@@ -172,6 +172,7 @@ class IntrinsicType(Enum):
     PRINT = auto()  # a --
     PUTC = auto()  # int --
     GETC = auto()  # -- int
+    READ_FILE = auto()  # ptr int -- ptr int bool
     EPUTC = auto()  # int --
     EXIT = auto()  # int --
     DEBUG = auto()  # --
@@ -226,6 +227,7 @@ INTRINSIC_TO_INTRINSIC_TYPE = {
     'print': IntrinsicType.PRINT,
     'putc': IntrinsicType.PUTC,
     'getc': IntrinsicType.GETC,
+    'read-file': IntrinsicType.READ_FILE,
     'eputc': IntrinsicType.EPUTC,
     'exit': IntrinsicType.EXIT,
     '?': IntrinsicType.DEBUG,

@@ -38,6 +38,10 @@ bootstrap-check: frogc-seed
     build/frogc.stage2 < compiler/frogc.frog > build/frogc.stage3.c
     cmp compiler/frogc.c build/frogc.stage2.c
     cmp build/frogc.stage2.c build/frogc.stage3.c
+    build/frogc < test/bootstrap/read_file.frog > build/frogc.read_file.c
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.read_file.c -o build/frogc.read_file
+    build/frogc.read_file > build/frogc.read_file.out
+    printf '#\ntrue\n0\nfalse\n' | cmp - build/frogc.read_file.out
 
 [group("bootstrap")]
 bootstrap-update: frogc-seed

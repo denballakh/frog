@@ -42,6 +42,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `docs/testing.md`: Test snapshot workflow and review process.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `test/__main__.py`: Snapshot test generator/runner. It runs example files, CLI cases, inline code snippets, and multi-file import-system cases.
+- `test/bootstrap/*.frog`: Focused programs compiled by the checked Frog compiler during `just bootstrap-check`.
 - `test/snapshots/**/*.out`: Markdown-style snapshot output files produced by `python -m test`. Snapshots embed tested source or CLI arguments with captured output.
 - `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
@@ -100,6 +101,7 @@ Useful direct commands:
 - Use `just approve-diff` to approve snapshot changes ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated snapshot `.out` files to confirm the new output is intentional.
 - The test runner also builds and runs examples through the C backend, so `gcc` must be available.
+- `just bootstrap-check` compiles its focused fixtures with strict C11 warnings and compares their output, in addition to checking compiler fixed-point equality.
 - `test/tmp_fs/` is created during tests and removed at the end; failed runs can leave generated artifacts there.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
 
@@ -151,6 +153,8 @@ Subcommands:
 - `translate(ir)` emits C code using `StringBuilder`, then the CLI compiles it with `gcc`.
 - Generated C sanitizes Frog procedure names into valid C identifiers for `proc_*`, `ret_*`, and related result variable prefixes, so punctuation in procedure names does not directly leak into C symbols.
 - The migration compiler in `compiler/frogc.frog` directly typechecks and emits a numeric-symbol stack-machine C backend. `compiler/frogc.c` must always be a fixed point: compiling the Frog source with it and recompiling with the result must reproduce the checked C byte-for-byte.
+- The migration compiler requires an explicit `proc main -- do ... end` with an empty stack contract. When the regression corpus moves to this compiler, test helpers should wrap ordinary inline cases in that procedure so individual fixtures stay concise.
+- During self-hosting, new compiler/bootstrap features do not need a matching Python interpreter implementation. Do not extend the interpreter solely for parity; it will be removed together with the Python compiler.
 
 ## Language Semantics
 
@@ -158,6 +162,7 @@ Subcommands:
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
+- `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 
 ## Implementation Conventions And Gotchas
 

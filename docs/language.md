@@ -165,6 +165,7 @@ end
 ### Memory
 
 - `alloc`: `size_bytes -- ptr` allocates a byte buffer.
+- `read-file`: `path_ptr path_length -- data_ptr data_length success` reads a UTF-8 path into an allocated byte buffer. On failure it returns length `0` and `false`; the data pointer must not be dereferenced.
 - Pointer arithmetic supports `ptr int + -- ptr` and `ptr int - -- ptr`; offsets are in bytes.
 - `int ptr +` is not supported.
 - Signed pointer reads: `@i8`, `@i16`, `@i32`, `@i64`, each `ptr -- int`.
