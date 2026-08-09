@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import assert_never, cast
 from enum import Enum
 from dataclasses import dataclass, field
+import sys
 
 from .sb import StringBuilder
 from .logs import error, notimplemented, warn, info, trace, unreachable, typecheck_has_a_bug
@@ -63,6 +64,9 @@ MEMORY_ACCESS_BITS = {
 }
 
 
+MAX_C_INT = 2**63 - 1
+
+
 def expect_enum_size(e_cls: type[Enum], expected_size: int) -> None:
     if len(e_cls) != expected_size:
         raise Error(f'{e_cls.__name__} has {len(e_cls)} members, expected {expected_size}')
@@ -113,7 +117,7 @@ def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
             continue
 
         if c == '"':
-            chars = ''
+            bs = bytearray()
             while True:
                 i += 1
                 if i >= len(text):
@@ -123,8 +127,38 @@ def _tokenize(text: str, filename: str = '<?>') -> Iterable[Token]:
                 if text[i] == '"':
                     i += 1
                     break
-                chars += text[i]
-            yield Token(TokenType.STR, chars, loc_start)
+                if text[i] != '\\':
+                    bs.extend(text[i].encode('utf-8'))
+                    continue
+
+                i += 1
+                if i >= len(text) or text[i] == '\n':
+                    error(loc_start, f'unterminated string literal')
+                match text[i]:
+                    case '\\':
+                        bs.append(ord('\\'))
+                    case '"':
+                        bs.append(ord('"'))
+                    case 'n':
+                        bs.append(ord('\n'))
+                    case 'r':
+                        bs.append(ord('\r'))
+                    case 't':
+                        bs.append(ord('\t'))
+                    case '0':
+                        bs.append(0)
+                    case 'x':
+                        hex_start = i + 1
+                        hex_end = hex_start + 2
+                        if hex_end > len(text) or any(
+                            c not in '0123456789abcdefABCDEF' for c in text[hex_start:hex_end]
+                        ):
+                            error(loc_start, 'invalid hexadecimal escape in string literal')
+                        bs.append(int(text[hex_start:hex_end], 16))
+                        i = hex_end - 1
+                    case _:
+                        error(loc_start, f'invalid escape in string literal: \\{text[i]}')
+            yield Token(TokenType.STR, bytes(bs), loc_start)
 
             loc_start = Loc(filename, line_no, col_no)
             i_start = i + 1
@@ -272,7 +306,11 @@ def _parse_import_decl(toks: list[Token], i: int) -> tuple[ImportDecl, int]:
     if i >= len(toks) or toks[i].type != TokenType.STR:
         error(tok_from, 'expected a string path after from')
     path_tok = toks[i]
-    path = cast(str, path_tok.value)
+    path_bytes = cast(bytes, path_tok.value)
+    try:
+        path = path_bytes.decode('utf-8')
+    except UnicodeDecodeError:
+        error(path_tok, 'import path must be valid UTF-8')
     i += 1
 
     if i >= len(toks) or not _is_keyword(toks[i], KeywordType.IMPORT):
@@ -663,6 +701,8 @@ def _compile_module_source(
                     warn(tok, f'encountered imaginary token: {pp(tok)}')
 
                 case TokenType.INT:
+                    if tok.value > MAX_C_INT:
+                        error(tok, f'integer literal exceeds the signed 64-bit range')
                     _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=tok.value))
 
                 case TokenType.BOOL:
@@ -677,7 +717,7 @@ def _compile_module_source(
                     _ = add_instr(Instruction(type=InstructionType.PUSH_INT, tok=tok, arg1=ord(tok.value)))
 
                 case TokenType.STR:
-                    notimplemented(tok.loc, f'string literals')
+                    _ = add_instr(Instruction(type=InstructionType.PUSH_STR, tok=tok, arg1=tok.value))
 
                 case TokenType.KEYWORD:
                     kw_type = cast(KeywordType, tok.value)
@@ -858,7 +898,7 @@ def _compile_module_source(
                         compile_stream(macro.body, macro_source, [*expansion_stack, symbol])
                         continue
 
-                    expect_enum_size(IntrinsicType, 48)
+                    expect_enum_size(IntrinsicType, 51)
                     match tok.value:
                         case _ if tok.value in INTRINSIC_TO_INTRINSIC_TYPE:
                             _ = add_instr(
@@ -1051,6 +1091,10 @@ def typecheck(ir: IR) -> None:
 
                 case InstructionType.PUSH_BOOL:
                     stack.append(StackEntry(ValueCls(ValueClsType.BOOL, unused), typechecking, tok=instr.tok))
+
+                case InstructionType.PUSH_STR:
+                    stack.append(StackEntry(ValueCls(ValueClsType.PTR), typechecking, tok=instr.tok))
+                    stack.append(StackEntry(ValueCls(ValueClsType.INT), typechecking, tok=instr.tok))
 
                 case InstructionType.PUSH_TYPE:
                     stack.append(StackEntry(ValueCls(ValueClsType.TYPE, instr.arg1), typechecking, tok=instr.tok))
@@ -1542,6 +1586,20 @@ def typecheck(ir: IR) -> None:
                                 Contract(ins=[ValueCls(ValueClsType.INT)], outs=[]),
                             )
 
+                        case IntrinsicType.GETC:
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(ins=[], outs=[ValueCls(ValueClsType.INT)]),
+                            )
+
+                        case IntrinsicType.EPUTC | IntrinsicType.EXIT:
+                            typecheck_contract(
+                                instr,
+                                stack,
+                                Contract(ins=[ValueCls(ValueClsType.INT)], outs=[]),
+                            )
+
                         case IntrinsicType.DEBUG:
                             info(
                                 instr,
@@ -1592,6 +1650,12 @@ def interpret(ir: IR) -> None:
 
             case InstructionType.PUSH_BOOL:
                 stack.append(StackEntry(ValueCls(ValueClsType.BOOL, unused), instr.arg1, tok=instr.tok))
+
+            case InstructionType.PUSH_STR:
+                bs = cast(bytes, instr.arg1)
+                string_ptr = MemoryPtr(bytearray(bs))
+                stack.append(StackEntry(ValueCls(ValueClsType.PTR), string_ptr, tok=instr.tok))
+                stack.append(StackEntry(ValueCls(ValueClsType.INT), len(bs), tok=instr.tok))
 
             case InstructionType.PUSH_TYPE:
                 stack.append(StackEntry(ValueCls(ValueClsType.TYPE, instr.arg1), instr.arg1, tok=instr.tok))
@@ -2129,6 +2193,26 @@ def interpret(ir: IR) -> None:
                             typecheck_has_a_bug(instr, f'expected an INT, got {pp(a.type)}')
                         print(chr(a.val), end='')
 
+                    case IntrinsicType.GETC:
+                        bs = sys.stdin.buffer.read(1)
+                        stack.append(StackEntry(ValueCls(ValueClsType.INT), bs[0] if bs else -1, tok=instr.tok))
+
+                    case IntrinsicType.EPUTC:
+                        if len(stack) < 1:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        a = stack.pop()
+                        if a.type.type != ValueClsType.INT:
+                            typecheck_has_a_bug(instr, f'expected an INT, got {pp(a.type)}')
+                        _ = sys.stderr.buffer.write(bytes((a.val & 0xFF,)))
+
+                    case IntrinsicType.EXIT:
+                        if len(stack) < 1:
+                            typecheck_has_a_bug(instr, 'not enough items on stack')
+                        a = stack.pop()
+                        if a.type.type != ValueClsType.INT:
+                            typecheck_has_a_bug(instr, f'expected an INT, got {pp(a.type)}')
+                        raise SystemExit(a.val)
+
                     case IntrinsicType.DEBUG:
                         info(instr, 'Stack at runtime:', stack=stack)
 
@@ -2149,6 +2233,8 @@ def translate(ir: IR) -> str:
         stack: Stack | None = None
 
     _used_names: set[str] = set()
+    sb: StringBuilder
+    indent: int
 
     def get_varname(hint: str) -> str:
         i = 0
@@ -2160,7 +2246,7 @@ def translate(ir: IR) -> str:
     def c_type(type: ValueCls) -> str:
         match type.type:
             case ValueClsType.INT:
-                return 'int'
+                return 'int64_t'
             case ValueClsType.BOOL:
                 return 'bool'
             case ValueClsType.PTR:
@@ -2197,8 +2283,8 @@ def translate(ir: IR) -> str:
         loc_b = c_str(repr(b.tok.loc))
         sb.add(f'{'':{indent}}if ({b.val} == 0) {{\n')
         sb.add(f'{'':{indent + 2}}printf("[ERROR] {loc}: division by zero\\n");\n')
-        sb.add(f'{'':{indent + 2}}printf("[NOTE] a: INT():%d@{loc_a}\\n", {a.val});\n')
-        sb.add(f'{'':{indent + 2}}printf("[NOTE] b: INT():%d@{loc_b}\\n", {b.val});\n')
+        sb.add(f'{'':{indent + 2}}printf("[NOTE] a: INT():%lld@{loc_a}\\n", (long long){a.val});\n')
+        sb.add(f'{'':{indent + 2}}printf("[NOTE] b: INT():%lld@{loc_b}\\n", (long long){b.val});\n')
         sb.add(f'{'':{indent + 2}}exit(1);\n')
         sb.add(f'{'':{indent}}}}\n')
 
@@ -2228,11 +2314,83 @@ def translate(ir: IR) -> str:
     sb_global += f'#include <stdbool.h>\n'
     sb_global += f'#include <stdlib.h>\n'
     sb_global += f'#include <stdint.h>\n'
+    sb_global += f'#include <string.h>\n'
+
+    used_memory_intrinsics: set[IntrinsicType] = set()
+    for proc in ir.procs:
+        for instr in proc.instrs:
+            if instr.type == InstructionType.INTRINSIC and instr.arg1 in MEMORY_ACCESS_BITS:
+                used_memory_intrinsics.add(cast(IntrinsicType, instr.arg1))
+
+    for intr_type in MEMORY_ACCESS_BITS:
+        if intr_type not in used_memory_intrinsics:
+            continue
+        bits, signed = MEMORY_ACCESS_BITS[intr_type]
+        prefix = 'i' if signed else 'u'
+        c_type_name = f'int{bits}_t' if signed else f'uint{bits}_t'
+        match intr_type:
+            case (
+                IntrinsicType.READ_I8
+                | IntrinsicType.READ_I16
+                | IntrinsicType.READ_I32
+                | IntrinsicType.READ_I64
+                | IntrinsicType.READ_U8
+                | IntrinsicType.READ_U16
+                | IntrinsicType.READ_U32
+                | IntrinsicType.READ_U64
+            ):
+                sb_global += f'static int64_t frog_read_{prefix}{bits}(const void* ptr) {{\n'
+                sb_global += f'  {c_type_name} value;\n'
+                sb_global += f'  memcpy(&value, ptr, sizeof(value));\n'
+                sb_global += f'  return (int64_t)value;\n'
+                sb_global += f'}}\n'
+
+            case (
+                IntrinsicType.WRITE_I8
+                | IntrinsicType.WRITE_I16
+                | IntrinsicType.WRITE_I32
+                | IntrinsicType.WRITE_I64
+                | IntrinsicType.WRITE_U8
+                | IntrinsicType.WRITE_U16
+                | IntrinsicType.WRITE_U32
+                | IntrinsicType.WRITE_U64
+            ):
+                sb_global += f'static void frog_write_{prefix}{bits}(void* ptr, int64_t value) {{\n'
+                sb_global += f'  {c_type_name} stored = ({c_type_name})value;\n'
+                sb_global += f'  memcpy(ptr, &stored, sizeof(stored));\n'
+                sb_global += f'}}\n'
+
+            case _:
+                unreachable(None, f'unknown memory intrinsic {intr_type}')
+
+    sb_declarations = StringBuilder()
+    for module, proc in ((module, proc) for module in ir.modules for proc in module.procs):
+        proc_name = c_proc_ident(module.id, proc.name)
+        ret = f'ret_{proc_name}'
+        sb_declarations += f'typedef struct {{\n'
+        if proc.contract.outs:
+            for i, typ in enumerate(proc.contract.outs):
+                sb_declarations += f'  {c_type(typ)} _{i};\n'
+        else:
+            sb_declarations += f'  unsigned char _unused;\n'
+        sb_declarations += f'}} {ret};\n'
+        sb_declarations += f'{ret} proc_{proc_name}('
+        if proc.contract.ins:
+            sb_declarations += ', '.join(c_type(typ) for typ in proc.contract.ins)
+        else:
+            sb_declarations += 'void'
+        sb_declarations += ');\n'
+    sb_global += str(sb_declarations)
+
+    def emit_byte_string(bs: bytes) -> str:
+        var = get_varname('lit_str')
+        values = ', '.join(f'0x{byte:02X}' for byte in bs) or '0'
+        sb_global.add(f'static unsigned char {var}[] = {{ {values} }};\n')
+        return var
 
     for module, proc in ((module, proc) for module in ir.modules for proc in module.procs):
         sb = StringBuilder()
         sb_header = StringBuilder()
-        sb_struct = StringBuilder()
 
         instrs = proc.instrs
         stack: Stack = []
@@ -2241,19 +2399,20 @@ def translate(ir: IR) -> str:
         proc_name = c_proc_ident(module.id, proc.name)
         ret = f'ret_{proc_name}'
         sb_header += f'{ret} proc_{proc_name}('
+        proc_args: list[str] = []
         for i, typ in enumerate(proc.contract.ins):
             name = get_varname('arg')
             if i > 0:
                 sb_header += ', '
             sb_header += f'{c_type(typ)} {name}'
+            proc_args.append(name)
             stack.append(StackEntry(typ, name, proc.tok))
+        if not proc.contract.ins:
+            sb_header += 'void'
         sb_header += ') {\n'
-        sb_struct += f'typedef struct {{\n'
-        for i, typ in enumerate(proc.contract.outs):
-            name = f'_{i}'
-            sb_struct += f'  {c_type(typ)} {name};\n'
-        sb_struct += f'}} {ret};\n'
         indent = 2
+        for arg in proc_args:
+            sb += f'{'':{indent}}(void){arg};\n'
 
         block_stack: list[Block] = []
         for ip, instr in enumerate(instrs):
@@ -2273,6 +2432,20 @@ def translate(ir: IR) -> str:
                     stack.append(StackEntry(typ, var, tok=instr.tok))
                     sb += f'{'':{indent}}{var} = {"true" if instr.tok.value else "false"};\n'
 
+                case InstructionType.PUSH_STR:
+                    bs = cast(bytes, instr.arg1)
+                    ptr_var = get_varname('lit_str_ptr')
+                    ptr_type = ValueCls(ValueClsType.PTR)
+                    declare_var(ptr_var, ptr_type)
+                    stack.append(StackEntry(ptr_type, ptr_var, tok=instr.tok))
+                    sb += f'{'':{indent}}{ptr_var} = {emit_byte_string(bs)};\n'
+
+                    len_var = get_varname('lit_str_len')
+                    len_type = ValueCls(ValueClsType.INT)
+                    declare_var(len_var, len_type)
+                    stack.append(StackEntry(len_type, len_var, tok=instr.tok))
+                    sb += f'{'':{indent}}{len_var} = {len(bs)};\n'
+
                 case InstructionType.PUSH_TYPE:
                     typ = ValueCls(ValueClsType.TYPE, instr.arg1)
                     stack.append(StackEntry(typ, unused, tok=instr.tok))
@@ -2284,13 +2457,18 @@ def translate(ir: IR) -> str:
                         unreachable(instr, f'proc {proc_ref.name} not found')
 
                     proc_called_name = c_proc_ident(proc_ref.module, proc_called.name)
-                    ret_var = get_varname(f'res_{proc_called_name}')
-                    ret_type = f'ret_{proc_called_name}'
-                    sb += f'{'':{indent}}{ret_type} {ret_var} = proc_{proc_called_name}('
-                    for i, arg in enumerate(stack[len(stack) - len(proc_called.contract.ins) :]):
+                    if proc_called.contract.outs:
+                        ret_var = get_varname(f'res_{proc_called_name}')
+                        ret_type = f'ret_{proc_called_name}'
+                        sb += f'{'':{indent}}{ret_type} {ret_var} = '
+                    else:
+                        ret_var = ''
+                        sb += f'{'':{indent}}'
+                    sb += f'proc_{proc_called_name}('
+                    for i, call_arg in enumerate(stack[len(stack) - len(proc_called.contract.ins) :]):
                         if i > 0:
                             sb += ', '
-                        sb += f'{arg.val}'
+                        sb += f'{call_arg.val}'
                         _ = stack.pop()
                     sb += ');\n'
 
@@ -2384,12 +2562,15 @@ def translate(ir: IR) -> str:
 
                 case InstructionType.RET:
                     ret_type = f'ret_{proc_name}'
-                    sb += f'{'':{indent}}return ({ret_type}){{\n'
-                    indent += 2
-                    for i, x in enumerate(stack):
-                        sb += f'{'':{indent}}._{i} = {x.val},\n'
-                    indent -= 2
-                    sb += f'{'':{indent}}}};\n'
+                    if proc.contract.outs:
+                        sb += f'{'':{indent}}return ({ret_type}){{\n'
+                        indent += 2
+                        for i, x in enumerate(stack):
+                            sb += f'{'':{indent}}._{i} = {x.val},\n'
+                        indent -= 2
+                        sb += f'{'':{indent}}}};\n'
+                    else:
+                        sb += f'{'':{indent}}return ({ret_type}){{ ._unused = 0 }};\n'
                     stack = []
 
                 case InstructionType.LABEL:
@@ -2788,16 +2969,26 @@ def translate(ir: IR) -> str:
                                     )
                                     stack.append(StackEntry(t.type.val, x.val, tok=instr.tok))
 
-                                case (
-                                    (ValueCls(ValueClsType.INT), ValueCls(ValueClsType.BOOL))
-                                    | (ValueCls(ValueClsType.BOOL), ValueCls(ValueClsType.INT))
-                                    | (ValueCls(ValueClsType.INT), ValueCls(ValueClsType.PTR))
-                                    | (ValueCls(ValueClsType.PTR), ValueCls(ValueClsType.INT))
+                                case (ValueCls(ValueClsType.INT), ValueCls(ValueClsType.BOOL)) | (
+                                    ValueCls(ValueClsType.BOOL),
+                                    ValueCls(ValueClsType.INT),
                                 ):
                                     var = get_varname(f'cast')
                                     declare_var(var, type=t.type.val)
                                     stack.append(StackEntry(type=t.type.val, val=var, tok=instr.tok))
                                     sb += f'{'':{indent}}{var} = ({c_type(t.type.val)}){x.val};\n'
+
+                                case (ValueCls(ValueClsType.INT), ValueCls(ValueClsType.PTR)):
+                                    var = get_varname(f'cast')
+                                    declare_var(var, type=t.type.val)
+                                    stack.append(StackEntry(type=t.type.val, val=var, tok=instr.tok))
+                                    sb += f'{'':{indent}}{var} = (void*)(uintptr_t){x.val};\n'
+
+                                case (ValueCls(ValueClsType.PTR), ValueCls(ValueClsType.INT)):
+                                    var = get_varname(f'cast')
+                                    declare_var(var, type=t.type.val)
+                                    stack.append(StackEntry(type=t.type.val, val=var, tok=instr.tok))
+                                    sb += f'{'':{indent}}{var} = (int64_t)(intptr_t){x.val};\n'
 
                                 case _:
                                     error(
@@ -2813,7 +3004,8 @@ def translate(ir: IR) -> str:
                             typ = ValueCls(ValueClsType.PTR)
                             declare_var(var, typ)
                             stack.append(StackEntry(typ, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = malloc({size.val});\n'
+                            sb += f'{'':{indent}}if ({size.val} < 0) {{ printf("[ERROR] allocation size is negative\\n"); exit(1); }}\n'
+                            sb += f'{'':{indent}}{var} = malloc((size_t){size.val});\n'
                             sb += f'{'':{indent}}if ({var} == NULL) {{ printf("[ERROR] allocation failed\\n"); exit(1); }}\n'
 
                         case (
@@ -2828,12 +3020,12 @@ def translate(ir: IR) -> str:
                         ):
                             ptr = stack.pop()
                             bits, signed = MEMORY_ACCESS_BITS[intr_type]
-                            c_read_type = f'int{bits}_t' if signed else f'uint{bits}_t'
+                            prefix = 'i' if signed else 'u'
                             var = get_varname(f'read')
                             typ = ValueCls(ValueClsType.INT)
                             declare_var(var, typ)
                             stack.append(StackEntry(typ, var, tok=instr.tok))
-                            sb += f'{'':{indent}}{var} = (int)(*({c_read_type}*){ptr.val});\n'
+                            sb += f'{'':{indent}}{var} = frog_read_{prefix}{bits}({ptr.val});\n'
 
                         case (
                             IntrinsicType.WRITE_I8
@@ -2848,14 +3040,14 @@ def translate(ir: IR) -> str:
                             ptr = stack.pop()
                             val = stack.pop()
                             bits, signed = MEMORY_ACCESS_BITS[intr_type]
-                            c_write_type = f'int{bits}_t' if signed else f'uint{bits}_t'
-                            sb += f'{'':{indent}}*({c_write_type}*){ptr.val} = ({c_write_type}){val.val};\n'
+                            prefix = 'i' if signed else 'u'
+                            sb += f'{'':{indent}}frog_write_{prefix}{bits}({ptr.val}, {val.val});\n'
 
                         # debugging:
                         case IntrinsicType.PRINT:
                             a = stack.pop()
                             if a.type.type == ValueClsType.INT:
-                                sb += f'{'':{indent}}printf("%d\\n", {a.val});\n'
+                                sb += f'{'':{indent}}printf("%lld\\n", (long long){a.val});\n'
 
                             elif a.type.type == ValueClsType.BOOL:
                                 sb += f'{'':{indent}}printf("%s\\n", {a.val} ? "true" : "false");\n'
@@ -2866,8 +3058,29 @@ def translate(ir: IR) -> str:
                         case IntrinsicType.PUTC:
                             a = stack.pop()
                             if a.type.type == ValueClsType.INT:
-                                sb += f'{'':{indent}}putchar({a.val});\n'
+                                sb += f'{'':{indent}}putchar((int)(unsigned char){a.val});\n'
 
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.GETC:
+                            var = get_varname('getc')
+                            typ = ValueCls(ValueClsType.INT)
+                            declare_var(var, typ)
+                            stack.append(StackEntry(typ, var, tok=instr.tok))
+                            sb += f'{'':{indent}}{var} = getchar();\n'
+
+                        case IntrinsicType.EPUTC:
+                            a = stack.pop()
+                            if a.type.type == ValueClsType.INT:
+                                sb += f'{'':{indent}}fputc((int)(unsigned char){a.val}, stderr);\n'
+                            else:
+                                unreachable(instr)
+
+                        case IntrinsicType.EXIT:
+                            a = stack.pop()
+                            if a.type.type == ValueClsType.INT:
+                                sb += f'{'':{indent}}exit({a.val});\n'
                             else:
                                 unreachable(instr)
 
@@ -2886,7 +3099,6 @@ def translate(ir: IR) -> str:
             unreachable(None, block_stack=block_stack)
 
         sb += '}\n'
-        sb_global += str(sb_struct)
         sb_global += str(sb_header)
         sb_global += str(sb)
 

@@ -296,15 +296,6 @@ Output:
 
 ```text
 [CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
-[STDERR]:
-test/tmp_fs/code.c: In function ‘proc_main’:
-test/tmp_fs/code.c:12:12: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
-   12 |   cast_0 = (void*)lit_int_0;
-      |            ^
-test/tmp_fs/code.c:13:12: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
-   13 |   cast_1 = (int)cast_0;
-      |            ^
-
 [CMD] test/tmp_fs/code.exe
 [STDOUT]:
 1
@@ -312,6 +303,209 @@ test/tmp_fs/code.c:13:12: warning: cast from pointer to integer of different siz
 ```
 
 ## Case 08
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+9223372036854775807 print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():9223372036854775807@test/tmp_fs/code.frog:1:1
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+9223372036854775807
+
+```
+
+## Case 09
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():4660@test/tmp_fs/code.frog:1:40
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+4660
+
+```
+
+## Case 10
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+proc forward -- int do later end
+proc later -- int do 42 end
+forward print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():42@test/tmp_fs/code.frog:2:22
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+42
+
+```
+
+## Case 11
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+proc sink int -- do drop end
+1 sink
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+(no output)
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+```
+
+## Case 12
+
+### Source: `test/tmp_fs/code.frog`
+
+```frog
+proc countdown int -- int do
+    if dup 0 == do drop 0 else 1 - countdown end
+end
+3 countdown print
+```
+
+### Run
+
+Command:
+
+```text
+py -m frog run test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[PRINT] INT():0@test/tmp_fs/code.frog:2:25
+```
+
+### Build
+
+Command:
+
+```text
+py -m frog -l WARN build -r test/tmp_fs/code.frog
+```
+
+Output:
+
+```text
+[CMD] gcc test/tmp_fs/code.c -o test/tmp_fs/code.exe
+[CMD] test/tmp_fs/code.exe
+[STDOUT]:
+0
+
+```
+
+## Case 13
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -351,7 +545,7 @@ Output:
 
 ```
 
-## Case 09
+## Case 14
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -393,7 +587,7 @@ Output:
 
 ```
 
-## Case 10
+## Case 15
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -435,7 +629,7 @@ Output:
 
 ```
 
-## Case 11
+## Case 16
 
 ### Source: `test/tmp_fs/code.frog`
 
@@ -477,7 +671,7 @@ Output:
 
 ```
 
-## Case 12
+## Case 17
 
 ### Source: `test/tmp_fs/code.frog`
 

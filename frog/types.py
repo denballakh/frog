@@ -104,6 +104,7 @@ class InstructionType(Enum):
     BIND = auto()
     LOAD_BIND = auto()
     UNBIND = auto()
+    PUSH_STR = auto()
 
 
 class IntrinsicType(Enum):
@@ -168,6 +169,9 @@ class IntrinsicType(Enum):
     # debugging:
     PRINT = auto()  # a --
     PUTC = auto()  # int --
+    GETC = auto()  # -- int
+    EPUTC = auto()  # int --
+    EXIT = auto()  # int --
     DEBUG = auto()  # --
 
 
@@ -219,6 +223,9 @@ INTRINSIC_TO_INTRINSIC_TYPE = {
     '!u64': IntrinsicType.WRITE_U64,
     'print': IntrinsicType.PRINT,
     'putc': IntrinsicType.PUTC,
+    'getc': IntrinsicType.GETC,
+    'eputc': IntrinsicType.EPUTC,
+    'exit': IntrinsicType.EXIT,
     '?': IntrinsicType.DEBUG,
 }
 

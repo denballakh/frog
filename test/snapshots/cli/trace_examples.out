@@ -248,31 +248,34 @@ Output:
     #include <stdbool.h>
     #include <stdlib.h>
     #include <stdint.h>
+    #include <string.h>
     typedef struct {
+      unsigned char _unused;
     } ret_main;
-    ret_main proc_main() {
-      int lit_int_0;
-      int lit_int_1;
-      int dup_0;
-      int lit_int_2;
-      int mul_0;
-      int add_0;
-      int dup_1;
-      int lit_int_3;
-      int gt_0;
-      int dup_2;
-      int lit_int_4;
-      int mod_0;
-      int lit_int_5;
-      int eq_0;
-      int lit_int_6;
-      int lit_int_7;
-      int lit_int_8;
-      int sub_0;
+    ret_main proc_main(void);
+    ret_main proc_main(void) {
+      int64_t lit_int_0;
+      int64_t lit_int_1;
+      int64_t dup_0;
+      int64_t lit_int_2;
+      int64_t mul_0;
+      int64_t add_0;
+      int64_t dup_1;
+      int64_t lit_int_3;
+      int64_t gt_0;
+      int64_t dup_2;
+      int64_t lit_int_4;
+      int64_t mod_0;
+      int64_t lit_int_5;
+      int64_t eq_0;
+      int64_t lit_int_6;
+      int64_t lit_int_7;
+      int64_t lit_int_8;
+      int64_t sub_0;
       lit_int_0 = 1;
       lit_int_1 = 2;
       dup_0 = lit_int_0;
-      printf("%d\n", dup_0);
+      printf("%lld\n", (long long)dup_0);
       lit_int_2 = 10;
       mul_0 = lit_int_0 * lit_int_2;
       add_0 = lit_int_1 + mul_0;
@@ -285,8 +288,8 @@ Output:
           lit_int_4 = 2;
           if (lit_int_4 == 0) {
             printf("[ERROR] examples/02_while.frog:18:5: division by zero\n");
-            printf("[NOTE] a: INT():%d@examples/02_while.frog:16:5\n", dup_2);
-            printf("[NOTE] b: INT():%d@examples/02_while.frog:17:5\n", lit_int_4);
+            printf("[NOTE] a: INT():%lld@examples/02_while.frog:16:5\n", (long long)dup_2);
+            printf("[NOTE] b: INT():%lld@examples/02_while.frog:17:5\n", (long long)lit_int_4);
             exit(1);
           }
           mod_0 = dup_2 % lit_int_4;
@@ -298,14 +301,13 @@ Output:
             lit_int_7 = 7;
             lit_int_6 = lit_int_7;
           }
-          printf("%d\n", lit_int_6);
+          printf("%lld\n", (long long)lit_int_6);
           lit_int_8 = 1;
           sub_0 = add_0 - lit_int_8;
           add_0 = sub_0;
         } else break;
       }
-      return (ret_main){
-      };
+      return (ret_main){ ._unused = 0 };
     }
     int main() {
       proc_main();

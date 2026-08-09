@@ -156,6 +156,8 @@ Subcommands:
 
 - `frog/__init__.py` is large and intentionally keeps the pipeline together; prefer minimal targeted edits unless a refactor is explicitly needed.
 - When adding an intrinsic, update all relevant places together: `IntrinsicType`, `INTRINSIC_TO_INTRINSIC_TYPE`, the `expect_enum_size(IntrinsicType, ...)` check, typechecker behavior, interpreter behavior, C translator behavior, tests, docs, and optionally VS Code grammar. Keep concrete language behavior documented in user-facing docs rather than adding one-off feature facts here.
+- String literals lower to a `ptr int` pair. Their interpreter storage is a UTF-8 `bytearray`, and C codegen must preserve the same bytes and byte length.
+- The C backend represents Frog `int` as `int64_t`. Generated fixed-width memory accesses must remain byte-safe (`memcpy` helpers), procedures need complete return types and prototypes before any definition, and zero-output procedures must not emit empty C structs.
 - When adding a value class, update `ValueClsType`, the `expect_enum_size(ValueClsType, ...)` checks, typechecking, interpretation, C type mapping, stack-copy logic, printing, casts, and tests.
 - When adding a keyword, update `KeywordType`, `KW_TO_KWT`, parser/compiler handling, macro body validation if the keyword affects block syntax, tests, docs, and `ide/vscode/frog_grammar.json`.
 - Error paths often call `error(...)`, which prints diagnostics then `sys.exit(...)`; tests rely on captured stdout and exit-code lines from helpers.

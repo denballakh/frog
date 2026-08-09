@@ -6,11 +6,12 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, and `type`.
 - Procedure signatures and casts can name `int`, `bool`, and `ptr`.
-- Integer literals are non-negative decimal chunks. Negative values are produced by operations, not by signed literal syntax.
+- `int` is a signed 64-bit integer in the C backend. Integer literals are non-negative decimal chunks and must not exceed `9223372036854775807`; negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints and are supported by both interpretation and C codegen.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.
-- String literals are supported in import declarations. In normal code, string literals tokenize, but compilation currently reports `not implemented: string literals`.
+- String literals push `ptr int`: a pointer to their bytes followed by their byte length. Their bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte.
+- Import paths use string literal bytes decoded as UTF-8.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 
 ## Stack Effects
@@ -172,6 +173,7 @@ end
 - Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
 - The interpreter models allocated memory as bytearray-backed pointers and checks bounds/fit for memory access.
 - Generated C uses `malloc`, `void*`, byte pointer arithmetic, and fixed-width integer loads/stores from `<stdint.h>`.
+- Generated C memory reads and writes use `memcpy`, so unaligned accesses do not violate C alignment or strict-aliasing rules.
 
 ### Casts
 
@@ -183,4 +185,11 @@ end
 
 - `print`: `a --`, prints one value with a newline.
 - `putc`: `int --`, writes a single character without an added newline or interpreter prefix. Generated C implements `putc` using `putchar`.
+- `getc`: `-- int`, reads one byte from standard input, or pushes `-1` at EOF.
+- `eputc`: `int --`, writes one byte to standard error.
+- `exit`: `int --`, terminates execution with the supplied exit status.
 - `?`: `--`, logs the stack at compile time during typechecking and at runtime during interpretation; it is omitted in C codegen.
+
+## C Backend Limits
+
+The interpreter uses Python integers, but generated C uses signed 64-bit arithmetic. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined by the C backend. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`.
