@@ -3115,11 +3115,20 @@ end
 
 proc emit-c-preamble ptr -- do
     drop
-    "#include <stdint.h>
+    "#define _POSIX_C_SOURCE 200809L
+
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 typedef int64_t Cell;
 typedef struct {
@@ -3210,6 +3219,70 @@ void frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; mem
 void frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }
+
+" emit
+    "int froglang_fork(void) {
+  if (fflush(NULL) != 0) return -1;
+  return (int)fork();
+}
+int froglang_create_file(void* path) { return open((const char*)path, O_WRONLY | O_CREAT | O_TRUNC, 0600); }
+int froglang_dup2(int old_fd, int new_fd) { return dup2(old_fd, new_fd); }
+int froglang_close(int fd) { return close(fd); }
+int froglang_chdir(void* path) { return chdir((const char*)path); }
+int froglang_execv(void* path, void* arguments) { return execv((const char*)path, (char* const*)arguments); }
+int froglang_execvp(void* file, void* arguments) { return execvp((const char*)file, (char* const*)arguments); }
+
+int froglang_ensure_directory(void* path) {
+  const char* directory = (const char*)path;
+  if (mkdir(directory, 0777) != 0 && errno != EEXIST) return -1;
+  struct stat info;
+  if (stat(directory, &info) != 0 || !S_ISDIR(info.st_mode)) return -1;
+  return 0;
+}
+
+void* froglang_realpath(void* path, void* resolved) {
+  return realpath((const char*)path, (char*)resolved);
+}
+
+int froglang_path_exists(void* path) {
+  struct stat info;
+  return stat((const char*)path, &info) == 0;
+}
+
+int froglang_same_file(void* first, void* second) {
+  struct stat first_info;
+  struct stat second_info;
+  return stat((const char*)first, &first_info) == 0
+      && stat((const char*)second, &second_info) == 0
+      && first_info.st_dev == second_info.st_dev
+      && first_info.st_ino == second_info.st_ino;
+}
+
+int froglang_wait_child(int child) {
+  int status;
+  while (waitpid((pid_t)child, &status, 0) < 0) {
+    if (errno != EINTR) return -1;
+  }
+  if (WIFEXITED(status)) return WEXITSTATUS(status);
+  if (WIFSIGNALED(status)) return 128 + WTERMSIG(status);
+  return 1;
+}
+
+void froglang_finish_child(int status) {
+  if (fflush(stdout) != 0) status = 1;
+  _exit(status);
+}
+
+void froglang_reset_child_signals(void) {
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  action.sa_handler = SIG_DFL;
+  sigemptyset(&action.sa_mask);
+  (void)sigaction(SIGINT, &action, NULL);
+  (void)sigaction(SIGTERM, &action, NULL);
+  (void)sigaction(SIGPIPE, &action, NULL);
+  (void)sigaction(SIGHUP, &action, NULL);
+}
 
 " emit
 end
