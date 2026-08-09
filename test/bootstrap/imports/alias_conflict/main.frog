@@ -1,0 +1,5 @@
+from "left.frog" import value as shared
+from "right.frog" import value as shared
+
+proc main -- do
+end

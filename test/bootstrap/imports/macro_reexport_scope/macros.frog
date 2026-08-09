@@ -1,0 +1,5 @@
+proc helper int -- int do
+    10 +
+end
+
+macro scoped helper if dup 15 > do 1 + else 1 - end end

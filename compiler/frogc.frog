@@ -41,7 +41,8 @@ proc program-module-head-offset -- int do 8 end
 proc program-module-tail-offset -- int do 16 end
 proc program-module-count-offset -- int do 24 end
 proc program-next-proc-id-offset -- int do 32 end
-proc program-bytes -- int do 40 end
+proc program-token-count-offset -- int do 40 end
+proc program-bytes -- int do 48 end
 
 proc macro-name-start-offset -- int do 0 end
 proc macro-name-length-offset -- int do 8 end
@@ -86,7 +87,27 @@ proc import-canonical-path-offset -- int do 32 end
 proc import-canonical-path-length-offset -- int do 40 end
 proc import-bytes -- int do 48 end
 
+proc scope-name-module-offset -- int do 0 end
+proc scope-name-start-offset -- int do 8 end
+proc scope-name-length-offset -- int do 16 end
+proc scope-kind-offset -- int do 24 end
+proc scope-definition-module-offset -- int do 32 end
+proc scope-definition-index-offset -- int do 40 end
+proc scope-bytes -- int do 48 end
+
+proc scope-procedure -- int do 1 end
+proc scope-macro -- int do 2 end
+
+proc load-new -- int do 0 end
+proc load-loading -- int do 1 end
+proc load-loaded -- int do 2 end
+
+proc resolve-new -- int do 0 end
+proc resolve-resolving -- int do 1 end
+proc resolve-resolved -- int do 2 end
+
 proc max-source-bytes -- int do 4194304 end
+proc max-import-path-bytes -- int do 1024 end
 
 proc field-read ptr int -- int do + @i64 end
 
@@ -316,12 +337,14 @@ proc program-module-head ptr -- ptr do program-module-head-offset pointer-field-
 proc program-module-tail ptr -- ptr do program-module-tail-offset pointer-field-read end
 proc program-module-count ptr -- int do program-module-count-offset field-read end
 proc program-next-proc-id ptr -- int do program-next-proc-id-offset field-read end
+proc program-token-count ptr -- int do program-token-count-offset field-read end
 
 proc set-program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
 proc set-program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
 proc set-program-module-tail ptr ptr -- do program-module-tail-offset pointer-field-write end
 proc set-program-module-count int ptr -- do program-module-count-offset field-write end
 proc set-program-next-proc-id int ptr -- do program-next-proc-id-offset field-write end
+proc set-program-token-count int ptr -- do program-token-count-offset field-write end
 
 proc program-allocate-proc-id ptr -- int do
     let program do
@@ -985,8 +1008,8 @@ proc scan-one-macro ptr int -- int do
     end
 end
 
-proc scan-block-end ptr int -- int do
-    let ctx body-start do
+proc scan-block-end-with-outer-elif ptr int bool -- int do
+    let ctx body-start allow-outer-elif do
         body-start 1
         while
             let token-index depth do
@@ -1010,7 +1033,7 @@ proc scan-block-end ptr int -- int do
                         "declarations are only allowed at top level" fail
                         depth
                     elif ctx token-index "elif" token-equals do
-                        if depth 1 <= do
+                        if depth 1 <= allow-outer-elif ! && do
                             "elif outside active if" fail
                         end
                         depth
@@ -1044,6 +1067,9 @@ proc scan-block-end ptr int -- int do
         end
     end
 end
+
+proc scan-block-end ptr int -- int do false scan-block-end-with-outer-elif end
+proc scan-ignored-block-end ptr int -- int do true scan-block-end-with-outer-elif end
 
 proc scan-one-proc ptr int -- int do
     let ctx proc-token do
@@ -1171,6 +1197,51 @@ proc set-import-field int ptr int int -- do
     end
 end
 
+proc import-path-token-at ptr int -- int do import-path-token-offset import-field end
+proc import-name-token-at ptr int -- int do import-name-token-offset import-field end
+proc import-alias-token-at ptr int -- int do import-alias-token-offset import-field end
+proc import-target-module-at ptr int -- ptr do
+    let ctx index do ctx index import-address import-target-module-offset pointer-field-read end
+end
+proc import-canonical-path-at ptr int -- ptr do
+    let ctx index do ctx index import-address import-canonical-path-offset pointer-field-read end
+end
+proc import-canonical-path-length-at ptr int -- int do import-canonical-path-length-offset import-field end
+
+proc set-import-target-module ptr ptr int -- do
+    let module ctx index do module ctx index import-address import-target-module-offset pointer-field-write end
+end
+
+proc scope-address ptr int -- ptr do
+    let ctx index do ctx ctx-scope index scope-bytes * + end
+end
+
+proc scope-field ptr int int -- int do
+    let ctx index offset do ctx index scope-address offset field-read end
+end
+
+proc set-scope-field int ptr int int -- do
+    let value ctx index offset do value ctx index scope-address offset field-write end
+end
+
+proc scope-name-module-at ptr int -- ptr do
+    let ctx index do ctx index scope-address scope-name-module-offset pointer-field-read end
+end
+proc scope-name-start-at ptr int -- int do scope-name-start-offset scope-field end
+proc scope-name-length-at ptr int -- int do scope-name-length-offset scope-field end
+proc scope-kind-at ptr int -- int do scope-kind-offset scope-field end
+proc scope-definition-module-at ptr int -- ptr do
+    let ctx index do ctx index scope-address scope-definition-module-offset pointer-field-read end
+end
+proc scope-definition-index-at ptr int -- int do scope-definition-index-offset scope-field end
+
+proc set-scope-name-module ptr ptr int -- do
+    let module ctx index do module ctx index scope-address scope-name-module-offset pointer-field-write end
+end
+proc set-scope-definition-module ptr ptr int -- do
+    let module ctx index do module ctx index scope-address scope-definition-module-offset pointer-field-write end
+end
+
 proc token-contains-byte ptr int int -- bool do
     let ctx token byte do
         ctx token token-slice let bytes length do
@@ -1191,13 +1262,20 @@ end
 
 proc require-import-name ptr int -- do
     let ctx token do
+        ctx token require-word
         if ctx token "*" token-equals do
             "wildcard imports are not supported" fail
         end
         if ctx token 44 token-contains-byte do
             "commas are not valid in import lists" fail
         end
-        ctx token require-word
+        if
+            ctx token reserved-name
+            ctx token "(" token-equals ||
+            ctx token ")" token-equals ||
+        do
+            "invalid imported name" fail
+        end
     end
 end
 
@@ -1221,7 +1299,10 @@ proc scan-import-item ptr int ptr int int -- int do
         ctx token require-import-name
         token let name-token do
             token 1 + let next-token do
-                if next-token ctx ctx-token-count < ctx next-token "as" token-equals && do
+                if next-token ctx ctx-token-count >= do
+                    ctx path-token name-token 0 1 - canonical canonical-length add-import
+                    next-token
+                elif ctx next-token "as" token-equals do
                     next-token 1 + let alias-token do
                         if alias-token ctx ctx-token-count >= do "expected import alias" fail end
                         ctx alias-token require-import-name
@@ -1233,6 +1314,16 @@ proc scan-import-item ptr int ptr int int -- int do
                     next-token
                 end
             end
+        end
+    end
+end
+
+proc import-list-continues ptr int -- bool do
+    let ctx token do
+        if token ctx ctx-token-count >= do
+            false
+        else
+            ctx token ")" token-equals !
         end
     end
 end
@@ -1253,11 +1344,7 @@ proc scan-one-import ptr int -- int do
                                 if next-token ctx ctx-token-count >= do "expected ) after import list" fail end
                                 if ctx next-token ")" token-equals do "expected imported name" fail end
                                 next-token
-                                while let list-token do
-                                    list-token
-                                    list-token ctx ctx-token-count <
-                                    ctx list-token ")" token-equals ! &&
-                                end do
+                                while dup ctx swap import-list-continues do
                                     let list-token do ctx path-token canonical canonical-length list-token scan-import-item end
                                 end
                                 let list-token do
@@ -1275,6 +1362,18 @@ proc scan-one-import ptr int -- int do
                     end
                 end
             end
+        end
+    end
+end
+
+proc token-starts-block ptr int -- bool do
+    let ctx token do
+        if ctx token token-kind-at token-word != do
+            false
+        else
+            ctx token "if" token-equals
+            ctx token "while" token-equals ||
+            ctx token "let" token-equals ||
         end
     end
 end
@@ -1300,11 +1399,6 @@ proc scan-declarations ptr -- do
                     "module aliases are not supported" fail
                     token-index 1 +
                 elif
-                    ctx token-index 44 token-contains-byte
-                do
-                    "commas are not valid in import lists" fail
-                    token-index 1 +
-                elif
                     ctx token-index token-kind-at token-word ==
                     ctx token-index "macro" token-equals &&
                 do
@@ -1315,14 +1409,22 @@ proc scan-declarations ptr -- do
                 do
                     ctx token-index scan-one-proc
                 else
-                    "only procedure and macro declarations are allowed at bootstrap top level" fail
-                    token-index 1 +
+                    if ctx ctx-is-root do
+                        "only declarations and imports are allowed at top level" fail
+                        token-index 1 +
+                    elif ctx token-index token-starts-block do
+                        ctx token-index 1 + scan-ignored-block-end
+                    else
+                        token-index 1 +
+                    end
                 end
             end
         end
         drop
-        if ctx ctx-main-proc 0 < do
-            "missing main procedure" fail
+        if ctx ctx-is-root do
+            if ctx ctx-main-proc 0 < do
+                "missing main procedure" fail
+            end
         end
     end
 end
@@ -1728,23 +1830,25 @@ proc decode-string-copy-from ptr int int ptr int -- do
     end
 end
 
-proc decode-string ptr int -- ptr int do
-    let ctx token do
-        ctx token decoded-string-length let length do
-            length alloc let bytes do
-                ctx token 0 bytes 0 decode-string-copy-from
-                bytes length
-            end
+proc bytes-are-dot ptr int int -- bool do
+    let bytes start length do
+        if length 1 == do
+            bytes start byte-read 46 ==
+        else
+            false
         end
     end
 end
 
-proc bytes-are-dot ptr int int -- bool do
-    let bytes start length do length 1 == bytes start byte-read 46 == && end
-end
-
 proc bytes-are-dot-dot ptr int int -- bool do
-    let bytes start length do length 2 == bytes start byte-read 46 == && bytes start 1 + byte-read 46 == && end
+    let bytes start length do
+        if length 2 == do
+            bytes start byte-read 46 ==
+            bytes start 1 + byte-read 46 == &&
+        else
+            false
+        end
+    end
 end
 
 proc bytes-contain-byte ptr int int -- bool do
@@ -1764,6 +1868,113 @@ proc bytes-contain-byte ptr int int -- bool do
         let index found do found end
     end
 end
+
+proc byte-in-range int int int -- bool do
+    let value lower upper do value lower >= value upper <= && end
+end
+
+proc utf8-continuation-byte int -- bool do
+    let value do value 128 191 byte-in-range end
+end
+
+proc valid-utf8-from ptr int int -- bool do
+    let bytes length index do
+        if index length >= do
+            true
+        else
+            bytes index byte-read
+            let first do
+                if first 127 <= do
+                    bytes length index 1 + valid-utf8-from
+                elif first 194 223 byte-in-range do
+                    if index 2 + length > do
+                        false
+                    elif bytes index 1 + byte-read utf8-continuation-byte do
+                        bytes length index 2 + valid-utf8-from
+                    else
+                        false
+                    end
+                elif first 224 == do
+                    if index 3 + length > do
+                        false
+                    elif
+                        bytes index 1 + byte-read 160 191 byte-in-range
+                        bytes index 2 + byte-read utf8-continuation-byte &&
+                    do
+                        bytes length index 3 + valid-utf8-from
+                    else
+                        false
+                    end
+                elif
+                    first 225 236 byte-in-range
+                    first 238 239 byte-in-range ||
+                do
+                    if index 3 + length > do
+                        false
+                    elif
+                        bytes index 1 + byte-read utf8-continuation-byte
+                        bytes index 2 + byte-read utf8-continuation-byte &&
+                    do
+                        bytes length index 3 + valid-utf8-from
+                    else
+                        false
+                    end
+                elif first 237 == do
+                    if index 3 + length > do
+                        false
+                    elif
+                        bytes index 1 + byte-read 128 159 byte-in-range
+                        bytes index 2 + byte-read utf8-continuation-byte &&
+                    do
+                        bytes length index 3 + valid-utf8-from
+                    else
+                        false
+                    end
+                elif first 240 == do
+                    if index 4 + length > do
+                        false
+                    elif
+                        bytes index 1 + byte-read 144 191 byte-in-range
+                        bytes index 2 + byte-read utf8-continuation-byte &&
+                        bytes index 3 + byte-read utf8-continuation-byte &&
+                    do
+                        bytes length index 4 + valid-utf8-from
+                    else
+                        false
+                    end
+                elif first 241 243 byte-in-range do
+                    if index 4 + length > do
+                        false
+                    elif
+                        bytes index 1 + byte-read utf8-continuation-byte
+                        bytes index 2 + byte-read utf8-continuation-byte &&
+                        bytes index 3 + byte-read utf8-continuation-byte &&
+                    do
+                        bytes length index 4 + valid-utf8-from
+                    else
+                        false
+                    end
+                elif first 244 == do
+                    if index 4 + length > do
+                        false
+                    elif
+                        bytes index 1 + byte-read 128 143 byte-in-range
+                        bytes index 2 + byte-read utf8-continuation-byte &&
+                        bytes index 3 + byte-read utf8-continuation-byte &&
+                    do
+                        bytes length index 4 + valid-utf8-from
+                    else
+                        false
+                    end
+                else
+                    false
+                end
+            end
+        end
+    end
+end
+
+proc valid-utf8 ptr int -- bool do 0 valid-utf8-from end
 
 proc skip-path-separators ptr int int -- int do
     let bytes length index do
@@ -1891,42 +2102,52 @@ end
 
 proc normalize-import-path ptr int -- ptr int do
     let ctx token do
-        ctx token decode-string
-        let bytes length do
-            if bytes length 0 bytes-contain-byte do
-                "import file not found" fail
+        ctx token decoded-string-length
+        let length do
+            if length max-import-path-bytes > do
+                "import path exceeds max-import-path-bytes" fail
             end
-            length 1 + cell-bytes * alloc
-            let starts do
+            length alloc
+            let bytes do
+                ctx token 0 bytes 0 decode-string-copy-from
+                if bytes length valid-utf8 ! do
+                    "import path must be valid UTF-8" fail
+                end
+                if bytes length 0 bytes-contain-byte do
+                    "import file not found" fail
+                end
                 length 1 + cell-bytes * alloc
-                let lengths do
-                    if length 0 > do
-                        bytes 0 byte-read 47 ==
-                    else
-                        false
-                    end
-                    let absolute do
-                        bytes length absolute starts lengths 0 0 collect-path-components
-                        let count do
-                            length 2 + alloc
-                            let output do
-                                if count 0 == do
-                                    if absolute do
-                                        47 output 0 byte-write
+                let starts do
+                    length 1 + cell-bytes * alloc
+                    let lengths do
+                        if length 0 > do
+                            bytes 0 byte-read 47 ==
+                        else
+                            false
+                        end
+                        let absolute do
+                            bytes length absolute starts lengths 0 0 collect-path-components
+                            let count do
+                                length 2 + alloc
+                                let output do
+                                    if count 0 == do
+                                        if absolute do
+                                            47 output 0 byte-write
+                                        else
+                                            46 output 0 byte-write
+                                        end
+                                        output 1
                                     else
-                                        46 output 0 byte-write
-                                    end
-                                    output 1
-                                else
-                                    if absolute do
-                                        47 output 0 byte-write
-                                        1
-                                    else
-                                        0
-                                    end
-                                    let output-index do
-                                        output
-                                        bytes starts lengths count output 0 output-index write-path-components
+                                        if absolute do
+                                            47 output 0 byte-write
+                                            1
+                                        else
+                                            0
+                                        end
+                                        let output-index do
+                                            output
+                                            bytes starts lengths count output 0 output-index write-path-components
+                                        end
                                     end
                                 end
                             end
@@ -1935,6 +2156,288 @@ proc normalize-import-path ptr int -- ptr int do
                 end
             end
         end
+    end
+end
+
+proc initialize-module-source ptr ptr int -- do
+    let ctx source source-length do
+        if source-length max-source-bytes > do
+            "source exceeds max-source-bytes" fail
+        end
+        source ctx set-ctx-source
+        source-length ctx set-ctx-source-length
+        source-length 1 + token-bytes * alloc ctx set-ctx-tokens
+        0 ctx set-ctx-token-count
+        0 1 - ctx set-ctx-main-proc
+        ctx lex
+        ctx ctx-program program-token-count ctx ctx-token-count + ctx ctx-program set-program-token-count
+
+        ctx ctx-token-count 1 + proc-bytes * alloc ctx set-ctx-procs
+        ctx ctx-token-count 1 + macro-bytes * alloc ctx set-ctx-macros
+        ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-types
+        ctx ctx-token-count 1 + import-bytes * alloc ctx set-ctx-imports
+        ctx ctx-token-count 1 + scope-bytes * alloc ctx set-ctx-scope
+        0 ctx set-ctx-scope-count
+        resolve-new ctx set-ctx-resolve-state
+        ctx scan-declarations
+    end
+end
+
+proc find-module-by-path-from ptr ptr int -- ptr do
+    let module path path-length do
+        if module int cast 0 == do
+            0 ptr cast
+        elif module ctx-is-root do
+            module ctx-next-module path path-length find-module-by-path-from
+        elif
+            module ctx-canonical-path
+            module ctx-canonical-path-length
+            path path-length
+            bytes-equal
+        do
+            module
+        else
+            module ctx-next-module path path-length find-module-by-path-from
+        end
+    end
+end
+
+proc find-module-by-path ptr ptr int -- ptr do
+    let program path path-length do
+        program program-module-head path path-length find-module-by-path-from
+    end
+end
+
+proc load-module-imports ptr ptr -- do
+    let program module do
+        0
+        while dup module ctx-import-count < do
+            dup let import-index do
+                program module import-index load-import-target drop
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc load-import-target ptr ptr int -- ptr do
+    let program importing-module import-index do
+        importing-module import-index import-canonical-path-at
+        importing-module import-index import-canonical-path-length-at
+        let canonical canonical-length do
+            program canonical canonical-length find-module-by-path
+            let existing do
+                if existing int cast 0 != do
+                    if existing ctx-load-state load-loading == do
+                        "cyclic import" fail
+                    end
+                    existing importing-module import-index set-import-target-module
+                    existing
+                else
+                    canonical canonical-length read-file
+                    let source source-length success do
+                        if success ! do
+                            "import file not found" fail
+                        end
+                        ctx-bytes alloc
+                        let module do
+                            canonical module set-ctx-canonical-path
+                            canonical-length module set-ctx-canonical-path-length
+                            0 ptr cast module set-ctx-imports
+                            0 module set-ctx-import-count
+                            0 ptr cast module set-ctx-scope
+                            0 module set-ctx-scope-count
+                            load-loading module set-ctx-load-state
+                            resolve-new module set-ctx-resolve-state
+                            false module set-ctx-is-root
+                            program module program-add-module
+                            module source source-length initialize-module-source
+                            program module load-module-imports
+                            load-loaded module set-ctx-load-state
+                            module importing-module import-index set-import-target-module
+                            module
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc scope-name-equals ptr int ptr int -- bool do
+    let ctx scope-index bytes length do
+        ctx scope-index scope-name-module-at ctx-source
+        ctx scope-index scope-name-start-at +
+        ctx scope-index scope-name-length-at
+        bytes length
+        bytes-equal
+    end
+end
+
+proc find-scope-symbol-from ptr ptr int int -- int do
+    let ctx bytes length scope-index do
+        if scope-index ctx ctx-scope-count >= do
+            0 1 -
+        elif ctx scope-index bytes length scope-name-equals do
+            scope-index
+        else
+            ctx bytes length scope-index 1 + find-scope-symbol-from
+        end
+    end
+end
+
+proc find-scope-symbol ptr ptr int -- int do
+    let ctx name-module token do
+        name-module token token-slice
+        let bytes length do
+            ctx bytes length 0 find-scope-symbol-from
+        end
+    end
+end
+
+proc scope-symbols-identical ptr int ptr int -- bool do
+    let first first-index second second-index do
+        first first-index scope-kind-at second second-index scope-kind-at ==
+        first first-index scope-definition-module-at int cast
+        second second-index scope-definition-module-at int cast == &&
+        first first-index scope-definition-index-at second second-index scope-definition-index-at == &&
+    end
+end
+
+proc add-scope-symbol ptr ptr int int int ptr int -- do
+    let ctx name-module name-start name-length kind definition-module definition-index do
+        ctx ctx-scope-count
+        let scope-index do
+            name-module ctx scope-index set-scope-name-module
+            name-start ctx scope-index scope-name-start-offset set-scope-field
+            name-length ctx scope-index scope-name-length-offset set-scope-field
+            kind ctx scope-index scope-kind-offset set-scope-field
+            definition-module ctx scope-index set-scope-definition-module
+            definition-index ctx scope-index scope-definition-index-offset set-scope-field
+            ctx ctx-scope-count 1 + ctx set-ctx-scope-count
+        end
+    end
+end
+
+proc add-scope-symbol-from-token ptr ptr int int ptr int -- do
+    let ctx name-module token kind definition-module definition-index do
+        ctx
+        name-module
+        name-module token token-start-at
+        name-module token token-length-at
+        kind
+        definition-module
+        definition-index
+        add-scope-symbol
+    end
+end
+
+proc resolve-one-import ptr int -- do
+    let ctx import-index do
+        ctx import-index import-target-module-at
+        let target do
+            if target int cast 0 == do
+                "internal import target is missing" fail
+            end
+            target resolve-module-scope
+            target ctx ctx import-index import-name-token-at find-scope-symbol
+            let target-symbol do
+                if target-symbol 0 < do
+                    "imported name not found" fail
+                end
+                ctx import-index import-alias-token-at
+                if dup 0 < do
+                    drop ctx import-index import-name-token-at
+                end
+                let visible-token do
+                    if
+                        ctx visible-token find-proc 0 >=
+                        ctx visible-token find-macro 0 >= ||
+                    do
+                        "import alias conflict" fail
+                    end
+                    ctx ctx visible-token find-scope-symbol
+                    let existing do
+                        if existing 0 >= do
+                            if ctx existing target target-symbol scope-symbols-identical ! do
+                                "import alias conflict" fail
+                            end
+                        else
+                            ctx
+                            ctx
+                            visible-token
+                            target target-symbol scope-kind-at
+                            target target-symbol scope-definition-module-at
+                            target target-symbol scope-definition-index-at
+                            add-scope-symbol-from-token
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc resolve-module-scope ptr -- do
+    let ctx do
+        if ctx ctx-resolve-state resolve-resolved == do
+        else
+            if ctx ctx-resolve-state resolve-resolving == do
+                "cyclic import" fail
+            end
+            resolve-resolving ctx set-ctx-resolve-state
+            0
+            while dup ctx ctx-import-count < do
+                dup ctx swap resolve-one-import
+                1 +
+            end
+            drop
+            0
+            while dup ctx ctx-proc-count < do
+                dup
+                let proc-index do
+                    ctx
+                    ctx
+                    ctx proc-index proc-name-start-at
+                    ctx proc-index proc-name-length-at
+                    scope-procedure
+                    ctx
+                    proc-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            0
+            while dup ctx ctx-macro-count < do
+                dup
+                let macro-index do
+                    ctx
+                    ctx
+                    ctx macro-index macro-name-start-at
+                    ctx macro-index macro-name-length-at
+                    scope-macro
+                    ctx
+                    macro-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            resolve-resolved ctx set-ctx-resolve-state
+        end
+    end
+end
+
+proc resolve-all-module-scopes ptr -- do
+    let program do
+        program program-module-head
+        while dup int cast 0 != do
+            dup resolve-module-scope
+            ctx-next-module
+        end
+        drop
     end
 end
 
@@ -2790,10 +3293,19 @@ end
 
 proc compile-ordinary-word ptr int -- do
     let cc token-index do
-        cc cc-scope-module token-index find-macro
-        let macro-index do
-            if macro-index 0 >= do
-                cc cc cc-scope-module macro-index compile-macro
+        cc cc-scope-module cc cc-defining-module token-index find-scope-symbol
+        let symbol-index do
+            if symbol-index 0 >= do
+                cc cc-scope-module symbol-index scope-kind-at scope-macro ==
+            else
+                false
+            end
+            let is-macro do
+            if is-macro do
+                cc
+                cc cc-scope-module symbol-index scope-definition-module-at
+                cc cc-scope-module symbol-index scope-definition-index-at
+                compile-macro
             elif cc token-index compile-type-word do
             elif cc token-index compile-intrinsic do
             else
@@ -2802,15 +3314,20 @@ proc compile-ordinary-word ptr int -- do
                     if local-index 0 >= do
                         cc token-index local-index compile-local-reference
                     else
-                        cc cc-scope-module token-index find-proc
-                        let proc-index do
-                            if proc-index 0 < do
-                                "unknown word" fail
-                            end
-                            cc token-index cc cc-scope-module proc-index compile-procedure-call
+                        if symbol-index 0 < do
+                            "unknown word" fail
                         end
+                        if cc cc-scope-module symbol-index scope-kind-at scope-procedure != do
+                            "unknown word" fail
+                        end
+                        cc
+                        token-index
+                        cc cc-scope-module symbol-index scope-definition-module-at
+                        cc cc-scope-module symbol-index scope-definition-index-at
+                        compile-procedure-call
                     end
                 end
+            end
             end
         end
     end
@@ -2935,11 +3452,11 @@ proc create-compile-context ptr ptr int -- ptr do
             ctx cc set-cc-defining-module
             ctx cc set-cc-scope-module
             proc-index cc set-cc-proc
-            ctx ctx-token-count 1 + cell-bytes * alloc cc set-cc-type-stack
+            program program-token-count 1 + cell-bytes * alloc cc set-cc-type-stack
             0 cc set-cc-type-count
-            ctx ctx-token-count 1 + block-bytes * alloc cc set-cc-blocks
+            program program-token-count 1 + block-bytes * alloc cc set-cc-blocks
             0 cc set-cc-block-count
-            ctx ctx-token-count 1 + local-bytes * alloc cc set-cc-locals
+            program program-token-count 1 + local-bytes * alloc cc set-cc-locals
             0 cc set-cc-local-count
             0 cc set-cc-next-local
             0 cc set-cc-indent
@@ -3016,6 +3533,7 @@ proc main -- do
         0 ptr cast program set-program-module-tail
         0 program set-program-module-count
         0 program set-program-next-proc-id
+        0 program set-program-token-count
         ctx-bytes alloc
         let ctx do
             0 ptr cast ctx set-ctx-canonical-path
@@ -3024,25 +3542,17 @@ proc main -- do
             0 ctx set-ctx-import-count
             0 ptr cast ctx set-ctx-scope
             0 ctx set-ctx-scope-count
-            0 ctx set-ctx-load-state
-            0 ctx set-ctx-resolve-state
+            load-loading ctx set-ctx-load-state
+            resolve-new ctx set-ctx-resolve-state
             true ctx set-ctx-is-root
             program ctx program-add-module
             ctx program set-program-root-module
             read-source
             let source source-length do
-            source ctx set-ctx-source
-            source-length ctx set-ctx-source-length
-            source-length 1 + token-bytes * alloc ctx set-ctx-tokens
-            0 ctx set-ctx-token-count
-            0 1 - ctx set-ctx-main-proc
-            ctx lex
-
-            ctx ctx-token-count 1 + proc-bytes * alloc ctx set-ctx-procs
-            ctx ctx-token-count 1 + macro-bytes * alloc ctx set-ctx-macros
-            ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-types
-            ctx ctx-token-count 1 + import-bytes * alloc ctx set-ctx-imports
-            ctx scan-declarations
+            ctx source source-length initialize-module-source
+            program ctx load-module-imports
+            load-loaded ctx set-ctx-load-state
+            program resolve-all-module-scopes
 
             program emit-c-emitter-support
             program compile-all-procedures

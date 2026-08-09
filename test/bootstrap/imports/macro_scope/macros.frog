@@ -1,0 +1,10 @@
+from "dep.frog" import imported
+
+99 print
+
+proc local int -- int do
+    10 +
+end
+
+macro local_macro 2 + end
+macro expand imported local local_macro let value do value end end

@@ -1,0 +1,3 @@
+proc imported int -- int do
+    1 +
+end

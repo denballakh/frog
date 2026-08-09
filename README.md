@@ -28,7 +28,7 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The self-hosted compiler requires an explicit `proc main -- do ... end` and supports single-file macros. Imports are still being migrated from the Python compiler.
+The self-hosted compiler requires an explicit `proc main -- do ... end`. It supports module-aware macros and root-relative imports of procedures and macros, including aliases, grouped imports, and reexports.
 
 # Examples
 -> [/examples/](./examples/)

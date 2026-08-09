@@ -1,0 +1,4 @@
+import "lib.frog" as library
+
+proc main -- do
+end

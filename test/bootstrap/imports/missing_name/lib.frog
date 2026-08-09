@@ -1,0 +1,3 @@
+proc present -- int do
+    1
+end

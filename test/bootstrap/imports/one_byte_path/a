@@ -1,0 +1,3 @@
+proc value -- int do
+    21
+end

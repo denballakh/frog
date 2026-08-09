@@ -1,0 +1,9 @@
+if false do
+    "ignored,then" drop
+elif true do
+    "ignored,elif" drop
+else
+    "ignored,else" drop
+end
+
+proc value -- int do 44 end

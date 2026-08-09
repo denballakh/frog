@@ -1,0 +1,7 @@
+proc one -- int do
+    1
+end
+
+proc two -- int do
+    2
+end

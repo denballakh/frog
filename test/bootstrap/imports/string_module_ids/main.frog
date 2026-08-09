@@ -1,0 +1,14 @@
+from "procedure.frog" import text
+from "direct_macros.frog" import direct_text
+from "facade.frog" import reexport_text
+
+proc emit_one ptr int -- do
+    drop @u8 putc
+end
+
+proc main -- do
+    text emit_one
+    direct_text emit_one
+    reexport_text emit_one
+    10 putc
+end

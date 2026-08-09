@@ -1,0 +1,4 @@
+from "self.frog" import value
+
+proc main -- do
+end

@@ -1,0 +1,4 @@
+from "source.frog" import value as if
+
+proc main -- do
+end

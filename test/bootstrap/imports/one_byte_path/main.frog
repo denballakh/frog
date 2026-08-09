@@ -1,0 +1,5 @@
+from "a" import value
+
+proc main -- do
+    value print
+end

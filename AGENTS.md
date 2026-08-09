@@ -154,7 +154,7 @@ Subcommands:
 - Generated C sanitizes Frog procedure names into valid C identifiers for `proc_*`, `ret_*`, and related result variable prefixes, so punctuation in procedure names does not directly leak into C symbols.
 - The migration compiler in `compiler/frogc.frog` directly typechecks and emits a numeric-symbol stack-machine C backend. `compiler/frogc.c` must always be a fixed point: compiling the Frog source with it and recompiling with the result must reproduce the checked C byte-for-byte.
 - The migration compiler requires an explicit `proc main -- do ... end` with an empty stack contract. When the regression corpus moves to this compiler, test helpers should wrap ordinary inline cases in that procedure so individual fixtures stay concise.
-- The migration compiler collects all single-file macro declarations before compiling procedures, expands them in the caller's compile/type/block context, resolves macros before ordinary words, and rejects recursive expansion and malformed macro bodies during declaration scanning.
+- The migration compiler collects module declarations before compiling procedures, resolves imported and reexported procedures and macros in their defining-module scope, expands macros in the caller's compile/type/block context, resolves macros before ordinary words, and rejects recursive expansion and malformed macro bodies during declaration scanning.
 - During self-hosting, new compiler/bootstrap features do not need a matching Python interpreter implementation. Do not extend the interpreter solely for parity; it will be removed together with the Python compiler.
 
 ## Language Semantics

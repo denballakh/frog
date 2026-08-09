@@ -1,0 +1,1 @@
+proc text -- ptr int do "P" end

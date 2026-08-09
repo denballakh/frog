@@ -1,0 +1,4 @@
+from "\xFF" import value
+
+proc main -- do
+end

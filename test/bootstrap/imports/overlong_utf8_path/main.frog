@@ -1,0 +1,5 @@
+from "\xE0\x80\x80" import value
+
+proc main -- do
+    value print
+end

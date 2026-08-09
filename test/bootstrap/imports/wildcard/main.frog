@@ -1,0 +1,4 @@
+from "lib.frog" import *
+
+proc main -- do
+end

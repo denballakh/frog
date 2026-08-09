@@ -1,0 +1,8 @@
+proc local -- int do
+    7
+end
+
+from "source.frog" import value as local
+
+proc main -- do
+end
