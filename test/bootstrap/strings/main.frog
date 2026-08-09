@@ -1,0 +1,46 @@
+from "lib.frog" import shared
+
+proc main -- do
+    "same"
+    let root-bytes root-length do
+        shared
+        let imported-bytes imported-length do
+            root-length imported-length == print
+            root-bytes int cast imported-bytes int cast == print
+        end
+    end
+
+    "a"
+    let plain-bytes plain-length do
+        "\x61"
+        let escaped-bytes escaped-length do
+            plain-length escaped-length == print
+            plain-bytes int cast escaped-bytes int cast == print
+        end
+    end
+
+    "\xB2\x39\x51\x9B\xF2\x9C\x09\x91"
+    let first-collision first-length do
+        "\xEF\xEF\x6D\x6A\x8C\xFD\xCE\x4F"
+        let second-collision second-length do
+            first-length second-length == print
+            first-collision int cast second-collision int cast != print
+            first-collision @u8 print
+            second-collision @u8 print
+        end
+    end
+
+    "A\"\\\n\0\xFF??/"
+    let bytes length do
+        length print
+        bytes @u8 print
+        bytes 1 + @u8 print
+        bytes 2 + @u8 print
+        bytes 3 + @u8 print
+        bytes 4 + @u8 print
+        bytes 5 + @u8 print
+        bytes 6 + @u8 print
+        bytes 7 + @u8 print
+        bytes 8 + @u8 print
+    end
+end

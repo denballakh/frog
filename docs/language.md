@@ -12,7 +12,8 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.
-- String literals push `ptr int`: a pointer to their bytes followed by their byte length. Their bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte.
+- String literals push `ptr int`: a pointer to their bytes followed by their byte length. Their bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Equal decoded byte strings share one generated storage object across all modules, even when their source spellings differ, so their pointers compare equal.
+- Generated C string symbols use a deterministic hash of the decoded bytes and a collision suffix when unequal strings have the same hash. The generated C initializer has a trailing NUL byte, but Frog's explicit byte length excludes it and continues to preserve embedded NUL bytes.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 

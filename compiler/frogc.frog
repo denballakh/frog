@@ -46,7 +46,19 @@ proc program-module-tail-offset -- int do 16 end
 proc program-module-count-offset -- int do 24 end
 proc program-next-proc-id-offset -- int do 32 end
 proc program-token-count-offset -- int do 40 end
-proc program-bytes -- int do 48 end
+proc program-strings-offset -- int do 48 end
+proc program-string-count-offset -- int do 56 end
+proc program-bytes -- int do 64 end
+
+proc string-bytes-offset -- int do 0 end
+proc string-length-offset -- int do 8 end
+proc string-hash-offset -- int do 16 end
+proc string-collision-offset -- int do 24 end
+proc string-bytes -- int do 32 end
+
+proc fnv-offset-basis -- int do 2166136261 end
+proc fnv-prime -- int do 16777619 end
+proc fnv-modulus -- int do 4294967296 end
 
 proc macro-name-start-offset -- int do 0 end
 proc macro-name-length-offset -- int do 8 end
@@ -361,6 +373,8 @@ proc program-module-tail ptr -- ptr do program-module-tail-offset pointer-field-
 proc program-module-count ptr -- int do program-module-count-offset field-read end
 proc program-next-proc-id ptr -- int do program-next-proc-id-offset field-read end
 proc program-token-count ptr -- int do program-token-count-offset field-read end
+proc program-strings ptr -- ptr do program-strings-offset pointer-field-read end
+proc program-string-count ptr -- int do program-string-count-offset field-read end
 
 proc set-program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
 proc set-program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
@@ -368,6 +382,30 @@ proc set-program-module-tail ptr ptr -- do program-module-tail-offset pointer-fi
 proc set-program-module-count int ptr -- do program-module-count-offset field-write end
 proc set-program-next-proc-id int ptr -- do program-next-proc-id-offset field-write end
 proc set-program-token-count int ptr -- do program-token-count-offset field-write end
+proc set-program-strings ptr ptr -- do program-strings-offset pointer-field-write end
+proc set-program-string-count int ptr -- do program-string-count-offset field-write end
+
+proc string-address ptr int -- ptr do
+    let program index do program program-strings index string-bytes * + end
+end
+
+proc string-field ptr int int -- int do
+    let program index offset do program index string-address offset field-read end
+end
+proc set-string-field int ptr int int -- do
+    let value program index offset do value program index string-address offset field-write end
+end
+
+proc string-data-at ptr int -- ptr do
+    let program index do program index string-address string-bytes-offset pointer-field-read end
+end
+proc string-length-at ptr int -- int do string-length-offset string-field end
+proc string-hash-at ptr int -- int do string-hash-offset string-field end
+proc string-collision-at ptr int -- int do string-collision-offset string-field end
+
+proc set-string-data ptr ptr int -- do
+    let data program index do data program index string-address string-bytes-offset pointer-field-write end
+end
 
 proc program-allocate-proc-id ptr -- int do
     let program do
@@ -2111,6 +2149,147 @@ proc decode-string-copy-from ptr int int ptr int -- do
     end
 end
 
+proc hash-string-bytes ptr int -- int do
+    let bytes length do
+        0 fnv-offset-basis
+        while
+            let index hash do
+                index hash index length <
+            end
+        do
+            let index hash do
+                index 1 +
+                hash bytes index byte-read ^ fnv-prime * fnv-modulus %
+            end
+        end
+        let index hash do hash end
+    end
+end
+
+proc pooled-string-matches ptr int ptr int int -- bool do
+    let program string-index bytes length hash do
+        if program string-index string-hash-at hash != do
+            false
+        elif program string-index string-length-at length != do
+            false
+        else
+            program string-index string-data-at
+            program string-index string-length-at
+            bytes length bytes-equal
+        end
+    end
+end
+
+proc find-pooled-string ptr ptr int int -- int do
+    let program bytes length hash do
+        0 0 1 -
+        while
+            let string-index found do
+                string-index found
+                string-index program program-string-count < found 0 < &&
+            end
+        do
+            let string-index found do
+                string-index 1 +
+                if program string-index bytes length hash pooled-string-matches do
+                    string-index
+                else
+                    found
+                end
+            end
+        end
+        let string-index found do found end
+    end
+end
+
+proc count-string-hash ptr int -- int do
+    let program hash do
+        0 0
+        while
+            let string-index count do
+                string-index count string-index program program-string-count <
+            end
+        do
+            let string-index count do
+                string-index 1 +
+                if program string-index string-hash-at hash == do
+                    count 1 +
+                else
+                    count
+                end
+            end
+        end
+        let string-index count do count end
+    end
+end
+
+proc add-pooled-string ptr ptr int int int -- int do
+    let program bytes length hash collision do
+        program program-string-count
+        let string-index do
+            bytes program string-index set-string-data
+            length program string-index string-length-offset set-string-field
+            hash program string-index string-hash-offset set-string-field
+            collision program string-index string-collision-offset set-string-field
+            string-index 1 + program set-program-string-count
+            string-index
+        end
+    end
+end
+
+proc intern-string-token ptr ptr int -- do
+    let program ctx token do
+        ctx token decoded-string-length
+        let length do
+            length alloc
+            let bytes do
+                ctx token 0 bytes 0 decode-string-copy-from
+                bytes length hash-string-bytes
+                let hash do
+                    program bytes length hash find-pooled-string
+                    let existing do
+                        if existing 0 >= do
+                            existing
+                        else
+                            program bytes length hash program hash count-string-hash add-pooled-string
+                        end
+                        ctx token token-value-offset set-token-field
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc intern-module-strings ptr ptr -- do
+    let program ctx do
+        0
+        while dup ctx ctx-token-count < do
+            dup
+            let token do
+                if ctx token token-kind-at token-string == do
+                    program ctx token intern-string-token
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc initialize-string-pool ptr -- do
+    let program do
+        program program-token-count 1 + string-bytes * alloc program set-program-strings
+        0 program set-program-string-count
+        program program-module-head
+        while dup int cast 0 != do
+            dup program swap intern-module-strings
+            ctx-next-module
+        end
+        drop
+    end
+end
+
 proc bytes-are-dot ptr int int -- bool do
     let bytes start length do
         if length 1 == do
@@ -2903,56 +3082,90 @@ proc emit-c-preamble ptr -- do
     "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i16(void* ptr, Cell value) { int16_t stored = (int16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i32(void* ptr, Cell value) { int32_t stored = (int32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i64(void* ptr, Cell value) { int64_t stored = (int64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\n\n" emit
 end
 
-proc emit-c-string-bytes ptr int int int -- do
-    let ctx token byte-index length do
-        if byte-index length >= do
+proc emit-c-string-byte int -- do
+    let byte do
+        if byte 34 == do
+            "\\\"" emit
+        elif byte 92 == do
+            "\\\\" emit
+        elif byte 10 == do
+            "\\n" emit
+        elif byte 13 == do
+            "\\r" emit
+        elif byte 9 == do
+            "\\t" emit
+        elif byte 63 == do
+            "\\?" emit
+        elif byte 32 >= byte 126 <= && do
+            byte putc
         else
-            if byte-index 0 != do ", " emit end
-            ctx token byte-index decoded-string-byte emit-unsigned
-            ctx token byte-index 1 + length emit-c-string-bytes
+            92 putc
+            byte 64 / 48 + putc
+            byte 8 / 8 % 48 + putc
+            byte 8 % 48 + putc
         end
     end
 end
 
+proc emit-c-string-bytes ptr int -- do
+    let bytes length do
+        0
+        while dup length < do
+            dup
+            let index do
+                bytes index byte-read emit-c-string-byte
+            end
+            1 +
+        end
+        drop
+    end
+end
+
 proc emit-string-symbol ptr int -- do
-    let ctx token do
+    let program string-index do
         "frog_string_" emit
-        ctx ctx-module-id
-        let module-id do
-            if module-id 0 == do
-                token emit-unsigned
-            else
-                "m" emit module-id emit-unsigned "_t" emit token emit-unsigned
+        program string-index string-hash-at emit-unsigned
+        program string-index string-collision-at
+        let collision do
+            if collision 0 > do
+                "_" emit collision emit-unsigned
             end
         end
     end
 end
 
 proc emit-c-string-literal ptr int -- do
-    let ctx token do
-        "const uint8_t " emit ctx token emit-string-symbol
-        "[] = {" emit
-        ctx token decoded-string-length
-        let length do
-            if length 0 == do
-                "0" emit
-            else
-                ctx token 0 length emit-c-string-bytes
-            end
-        end
-        "};\n" emit
+    let program string-index do
+        "static const uint8_t " emit program string-index emit-string-symbol
+        "[] = \"" emit
+        program string-index string-data-at
+        program string-index string-length-at
+        emit-c-string-bytes
+        "\";\n" emit
     end
 end
 
 proc emit-string-globals ptr -- do
-    let ctx do
+    let program do
         0
-        while dup ctx ctx-token-count < do
+        while dup program program-string-count < do
             dup
-            let token-index do
-                if ctx token-index token-kind-at token-string == do
-                    ctx token-index emit-c-string-literal
-                end
+            let string-index do
+                program string-index emit-c-string-literal
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-string-references ptr -- do
+    let program do
+        0
+        while dup program program-string-count < do
+            dup
+            let string-index do
+                "  (void)" emit program string-index emit-string-symbol ";\n" emit
             end
             1 +
         end
@@ -3038,12 +3251,7 @@ end
 proc emit-c-emitter-support ptr -- do
     let program do
         program program-root-module emit-c-preamble
-        program program-module-head
-        while dup int cast 0 != do
-            dup emit-string-globals
-            ctx-next-module
-        end
-        drop
+        program emit-string-globals
         program program-module-head
         while dup int cast 0 != do
             dup emit-prototypes
@@ -3409,14 +3617,17 @@ end
 
 proc emit-push-string ptr int -- do
     let cc token-index do
-        cc emit-indent
-        "frog_push((Cell)(intptr_t)" emit
-        cc cc-defining-module token-index emit-string-symbol
-        ");" emit 10 putc
-        cc emit-indent
-        "frog_push(" emit
-        cc cc-defining-module token-index decoded-string-length emit-unsigned
-        ");" emit 10 putc
+        cc cc-defining-module token-index token-value-at
+        let string-index do
+            cc emit-indent
+            "frog_push((Cell)(intptr_t)" emit
+            cc cc-program string-index emit-string-symbol
+            ");" emit 10 putc
+            cc emit-indent
+            "frog_push(" emit
+            cc cc-program string-index string-length-at emit-unsigned
+            ");" emit 10 putc
+        end
     end
 end
 
@@ -4049,9 +4260,10 @@ proc emit-main-wrapper ptr -- do
     let program do
         program program-root-module
         let ctx do
-        "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n  " emit
-        ctx ctx ctx-main-proc proc-global-id-at emit-proc-name
-        "();\n  if (frog_stack.count != 0) frog_runtime_fail();\n  free(frog_stack.values);\n  return 0;\n}\n" emit
+            "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n" emit
+            program emit-string-references
+            "  " emit ctx ctx ctx-main-proc proc-global-id-at emit-proc-name
+            "();\n  if (frog_stack.count != 0) frog_runtime_fail();\n  free(frog_stack.values);\n  return 0;\n}\n" emit
         end
     end
 end
@@ -4067,6 +4279,8 @@ proc main -- do
         0 program set-program-module-count
         0 program set-program-next-proc-id
         0 program set-program-token-count
+        0 ptr cast program set-program-strings
+        0 program set-program-string-count
         ctx-bytes alloc
         let ctx do
             0 ptr cast ctx set-ctx-canonical-path
@@ -4085,6 +4299,7 @@ proc main -- do
             ctx source source-length initialize-module-source
             program ctx load-module-imports
             load-loaded ctx set-ctx-load-state
+            program initialize-string-pool
             program resolve-all-module-scopes
             program validate-external-declarations
 
