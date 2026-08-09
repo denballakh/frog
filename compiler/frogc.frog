@@ -10,6 +10,8 @@ proc type-bool -- int do 2 end
 proc type-ptr -- int do 3 end
 proc type-type -- int do 4 end
 
+proc max-int -- int do 1 62 << dup 1 - + end
+
 proc token-int -- int do 1 end
 proc token-bool -- int do 2 end
 proc token-char -- int do 3 end
@@ -478,6 +480,13 @@ proc parse-decimal ptr int int -- int do
             end
         do
             let index value do
+                if
+                    value max-int 10 / >
+                    value max-int 10 / ==
+                    source start index + byte-read 48 - max-int 10 % > && ||
+                do
+                    "integer literal exceeds the signed 64-bit range" fail
+                end
                 index 1 +
                 value 10 * source start index + byte-read 48 - +
             end
@@ -565,17 +574,27 @@ proc lex-character ptr int int int -- do
         if ctx ctx-lex-index ctx ctx-source-length >= do
             "unterminated character literal" fail
         end
-        ctx ctx ctx-lex-index source-byte
-        let value do
-            ctx lex-advance
+        if ctx ctx ctx-lex-index source-byte 10 == do
+            "unterminated character literal" fail
+        end
+        if ctx ctx ctx-lex-index source-byte 39 == do
+            "invalid character literal" fail
+        end
+        ctx ctx-source ctx ctx-source-length ctx ctx-lex-index utf8-codepoint-at
+        let value width do
+            ctx width lex-advance-count
             if ctx ctx-lex-index ctx ctx-source-length >= do
                 "unterminated character literal" fail
             end
             if ctx ctx ctx-lex-index source-byte 39 != do
-                "character literal must contain one byte" fail
+                if ctx ctx ctx-lex-index source-byte 10 == do
+                    "unterminated character literal" fail
+                else
+                    "invalid character literal" fail
+                end
             end
             ctx lex-advance
-            ctx token-char start 3 value line column add-token
+            ctx token-char start width 2 + value line column add-token
         end
     end
 end
@@ -984,12 +1003,6 @@ proc scan-one-macro ptr int -- int do
                     "duplicate macro name" fail
                 end
             end
-            ctx name-token find-proc
-            let existing-proc do
-                if existing-proc 0 >= do
-                    "macro name conflicts with procedure name" fail
-                end
-            end
             ctx ctx-macro-count
             let macro-index do
                 ctx name-token token-start-at ctx macro-index macro-name-start-offset set-macro-field
@@ -1089,12 +1102,6 @@ proc scan-one-proc ptr int -- int do
                     ctx name-token token-slice emit-error
                     10 eputc
                     1 exit
-                end
-            end
-            ctx name-token find-macro
-            let existing-macro do
-                if existing-macro 0 >= do
-                    "procedure name conflicts with macro name" fail
                 end
             end
 
@@ -1877,97 +1884,114 @@ proc utf8-continuation-byte int -- bool do
     let value do value 128 191 byte-in-range end
 end
 
-proc valid-utf8-from ptr int int -- bool do
+proc utf8-sequence-width ptr int int -- int do
     let bytes length index do
         if index length >= do
-            true
+            0
         else
             bytes index byte-read
             let first do
                 if first 127 <= do
-                    bytes length index 1 + valid-utf8-from
+                    1
                 elif first 194 223 byte-in-range do
                     if index 2 + length > do
-                        false
+                        0
                     elif bytes index 1 + byte-read utf8-continuation-byte do
-                        bytes length index 2 + valid-utf8-from
+                        2
                     else
-                        false
+                        0
                     end
                 elif first 224 == do
                     if index 3 + length > do
-                        false
+                        0
                     elif
                         bytes index 1 + byte-read 160 191 byte-in-range
                         bytes index 2 + byte-read utf8-continuation-byte &&
                     do
-                        bytes length index 3 + valid-utf8-from
+                        3
                     else
-                        false
+                        0
                     end
                 elif
                     first 225 236 byte-in-range
                     first 238 239 byte-in-range ||
                 do
                     if index 3 + length > do
-                        false
+                        0
                     elif
                         bytes index 1 + byte-read utf8-continuation-byte
                         bytes index 2 + byte-read utf8-continuation-byte &&
                     do
-                        bytes length index 3 + valid-utf8-from
+                        3
                     else
-                        false
+                        0
                     end
                 elif first 237 == do
                     if index 3 + length > do
-                        false
+                        0
                     elif
                         bytes index 1 + byte-read 128 159 byte-in-range
                         bytes index 2 + byte-read utf8-continuation-byte &&
                     do
-                        bytes length index 3 + valid-utf8-from
+                        3
                     else
-                        false
+                        0
                     end
                 elif first 240 == do
                     if index 4 + length > do
-                        false
+                        0
                     elif
                         bytes index 1 + byte-read 144 191 byte-in-range
                         bytes index 2 + byte-read utf8-continuation-byte &&
                         bytes index 3 + byte-read utf8-continuation-byte &&
                     do
-                        bytes length index 4 + valid-utf8-from
+                        4
                     else
-                        false
+                        0
                     end
                 elif first 241 243 byte-in-range do
                     if index 4 + length > do
-                        false
+                        0
                     elif
                         bytes index 1 + byte-read utf8-continuation-byte
                         bytes index 2 + byte-read utf8-continuation-byte &&
                         bytes index 3 + byte-read utf8-continuation-byte &&
                     do
-                        bytes length index 4 + valid-utf8-from
+                        4
                     else
-                        false
+                        0
                     end
                 elif first 244 == do
                     if index 4 + length > do
-                        false
+                        0
                     elif
                         bytes index 1 + byte-read 128 143 byte-in-range
                         bytes index 2 + byte-read utf8-continuation-byte &&
                         bytes index 3 + byte-read utf8-continuation-byte &&
                     do
-                        bytes length index 4 + valid-utf8-from
+                        4
                     else
-                        false
+                        0
                     end
                 else
+                    0
+                end
+            end
+        end
+    end
+end
+
+proc valid-utf8-from ptr int int -- bool do
+    let bytes length index do
+        if index length >= do
+            true
+        else
+            bytes length index utf8-sequence-width
+            let width do
+                if width 0 == do
                     false
+                else
+                    bytes length index width + valid-utf8-from
                 end
             end
         end
@@ -1975,6 +1999,46 @@ proc valid-utf8-from ptr int int -- bool do
 end
 
 proc valid-utf8 ptr int -- bool do 0 valid-utf8-from end
+
+proc utf8-codepoint-at ptr int int -- int int do
+    let bytes length index do
+        bytes length index utf8-sequence-width
+        let width do
+            if width 0 == do
+                "invalid character literal" fail
+                0 0
+            elif width 1 == do
+                bytes index byte-read width
+            elif width 2 == do
+                bytes index byte-read 192 - 64 *
+                bytes index 1 + byte-read 128 - +
+                width
+            elif width 3 == do
+                bytes index byte-read 224 - 4096 *
+                bytes index 1 + byte-read 128 - 64 * +
+                bytes index 2 + byte-read 128 - +
+                width
+            else
+                bytes index byte-read 240 - 262144 *
+                bytes index 1 + byte-read 128 - 4096 * +
+                bytes index 2 + byte-read 128 - 64 * +
+                bytes index 3 + byte-read 128 - +
+                width
+            end
+        end
+    end
+end
+
+proc lex-advance-count ptr int -- do
+    let ctx remaining do
+        remaining
+        while dup 0 > do
+            ctx lex-advance
+            1 -
+        end
+        drop
+    end
+end
 
 proc skip-path-separators ptr int int -- int do
     let bytes length index do
@@ -2394,22 +2458,6 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx ctx-proc-count < do
-                dup
-                let proc-index do
-                    ctx
-                    ctx
-                    ctx proc-index proc-name-start-at
-                    ctx proc-index proc-name-length-at
-                    scope-procedure
-                    ctx
-                    proc-index
-                    add-scope-symbol
-                end
-                1 +
-            end
-            drop
-            0
             while dup ctx ctx-macro-count < do
                 dup
                 let macro-index do
@@ -2420,6 +2468,22 @@ proc resolve-module-scope ptr -- do
                     scope-macro
                     ctx
                     macro-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            0
+            while dup ctx ctx-proc-count < do
+                dup
+                let proc-index do
+                    ctx
+                    ctx
+                    ctx proc-index proc-name-start-at
+                    ctx proc-index proc-name-length-at
+                    scope-procedure
+                    ctx
+                    proc-index
                     add-scope-symbol
                 end
                 1 +
@@ -2808,7 +2872,11 @@ proc compile-cast-intrinsic ptr -- do
                     "unsupported cast" fail
                 end
                 cc target-type type-push
-                cc "(void)frog_pop();" emit-line
+                if source-type type-int == target-type type-bool == && do
+                    cc "{ (void)frog_pop(); Cell value = frog_pop(); frog_push(value != 0); }" emit-line
+                else
+                    cc "(void)frog_pop();" emit-line
+                end
             end
         end
     end

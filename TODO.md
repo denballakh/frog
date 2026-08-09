@@ -7,6 +7,7 @@ When an item from this list is fixed/implemented - remove it from this list.
 ## New language features
 
 - Add multiline string literals so large templates, including generated C fragments, do not need to be encoded as long single-line literals.
+- Add compile-time constants that evaluate expressions during compilation and expand into one or more literals instead of reevaluating the expression at every runtime use.
 
 ## Diagnostics And Debugging
 

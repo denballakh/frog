@@ -53,6 +53,7 @@ bootstrap-check: frogc-seed
     ! build/frogc < test/bootstrap/macro_reserved_name.frog > build/frogc.macro_reserved_name.c 2> build/frogc.macro_reserved_name.err
     printf 'frogc: reserved keyword cannot be a macro name\n' | cmp - build/frogc.macro_reserved_name.err
     bash test/bootstrap/imports.sh "$(pwd)/build/frogc"
+    bash test/bootstrap/semantics.sh "$(pwd)/build/frogc"
 
 [group("bootstrap")]
 bootstrap-update: frogc-seed

@@ -1,0 +1,6 @@
+proc main -- do
+    'A' print
+    'é' print
+    '€' print
+    '😀' print
+end

@@ -1,0 +1,2 @@
+proc imported int -- int do 300 + end
+macro imported 30 + end

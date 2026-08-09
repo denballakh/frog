@@ -1,0 +1,5 @@
+proc main -- do
+    5 bool cast int cast print
+    0 bool cast int cast print
+    0 1 - bool cast int cast print
+end

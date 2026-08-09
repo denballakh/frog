@@ -180,6 +180,7 @@ end
 
 - `cast`: `x type -- y`
 - Casts currently allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, and `ptr`/`int` conversions.
+- Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
 - The destination type is pushed with the `int`, `bool`, or `ptr` type word.
 
 ### Output And Debugging
