@@ -23,7 +23,7 @@ macro over let a b do a b a end end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/imported_macro_with_let/main.frog
+build/frogc run test/tmp_fs/imported_macro_with_let/main.frog
 ```
 
 Output:

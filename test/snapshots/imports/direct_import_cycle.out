@@ -28,7 +28,7 @@ from "a.frog" import value
 Command:
 
 ```text
-python -m frog run test/tmp_fs/direct_import_cycle/main.frog
+build/frogc run test/tmp_fs/direct_import_cycle/main.frog
 ```
 
 Output:

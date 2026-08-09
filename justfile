@@ -26,16 +26,22 @@ test: check bootstrap-check
     git status --short -- test/snapshots
     test -z "$(git status --porcelain -- test/snapshots)"
 
+_compile-frogc source output:
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -Dmain=frog_compiler_main -c "{{source}}" -o "{{output}}.core.o"
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -c compiler/frogc_cli.c -o "{{output}}.cli.o"
+    gcc "{{output}}.core.o" "{{output}}.cli.o" -o "{{output}}"
+
 [group("bootstrap")]
 frogc-seed:
     mkdir -p build
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 compiler/frogc.c -o build/frogc
+    just _compile-frogc compiler/frogc.c build/frogc
 
 [group("bootstrap")]
 bootstrap-check: frogc-seed
     build/frogc < compiler/frogc.frog > build/frogc.stage2.c
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.stage2.c -o build/frogc.stage2
+    just _compile-frogc build/frogc.stage2.c build/frogc.stage2
     build/frogc.stage2 < compiler/frogc.frog > build/frogc.stage3.c
+    just _compile-frogc build/frogc.stage3.c build/frogc.stage3
     cmp compiler/frogc.c build/frogc.stage2.c
     cmp build/frogc.stage2.c build/frogc.stage3.c
     build/frogc < test/bootstrap/read_file.frog > build/frogc.read_file.c
@@ -58,9 +64,9 @@ bootstrap-check: frogc-seed
 [group("bootstrap")]
 bootstrap-update: frogc-seed
     build/frogc < compiler/frogc.frog > build/frogc.candidate1.c
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.candidate1.c -o build/frogc.candidate1
+    just _compile-frogc build/frogc.candidate1.c build/frogc.candidate1
     build/frogc.candidate1 < compiler/frogc.frog > build/frogc.candidate2.c
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.candidate2.c -o build/frogc.candidate2
+    just _compile-frogc build/frogc.candidate2.c build/frogc.candidate2
     build/frogc.candidate2 < compiler/frogc.frog > build/frogc.candidate3.c
     cmp build/frogc.candidate2.c build/frogc.candidate3.c
     cp build/frogc.candidate2.c compiler/frogc.c
@@ -77,8 +83,8 @@ approve-diff:
 
 [group("run")]
 [positional-arguments]
-@cli *args:
-    python -m frog "$@"
+@cli *args: frogc-seed
+    build/frogc "$@"
 
 [group("misc")]
 clean:

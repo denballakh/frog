@@ -27,7 +27,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/imported_top_level_code_does_not_run/main.frog
+build/frogc run test/tmp_fs/imported_top_level_code_does_not_run/main.frog
 ```
 
 Output:

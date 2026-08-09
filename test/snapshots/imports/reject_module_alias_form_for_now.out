@@ -22,7 +22,7 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/reject_module_alias_form_for_now/main.frog
+build/frogc run test/tmp_fs/reject_module_alias_form_for_now/main.frog
 ```
 
 Output:

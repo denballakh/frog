@@ -29,7 +29,7 @@ proc other -- int do 2 end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/conflict_two_imports_same_alias/main.frog
+build/frogc run test/tmp_fs/conflict_two_imports_same_alias/main.frog
 ```
 
 Output:

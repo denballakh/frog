@@ -23,7 +23,7 @@ macro twice dup + end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/import_macro/main.frog
+build/frogc run test/tmp_fs/import_macro/main.frog
 ```
 
 Output:

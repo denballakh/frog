@@ -1,21 +1,25 @@
 # Snapshot: cli/usage
 
-## Case: `(no arguments)`
+## Case: `-h`
 
 ### Result
 
 Command:
 
 ```text
-python -m frog
+build/frogc -h
 ```
 
 Output:
 
 ```text
-frog: missing command
-Try `python -m frog --help`.
-[EXIT CODE] 2
+Usage:
+  frogc < source.frog > source.c
+  frogc <command> [options]
+
+Commands:
+  run [-c CODE | FILE]       compile and run Frog source
+  build [-o FILE] [-r] FILE  compile Frog source to a binary
 ```
 
 ## Case: `--help`
@@ -25,13 +29,15 @@ Try `python -m frog --help`.
 Command:
 
 ```text
-python -m frog --help
+build/frogc --help
 ```
 
 Output:
 
 ```text
-Usage: python -m frog <command> [options]
+Usage:
+  frogc < source.frog > source.c
+  frogc <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
@@ -45,13 +51,13 @@ Commands:
 Command:
 
 ```text
-python -m frog run test/tmp_fs/missing.frog
+build/frogc run test/tmp_fs/missing.frog
 ```
 
 Output:
 
 ```text
-frog: source file not found: test/tmp_fs/missing.frog
+frogc: source file not found: test/tmp_fs/missing.frog
 [EXIT CODE] 1
 ```
 
@@ -62,14 +68,14 @@ frog: source file not found: test/tmp_fs/missing.frog
 Command:
 
 ```text
-python -m frog --unknown
+build/frogc --unknown
 ```
 
 Output:
 
 ```text
-frog: unknown command: --unknown
-Try `python -m frog --help`.
+frogc: unknown command: --unknown
+Try `frogc --help`.
 [EXIT CODE] 2
 ```
 
@@ -80,14 +86,14 @@ Try `python -m frog --help`.
 Command:
 
 ```text
-python -m frog unknown
+build/frogc unknown
 ```
 
 Output:
 
 ```text
-frog: unknown command: unknown
-Try `python -m frog --help`.
+frogc: unknown command: unknown
+Try `frogc --help`.
 [EXIT CODE] 2
 ```
 
@@ -106,14 +112,14 @@ end
 Command:
 
 ```text
-python -m frog build -o build/frogc examples/01_simple.frog
+build/frogc build -o build/frogc examples/01_simple.frog
 ```
 
 Output:
 
 ```text
-frog: build output aliases the native compiler cache
-Try `python -m frog --help`.
+frogc: build output aliases the running compiler
+Try `frogc --help`.
 [EXIT CODE] 2
 ```
 

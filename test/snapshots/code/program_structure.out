@@ -13,7 +13,7 @@
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -36,7 +36,7 @@ frogc: missing main procedure
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:

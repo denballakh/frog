@@ -40,7 +40,7 @@ proc value -- int do 7 end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/import_paths_are_root_relative/main.frog
+build/frogc run test/tmp_fs/import_paths_are_root_relative/main.frog
 ```
 
 Output:

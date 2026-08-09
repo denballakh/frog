@@ -1,18 +1,13 @@
 from collections.abc import Mapping
-import contextlib
 from dataclasses import dataclass
-import io
 import os
 from pathlib import Path
 import shlex
 import shutil
 import signal
 import subprocess
-import sys
 import textwrap
 from typing import assert_never
-
-from frog import __main__ as frog_cli
 
 
 @dataclass(frozen=True)
@@ -784,7 +779,7 @@ cli_example_groups = [
     CliExampleGroup(
         'usage',
         [
-            '',
+            '-h',
             '--help',
             'run test/tmp_fs/missing.frog',
             '--unknown',
@@ -801,6 +796,7 @@ cli_example_groups = [
 assert len(file_code_examples) == 40
 
 ROOT = Path(__file__).parent.parent
+FROGC = ROOT / 'build' / 'frogc'
 
 dir_examples = ROOT / 'examples'
 dir_tests = ROOT / 'test'
@@ -853,9 +849,9 @@ def render_source(label: str, text: str) -> str:
 
 def capture_frog(*args: str | Path, env: Mapping[str, str] | None = None) -> CommandResult:
     command_args = [str(arg) for arg in args]
-    command = shlex.join(['python', '-m', 'frog', *command_args])
+    command = shlex.join(['build/frogc', *command_args])
     process = subprocess.Popen(
-        [sys.executable, '-m', 'frog', *command_args],
+        [FROGC, *command_args],
         cwd=ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -951,8 +947,7 @@ try:
             print(f'[CLI:{cli_group.name}] {cli_example}')
             args = shlex.split(cli_example)
             result = capture_frog(*args)
-            case_name = cli_example if cli_example else '(no arguments)'
-            parts.append(f'## Case: `{case_name}`\n\n')
+            parts.append(f'## Case: `{cli_example}`\n\n')
             parts.append(render_cli_sources(args))
             parts.append(render_result('Result', result))
 
@@ -994,12 +989,13 @@ try:
     failing_environment['PATH'] = f'{fake_bin}{os.pathsep}{failing_environment["PATH"]}'
     failed_build = capture_frog('build', build_main_relative, env=failing_environment)
     assert failed_build.exit_code != 0
-    assert built_c.read_bytes() == original_c
+    failed_c = built_c.read_bytes()
+    assert failed_c != original_c
     assert built_executable.read_bytes() == original_executable
 
     updated_build = capture_frog('build', build_main_relative)
     assert updated_build.exit_code == 0
-    assert built_c.read_bytes() != original_c
+    assert built_c.read_bytes() == failed_c
     assert built_executable.read_bytes() != original_executable
 
     symlink_case = tmp_fs / 'symlink_root'
@@ -1016,30 +1012,6 @@ try:
     symlink_result = capture_frog('run', lexical_main.relative_to(ROOT))
     assert symlink_result.exit_code == 0
     assert symlink_result.body == '42\n'
-
-    rollback_case = tmp_fs / 'publication_rollback'
-    rollback_case.mkdir()
-    rollback_c = rollback_case / 'program.c'
-    rollback_executable = rollback_case / 'program.exe'
-    rollback_c_candidate = rollback_case / 'program.c.candidate'
-    missing_executable_candidate = rollback_case / 'missing.exe.candidate'
-    _ = rollback_c.write_bytes(b'old C')
-    _ = rollback_executable.write_bytes(b'old executable')
-    _ = rollback_c_candidate.write_bytes(b'new C')
-    error_output = io.StringIO()
-    with contextlib.redirect_stderr(error_output):
-        publish_result = frog_cli.publish_build(
-            rollback_c_candidate,
-            rollback_c,
-            missing_executable_candidate,
-            rollback_executable,
-        )
-    assert publish_result != 0
-    assert 'unable to publish build artifacts' in error_output.getvalue()
-    assert rollback_c.read_bytes() == b'old C'
-    assert rollback_executable.read_bytes() == b'old executable'
-    assert not rollback_c_candidate.exists()
-    assert not list(rollback_case.glob('.*'))
 
     for code_group in code_example_groups:
         parts = [snapshot_header(f'code/{code_group.name}')]

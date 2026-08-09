@@ -24,7 +24,7 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/conflict_import_then_local_proc/main.frog
+build/frogc run test/tmp_fs/conflict_import_then_local_proc/main.frog
 ```
 
 Output:

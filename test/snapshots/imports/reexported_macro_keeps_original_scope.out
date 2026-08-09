@@ -35,7 +35,7 @@ from "macros.frog" import bump
 Command:
 
 ```text
-python -m frog run test/tmp_fs/reexported_macro_keeps_original_scope/main.frog
+build/frogc run test/tmp_fs/reexported_macro_keeps_original_scope/main.frog
 ```
 
 Output:

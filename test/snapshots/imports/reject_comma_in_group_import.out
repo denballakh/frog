@@ -25,7 +25,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/reject_comma_in_group_import/main.frog
+build/frogc run test/tmp_fs/reject_comma_in_group_import/main.frog
 ```
 
 Output:

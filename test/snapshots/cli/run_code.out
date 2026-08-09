@@ -7,7 +7,7 @@
 Command:
 
 ```text
-python -m frog run -c 'proc main -- do 42 print end'
+build/frogc run -c 'proc main -- do 42 print end'
 ```
 
 Output:

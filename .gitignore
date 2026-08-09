@@ -2,6 +2,7 @@
 *.c
 *.exe
 !compiler/frogc.c
+!compiler/frogc_cli.c
 
 scratch.frog
 

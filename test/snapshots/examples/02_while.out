@@ -44,7 +44,7 @@ end
 Command:
 
 ```text
-python -m frog run examples/02_while.frog
+build/frogc run examples/02_while.frog
 ```
 
 Output:

@@ -24,7 +24,7 @@ proc value -- int do 42 end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/canonical_import_paths_share_module/main.frog
+build/frogc run test/tmp_fs/canonical_import_paths_share_module/main.frog
 ```
 
 Output:

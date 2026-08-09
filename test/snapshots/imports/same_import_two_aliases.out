@@ -25,7 +25,7 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/same_import_two_aliases/main.frog
+build/frogc run test/tmp_fs/same_import_two_aliases/main.frog
 ```
 
 Output:

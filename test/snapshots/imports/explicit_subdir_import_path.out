@@ -39,7 +39,7 @@ proc value -- int do 7 end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/explicit_subdir_import_path/main.frog
+build/frogc run test/tmp_fs/explicit_subdir_import_path/main.frog
 ```
 
 Output:

@@ -108,7 +108,7 @@ end
 Command:
 
 ```text
-python -m frog run examples/07_rule30.frog
+build/frogc run examples/07_rule30.frog
 ```
 
 Output:

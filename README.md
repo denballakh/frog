@@ -10,15 +10,16 @@ It is heavily inspired by [Porth](https://gitlab.com/tsoding/porth)
 # Usage
 
 ```sh
-python -m frog --help
-python -m frog run examples/01_simple.frog
+just frogc-seed
+build/frogc -h
+build/frogc run examples/01_simple.frog
 ```
 
-`compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. The Python entrypoint contains only process and file orchestration: it invokes the checked compiler and `gcc`.
+`compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. The native CLI contains only process and file orchestration: it invokes the checked compiler and `gcc`. Python is test-only.
 
 Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 
-`run` compiles Frog to temporary C, compiles that C to a temporary binary, and executes it. `build` locks both output paths and writes the generated `.c` and executable only after both compilation stages succeed; `build -r` holds those locks while running the published executable.
+`build/frogc -h` shows CLI help. With no arguments, `build/frogc` is a compiler filter: it reads Frog source from standard input and writes generated C to standard output. `run` writes reusable scratch artifacts under `build/`, compiles them, and executes the binary. `build` writes the source-adjacent `.c` and executable directly; `build -r` runs the resulting executable.
 
 # Compiler and bootstrap
 
@@ -38,11 +39,14 @@ just bootstrap-check
 
 The compiler supports module-aware macros and root-relative imports of procedures and macros, including aliases, grouped imports, and reexports.
 
-To bootstrap without Python:
+To bootstrap manually without Python:
 
 ```sh
-gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 compiler/frogc.c -o frogc
-./frogc < compiler/frogc.frog > frogc.next.c
+mkdir -p build
+gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -Dmain=frog_compiler_main -c compiler/frogc.c -o build/frogc_compiler.o
+gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 -c compiler/frogc_cli.c -o build/frogc_cli.o
+gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc_compiler.o build/frogc_cli.o -o build/frogc
+build/frogc < compiler/frogc.frog > build/frogc.next.c
 ```
 
 # Examples

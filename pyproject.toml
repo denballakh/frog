@@ -1,15 +1,3 @@
-[project]
-name = "Froglang"
-description = "FrogLang"
-license = "MIT"
-requires-python = ">=3.13"
-authors = [
-  { name = "denball" },
-]
-
-[project.urls]
-Repository = "https://github.com/denballakh/frog"
-
 [tool.black]
 line-length = 120
 target-version = ['py313']

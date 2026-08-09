@@ -1,6 +1,6 @@
 # Examples
 
-Every example is a complete program with an explicit `proc main -- do ... end`. Run one with `python -m frog run examples/01_simple.frog`; the CLI compiles it to C and executes the compiled binary.
+Every example is a complete program with an explicit `proc main -- do ... end`. Run one with `build/frogc run examples/01_simple.frog`; the CLI compiles it to C and executes the compiled binary.
 
 - `01_simple.frog`: Basic stack arithmetic, debug, and print demo.
 - `02_while.frog`: While loop, nested if/else, and arithmetic demo.

@@ -16,7 +16,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/missing_imported_file/main.frog
+build/frogc run test/tmp_fs/missing_imported_file/main.frog
 ```
 
 Output:

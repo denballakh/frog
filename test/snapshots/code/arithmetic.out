@@ -15,7 +15,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -39,7 +39,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -63,7 +63,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -87,7 +87,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -111,7 +111,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -136,7 +136,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -160,7 +160,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -185,7 +185,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -209,7 +209,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -233,7 +233,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -257,7 +257,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -281,7 +281,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:
@@ -305,7 +305,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/code.frog
+build/frogc run test/tmp_fs/code.frog
 ```
 
 Output:

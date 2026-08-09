@@ -29,7 +29,7 @@ from "math.frog" import inc as bump
 Command:
 
 ```text
-python -m frog run test/tmp_fs/reexport_alias/main.frog
+build/frogc run test/tmp_fs/reexport_alias/main.frog
 ```
 
 Output:

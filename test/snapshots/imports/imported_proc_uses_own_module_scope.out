@@ -29,7 +29,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/imported_proc_uses_own_module_scope/main.frog
+build/frogc run test/tmp_fs/imported_proc_uses_own_module_scope/main.frog
 ```
 
 Output:

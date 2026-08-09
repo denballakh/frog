@@ -33,7 +33,7 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/imported_macro_uses_defining_module_import/main.frog
+build/frogc run test/tmp_fs/imported_macro_uses_defining_module_import/main.frog
 ```
 
 Output:

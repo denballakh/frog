@@ -23,7 +23,7 @@ end
 Command:
 
 ```text
-python -m frog run examples/04_procs.frog
+build/frogc run examples/04_procs.frog
 ```
 
 Output:

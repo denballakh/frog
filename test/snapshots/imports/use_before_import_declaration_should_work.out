@@ -24,7 +24,7 @@ proc inc int -- int do 1 + end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/use_before_import_declaration_should_work/main.frog
+build/frogc run test/tmp_fs/use_before_import_declaration_should_work/main.frog
 ```
 
 Output:

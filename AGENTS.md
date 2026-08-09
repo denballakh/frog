@@ -14,7 +14,7 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 ## Project Overview
 
-FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. Python is used only for CLI process/file orchestration and snapshot orchestration; the repository has no Python language implementation or Frog interpreter.
+FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` is the sole Frog compiler, typechecker, and C emitter. The native `compiler/frogc_cli.c` provides CLI process and file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
 
 The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, compile-time imports and macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
@@ -22,7 +22,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 
 - `compiler/frogc.frog`: The sole Frog compiler, typechecker, and deterministic C emitter. It reads the root source from stdin and resolves imports from the compiler process's working directory.
 - `compiler/frogc.c`: Checked-in fixed-point C bootstrap seed generated from `compiler/frogc.frog`; this is an authoritative bootstrap artifact, not a disposable build output.
-- `frog/__main__.py`: Native CLI process and file orchestration. It invokes the checked compiler and `gcc`; it contains no language semantics.
+- `compiler/frogc_cli.c`: Native CLI process and file orchestration. It invokes the checked compiler and `gcc`; it contains no language semantics.
 - `examples/*.frog`: Example Frog programs. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
 - `examples/01_simple.frog`: Basic stack arithmetic, debug, and print demo.
 - `examples/02_while.frog`: While loop, nested if/else, and arithmetic demo.
@@ -36,7 +36,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/testing.md`: Test snapshot workflow and review process.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
-- `test/__main__.py`: Snapshot orchestration for example files, CLI cases, inline snippets, and multi-file imports, plus focused artifact-publication assertions. It invokes the native CLI in subprocesses and contains no language implementation.
+- `test/__main__.py`: Snapshot orchestration for example files, CLI cases, inline snippets, and multi-file imports, plus black-box build-artifact assertions. It invokes the native CLI in subprocesses and contains no language implementation.
 - `test/bootstrap/`: Focused native compiler fixtures and shell harnesses run by `just bootstrap-check`.
 - `test/snapshots/**/*.out`: Markdown-style snapshot output files produced by `python -m test`. Snapshots embed tested source or CLI arguments with captured output.
 - `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
@@ -48,7 +48,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 
 - Python requirement is `>=3.13`.
 - The devenv shell provides optimized Python 3.13 plus `mypy`, `basedpyright`, `black`, `git`, and Nix language support.
-- Running or building Frog files requires `gcc`: both CLI paths compile Frog to C and then compile the C program.
+- Running or building Frog files requires `gcc`: the native CLI compiles Frog to C and then compiles the C program.
 
 ## Common Commands
 
@@ -63,15 +63,16 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Show regenerated snapshot diffs: `just show-diff`
 - Approve regenerated snapshot diffs after careful review: `just approve-diff`
 - Run Frog CLI through just: `just cli <args>`
-- Remove generated C/exe artifacts: `just clean`
+- Remove generated root/example/test C/exe artifacts: `just clean`
 
 Useful direct commands:
 
-- CLI help: `just cli -h` or `python -m frog --help`
-- Compile and run a file: `python -m frog run examples/01_simple.frog`
-- Compile and run inline source: `python -m frog run -c 'proc main -- do 1 2 + print end'`
-- Build a file: `python -m frog build examples/01_simple.frog`
-- Build and run: `python -m frog build -r examples/01_simple.frog`
+- CLI help: `build/frogc -h`
+- Compile and run a file: `build/frogc run examples/01_simple.frog`
+- Compile and run inline source: `build/frogc run -c 'proc main -- do 1 2 + print end'`
+- Build a file: `build/frogc build examples/01_simple.frog`
+- Build and run: `build/frogc build -r examples/01_simple.frog`
+- Use the compiler as a stdin-to-stdout filter: `build/frogc < source.frog > source.c`
 
 ## Formatting And Typechecking
 
@@ -79,7 +80,7 @@ Useful direct commands:
 - Keep the existing single-quote style in Python; Black is configured not to normalize strings.
 - Typechecking uses both `mypy .` and `basedpyright .`.
 - Pyright mode is `recommended`, with `reportAny`, `reportExplicitAny`, and `reportCallInDefaultInitializer` disabled.
-- The Python orchestration code intentionally uses modern typing features such as `type SourceInput = ...`, frozen dataclasses, pattern matching, and exhaustive `assert_never` checks.
+- The Python test runner intentionally uses modern typing features such as `type SourceInput = ...`, frozen dataclasses, pattern matching, and exhaustive `assert_never` checks.
 
 ## Testing Nuances
 
@@ -87,31 +88,34 @@ Useful direct commands:
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
 - `just test` regenerates `test/snapshots/**/*.out` by capturing stdout from many scenarios, then fails if the snapshot directory differs from git, including untracked files.
 - Snapshots are self-contained Markdown-style `.out` files. They embed the Frog source or CLI command under test before the captured output.
-- Each example, inline, and multi-file corpus case runs once through the native `frog run` path.
+- Each example, inline, and multi-file corpus case runs once through the native `build/frogc run` path.
 - Inline cases use immutable `SourceSpec` values to materialize an explicit `proc main -- do ... end`; declaration-order and malformed-structure cases use the appropriate structural fields or verbatim raw source.
 - Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and cover imported procedures, macros, reexports, root-relative paths, conflicts, cycles, and rejected syntax.
 - Use `just show-diff` to inspect snapshot changes.
 - Use `just approve-diff` to approve snapshot changes ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated snapshot `.out` files to confirm the new output is intentional.
-- One focused CLI case exercises `build -r`. Additional assertions verify failed-C preservation, successful replacement, rollback after a partial publication failure, and lexical imports through a symlinked root source.
-- All persistent test build artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block; abrupt process termination can still leave it behind.
+- One focused CLI case exercises `build -r`. Additional Python assertions verify direct-output behavior across a forced GCC failure, deterministic regeneration, successful replacement, and lexical imports through a symlinked root source.
+- CLI `build` test artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
 - `just bootstrap-check` compiles its focused fixtures with strict C11 warnings and compares their output, in addition to checking compiler fixed-point equality.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
 
 ## CLI Behavior
 
-- Entrypoint is `python -m frog`.
+- Entrypoint is `build/frogc` (or `just cli <args>`).
+- With no arguments, it is a compiler filter: it reads Frog source from standard input and writes generated C to standard output.
 - Subcommands are `run` and `build`; each has `-h`/`--help`.
-- `run` accepts `-c CODE` or one file path. It invokes the native Frog compiler, compiles the emitted C with strict C11 flags in a temporary directory, and executes the resulting binary.
-- `build FILE` compiles Frog to C and then compiles C to an executable. It locks both destinations and publishes the source-adjacent `.c` and `.exe` only after both stages succeed; `-o FILE` selects a different executable destination.
-- `build -r FILE` holds the destination locks while executing the compiled binary.
-- `frog/__main__.py` prepares a source-and-flags-stamped, locked native compiler cache from `compiler/frogc.c`, manages temporary and published files, and forwards process exit status. It must not implement Frog syntax or semantics.
+- `run` accepts `-c CODE` or one file path. It invokes the native Frog compiler, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
+- `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
+- `build -r FILE` runs the resulting executable.
+- `compiler/frogc_cli.c` manages the minimal native process/file calls and forwards process exit status. It must not implement Frog syntax or semantics.
 
 Current CLI help output:
 
 ```text
-$ python -m frog --help
-Usage: python -m frog <command> [options]
+$ build/frogc -h
+Usage:
+  frogc < source.frog > source.c
+  frogc <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
@@ -142,7 +146,7 @@ Commands:
 
 ## Implementation Conventions And Gotchas
 
-- Keep language semantics in `compiler/frogc.frog`. Do not add tokenization, parsing, typechecking, evaluation, or C emission to Python orchestration.
+- Keep language semantics in `compiler/frogc.frog`. Do not add tokenization, parsing, typechecking, evaluation, or C emission to the native CLI.
 - When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and snapshot coverage, user-facing docs, and optionally the VS Code grammar.
 - String literals lower to a UTF-8 byte pointer and byte length (`ptr int`); generated globals and macro expansion must retain the defining module's literal identity.
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
@@ -150,8 +154,7 @@ Commands:
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.
 - `test/__main__.py` uses `SourceSpec` to materialize concise inline bodies, declarations before or after `main`, and verbatim malformed structural probes. It must write and snapshot the materialized source.
 - Do not treat generated `.c` or `.exe` files as authoritative source, except for the intentional bootstrap seed `compiler/frogc.c`. Other generated files remain disposable build/test artifacts.
-- CLI `build` must not replace either published artifact unless both Frog-to-C and C-to-binary stages succeed.
-- Keep the two build destinations locked as one transaction through publication and any requested `build -r` execution.
+- CLI `build` intentionally writes outputs directly and provides no locking or rollback transaction.
 
 ## VS Code Grammar
 
@@ -162,6 +165,6 @@ Commands:
 ## Working Tree Hygiene
 
 - The repository ignores generated `*.c`, `*.exe`, Python caches, mypy cache, `.devenv*`, `.direnv`, and local env files.
-- `compiler/frogc.c` is the explicit exception to the generated-C ignore rule. Update it only with `just bootstrap-update`, whose fixed-point comparison must pass first.
+- `compiler/frogc.c` and `compiler/frogc_cli.c` are explicit exceptions to the generated-C ignore rule. Update the generated seed only with `just bootstrap-update`, whose fixed-point comparison must pass first.
 - Before finalizing code changes, run `just test` when feasible. For docs-only changes, a lighter verification may be enough.
 - If tests regenerate files under `test/snapshots/`, review those diffs carefully because they are the effective behavioral snapshots.

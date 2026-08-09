@@ -13,7 +13,7 @@ end
 Command:
 
 ```text
-python -m frog build -r test/tmp_fs/build_run/main.frog
+build/frogc build -r test/tmp_fs/build_run/main.frog
 ```
 
 Output:

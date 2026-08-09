@@ -26,7 +26,7 @@ end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog
+build/frogc run test/tmp_fs/imported_macro_uses_defining_module_macro/main.frog
 ```
 
 Output:

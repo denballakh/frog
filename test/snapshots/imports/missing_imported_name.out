@@ -22,7 +22,7 @@ proc dec int -- int do 1 - end
 Command:
 
 ```text
-python -m frog run test/tmp_fs/missing_imported_name/main.frog
+build/frogc run test/tmp_fs/missing_imported_name/main.frog
 ```
 
 Output:
