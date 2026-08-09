@@ -68,9 +68,22 @@ proc main -- do
 end
 ```
 
-`macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. Whenever `name` appears as a word in the remaining code, it is expanded before normal word resolution, so macros can shadow intrinsics or procedures with the same name.
+`macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. User-defined and imported macros expand before normal word resolution, so they can shadow intrinsics or procedures with the same name.
 
 Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
+
+## Standard Prelude
+
+The compiler embeds a small Frog source module containing `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot`. These words are ordinary macros implemented with `let`; they do not have compiler intrinsic implementations and do not require a standard-library file at runtime.
+
+Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported procedure, and finally a prelude macro. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
+
+- `dup`: `a -- a a`
+- `dup2`: `a b -- a b a b`
+- `drop`: `a --`
+- `swap`: `a b -- b a`
+- `swap2`: `a b x y -- x y a b`
+- `rot`: `a b c -- b c a`
 
 ## Imports
 
@@ -189,15 +202,6 @@ end
 - `>`: `int int -- bool`
 - `<=`: `int int -- bool`
 - `>=`: `int int -- bool`
-
-### Stack Manipulation
-
-- `dup`: `a -- a a`
-- `dup2`: `a b -- a b a b`
-- `drop`: `a --`
-- `swap`: `a b -- b a`
-- `swap2`: `a b x y -- x y a b`
-- `rot`: `a b c -- b c a`
 
 ### Process Arguments
 

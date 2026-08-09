@@ -1,0 +1,8 @@
+proc exercise-prelude -- do
+    10 20 dup2 print print print print
+    30 drop
+    40 50 swap print print
+    1 2 3 4 swap2 print print print print
+    5 6 7 rot print print print
+    8 dup + print
+end

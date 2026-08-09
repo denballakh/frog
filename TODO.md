@@ -6,7 +6,6 @@ When an item from this list is fixed/implemented - remove it from this list.
 
 ## New language features
 
-- Move intrinsics that can be expressed as standard macros plus `let`, such as `drop`, into a minimal standard prelude/library and remove their compiler special cases.
 - Add compile-time constants that evaluate expressions during compilation and expand into one or more literals instead of reevaluating the expression at every runtime use.
 
 ## Diagnostics And Debugging

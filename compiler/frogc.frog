@@ -48,7 +48,7 @@ proc program-next-proc-id-offset -- int do 32 end
 proc program-token-count-offset -- int do 40 end
 proc program-strings-offset -- int do 48 end
 proc program-string-count-offset -- int do 56 end
-proc program-bytes -- int do 64 end
+proc program-bytes -- int do 72 end
 
 proc string-bytes-offset -- int do 0 end
 proc string-length-offset -- int do 8 end
@@ -3543,52 +3543,6 @@ proc compile-logic-comparison-intrinsic ptr int -- bool do
     end
 end
 
-proc compile-stack-intrinsic ptr int -- bool do
-    let cc token-index do
-        if cc cc-defining-module token-index "dup" token-equals do
-            cc type-pop let value-type do
-                cc value-type type-push cc value-type type-push
-                cc "{ Cell a = frog_pop(); frog_push(a); frog_push(a); }" emit-line
-            end
-            true
-        elif cc cc-defining-module token-index "dup2" token-equals do
-            cc type-pop cc type-pop
-            let right-type left-type do
-                cc left-type type-push cc right-type type-push
-                cc left-type type-push cc right-type type-push
-                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a); frog_push(b); frog_push(a); frog_push(b); }" emit-line
-            end
-            true
-        elif cc cc-defining-module token-index "drop" token-equals do
-            cc type-pop drop cc "(void)frog_pop();" emit-line true
-        elif cc cc-defining-module token-index "swap" token-equals do
-            cc type-pop cc type-pop
-            let right-type left-type do
-                cc right-type type-push cc left-type type-push
-                cc "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(b); frog_push(a); }" emit-line
-            end
-            true
-        elif cc cc-defining-module token-index "swap2" token-equals do
-            cc type-pop cc type-pop cc type-pop cc type-pop
-            let fourth-type third-type second-type first-type do
-                cc third-type type-push cc fourth-type type-push
-                cc first-type type-push cc second-type type-push
-                cc "{ Cell d = frog_pop(); Cell c = frog_pop(); Cell b = frog_pop(); Cell a = frog_pop(); frog_push(c); frog_push(d); frog_push(a); frog_push(b); }" emit-line
-            end
-            true
-        elif cc cc-defining-module token-index "rot" token-equals do
-            cc type-pop cc type-pop cc type-pop
-            let third-type second-type first-type do
-                cc second-type type-push cc third-type type-push cc first-type type-push
-                cc "{ Cell c = frog_pop(); Cell b = frog_pop(); Cell a = frog_pop(); frog_push(b); frog_push(c); frog_push(a); }" emit-line
-            end
-            true
-        else
-            false
-        end
-    end
-end
-
 proc type-literal-base -- int do 100 end
 
 proc compile-cast-intrinsic ptr -- do
@@ -3731,8 +3685,6 @@ proc compile-intrinsic ptr int -- bool do
         if cc token-index compile-arithmetic-intrinsic do
             true
         elif cc token-index compile-logic-comparison-intrinsic do
-            true
-        elif cc token-index compile-stack-intrinsic do
             true
         else
             cc token-index compile-memory-io-intrinsic
@@ -4099,17 +4051,20 @@ proc compile-ordinary-word ptr int -- do
                     if local-index 0 >= do
                         cc token-index local-index compile-local-reference
                     else
-                        if symbol-index 0 < do
-                            "unknown word" fail
+                        if symbol-index 0 >= do
+                            if cc cc-scope-module symbol-index scope-kind-at scope-procedure != do
+                                "unknown word" fail
+                            end
+                            cc
+                            token-index
+                            cc cc-scope-module symbol-index scope-definition-module-at
+                            cc cc-scope-module symbol-index scope-definition-index-at
+                            compile-procedure-call
+                        else
+                            if cc token-index compile-prelude-macro ! do
+                                "unknown word" fail
+                            end
                         end
-                        if cc cc-scope-module symbol-index scope-kind-at scope-procedure != do
-                            "unknown word" fail
-                        end
-                        cc
-                        token-index
-                        cc cc-scope-module symbol-index scope-definition-module-at
-                        cc cc-scope-module symbol-index scope-definition-index-at
-                        compile-procedure-call
                     end
                 end
             end
@@ -4413,6 +4368,7 @@ proc main -- do
         0 program set-program-token-count
         0 ptr cast program set-program-strings
         0 program set-program-string-count
+        0 ptr cast program set-program-prelude-module
         ctx-bytes alloc
         let ctx do
             0 ptr cast ctx set-ctx-canonical-path
@@ -4431,6 +4387,7 @@ proc main -- do
             ctx source source-length initialize-module-source
             program ctx load-module-imports
             load-loaded ctx set-ctx-load-state
+            program initialize-prelude
             program initialize-string-pool
             program resolve-all-module-scopes
             program validate-external-declarations
@@ -4438,6 +4395,63 @@ proc main -- do
             program emit-c-emitter-support
             program compile-all-procedures
             program emit-main-wrapper
+            end
+        end
+    end
+end
+
+proc program-prelude-module-offset -- int do 64 end
+proc program-prelude-module ptr -- ptr do program-prelude-module-offset pointer-field-read end
+proc set-program-prelude-module ptr ptr -- do program-prelude-module-offset pointer-field-write end
+
+proc initialize-prelude ptr -- do
+    let program do
+        ctx-bytes alloc
+        let prelude do
+            0 ptr cast prelude set-ctx-canonical-path
+            0 prelude set-ctx-canonical-path-length
+            0 ptr cast prelude set-ctx-imports
+            0 prelude set-ctx-import-count
+            0 ptr cast prelude set-ctx-scope
+            0 prelude set-ctx-scope-count
+            load-loading prelude set-ctx-load-state
+            resolve-new prelude set-ctx-resolve-state
+            false prelude set-ctx-is-root
+            program prelude program-add-module
+            "macro dup let a do a a end end
+macro dup2 let a b do a b a b end end
+macro drop let a do end end
+macro swap let a b do b a end end
+macro swap2 let a b c d do c d a b end end
+macro rot let a b c do b c a end end
+"
+            let source source-length do
+                prelude source source-length initialize-module-source
+            end
+            load-loaded prelude set-ctx-load-state
+            prelude program set-program-prelude-module
+        end
+    end
+end
+
+proc compile-prelude-macro ptr int -- bool do
+    let cc token-index do
+        cc cc-program program-prelude-module
+        let prelude do
+            prelude cc cc-defining-module token-index find-scope-symbol
+            let symbol-index do
+                if symbol-index 0 < do
+                    false
+                else
+                    if prelude symbol-index scope-kind-at scope-macro != do
+                        "internal prelude symbol is not a macro" fail
+                    end
+                    cc
+                    prelude symbol-index scope-definition-module-at
+                    prelude symbol-index scope-definition-index-at
+                    compile-macro
+                    true
+                end
             end
         end
     end

@@ -1,0 +1,17 @@
+from "fallbacks.frog" import exercise-prelude
+
+proc drop int -- int do 1 + end
+macro swap let first second do first second end end
+
+proc main -- do
+    41 drop print
+
+    7
+    let dup do
+        dup print
+    end
+
+    1 2 swap print print
+    3 dup + print
+    exercise-prelude
+end

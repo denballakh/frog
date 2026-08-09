@@ -62,6 +62,7 @@ run_source_error() {
 run_ok bool_cast $'1\n0\n1\n'
 run_ok integer_max $'9223372036854775807\n'
 run_ok integer_bases $'0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n'
+run_ok prelude_shadow $'42\n7\n2\n1\n6\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n'
 run_ok macro_shadow $'11\n21\n31\n'
 run_ok characters $'65\n233\n8364\n128512\n'
 run_ok args $'3\n/\nfrog\npond\n' frog pond
