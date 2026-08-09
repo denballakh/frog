@@ -1,0 +1,10 @@
+proc main -- do
+    0b0 print
+    0b111 print
+    0o222 print
+    0x333 print
+    0xAbCd print
+    0b111111111111111111111111111111111111111111111111111111111111111 print
+    0o777777777777777777777 print
+    0x7FFFFFFFFFFFFFFF print
+end

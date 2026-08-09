@@ -56,9 +56,9 @@ proc string-hash-offset -- int do 16 end
 proc string-collision-offset -- int do 24 end
 proc string-bytes -- int do 32 end
 
-proc fnv-offset-basis -- int do 2166136261 end
-proc fnv-prime -- int do 16777619 end
-proc fnv-modulus -- int do 4294967296 end
+proc fnv-offset-basis -- int do 0x811c9dc5 end
+proc fnv-prime -- int do 0x01000193 end
+proc fnv-modulus -- int do 0x100000000 end
 
 proc macro-name-start-offset -- int do 0 end
 proc macro-name-length-offset -- int do 8 end
@@ -243,15 +243,7 @@ proc is-c-identifier-byte int -- bool do
     end
 end
 
-proc is-hex-digit int -- bool do
-    let byte do
-        byte is-digit
-        byte 65 >= byte 70 <= && ||
-        byte 97 >= byte 102 <= && ||
-    end
-end
-
-proc hex-value int -- int do
+proc digit-value int -- int do
     let byte do
         if byte is-digit do
             byte 48 -
@@ -259,6 +251,19 @@ proc hex-value int -- int do
             byte 65 - 10 +
         elif byte 97 >= byte 102 <= && do
             byte 97 - 10 +
+        else
+            0 1 -
+        end
+    end
+end
+
+proc is-hex-digit int -- bool do digit-value 0 >= end
+
+proc hex-value int -- int do
+    digit-value
+    let value do
+        if value 0 >= do
+            value
         else
             "invalid hexadecimal digit" fail
             0
@@ -530,8 +535,32 @@ proc all-digits ptr int int -- bool do
     end
 end
 
-proc parse-decimal ptr int int -- int do
+proc integer-literal-base ptr int int -- int do
     let source start length do
+        if length 2 >= source start byte-read 48 == && do
+            source start 1 + byte-read
+            let prefix do
+                if prefix 98 == do
+                    2
+                elif prefix 111 == do
+                    8
+                elif prefix 120 == do
+                    16
+                else
+                    0
+                end
+            end
+        else
+            0
+        end
+    end
+end
+
+proc parse-integer ptr int int int -- int do
+    let source start length base do
+        if length 0 == do
+            "invalid integer literal" fail
+        end
         0 0
         while
             let index value do
@@ -539,15 +568,21 @@ proc parse-decimal ptr int int -- int do
             end
         do
             let index value do
-                if
-                    value max-int 10 / >
-                    value max-int 10 / ==
-                    source start index + byte-read 48 - max-int 10 % > && ||
-                do
-                    "integer literal exceeds the signed 64-bit range" fail
+                source start index + byte-read digit-value
+                let digit do
+                    if digit 0 < digit base >= || do
+                        "invalid integer literal" fail
+                    end
+                    if
+                        value max-int base / >
+                        value max-int base / ==
+                        digit max-int base % > && ||
+                    do
+                        "integer literal exceeds the signed 64-bit range" fail
+                    end
+                    index 1 +
+                    value base * digit +
                 end
-                index 1 +
-                value 10 * source start index + byte-read 48 - +
             end
         end
         let index value do value end
@@ -561,9 +596,16 @@ proc classify-word ptr int int -- int int do
         elif source start + length "false" bytes-equal do
             token-bool 0
         elif source start length all-digits do
-            token-int source start length parse-decimal
+            token-int source start length 10 parse-integer
         else
-            token-word 0
+            source start length integer-literal-base
+            let base do
+                if base 0 > do
+                    token-int source start 2 + length 2 - base parse-integer
+                else
+                    token-word 0
+                end
+            end
         end
     end
 end

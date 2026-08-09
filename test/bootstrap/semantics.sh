@@ -61,6 +61,7 @@ run_source_error() {
 
 run_ok bool_cast $'1\n0\n1\n'
 run_ok integer_max $'9223372036854775807\n'
+run_ok integer_bases $'0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n'
 run_ok macro_shadow $'11\n21\n31\n'
 run_ok characters $'65\n233\n8364\n128512\n'
 run_ok args $'3\n/\nfrog\npond\n' frog pond
@@ -69,6 +70,33 @@ printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_
     | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
 
 run_error integer_overflow 'integer literal exceeds the signed 64-bit range'
+run_source_error integer_binary_missing_digits \
+    $'proc main -- do 0b print end\n' \
+    'invalid integer literal'
+run_source_error integer_binary_invalid_digit \
+    $'proc main -- do 0b102 print end\n' \
+    'invalid integer literal'
+run_source_error integer_octal_invalid_digit \
+    $'proc main -- do 0o8 print end\n' \
+    'invalid integer literal'
+run_source_error integer_hex_missing_digits \
+    $'proc main -- do 0x print end\n' \
+    'invalid integer literal'
+run_source_error integer_hex_invalid_digit \
+    $'proc main -- do 0xg print end\n' \
+    'invalid integer literal'
+run_source_error integer_hex_trailing_punctuation \
+    $'proc main -- do 0x1.2 print end\n' \
+    'invalid integer literal'
+run_source_error integer_binary_overflow \
+    $'proc main -- do 0b1000000000000000000000000000000000000000000000000000000000000000 print end\n' \
+    'integer literal exceeds the signed 64-bit range'
+run_source_error integer_octal_overflow \
+    $'proc main -- do 0o1000000000000000000000 print end\n' \
+    'integer literal exceeds the signed 64-bit range'
+run_source_error integer_hex_overflow \
+    $'proc main -- do 0x8000000000000000 print end\n' \
+    'integer literal exceeds the signed 64-bit range'
 run_error character_empty 'invalid character literal'
 run_error character_two_codepoints 'invalid character literal'
 run_source_error character_malformed_utf8 \

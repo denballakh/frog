@@ -8,7 +8,7 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, and `type`.
 - Procedure signatures and casts can name `int`, `bool`, and `ptr`.
-- `int` is a signed 64-bit integer in generated C. Integer literals are non-negative decimal chunks and must not exceed `9223372036854775807`; negative values are produced by operations, not by signed literal syntax.
+- `int` is a signed 64-bit integer in generated C. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.

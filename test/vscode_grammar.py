@@ -30,7 +30,9 @@ def main() -> None:
 
     repository = dictionary(grammar['repository'])
     literals = dictionary(repository['literals'])
-    string = named_pattern(patterns(literals['patterns']), 'string.quoted.double.frog')
+    literal_patterns = patterns(literals['patterns'])
+    string = named_pattern(literal_patterns, 'string.quoted.double.frog')
+    numeric = named_pattern(literal_patterns, 'constant.numeric.frog')
 
     assert string['begin'] == '"'
     assert string['end'] == '"'
@@ -64,6 +66,20 @@ def main() -> None:
     assert invalid_hex is not None
     assert invalid_hex.group() == r'\x0'
     assert escape_regex.fullmatch(malformed_before_escaped_quote[invalid_hex.end() :])
+
+    numeric_pattern = numeric['match']
+    assert isinstance(numeric_pattern, str)
+    numeric_regex = re.compile(numeric_pattern)
+    for spelling in ('0', '123', '0b111', '0o222', '0x333', '0xAbCd'):
+        assert numeric_regex.fullmatch(spelling), spelling
+    for spelling in ('0b', '0b2', '0o8', '0x', '0xg'):
+        assert numeric_regex.fullmatch(spelling) is None, spelling
+    for source in ('0x1.2', '0b1-foo', 'name-123', '123abc'):
+        assert numeric_regex.search(source) is None, source
+
+    after_string = numeric_regex.search('"value"0x2a ')
+    assert after_string is not None
+    assert after_string.group() == '0x2a'
 
 
 if __name__ == '__main__':
