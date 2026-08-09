@@ -1,0 +1,21 @@
+macro choose if dup 0 < do drop 1 elif dup 0 == do drop 2 else drop 3 end end
+macro countdown while dup 0 > do dup print 1 - end drop end
+macro over let a b do a b a end end
+macro two one one end
+macro int 9 end
+macro alloc 7 end
+
+proc main -- do
+    0 1 - choose print
+    0 choose print
+    1 choose print
+    3 countdown
+    1 2 over print print print
+    5 later print
+    5 two print
+    int print
+    42 let alloc do alloc print end
+end
+
+macro one 1 + end
+macro later 1 + end

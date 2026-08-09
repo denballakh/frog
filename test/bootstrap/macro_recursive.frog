@@ -1,0 +1,6 @@
+macro a b end
+macro b a end
+
+proc main -- do
+    a
+end

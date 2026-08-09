@@ -1,0 +1,4 @@
+macro if 1 end
+
+proc main -- do
+end

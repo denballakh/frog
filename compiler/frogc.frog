@@ -35,6 +35,13 @@ proc proc-output-count-offset -- int do 56 end
 proc proc-index-offset -- int do 64 end
 proc proc-bytes -- int do 72 end
 
+proc macro-name-start-offset -- int do 0 end
+proc macro-name-length-offset -- int do 8 end
+proc macro-body-start-offset -- int do 16 end
+proc macro-body-end-offset -- int do 24 end
+proc macro-expanding-offset -- int do 32 end
+proc macro-bytes -- int do 40 end
+
 proc ctx-source-offset -- int do 0 end
 proc ctx-source-length-offset -- int do 8 end
 proc ctx-tokens-offset -- int do 16 end
@@ -47,7 +54,9 @@ proc ctx-lex-index-offset -- int do 64 end
 proc ctx-lex-line-offset -- int do 72 end
 proc ctx-lex-column-offset -- int do 80 end
 proc ctx-main-proc-offset -- int do 88 end
-proc ctx-bytes -- int do 96 end
+proc ctx-macros-offset -- int do 96 end
+proc ctx-macro-count-offset -- int do 104 end
+proc ctx-bytes -- int do 112 end
 
 proc max-source-bytes -- int do 4194304 end
 
@@ -227,6 +236,8 @@ proc ctx-lex-index ptr -- int do ctx-lex-index-offset field-read end
 proc ctx-lex-line ptr -- int do ctx-lex-line-offset field-read end
 proc ctx-lex-column ptr -- int do ctx-lex-column-offset field-read end
 proc ctx-main-proc ptr -- int do ctx-main-proc-offset field-read end
+proc ctx-macros ptr -- ptr do ctx-macros-offset pointer-field-read end
+proc ctx-macro-count ptr -- int do ctx-macro-count-offset field-read end
 
 proc set-ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
 proc set-ctx-source-length int ptr -- do ctx-source-length-offset field-write end
@@ -240,6 +251,8 @@ proc set-ctx-lex-index int ptr -- do ctx-lex-index-offset field-write end
 proc set-ctx-lex-line int ptr -- do ctx-lex-line-offset field-write end
 proc set-ctx-lex-column int ptr -- do ctx-lex-column-offset field-write end
 proc set-ctx-main-proc int ptr -- do ctx-main-proc-offset field-write end
+proc set-ctx-macros ptr ptr -- do ctx-macros-offset pointer-field-write end
+proc set-ctx-macro-count int ptr -- do ctx-macro-count-offset field-write end
 
 proc token-address ptr int -- ptr do
     let ctx index do
@@ -535,6 +548,37 @@ proc proc-output-start-at ptr int -- int do proc-output-start-offset proc-field 
 proc proc-output-count-at ptr int -- int do proc-output-count-offset proc-field end
 proc proc-index-at ptr int -- int do proc-index-offset proc-field end
 
+proc macro-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-macros index macro-bytes * +
+    end
+end
+
+proc macro-field ptr int int -- int do
+    let ctx index offset do
+        ctx index macro-address offset field-read
+    end
+end
+
+proc set-macro-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index macro-address offset field-write
+    end
+end
+
+proc macro-name-start-at ptr int -- int do macro-name-start-offset macro-field end
+proc macro-name-length-at ptr int -- int do macro-name-length-offset macro-field end
+proc macro-body-start-at ptr int -- int do macro-body-start-offset macro-field end
+proc macro-body-end-at ptr int -- int do macro-body-end-offset macro-field end
+proc macro-expanding-at ptr int -- bool do macro-expanding-offset macro-field 0 != end
+
+proc set-macro-expanding bool ptr int -- do
+    let value ctx index do
+        if value do 1 else 0 end
+        ctx index macro-expanding-offset set-macro-field
+    end
+end
+
 proc type-at ptr int -- int do
     let ctx index do
         ctx ctx-types index cell-bytes * field-read
@@ -553,6 +597,24 @@ proc require-word ptr int -- do
         if ctx token-index token-kind-at token-word != do
             "expected word token" fail
         end
+    end
+end
+
+proc reserved-name ptr int -- bool do
+    let ctx token-index do
+        ctx token-index "proc" token-equals
+        ctx token-index "macro" token-equals ||
+        ctx token-index "if" token-equals ||
+        ctx token-index "elif" token-equals ||
+        ctx token-index "else" token-equals ||
+        ctx token-index "while" token-equals ||
+        ctx token-index "do" token-equals ||
+        ctx token-index "end" token-equals ||
+        ctx token-index "let" token-equals ||
+        ctx token-index "from" token-equals ||
+        ctx token-index "import" token-equals ||
+        ctx token-index "as" token-equals ||
+        ctx token-index "--" token-equals ||
     end
 end
 
@@ -599,6 +661,227 @@ proc find-proc ptr int -- int do
     0 find-proc-from
 end
 
+proc macro-name-equals-token ptr int int -- bool do
+    let ctx macro-index token-index do
+        ctx ctx-source
+        ctx macro-index macro-name-start-at
+        +
+        ctx macro-index macro-name-length-at
+        ctx token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-macro-from ptr int int -- int do
+    let ctx token-index macro-index do
+        if macro-index ctx ctx-macro-count >= do
+            0 1 -
+        elif ctx macro-index token-index macro-name-equals-token do
+            macro-index
+        else
+            ctx token-index macro-index 1 + find-macro-from
+        end
+    end
+end
+
+proc find-macro ptr int -- int do
+    0 find-macro-from
+end
+
+proc scan-macro-body ptr int -- int do
+    let ctx body-start do
+        body-start 0 true
+        while
+            let token-index depth active do
+                token-index depth active active
+            end
+        do
+            let token-index depth active do
+                if token-index ctx ctx-token-count >= do
+                    "unterminated macro body" fail
+                    token-index depth false
+                elif ctx token-index token-kind-at token-word == do
+                    if ctx token-index "end" token-equals do
+                        if depth 0 == do
+                            token-index 1 + depth false
+                        else
+                            token-index 1 + depth 1 - true
+                        end
+                    elif
+                        ctx token-index "if" token-equals
+                        ctx token-index "while" token-equals ||
+                        ctx token-index "let" token-equals ||
+                    do
+                        token-index 1 + depth 1 + true
+                    elif
+                        ctx token-index "proc" token-equals
+                        ctx token-index "macro" token-equals ||
+                        ctx token-index "from" token-equals ||
+                        ctx token-index "import" token-equals ||
+                    do
+                        "declarations and imports are not allowed in macro bodies" fail
+                        token-index 1 + depth true
+                    else
+                        token-index 1 + depth true
+                    end
+                else
+                    token-index 1 + depth true
+                end
+            end
+        end
+        let next-token depth active do
+            next-token
+        end
+    end
+end
+
+proc validate-macro-body ptr int int -- do
+    let ctx body-start body-end do
+        body-end body-start - cell-bytes * alloc
+        let kinds do
+            body-end body-start - cell-bytes * alloc
+            let has-dos do
+                body-end body-start - cell-bytes * alloc
+                let has-elses do
+                    body-start 0
+                    while
+                        let token-index depth do
+                            token-index depth
+                            token-index body-end <
+                        end
+                    do
+                        let token-index depth do
+                            if ctx token-index token-kind-at token-word == do
+                                if
+                                    ctx token-index "proc" token-equals
+                                    ctx token-index "macro" token-equals ||
+                                    ctx token-index "from" token-equals ||
+                                    ctx token-index "import" token-equals ||
+                                do
+                                    "declarations and imports are not allowed in macro bodies" fail
+                                    token-index 1 + depth
+                                elif
+                                    ctx token-index "if" token-equals
+                                    ctx token-index "while" token-equals ||
+                                    ctx token-index "let" token-equals ||
+                                do
+                                    if ctx token-index "if" token-equals do
+                                        block-if kinds depth cell-bytes * field-write
+                                    elif ctx token-index "while" token-equals do
+                                        block-while kinds depth cell-bytes * field-write
+                                    else
+                                        block-let kinds depth cell-bytes * field-write
+                                    end
+                                    0 has-dos depth cell-bytes * field-write
+                                    0 has-elses depth cell-bytes * field-write
+                                    token-index 1 + depth 1 +
+                                elif ctx token-index "do" token-equals do
+                                    if depth 0 <= do
+                                        "do outside macro control-flow block" fail
+                                    end
+                                    if has-dos depth 1 - cell-bytes * field-read 0 != do
+                                        "duplicate do in macro control-flow block" fail
+                                    end
+                                    1 has-dos depth 1 - cell-bytes * field-write
+                                    token-index 1 + depth
+                                elif ctx token-index "else" token-equals do
+                                    if depth 0 <= do
+                                        "else outside macro if block" fail
+                                    end
+                                    if kinds depth 1 - cell-bytes * field-read block-if != do
+                                        "else outside macro if block" fail
+                                    end
+                                    if has-dos depth 1 - cell-bytes * field-read 0 == do
+                                        "else requires a completed macro if arm" fail
+                                    end
+                                    if has-elses depth 1 - cell-bytes * field-read 0 != do
+                                        "duplicate else in macro if block" fail
+                                    end
+                                    1 has-elses depth 1 - cell-bytes * field-write
+                                    token-index 1 + depth
+                                elif ctx token-index "elif" token-equals do
+                                    if depth 0 <= do
+                                        "elif outside macro if block" fail
+                                    end
+                                    if kinds depth 1 - cell-bytes * field-read block-if != do
+                                        "elif outside macro if block" fail
+                                    end
+                                    if has-dos depth 1 - cell-bytes * field-read 0 == do
+                                        "elif requires a completed macro if arm" fail
+                                    end
+                                    if has-elses depth 1 - cell-bytes * field-read 0 != do
+                                        "elif after else in macro if block" fail
+                                    end
+                                    0 has-dos depth 1 - cell-bytes * field-write
+                                    token-index 1 + depth
+                                elif ctx token-index "end" token-equals do
+                                    if depth 0 <= do
+                                        "end outside macro control-flow block" fail
+                                    end
+                                    if has-dos depth 1 - cell-bytes * field-read 0 == do
+                                        "macro control-flow block requires do" fail
+                                    end
+                                    token-index 1 + depth 1 -
+                                else
+                                    token-index 1 + depth
+                                end
+                            else
+                                token-index 1 + depth
+                            end
+                        end
+                    end
+                    let token-index depth do
+                        if depth 0 != do
+                            "unclosed blocks in macro body" fail
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc scan-one-macro ptr int -- int do
+    let ctx macro-token do
+        macro-token 1 +
+        let name-token do
+            if name-token ctx ctx-token-count >= do
+                "expected macro name" fail
+            end
+            ctx name-token require-word
+            if ctx name-token reserved-name do
+                "reserved keyword cannot be a macro name" fail
+            end
+            ctx name-token find-macro
+            let existing-macro do
+                if existing-macro 0 >= do
+                    "duplicate macro name" fail
+                end
+            end
+            ctx name-token find-proc
+            let existing-proc do
+                if existing-proc 0 >= do
+                    "macro name conflicts with procedure name" fail
+                end
+            end
+            ctx ctx-macro-count
+            let macro-index do
+                ctx name-token token-start-at ctx macro-index macro-name-start-offset set-macro-field
+                ctx name-token token-length-at ctx macro-index macro-name-length-offset set-macro-field
+                false ctx macro-index set-macro-expanding
+                ctx name-token 1 + scan-macro-body
+                let next-token do
+                    ctx name-token 1 + next-token 1 - validate-macro-body
+                    name-token 1 + ctx macro-index macro-body-start-offset set-macro-field
+                    next-token 1 - ctx macro-index macro-body-end-offset set-macro-field
+                    ctx ctx-macro-count 1 + ctx set-ctx-macro-count
+                    next-token
+                end
+            end
+        end
+    end
+end
+
 proc scan-block-end ptr int -- int do
     let ctx body-start do
         body-start 1
@@ -611,7 +894,15 @@ proc scan-block-end ptr int -- int do
         do
             let token-index depth do
                 if ctx token-index token-kind-at token-word == do
-                    if ctx token-index "elif" token-equals do
+                    if
+                        ctx token-index "proc" token-equals
+                        ctx token-index "macro" token-equals ||
+                        ctx token-index "from" token-equals ||
+                        ctx token-index "import" token-equals ||
+                    do
+                        "declarations and imports are only allowed at top level" fail
+                        depth
+                    elif ctx token-index "elif" token-equals do
                         if depth 1 <= do
                             "elif outside active if" fail
                         end
@@ -655,6 +946,9 @@ proc scan-one-proc ptr int -- int do
                 "expected procedure name" fail
             end
             ctx name-token require-word
+            if ctx name-token reserved-name do
+                "reserved keyword cannot be a procedure name" fail
+            end
             ctx name-token find-proc
             let existing-proc do
                 if existing-proc 0 >= do
@@ -662,6 +956,12 @@ proc scan-one-proc ptr int -- int do
                     ctx name-token token-slice emit-error
                     10 eputc
                     1 exit
+                end
+            end
+            ctx name-token find-macro
+            let existing-macro do
+                if existing-macro 0 >= do
+                    "procedure name conflicts with macro name" fail
                 end
             end
 
@@ -745,20 +1045,26 @@ proc scan-one-proc ptr int -- int do
     end
 end
 
-proc scan-procedures ptr -- do
+proc scan-declarations ptr -- do
     let ctx do
         0 ctx set-ctx-proc-count
         0 ctx set-ctx-type-count
+        0 ctx set-ctx-macro-count
         0
         while dup ctx ctx-token-count < do
             let token-index do
                 if
                     ctx token-index token-kind-at token-word ==
+                    ctx token-index "macro" token-equals &&
+                do
+                    ctx token-index scan-one-macro
+                elif
+                    ctx token-index token-kind-at token-word ==
                     ctx token-index "proc" token-equals &&
                 do
                     ctx token-index scan-one-proc
                 else
-                    "only procedure declarations are allowed at bootstrap top level" fail
+                    "only procedure and macro declarations are allowed at bootstrap top level" fail
                     token-index 1 +
                 end
             end
@@ -1954,11 +2260,28 @@ proc compile-type-word ptr int -- bool do
     end
 end
 
+proc compile-macro ptr int -- do
+    let cc macro-index do
+        if cc cc-root macro-index macro-expanding-at do
+            "recursive macro expansion" fail
+        end
+        true cc cc-root macro-index set-macro-expanding
+        cc
+        cc cc-root macro-index macro-body-start-at
+        cc cc-root macro-index macro-body-end-at
+        compile-body-range
+        false cc cc-root macro-index set-macro-expanding
+    end
+end
+
 proc compile-ordinary-word ptr int -- do
     let cc token-index do
-        if cc token-index compile-type-word do
-        else
-            if cc token-index compile-intrinsic do
+        cc cc-root token-index find-macro
+        let macro-index do
+            if macro-index 0 >= do
+                cc macro-index compile-macro
+            elif cc token-index compile-type-word do
+            elif cc token-index compile-intrinsic do
             else
                 cc token-index find-local
                 let local-index do
@@ -2167,8 +2490,9 @@ proc main -- do
             ctx lex
 
             ctx ctx-token-count 1 + proc-bytes * alloc ctx set-ctx-procs
+            ctx ctx-token-count 1 + macro-bytes * alloc ctx set-ctx-macros
             ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-types
-            ctx scan-procedures
+            ctx scan-declarations
 
             ctx emit-c-emitter-support
             ctx compile-all-procedures
