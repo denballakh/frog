@@ -1,0 +1,14 @@
+from "shape.frog" import Maybe as P
+
+proc take P -- int do P.some end
+
+proc main -- do
+    8 P:some
+    let value do
+        value P.some?
+        let maybe matches do
+            matches print
+            maybe take print
+        end
+    end
+end

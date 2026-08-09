@@ -1,0 +1,8 @@
+union Maybe
+    case none
+    case some int
+end
+
+proc main -- do
+    Maybe:none Maybe.some print
+end

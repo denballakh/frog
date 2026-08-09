@@ -1,0 +1,12 @@
+union Maybe
+    case none
+    case some int
+end
+
+proc main -- do
+    16 alloc
+    let raw do
+        2 raw !i64
+        raw Maybe cast Maybe.none
+    end
+end

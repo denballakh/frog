@@ -1,0 +1,3 @@
+from "shape.frog" import Maybe as P.Q
+
+proc main -- do end

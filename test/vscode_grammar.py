@@ -53,10 +53,16 @@ def main() -> None:
     assert isinstance(keyword_pattern, str)
     assert isinstance(special_pattern, str)
     assert re.compile(keyword_pattern).fullmatch('record')
+    assert re.compile(keyword_pattern).fullmatch('union')
+    assert re.compile(keyword_pattern).fullmatch('case')
     special_regex = re.compile(special_pattern)
     assert special_regex.fullmatch('Node:alloc')
     assert special_regex.fullmatch('Node:sizeof')
+    assert special_regex.fullmatch('Maybe:some')
+    assert special_regex.fullmatch('Maybe.some?')
+    assert special_regex.fullmatch('?')
     assert special_regex.fullmatch('Node.bytes') is None
+    assert special_regex.fullmatch('Maybe.some') is None
 
     string_patterns = patterns(string['patterns'])
     assert all('include' not in pattern for pattern in string_patterns)

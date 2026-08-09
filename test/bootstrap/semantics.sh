@@ -31,6 +31,29 @@ run_ok() {
     printf '%s' "$expected" | cmp - "$output/$case_name.out"
 }
 
+run_status() {
+    local case_name=$1
+    local expected_status=$2
+    local fixture="$fixtures/$case_name"
+
+    (
+        cd "$fixture"
+        "$compiler" < main.frog > "$output/$case_name.c"
+    )
+    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 \
+        "$output/$case_name.c" -o "$output/$case_name"
+    local actual_status
+    if "$output/$case_name" > "$output/$case_name.out"; then
+        actual_status=0
+    else
+        actual_status=$?
+    fi
+    if [[ $actual_status -ne $expected_status ]]; then
+        echo "expected $case_name to exit $expected_status, got $actual_status" >&2
+        exit 1
+    fi
+}
+
 run_error() {
     local case_name=$1
     local expected=$2
@@ -69,6 +92,11 @@ run_ok args $'3\n/\nfrog\npond\n' frog pond
 run_ok pointer_store $'65\n'
 run_ok c_ffi $'42\n42\n711\ntrue\nfalse\n'
 run_ok records_layout $'41\ntrue\ntrue\n32\n7\n'
+run_ok unions_layout $'true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n'
+run_status unions_wrong_variant 1
+run_status unions_invalid_tag 1
+run_status unions_negative_tag 1
+run_status unions_null 1
 printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
     | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
 
@@ -171,3 +199,42 @@ run_source_error record_duplicate_field \
 run_source_error record_unsupported_cast \
     $'record Point x int end\nproc main -- do 1 Point cast drop end\n' \
     'unsupported cast'
+run_source_error union_empty \
+    $'union Maybe end\nproc main -- do end\n' \
+    'union must declare at least one variant'
+run_source_error union_duplicate_variant \
+    $'union Maybe case x case x end\nproc main -- do end\n' \
+    'duplicate union variant: x'
+run_source_error union_unknown_type \
+    $'union Maybe case some Missing end\nproc main -- do end\n' \
+    'unknown type in union variant'
+run_source_error union_multiple_payloads \
+    $'union Maybe case pair int bool end\nproc main -- do end\n' \
+    'union variant may carry at most one value'
+run_source_error union_unknown_variant \
+    $'union Maybe case none end\nproc main -- do Maybe:other drop end\n' \
+    'unknown union variant'
+run_source_error union_wrong_payload_type \
+    $'union Maybe case some int end\nproc main -- do true Maybe:some drop end\n' \
+    'compile-time stack type mismatch'
+run_source_error union_unsupported_cast \
+    $'union Maybe case none end\nproc main -- do 1 Maybe cast drop end\n' \
+    'unsupported cast'
+run_source_error union_inside_proc \
+    $'proc main -- do union Maybe case none end end\n' \
+    'declarations are only allowed at top level'
+run_source_error union_inside_macro \
+    $'macro bad union Maybe case none end end\nproc main -- do end\n' \
+    'declarations are not allowed in macro bodies'
+run_source_error union_missing_name \
+    $'union end\nproc main -- do end\n' \
+    'expected union name'
+run_source_error union_invalid_name \
+    $'union P.Q case none end\nproc main -- do end\n' \
+    'invalid union name'
+run_source_error union_missing_variant_name \
+    $'union Maybe case end\nproc main -- do end\n' \
+    'expected union variant name'
+run_source_error union_invalid_variant_name \
+    $'union Maybe case P.Q end\nproc main -- do end\n' \
+    'union variant name must be an identifier'

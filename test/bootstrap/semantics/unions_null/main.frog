@@ -1,0 +1,7 @@
+union Maybe
+    case none
+end
+
+proc main -- do
+    0 ptr cast Maybe cast Maybe.none? drop drop
+end

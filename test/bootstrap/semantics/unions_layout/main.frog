@@ -1,0 +1,71 @@
+proc maybe-value Maybe -- int do Maybe.some end
+
+union Maybe
+    case none
+    case some int
+end
+
+record Payload
+    value int
+    maybe Maybe
+end
+
+union Box
+    case empty
+    case full Payload
+end
+
+union Chain
+    case stop
+    case next Chain
+end
+
+union Scalar
+    case flag bool
+    case address ptr
+end
+
+proc main -- do
+    Maybe:none Maybe.none?
+    let value matches do
+        matches print
+    end
+    Maybe:none Maybe.some?
+    let value matches do
+        matches print
+    end
+    Maybe:none Maybe.none
+    Maybe:none ptr cast Maybe cast Maybe.none
+    9 Maybe:some
+    let value do
+        value Maybe.some?
+        let maybe matches do
+            matches print
+            maybe maybe-value print
+        end
+    end
+
+    Payload:alloc
+    let payload do
+        7 payload Payload.value!
+        Maybe:none payload Payload.maybe!
+        payload Payload.maybe Maybe.none
+        payload Box:full
+        let boxed do
+            boxed Box.full?
+            let box matches do
+                matches print
+                box Box.full Payload.value print
+            end
+        end
+    end
+
+    Chain:stop Chain:next Chain.next?
+    let chain matches do
+        matches print
+    end
+
+
+    true Scalar:flag Scalar.flag print
+    0 ptr cast Scalar:address Scalar.address int cast 0 == print
+end

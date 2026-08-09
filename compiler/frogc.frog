@@ -9,7 +9,8 @@ proc type-int -- int do 1 end
 proc type-bool -- int do 2 end
 proc type-ptr -- int do 3 end
 proc type-type -- int do 4 end
-proc type-record-base -- int do 1000 end
+proc type-none -- int do 0 end
+proc type-nominal-base -- int do 1000 end
 
 proc max-int -- int do 1 62 << dup 1 - + end
 
@@ -49,7 +50,7 @@ proc program-next-proc-id-offset -- int do 32 end
 proc program-token-count-offset -- int do 40 end
 proc program-strings-offset -- int do 48 end
 proc program-string-count-offset -- int do 56 end
-proc program-next-record-type-offset -- int do 72 end
+proc program-next-nominal-type-offset -- int do 72 end
 proc program-bytes -- int do 80 end
 
 proc string-bytes-offset -- int do 0 end
@@ -82,6 +83,22 @@ proc record-field-type-offset -- int do 16 end
 proc record-field-byte-offset-offset -- int do 24 end
 proc record-field-bytes -- int do 32 end
 
+proc union-name-start-offset -- int do 0 end
+proc union-name-length-offset -- int do 8 end
+proc union-case-start-offset -- int do 16 end
+proc union-case-count-offset -- int do 24 end
+proc union-type-offset -- int do 32 end
+proc union-bytes -- int do 40 end
+
+proc union-case-name-start-offset -- int do 0 end
+proc union-case-name-length-offset -- int do 8 end
+proc union-case-payload-type-offset -- int do 16 end
+proc union-case-tag-offset -- int do 24 end
+proc union-case-bytes -- int do 32 end
+
+proc union-payload-offset -- int do cell-bytes end
+proc union-storage-bytes -- int do cell-bytes 2 * end
+
 proc ctx-source-offset -- int do 0 end
 proc ctx-source-length-offset -- int do 8 end
 proc ctx-tokens-offset -- int do 16 end
@@ -112,7 +129,11 @@ proc ctx-records-offset -- int do 208 end
 proc ctx-record-count-offset -- int do 216 end
 proc ctx-record-fields-offset -- int do 224 end
 proc ctx-record-field-count-offset -- int do 232 end
-proc ctx-bytes -- int do 240 end
+proc ctx-unions-offset -- int do 240 end
+proc ctx-union-count-offset -- int do 248 end
+proc ctx-union-cases-offset -- int do 256 end
+proc ctx-union-case-count-offset -- int do 264 end
+proc ctx-bytes -- int do 272 end
 
 proc import-path-token-offset -- int do 0 end
 proc import-name-token-offset -- int do 8 end
@@ -133,6 +154,7 @@ proc scope-bytes -- int do 48 end
 proc scope-procedure -- int do 1 end
 proc scope-macro -- int do 2 end
 proc scope-record -- int do 3 end
+proc scope-union -- int do 4 end
 
 proc load-new -- int do 0 end
 proc load-loading -- int do 1 end
@@ -363,6 +385,10 @@ proc ctx-records ptr -- ptr do ctx-records-offset pointer-field-read end
 proc ctx-record-count ptr -- int do ctx-record-count-offset field-read end
 proc ctx-record-fields ptr -- ptr do ctx-record-fields-offset pointer-field-read end
 proc ctx-record-field-count ptr -- int do ctx-record-field-count-offset field-read end
+proc ctx-unions ptr -- ptr do ctx-unions-offset pointer-field-read end
+proc ctx-union-count ptr -- int do ctx-union-count-offset field-read end
+proc ctx-union-cases ptr -- ptr do ctx-union-cases-offset pointer-field-read end
+proc ctx-union-case-count ptr -- int do ctx-union-case-count-offset field-read end
 
 proc set-ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
 proc set-ctx-source-length int ptr -- do ctx-source-length-offset field-write end
@@ -393,6 +419,10 @@ proc set-ctx-records ptr ptr -- do ctx-records-offset pointer-field-write end
 proc set-ctx-record-count int ptr -- do ctx-record-count-offset field-write end
 proc set-ctx-record-fields ptr ptr -- do ctx-record-fields-offset pointer-field-write end
 proc set-ctx-record-field-count int ptr -- do ctx-record-field-count-offset field-write end
+proc set-ctx-unions ptr ptr -- do ctx-unions-offset pointer-field-write end
+proc set-ctx-union-count int ptr -- do ctx-union-count-offset field-write end
+proc set-ctx-union-cases ptr ptr -- do ctx-union-cases-offset pointer-field-write end
+proc set-ctx-union-case-count int ptr -- do ctx-union-case-count-offset field-write end
 proc set-ctx-is-root bool ptr -- do
     let value ctx do
         if value do 1 else 0 end
@@ -408,7 +438,7 @@ proc program-next-proc-id ptr -- int do program-next-proc-id-offset field-read e
 proc program-token-count ptr -- int do program-token-count-offset field-read end
 proc program-strings ptr -- ptr do program-strings-offset pointer-field-read end
 proc program-string-count ptr -- int do program-string-count-offset field-read end
-proc program-next-record-type ptr -- int do program-next-record-type-offset field-read end
+proc program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
 
 proc set-program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
 proc set-program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
@@ -418,7 +448,7 @@ proc set-program-next-proc-id int ptr -- do program-next-proc-id-offset field-wr
 proc set-program-token-count int ptr -- do program-token-count-offset field-write end
 proc set-program-strings ptr ptr -- do program-strings-offset pointer-field-write end
 proc set-program-string-count int ptr -- do program-string-count-offset field-write end
-proc set-program-next-record-type int ptr -- do program-next-record-type-offset field-write end
+proc set-program-next-nominal-type int ptr -- do program-next-nominal-type-offset field-write end
 
 proc string-address ptr int -- ptr do
     let program index do program program-strings index string-bytes * + end
@@ -452,12 +482,12 @@ proc program-allocate-proc-id ptr -- int do
     end
 end
 
-proc program-allocate-record-type ptr -- int do
+proc program-allocate-nominal-type ptr -- int do
     let program do
-        program program-next-record-type
-        let record-type do
-            record-type 1 + program set-program-next-record-type
-            record-type
+        program program-next-nominal-type
+        let nominal-type do
+            nominal-type 1 + program set-program-next-nominal-type
+            nominal-type
         end
     end
 end
@@ -919,6 +949,62 @@ proc set-record-field-type int ptr int -- do
     let value ctx index do value ctx index record-field-type-offset set-record-field-entry-field end
 end
 
+proc union-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-unions index union-bytes * +
+    end
+end
+
+proc union-entry-field ptr int int -- int do
+    let ctx index offset do
+        ctx index union-address offset field-read
+    end
+end
+
+proc set-union-entry-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index union-address offset field-write
+    end
+end
+
+proc union-name-start-at ptr int -- int do union-name-start-offset union-entry-field end
+proc union-name-length-at ptr int -- int do union-name-length-offset union-entry-field end
+proc union-case-start-at ptr int -- int do union-case-start-offset union-entry-field end
+proc union-case-count-at ptr int -- int do union-case-count-offset union-entry-field end
+proc union-type-at ptr int -- int do union-type-offset union-entry-field end
+
+proc union-case-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-union-cases index union-case-bytes * +
+    end
+end
+
+proc union-case-entry-field ptr int int -- int do
+    let ctx index offset do
+        ctx index union-case-address offset field-read
+    end
+end
+
+proc set-union-case-entry-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index union-case-address offset field-write
+    end
+end
+
+proc union-case-name-start-at ptr int -- int do
+    union-case-name-start-offset union-case-entry-field
+end
+proc union-case-name-length-at ptr int -- int do
+    union-case-name-length-offset union-case-entry-field
+end
+proc union-case-payload-type-at ptr int -- int do
+    union-case-payload-type-offset union-case-entry-field
+end
+proc union-case-tag-at ptr int -- int do union-case-tag-offset union-case-entry-field end
+proc set-union-case-payload-type int ptr int -- do
+    let value ctx index do value ctx index union-case-payload-type-offset set-union-case-entry-field end
+end
+
 proc type-at ptr int -- int do
     let ctx index do
         ctx ctx-types index cell-bytes * field-read
@@ -956,6 +1042,8 @@ proc reserved-name ptr int -- bool do
         ctx token-index "as" token-equals ||
         ctx token-index "extern" token-equals ||
         ctx token-index "record" token-equals ||
+        ctx token-index "union" token-equals ||
+        ctx token-index "case" token-equals ||
         ctx token-index "--" token-equals ||
     end
 end
@@ -988,7 +1076,7 @@ proc c-identifier-suffix-valid ptr int int -- bool do
     end
 end
 
-proc record-identifier-token ptr int -- bool do
+proc identifier-token ptr int -- bool do
     let ctx token-index do
         ctx token-index token-slice
         let bytes length do
@@ -1261,6 +1349,61 @@ end
 
 proc find-record-field ptr int ptr int -- int do 0 find-record-field-from end
 
+proc union-name-equals-token ptr int int -- bool do
+    let ctx union-index token-index do
+        ctx ctx-source
+        ctx union-index union-name-start-at
+        +
+        ctx union-index union-name-length-at
+        ctx token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-union-from ptr int int -- int do
+    let ctx token-index union-index do
+        if union-index ctx ctx-union-count >= do
+            0 1 -
+        elif ctx union-index token-index union-name-equals-token do
+            union-index
+        else
+            ctx token-index union-index 1 + find-union-from
+        end
+    end
+end
+
+proc find-union ptr int -- int do 0 find-union-from end
+
+proc union-case-name-equals-bytes ptr int ptr int -- bool do
+    let ctx case-index bytes length do
+        ctx ctx-source
+        ctx case-index union-case-name-start-at
+        +
+        ctx case-index union-case-name-length-at
+        bytes length
+        bytes-equal
+    end
+end
+
+proc find-union-case-from ptr int ptr int int -- int do
+    let ctx union-index bytes length relative-index do
+        if relative-index ctx union-index union-case-count-at >= do
+            0 1 -
+        else
+            ctx union-index union-case-start-at relative-index +
+            let case-index do
+                if ctx case-index bytes length union-case-name-equals-bytes do
+                    case-index
+                else
+                    ctx union-index bytes length relative-index 1 + find-union-case-from
+                end
+            end
+        end
+    end
+end
+
+proc find-union-case ptr int ptr int -- int do 0 find-union-case-from end
+
 proc fail-duplicate-declaration ptr int -- do
     let ctx token-index do
         "frogc: " emit-error
@@ -1283,7 +1426,7 @@ proc scan-record-fields ptr int int -- int do
             token-index 1 +
         else
             ctx token-index require-word
-            if ctx token-index record-identifier-token ! do
+            if ctx token-index identifier-token ! do
                 "record field name must be an identifier" fail
             end
             ctx record-index ctx token-index token-slice find-record-field
@@ -1339,7 +1482,7 @@ proc scan-one-record ptr int -- int do
             end
             ctx name-token require-word
             if
-                ctx name-token record-identifier-token !
+                ctx name-token identifier-token !
                 ctx name-token reserved-name ||
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
@@ -1357,6 +1500,7 @@ proc scan-one-record ptr int -- int do
             if
                 ctx name-token find-proc 0 >=
                 ctx name-token find-macro 0 >= ||
+                ctx name-token find-union 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -1369,11 +1513,167 @@ proc scan-one-record ptr int -- int do
                 ctx ctx-record-field-count
                 ctx record-index record-field-start-offset set-record-entry-field
                 0 ctx record-index record-field-count-offset set-record-entry-field
-                ctx ctx-program program-allocate-record-type
+                ctx ctx-program program-allocate-nominal-type
                 ctx record-index record-type-offset set-record-entry-field
                 ctx record-index name-token 1 + scan-record-fields
                 let next-token do
                     record-index 1 + ctx set-ctx-record-count
+                    next-token
+                end
+            end
+        end
+    end
+end
+
+proc scan-union-cases ptr int int -- int do
+    let ctx union-index token-index do
+        if token-index ctx ctx-token-count >= do
+            "unterminated union declaration" fail
+            token-index
+        elif ctx token-index "end" token-equals do
+            if ctx union-index union-case-count-at 0 == do
+                "union must declare at least one variant" fail
+            end
+            token-index 1 +
+        elif ctx token-index "case" token-equals ! do
+            "expected case or end in union declaration" fail
+            token-index
+        else
+            token-index 1 +
+            let name-token do
+                if
+                    name-token ctx ctx-token-count >=
+                    if dup ! do
+                        drop
+                        ctx name-token "case" token-equals
+                        ctx name-token "end" token-equals ||
+                    end
+                do
+                    "expected union variant name" fail
+                end
+                ctx name-token require-word
+                if
+                    ctx name-token identifier-token !
+                    ctx name-token reserved-name ||
+                do
+                    "union variant name must be an identifier" fail
+                end
+                ctx union-index ctx name-token token-slice find-union-case
+                let existing-case do
+                    if existing-case 0 >= do
+                        "frogc: " emit-error
+                        "duplicate union variant: " emit-error
+                        ctx name-token token-slice emit-error
+                        10 eputc
+                        1 exit
+                    end
+                end
+                ctx ctx-union-case-count
+                let case-index do
+                    ctx name-token token-start-at
+                    ctx case-index union-case-name-start-offset set-union-case-entry-field
+                    ctx name-token token-length-at
+                    ctx case-index union-case-name-length-offset set-union-case-entry-field
+                    type-none ctx case-index union-case-payload-type-offset set-union-case-entry-field
+                    ctx union-index union-case-count-at
+                    ctx case-index union-case-tag-offset set-union-case-entry-field
+                    name-token 1 +
+                    let after-name do
+                        if after-name ctx ctx-token-count >= do
+                            "unterminated union declaration" fail
+                        end
+                        if
+                            ctx after-name "case" token-equals
+                            ctx after-name "end" token-equals ||
+                        do
+                            after-name
+                        else
+                            ctx after-name require-word
+                            if ctx after-name reserved-name do
+                                "unknown type in union variant" fail
+                            end
+                            ctx after-name parse-type-token
+                            ctx case-index union-case-payload-type-offset set-union-case-entry-field
+                            after-name 1 +
+                            let after-payload do
+                                if after-payload ctx ctx-token-count >= do
+                                    "unterminated union declaration" fail
+                                end
+                                if
+                                    ctx after-payload "case" token-equals
+                                    ctx after-payload "end" token-equals ||
+                                    !
+                                do
+                                    "union variant may carry at most one value" fail
+                                end
+                                after-payload
+                            end
+                        end
+                        let next-token do
+                            case-index 1 + ctx set-ctx-union-case-count
+                            ctx union-index union-case-count-at 1 +
+                            ctx union-index union-case-count-offset set-union-entry-field
+                            ctx union-index next-token scan-union-cases
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc scan-one-union ptr int -- int do
+    let ctx union-token do
+        union-token 1 +
+        let name-token do
+            if
+                name-token ctx ctx-token-count >=
+                if dup ! do
+                    drop
+                    ctx name-token "case" token-equals
+                    ctx name-token "end" token-equals ||
+                end
+            do
+                "expected union name" fail
+            end
+            ctx name-token require-word
+            if
+                ctx name-token identifier-token !
+                ctx name-token reserved-name ||
+                ctx name-token "int" token-equals ||
+                ctx name-token "bool" token-equals ||
+                ctx name-token "ptr" token-equals ||
+            do
+                "invalid union name" fail
+            end
+            if ctx name-token find-union 0 >= do
+                "frogc: " emit-error
+                "duplicate union name: " emit-error
+                ctx name-token token-slice emit-error
+                10 eputc
+                1 exit
+            end
+            if
+                ctx name-token find-proc 0 >=
+                ctx name-token find-macro 0 >= ||
+                ctx name-token find-record 0 >= ||
+            do
+                ctx name-token fail-duplicate-declaration
+            end
+            ctx ctx-union-count
+            let union-index do
+                ctx name-token token-start-at
+                ctx union-index union-name-start-offset set-union-entry-field
+                ctx name-token token-length-at
+                ctx union-index union-name-length-offset set-union-entry-field
+                ctx ctx-union-case-count
+                ctx union-index union-case-start-offset set-union-entry-field
+                0 ctx union-index union-case-count-offset set-union-entry-field
+                ctx ctx-program program-allocate-nominal-type
+                ctx union-index union-type-offset set-union-entry-field
+                ctx union-index name-token 1 + scan-union-cases
+                let next-token do
+                    union-index 1 + ctx set-ctx-union-count
                     next-token
                 end
             end
@@ -1417,6 +1717,7 @@ proc scan-macro-body ptr int -- int do
                         ctx token-index "macro" token-equals ||
                         ctx token-index "extern" token-equals ||
                         ctx token-index "record" token-equals ||
+                        ctx token-index "union" token-equals ||
                     do
                         "declarations are not allowed in macro bodies" fail
                         token-index 1 + depth true
@@ -1462,6 +1763,7 @@ proc validate-macro-body ptr int int -- do
                                     ctx token-index "macro" token-equals ||
                                     ctx token-index "extern" token-equals ||
                                     ctx token-index "record" token-equals ||
+                                    ctx token-index "union" token-equals ||
                                 do
                                     "declarations are not allowed in macro bodies" fail
                                     token-index 1 + depth
@@ -1563,7 +1865,10 @@ proc scan-one-macro ptr int -- int do
                     "duplicate macro name" fail
                 end
             end
-            if ctx name-token find-record 0 >= do
+            if
+                ctx name-token find-record 0 >=
+                ctx name-token find-union 0 >= ||
+            do
                 ctx name-token fail-duplicate-declaration
             end
             ctx ctx-macro-count
@@ -1607,6 +1912,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
                         ctx token-index "macro" token-equals ||
                         ctx token-index "extern" token-equals ||
                         ctx token-index "record" token-equals ||
+                        ctx token-index "union" token-equals ||
                     do
                         "declarations are only allowed at top level" fail
                         depth
@@ -1667,7 +1973,10 @@ proc allocate-proc ptr int bool -- int do
                 1 exit
             end
         end
-        if ctx name-token find-record 0 >= do
+        if
+            ctx name-token find-record 0 >=
+            ctx name-token find-union 0 >= ||
+        do
             ctx name-token fail-duplicate-declaration
         end
 
@@ -2050,6 +2359,8 @@ proc scan-declarations ptr -- do
         0 ctx set-ctx-import-count
         0 ctx set-ctx-record-count
         0 ctx set-ctx-record-field-count
+        0 ctx set-ctx-union-count
+        0 ctx set-ctx-union-case-count
         0
         while dup ctx ctx-token-count < do
             let token-index do
@@ -2084,6 +2395,11 @@ proc scan-declarations ptr -- do
                     ctx token-index "record" token-equals &&
                 do
                     ctx token-index scan-one-record
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "union" token-equals &&
+                do
+                    ctx token-index scan-one-union
                 else
                     if ctx ctx-is-root do
                         "only declarations and imports are allowed at top level" fail
@@ -3047,6 +3363,8 @@ proc initialize-module-source ptr ptr int -- do
         ctx ctx-token-count 1 + scope-bytes * alloc ctx set-ctx-scope
         ctx ctx-token-count 1 + record-bytes * alloc ctx set-ctx-records
         ctx ctx-token-count 1 + record-field-bytes * alloc ctx set-ctx-record-fields
+        ctx ctx-token-count 1 + union-bytes * alloc ctx set-ctx-unions
+        ctx ctx-token-count 1 + union-case-bytes * alloc ctx set-ctx-union-cases
         0 ctx set-ctx-scope-count
         resolve-new ctx set-ctx-resolve-state
         ctx scan-declarations
@@ -3223,14 +3541,21 @@ proc resolve-one-import ptr int -- do
                 let visible-token do
                     if
                         target target-symbol scope-kind-at scope-record ==
-                        ctx visible-token record-identifier-token ! &&
+                        ctx visible-token identifier-token ! &&
                     do
                         "record import alias must be an identifier" fail
+                    end
+                    if
+                        target target-symbol scope-kind-at scope-union ==
+                        ctx visible-token identifier-token ! &&
+                    do
+                        "union import alias must be an identifier" fail
                     end
                     if
                         ctx visible-token find-proc 0 >=
                         ctx visible-token find-macro 0 >= ||
                         ctx visible-token find-record 0 >= ||
+                        ctx visible-token find-union 0 >= ||
                     do
                         "import alias conflict" fail
                     end
@@ -3287,6 +3612,22 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
+            while dup ctx ctx-union-count < do
+                dup
+                let union-index do
+                    ctx
+                    ctx
+                    ctx union-index union-name-start-at
+                    ctx union-index union-name-length-at
+                    scope-union
+                    ctx
+                    union-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            0
             while dup ctx ctx-macro-count < do
                 dup
                 let macro-index do
@@ -3334,22 +3675,29 @@ proc resolve-all-module-scopes ptr -- do
     end
 end
 
-proc resolve-record-type-token ptr int ptr int -- int do
+proc resolve-nominal-type-token ptr int ptr int -- int do
     let ctx token-index error-message error-length do
         ctx ctx token-index find-scope-symbol
         let symbol-index do
-            if
-                symbol-index 0 <
-                if dup ! do
-                    drop ctx symbol-index scope-kind-at scope-record !=
-                end
-            do
+            if symbol-index 0 < do
                 error-message error-length fail
                 0
             else
-                ctx symbol-index scope-definition-module-at
-                ctx symbol-index scope-definition-index-at
-                record-type-at
+                ctx symbol-index scope-kind-at
+                let kind do
+                    if kind scope-record == do
+                        ctx symbol-index scope-definition-module-at
+                        ctx symbol-index scope-definition-index-at
+                        record-type-at
+                    elif kind scope-union == do
+                        ctx symbol-index scope-definition-module-at
+                        ctx symbol-index scope-definition-index-at
+                        union-type-at
+                    else
+                        error-message error-length fail
+                        0
+                    end
+                end
             end
         end
     end
@@ -3367,7 +3715,7 @@ proc resolve-module-signature-types ptr -- do
                         ctx
                         value-type unresolved-type-token-index
                         "unknown type in procedure signature"
-                        resolve-record-type-token
+                        resolve-nominal-type-token
                         ctx ctx-types type-index cell-bytes * field-write
                     end
                 end
@@ -3390,8 +3738,31 @@ proc resolve-module-record-field-types ptr -- do
                         ctx
                         value-type unresolved-type-token-index
                         "unknown type in record field"
-                        resolve-record-type-token
+                        resolve-nominal-type-token
                         ctx field-index set-record-field-type
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc resolve-module-union-case-types ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-union-case-count < do
+            dup
+            let case-index do
+                ctx case-index union-case-payload-type-at
+                let value-type do
+                    if value-type 0 < do
+                        ctx
+                        value-type unresolved-type-token-index
+                        "unknown type in union variant"
+                        resolve-nominal-type-token
+                        ctx case-index set-union-case-payload-type
                     end
                 end
             end
@@ -3406,6 +3777,7 @@ proc resolve-all-types ptr -- do
         program program-module-head
         while dup int cast 0 != do
             dup resolve-module-record-field-types
+            dup resolve-module-union-case-types
             dup resolve-module-signature-types
             ctx-next-module
         end
@@ -3626,6 +3998,13 @@ Cell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof
 Cell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }
 void* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }
 void frog_write_ptr(void* ptr, void* value) { memcpy(ptr, &value, sizeof(value)); }
+
+Cell frog_union_tag(const void* value, Cell case_count) {
+  if (value == NULL) frog_runtime_fail();
+  Cell tag = frog_read_i64(value);
+  if (tag < 0 || tag >= case_count) frog_runtime_fail();
+  return tag;
+}
 
 " emit
     "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }
@@ -4034,7 +4413,7 @@ proc compile-logic-comparison-intrinsic ptr int -- bool do
 end
 
 proc type-literal-base -- int do 100 end
-proc type-is-record int -- bool do type-record-base >= end
+proc type-is-nominal int -- bool do type-nominal-base >= end
 
 proc compile-cast-intrinsic ptr -- do
     let cc do
@@ -4051,7 +4430,7 @@ proc compile-cast-intrinsic ptr -- do
                     target-type type-int ==
                     target-type type-bool == ||
                     target-type type-ptr == ||
-                    target-type type-is-record ||
+                    target-type type-is-nominal ||
                     !
                 do
                     "cast target is not a type literal" fail
@@ -4062,8 +4441,8 @@ proc compile-cast-intrinsic ptr -- do
                     source-type type-bool == target-type type-int == && ||
                     source-type type-int == target-type type-ptr == && ||
                     source-type type-ptr == target-type type-int == && ||
-                    source-type type-ptr == target-type type-is-record && ||
-                    source-type type-is-record target-type type-ptr == && ||
+                    source-type type-ptr == target-type type-is-nominal && ||
+                    source-type type-is-nominal target-type type-ptr == && ||
                     !
                 do
                     "unsupported cast" fail
@@ -4523,6 +4902,26 @@ proc visible-record-definition ptr ptr int -- ptr int bool do
     end
 end
 
+proc visible-union-definition ptr ptr int -- ptr int bool do
+    let scope bytes length do
+        scope bytes length 0 find-scope-symbol-from
+        let symbol-index do
+            if
+                symbol-index 0 >=
+                if dup do
+                    drop scope symbol-index scope-kind-at scope-union ==
+                end
+            do
+                scope symbol-index scope-definition-module-at
+                scope symbol-index scope-definition-index-at
+                true
+            else
+                0 ptr cast 0 1 - false
+            end
+        end
+    end
+end
+
 proc compile-record-type-word ptr int -- bool do
     let cc token-index do
         cc cc-scope-module
@@ -4531,6 +4930,29 @@ proc compile-record-type-word ptr int -- bool do
         let module record-index found do
             if found do
                 module record-index record-type-at
+                let value-type do
+                    0 value-type -
+                    let literal-type do
+                        cc literal-type type-push
+                        cc literal-type emit-push-integer
+                        true
+                    end
+                end
+            else
+                false
+            end
+        end
+    end
+end
+
+proc compile-union-type-word ptr int -- bool do
+    let cc token-index do
+        cc cc-scope-module
+        cc cc-defining-module token-index token-slice
+        visible-union-definition
+        let module union-index found do
+            if found do
+                module union-index union-type-at
                 let value-type do
                     0 value-type -
                     let literal-type do
@@ -4679,6 +5101,180 @@ proc compile-record-word ptr int -- bool do
     end
 end
 
+proc emit-union-constructor ptr int bool -- do
+    let cc tag has-payload do
+        cc emit-indent
+        "{ " emit
+        if has-payload do
+            "Cell payload = frog_pop(); " emit
+        end
+        "unsigned char *union_value = (unsigned char *)frog_alloc(" emit
+        union-storage-bytes emit-unsigned
+        "); frog_write_i64(union_value, " emit
+        tag emit-unsigned
+        "); frog_write_i64(union_value + " emit
+        union-payload-offset emit-unsigned
+        ", " emit
+        if has-payload do
+            "payload" emit
+        else
+            "0" emit
+        end
+        "); frog_push((Cell)(intptr_t)union_value); }" emit
+        10 putc
+    end
+end
+
+proc emit-union-predicate ptr int int -- do
+    let cc tag case-count do
+        cc emit-indent
+        "{ Cell raw = frog_pop(); const void *union_value = (const void *)(intptr_t)raw; Cell tag = frog_union_tag(union_value, " emit
+        case-count emit-unsigned
+        "); frog_push(raw); frog_push(tag == " emit
+        tag emit-unsigned
+        "); }" emit
+        10 putc
+    end
+end
+
+proc emit-union-projection ptr int int bool -- do
+    let cc tag case-count has-payload do
+        cc emit-indent
+        "{ const unsigned char *union_value = (const unsigned char *)(intptr_t)frog_pop(); if (frog_union_tag(union_value, " emit
+        case-count emit-unsigned
+        ") != " emit
+        tag emit-unsigned
+        ") frog_runtime_fail();" emit
+        if has-payload do
+            " frog_push(frog_read_i64(union_value + " emit
+            union-payload-offset emit-unsigned
+            "));" emit
+        end
+        " }" emit
+        10 putc
+    end
+end
+
+proc compile-union-constructor ptr ptr int int -- bool do
+    let cc bytes length separator do
+        if separator 0 <= separator 1 + length >= || do
+            false
+        else
+            cc cc-scope-module bytes separator visible-union-definition
+            let module union-index found do
+                if found ! do
+                    false
+                else
+                    module union-index
+                    bytes separator 1 + +
+                    length separator 1 + -
+                    find-union-case
+                    let case-index do
+                        if case-index 0 < do
+                            "unknown union variant" fail
+                        end
+                        module case-index union-case-payload-type-at
+                        let payload-type do
+                            if payload-type type-none != do
+                                cc payload-type type-expect
+                            end
+                            module union-index union-type-at cc swap type-push
+                            cc
+                            module case-index union-case-tag-at
+                            payload-type type-none !=
+                            emit-union-constructor
+                            true
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-union-instance ptr ptr int int -- bool do
+    let cc bytes length separator do
+        if separator 0 <= separator 1 + length >= || do
+            false
+        else
+            cc cc-scope-module bytes separator visible-union-definition
+            let module union-index found do
+                if found ! do
+                    false
+                else
+                    separator 1 +
+                    let case-start do
+                        bytes length 1 - byte-read 63 ==
+                        let predicate do
+                            length case-start -
+                            if predicate do 1 - end
+                            let case-length do
+                                if case-length 0 <= do
+                                    "unknown union variant" fail
+                                end
+                                module union-index bytes case-start + case-length find-union-case
+                                let case-index do
+                                    if case-index 0 < do
+                                        "unknown union variant" fail
+                                    end
+                                    module union-index union-type-at
+                                    let union-type do
+                                        cc union-type type-expect
+                                        if predicate do
+                                            cc union-type type-push
+                                            cc type-bool type-push
+                                            cc
+                                            module case-index union-case-tag-at
+                                            module union-index union-case-count-at
+                                            emit-union-predicate
+                                        else
+                                            module case-index union-case-payload-type-at
+                                            let payload-type do
+                                                if payload-type type-none != do
+                                                    cc payload-type type-push
+                                                end
+                                                cc
+                                                module case-index union-case-tag-at
+                                                module union-index union-case-count-at
+                                                payload-type type-none !=
+                                                emit-union-projection
+                                            end
+                                        end
+                                        true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-union-word ptr int -- bool do
+    let cc token-index do
+        cc cc-defining-module token-index token-slice
+        let bytes length do
+            bytes length 58 first-index-of-byte
+            let colon do
+                if colon 0 >= do
+                    cc bytes length colon compile-union-constructor
+                else
+                    bytes length 46 first-index-of-byte
+                    let dot do
+                        if dot 0 >= do
+                            cc bytes length dot compile-union-instance
+                        else
+                            false
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 proc compile-type-word ptr int -- bool do
     let cc token-index do
         if cc cc-defining-module token-index "int" token-equals do
@@ -4694,7 +5290,11 @@ proc compile-type-word ptr int -- bool do
             cc type-literal-base type-ptr + emit-push-integer
             true
         else
-            cc token-index compile-record-type-word
+            if cc token-index compile-record-type-word do
+                true
+            else
+                cc token-index compile-union-type-word
+            end
         end
     end
 end
@@ -4738,6 +5338,7 @@ proc compile-ordinary-word ptr int -- do
                 compile-macro
             elif cc token-index compile-type-word do
             elif cc token-index compile-record-word do
+            elif cc token-index compile-union-word do
             elif cc token-index compile-intrinsic do
             else
                 cc token-index find-local
@@ -5060,7 +5661,7 @@ proc compile-source ptr int -- do
             0 ptr cast program set-program-module-tail
             0 program set-program-module-count
             0 program set-program-next-proc-id
-            type-record-base program set-program-next-record-type
+            type-nominal-base program set-program-next-nominal-type
             0 program set-program-token-count
             0 ptr cast program set-program-strings
             0 program set-program-string-count

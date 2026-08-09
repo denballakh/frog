@@ -1,0 +1,12 @@
+from "shape.frog" import Imported
+
+union Local
+    case none
+    case some int
+end
+
+proc unwrap Imported -- int do Imported.some end
+
+proc main -- do
+    1 Local:some unwrap print
+end

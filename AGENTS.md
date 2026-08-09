@@ -16,7 +16,7 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI process/file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
 
-The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, nominal records, compile-time imports and macros, and block keywords such as `proc`, `record`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, nominal records and tagged unions, compile-time imports and macros, and block keywords such as `proc`, `record`, `union`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
@@ -127,7 +127,7 @@ Commands:
 - The compiler reads root source bytes from stdin and writes generated C to stdout. Imported files are loaded relative to the root compiler process's working directory.
 - The supported import syntax is `from "path.frog" import name`, `from "path.frog" import name as alias`, and grouped whitespace-separated imports such as `from "path.frog" import ( x y z )`. Wildcards, commas, and `import "path.frog" as mod` are rejected for now.
 - Import paths are resolved relative to the root file being compiled, not relative to the importing module. Use explicit paths such as `"pkg/math.frog"` for subdirectory files.
-- Imported files contribute procedures and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
+- Imported files contribute procedures, records, unions, and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
@@ -146,13 +146,16 @@ Commands:
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 - `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `Name.field`/`Name.field!` provide statically typed access.
 - Record fields occupy one eight-byte Cell in declaration order. Record-valued fields store handles, and only explicit `ptr`/record casts cross the nominal boundary.
+- `union Name case Variant [PayloadType] ... end` defines a nominal pointer-backed tagged union with zero or one payload Cell per variant. `Name:variant` constructs, `Name.variant?` preserves and tests a validated handle, and `Name.variant` performs a checked projection.
+- Union constructors allocate internal tag-and-payload storage. Union lifetime is manual, payload handles are borrowed, explicit `ptr`/union casts form an unsafe boundary, and matching through `if`/`elif` is not exhaustiveness-checked.
 
 ## Implementation Conventions And Gotchas
 
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
 - When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and snapshot coverage, user-facing docs, and optionally the VS Code grammar.
 - String literals lower to a UTF-8 byte pointer and byte length (`ptr int`); generated globals and macro expansion must retain the defining module's literal identity.
-- Record type IDs are program-global and nominal. Imported aliases and reexports must retain the defining record identity; type-level operations use `:` and field operations use `.`.
+- Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
+- Exact macros may shadow generated nominal operations; otherwise record and union operations resolve before locals and procedures with the same qualified spelling.
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.

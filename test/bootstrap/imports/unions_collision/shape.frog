@@ -1,0 +1,3 @@
+union Maybe
+    case none
+end
