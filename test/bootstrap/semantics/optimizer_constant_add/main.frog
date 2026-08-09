@@ -1,0 +1,14 @@
+macro constant-add 4 5 + end
+
+proc main -- do
+    2 3 + print
+    0x10 0b10 + print
+    1 2 dynamic-add print
+    constant-add print
+
+    if false do
+        9223372036854775807 1 + drop
+    end
+end
+
+proc dynamic-add int int -- int do + end

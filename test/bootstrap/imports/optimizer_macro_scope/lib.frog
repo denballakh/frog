@@ -1,0 +1,5 @@
+macro + drop drop 41 end
+
+macro constant-add
+    1 2 +
+end

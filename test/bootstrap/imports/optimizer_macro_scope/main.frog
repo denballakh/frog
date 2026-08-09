@@ -1,0 +1,5 @@
+from "lib.frog" import constant-add
+
+proc main -- do
+    constant-add print
+end

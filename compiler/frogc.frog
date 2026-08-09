@@ -5917,11 +5917,7 @@ proc compile-ordinary-word ptr int -- do
     let cc token-index do
         cc cc-scope-module cc cc-defining-module token-index find-scope-symbol
         let symbol-index do
-            if symbol-index 0 >= do
-                cc cc-scope-module symbol-index scope-kind-at scope-macro ==
-            else
-                false
-            end
+            cc token-index token-resolves-to-macro
             let is-macro do
             if is-macro do
                 cc
@@ -6015,6 +6011,47 @@ proc compile-token ptr int -- int do
     end
 end
 
+proc token-resolves-to-macro ptr int -- bool do
+    let cc token-index do
+        cc cc-scope-module cc cc-defining-module token-index find-scope-symbol
+        let symbol-index do
+            if symbol-index 0 >= do
+                cc cc-scope-module symbol-index scope-kind-at scope-macro ==
+            else
+                false
+            end
+        end
+    end
+end
+
+proc try-compile-constant-add ptr int int -- bool do
+    let cc token-index body-end do
+        if token-index 2 + body-end >= do
+            false
+        elif
+            cc cc-defining-module token-index token-kind-at token-int ==
+            cc cc-defining-module token-index 1 + token-kind-at token-int == &&
+            cc cc-defining-module token-index 2 + token-kind-at token-word == &&
+            cc cc-defining-module token-index 2 + "+" token-equals &&
+            cc token-index 2 + token-resolves-to-macro ! &&
+        do
+            cc cc-defining-module token-index token-value-at
+            cc cc-defining-module token-index 1 + token-value-at
+            let left right do
+                if left max-int right - <= do
+                    cc type-int type-push
+                    cc left right + emit-push-integer
+                    true
+                else
+                    false
+                end
+            end
+        else
+            false
+        end
+    end
+end
+
 proc initialize-proc-inputs ptr int -- do
     let cc input-index do
         if input-index cc cc-procedure-module cc cc-proc proc-input-count-at < do
@@ -6065,7 +6102,13 @@ proc compile-body-range ptr int int -- do
     let cc token-index body-end do
         token-index
         while dup body-end < do
-            cc swap compile-token
+            let current-token do
+                if cc current-token body-end try-compile-constant-add do
+                    current-token 3 +
+                else
+                    cc current-token compile-token
+                end
+            end
         end
         drop
     end

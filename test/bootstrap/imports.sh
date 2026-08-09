@@ -77,6 +77,7 @@ run_ok functions_alias $'6\n'
 run_ok functions_reexport $'43\n'
 run_ok functions_macro_private $'42\n'
 run_ok functions_extern $'77\n'
+run_ok optimizer_macro_scope $'41\n'
 
 run_error missing_file 'import file not found'
 run_error missing_name 'imported name not found'

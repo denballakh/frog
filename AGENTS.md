@@ -159,6 +159,7 @@ Commands:
 - Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
 - Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
+- The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.

@@ -1,0 +1,5 @@
+macro + drop drop 41 end
+
+proc main -- do
+    2 3 + print
+end

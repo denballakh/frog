@@ -95,6 +95,8 @@ run_ok records_layout $'41\ntrue\ntrue\n32\n7\n'
 run_ok unions_layout $'true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n'
 run_ok functions_layout $'42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n'
 run_ok functions_macro_shadow $'99\n'
+run_ok optimizer_constant_add $'5\n18\n3\n9\n'
+run_ok optimizer_macro_shadow $'41\n'
 run_status unions_wrong_variant 1
 run_status unions_invalid_tag 1
 run_status unions_negative_tag 1
@@ -103,6 +105,11 @@ run_status functions_unknown_proc 1
 run_status functions_incompatible_proc 1
 printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
     | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
+printf '%s' $'  frog_push(5);\n  frog_push(18);\n  frog_push(9);\n' \
+    | cmp - <(sed -n '/^void p0(void) {$/,/^}$/p' "$output/optimizer_constant_add.c" \
+        | sed -n '/^  frog_push(5);$/p; /^  frog_push(18);$/p; /^  frog_push(9);$/p')
+printf '%s' $'    frog_push(9223372036854775807);\n    frog_push(1);\n    { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a + b); }\n' \
+    | cmp - <(sed -n '/^    frog_push(9223372036854775807);$/,+2p' "$output/optimizer_constant_add.c")
 
 run_error integer_overflow 'integer literal exceeds the signed 64-bit range'
 run_source_error integer_binary_missing_digits \
@@ -296,3 +303,9 @@ run_source_error function_declaration_collision \
 run_source_error function_output_contract_mismatch \
     $'fn Pair int -- int int end\nproc one int -- int do end\nproc main -- do Pair:ref:one drop end\n' \
     'function reference contract mismatch'
+run_source_error optimizer_recursive_macro_shadow \
+    $'macro + 1 2 + end\nproc main -- do + drop end\n' \
+    'recursive macro expansion'
+run_source_error optimizer_type_error \
+    $'proc main -- do 1 true + drop end\n' \
+    'invalid operand types for pointer/integer arithmetic'

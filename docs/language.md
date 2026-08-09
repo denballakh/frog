@@ -331,6 +331,12 @@ end
 - `exit`: `int --`, terminates execution with the supplied exit status.
 - `?`: `--`, a no-op debugging marker that is omitted from generated C.
 
+## Optimization
+
+The compiler performs one deterministic typed peephole rewrite: adjacent non-negative integer literals followed by the intrinsic `+` emit a single constant push when their sum fits Frog's signed 64-bit range. Literal spellings in any supported base are folded. A visible macro named `+` keeps normal macro precedence, and a sum that would overflow is emitted unchanged rather than becoming a compile-time error.
+
+Broader optimization is left to the C compiler. The peephole rewrite may reduce transient Frog stack capacity requirements, so the exact point of process memory exhaustion is not part of its semantic equivalence guarantee.
+
 ## Generated C Limits
 
 Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`. Passing a Frog `int` outside the C implementation's `int` range through `c-int` is also implementation-defined.
