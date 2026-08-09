@@ -9,6 +9,7 @@ proc type-int -- int do 1 end
 proc type-bool -- int do 2 end
 proc type-ptr -- int do 3 end
 proc type-type -- int do 4 end
+proc type-record-base -- int do 1000 end
 
 proc max-int -- int do 1 62 << dup 1 - + end
 
@@ -48,7 +49,8 @@ proc program-next-proc-id-offset -- int do 32 end
 proc program-token-count-offset -- int do 40 end
 proc program-strings-offset -- int do 48 end
 proc program-string-count-offset -- int do 56 end
-proc program-bytes -- int do 72 end
+proc program-next-record-type-offset -- int do 72 end
+proc program-bytes -- int do 80 end
 
 proc string-bytes-offset -- int do 0 end
 proc string-length-offset -- int do 8 end
@@ -66,6 +68,19 @@ proc macro-body-start-offset -- int do 16 end
 proc macro-body-end-offset -- int do 24 end
 proc macro-expanding-offset -- int do 32 end
 proc macro-bytes -- int do 40 end
+
+proc record-name-start-offset -- int do 0 end
+proc record-name-length-offset -- int do 8 end
+proc record-field-start-offset -- int do 16 end
+proc record-field-count-offset -- int do 24 end
+proc record-type-offset -- int do 32 end
+proc record-bytes -- int do 40 end
+
+proc record-field-name-start-offset -- int do 0 end
+proc record-field-name-length-offset -- int do 8 end
+proc record-field-type-offset -- int do 16 end
+proc record-field-byte-offset-offset -- int do 24 end
+proc record-field-bytes -- int do 32 end
 
 proc ctx-source-offset -- int do 0 end
 proc ctx-source-length-offset -- int do 8 end
@@ -93,7 +108,11 @@ proc ctx-scope-count-offset -- int do 176 end
 proc ctx-load-state-offset -- int do 184 end
 proc ctx-resolve-state-offset -- int do 192 end
 proc ctx-is-root-offset -- int do 200 end
-proc ctx-bytes -- int do 208 end
+proc ctx-records-offset -- int do 208 end
+proc ctx-record-count-offset -- int do 216 end
+proc ctx-record-fields-offset -- int do 224 end
+proc ctx-record-field-count-offset -- int do 232 end
+proc ctx-bytes -- int do 240 end
 
 proc import-path-token-offset -- int do 0 end
 proc import-name-token-offset -- int do 8 end
@@ -113,6 +132,7 @@ proc scope-bytes -- int do 48 end
 
 proc scope-procedure -- int do 1 end
 proc scope-macro -- int do 2 end
+proc scope-record -- int do 3 end
 
 proc load-new -- int do 0 end
 proc load-loading -- int do 1 end
@@ -339,6 +359,10 @@ proc ctx-scope-count ptr -- int do ctx-scope-count-offset field-read end
 proc ctx-load-state ptr -- int do ctx-load-state-offset field-read end
 proc ctx-resolve-state ptr -- int do ctx-resolve-state-offset field-read end
 proc ctx-is-root ptr -- bool do ctx-is-root-offset field-read 0 != end
+proc ctx-records ptr -- ptr do ctx-records-offset pointer-field-read end
+proc ctx-record-count ptr -- int do ctx-record-count-offset field-read end
+proc ctx-record-fields ptr -- ptr do ctx-record-fields-offset pointer-field-read end
+proc ctx-record-field-count ptr -- int do ctx-record-field-count-offset field-read end
 
 proc set-ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
 proc set-ctx-source-length int ptr -- do ctx-source-length-offset field-write end
@@ -365,6 +389,10 @@ proc set-ctx-scope ptr ptr -- do ctx-scope-offset pointer-field-write end
 proc set-ctx-scope-count int ptr -- do ctx-scope-count-offset field-write end
 proc set-ctx-load-state int ptr -- do ctx-load-state-offset field-write end
 proc set-ctx-resolve-state int ptr -- do ctx-resolve-state-offset field-write end
+proc set-ctx-records ptr ptr -- do ctx-records-offset pointer-field-write end
+proc set-ctx-record-count int ptr -- do ctx-record-count-offset field-write end
+proc set-ctx-record-fields ptr ptr -- do ctx-record-fields-offset pointer-field-write end
+proc set-ctx-record-field-count int ptr -- do ctx-record-field-count-offset field-write end
 proc set-ctx-is-root bool ptr -- do
     let value ctx do
         if value do 1 else 0 end
@@ -380,6 +408,7 @@ proc program-next-proc-id ptr -- int do program-next-proc-id-offset field-read e
 proc program-token-count ptr -- int do program-token-count-offset field-read end
 proc program-strings ptr -- ptr do program-strings-offset pointer-field-read end
 proc program-string-count ptr -- int do program-string-count-offset field-read end
+proc program-next-record-type ptr -- int do program-next-record-type-offset field-read end
 
 proc set-program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
 proc set-program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
@@ -389,6 +418,7 @@ proc set-program-next-proc-id int ptr -- do program-next-proc-id-offset field-wr
 proc set-program-token-count int ptr -- do program-token-count-offset field-write end
 proc set-program-strings ptr ptr -- do program-strings-offset pointer-field-write end
 proc set-program-string-count int ptr -- do program-string-count-offset field-write end
+proc set-program-next-record-type int ptr -- do program-next-record-type-offset field-write end
 
 proc string-address ptr int -- ptr do
     let program index do program program-strings index string-bytes * + end
@@ -418,6 +448,16 @@ proc program-allocate-proc-id ptr -- int do
         let proc-id do
             proc-id 1 + program set-program-next-proc-id
             proc-id
+        end
+    end
+end
+
+proc program-allocate-record-type ptr -- int do
+    let program do
+        program program-next-record-type
+        let record-type do
+            record-type 1 + program set-program-next-record-type
+            record-type
         end
     end
 end
@@ -823,6 +863,62 @@ proc set-macro-expanding bool ptr int -- do
     end
 end
 
+proc record-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-records index record-bytes * +
+    end
+end
+
+proc record-entry-field ptr int int -- int do
+    let ctx index offset do
+        ctx index record-address offset field-read
+    end
+end
+
+proc set-record-entry-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index record-address offset field-write
+    end
+end
+
+proc record-name-start-at ptr int -- int do record-name-start-offset record-entry-field end
+proc record-name-length-at ptr int -- int do record-name-length-offset record-entry-field end
+proc record-field-start-at ptr int -- int do record-field-start-offset record-entry-field end
+proc record-field-count-at ptr int -- int do record-field-count-offset record-entry-field end
+proc record-type-at ptr int -- int do record-type-offset record-entry-field end
+
+proc record-field-address ptr int -- ptr do
+    let ctx index do
+        ctx ctx-record-fields index record-field-bytes * +
+    end
+end
+
+proc record-field-entry-field ptr int int -- int do
+    let ctx index offset do
+        ctx index record-field-address offset field-read
+    end
+end
+
+proc set-record-field-entry-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index record-field-address offset field-write
+    end
+end
+
+proc record-field-name-start-at ptr int -- int do
+    record-field-name-start-offset record-field-entry-field
+end
+proc record-field-name-length-at ptr int -- int do
+    record-field-name-length-offset record-field-entry-field
+end
+proc record-field-type-at ptr int -- int do record-field-type-offset record-field-entry-field end
+proc record-field-byte-offset-at ptr int -- int do
+    record-field-byte-offset-offset record-field-entry-field
+end
+proc set-record-field-type int ptr int -- do
+    let value ctx index do value ctx index record-field-type-offset set-record-field-entry-field end
+end
+
 proc type-at ptr int -- int do
     let ctx index do
         ctx ctx-types index cell-bytes * field-read
@@ -859,6 +955,7 @@ proc reserved-name ptr int -- bool do
         ctx token-index "import" token-equals ||
         ctx token-index "as" token-equals ||
         ctx token-index "extern" token-equals ||
+        ctx token-index "record" token-equals ||
         ctx token-index "--" token-equals ||
     end
 end
@@ -887,6 +984,21 @@ proc c-identifier-suffix-valid ptr int int -- bool do
             bytes length index 1 + c-identifier-suffix-valid
         else
             false
+        end
+    end
+end
+
+proc record-identifier-token ptr int -- bool do
+    let ctx token-index do
+        ctx token-index token-slice
+        let bytes length do
+            if length 0 == do
+                false
+            elif bytes 0 byte-read is-c-identifier-start ! do
+                false
+            else
+                bytes length 1 c-identifier-suffix-valid
+            end
         end
     end
 end
@@ -1028,11 +1140,17 @@ proc parse-type-token ptr int -- int do
         elif ctx token-index "ptr" token-equals do
             type-ptr
         else
-            "unknown type in procedure signature" fail
-            0
+            if ctx token-index reserved-name do
+                "unknown type in procedure signature" fail
+                0
+            else
+                0 token-index - 1 -
+            end
         end
     end
 end
+
+proc unresolved-type-token-index int -- int do 0 swap - 1 - end
 
 proc proc-name-equals-token ptr int int -- bool do
     let ctx proc-index token-index do
@@ -1088,6 +1206,181 @@ proc find-macro ptr int -- int do
     0 find-macro-from
 end
 
+proc record-name-equals-token ptr int int -- bool do
+    let ctx record-index token-index do
+        ctx ctx-source
+        ctx record-index record-name-start-at
+        +
+        ctx record-index record-name-length-at
+        ctx token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-record-from ptr int int -- int do
+    let ctx token-index record-index do
+        if record-index ctx ctx-record-count >= do
+            0 1 -
+        elif ctx record-index token-index record-name-equals-token do
+            record-index
+        else
+            ctx token-index record-index 1 + find-record-from
+        end
+    end
+end
+
+proc find-record ptr int -- int do 0 find-record-from end
+
+proc record-field-name-equals-bytes ptr int ptr int -- bool do
+    let ctx field-index bytes length do
+        ctx ctx-source
+        ctx field-index record-field-name-start-at
+        +
+        ctx field-index record-field-name-length-at
+        bytes length
+        bytes-equal
+    end
+end
+
+proc find-record-field-from ptr int ptr int int -- int do
+    let ctx record-index bytes length relative-index do
+        if relative-index ctx record-index record-field-count-at >= do
+            0 1 -
+        else
+            ctx record-index record-field-start-at relative-index +
+            let field-index do
+                if ctx field-index bytes length record-field-name-equals-bytes do
+                    field-index
+                else
+                    ctx record-index bytes length relative-index 1 + find-record-field-from
+                end
+            end
+        end
+    end
+end
+
+proc find-record-field ptr int ptr int -- int do 0 find-record-field-from end
+
+proc fail-duplicate-declaration ptr int -- do
+    let ctx token-index do
+        "frogc: " emit-error
+        "duplicate declaration name: " emit-error
+        ctx token-index token-slice emit-error
+        10 eputc
+        1 exit
+    end
+end
+
+proc scan-record-fields ptr int int -- int do
+    let ctx record-index token-index do
+        if token-index ctx ctx-token-count >= do
+            "unterminated record declaration" fail
+            token-index
+        elif ctx token-index "end" token-equals do
+            if ctx record-index record-field-count-at 0 == do
+                "record must declare at least one field" fail
+            end
+            token-index 1 +
+        else
+            ctx token-index require-word
+            if ctx token-index record-identifier-token ! do
+                "record field name must be an identifier" fail
+            end
+            ctx record-index ctx token-index token-slice find-record-field
+            let existing-field do
+                if existing-field 0 >= do
+                    "frogc: " emit-error
+                    "duplicate record field: " emit-error
+                    ctx token-index token-slice emit-error
+                    10 eputc
+                    1 exit
+                end
+            end
+            token-index 1 +
+            let type-token do
+                if
+                    type-token ctx ctx-token-count >=
+                    if dup ! do
+                        drop ctx type-token "end" token-equals
+                    end
+                do
+                    "expected record field type" fail
+                end
+                ctx type-token require-word
+                if ctx type-token reserved-name do
+                    "unknown type in record field" fail
+                end
+                ctx ctx-record-field-count
+                let field-index do
+                    ctx token-index token-start-at
+                    ctx field-index record-field-name-start-offset set-record-field-entry-field
+                    ctx token-index token-length-at
+                    ctx field-index record-field-name-length-offset set-record-field-entry-field
+                    ctx type-token parse-type-token
+                    ctx field-index record-field-type-offset set-record-field-entry-field
+                    ctx record-index record-field-count-at cell-bytes *
+                    ctx field-index record-field-byte-offset-offset set-record-field-entry-field
+                    field-index 1 + ctx set-ctx-record-field-count
+                    ctx record-index record-field-count-at 1 +
+                    ctx record-index record-field-count-offset set-record-entry-field
+                    ctx record-index type-token 1 + scan-record-fields
+                end
+            end
+        end
+    end
+end
+
+proc scan-one-record ptr int -- int do
+    let ctx record-token do
+        record-token 1 +
+        let name-token do
+            if name-token ctx ctx-token-count >= do
+                "expected record name" fail
+            end
+            ctx name-token require-word
+            if
+                ctx name-token record-identifier-token !
+                ctx name-token reserved-name ||
+                ctx name-token "int" token-equals ||
+                ctx name-token "bool" token-equals ||
+                ctx name-token "ptr" token-equals ||
+            do
+                "invalid record name" fail
+            end
+            if ctx name-token find-record 0 >= do
+                "frogc: " emit-error
+                "duplicate record name: " emit-error
+                ctx name-token token-slice emit-error
+                10 eputc
+                1 exit
+            end
+            if
+                ctx name-token find-proc 0 >=
+                ctx name-token find-macro 0 >= ||
+            do
+                ctx name-token fail-duplicate-declaration
+            end
+            ctx ctx-record-count
+            let record-index do
+                ctx name-token token-start-at
+                ctx record-index record-name-start-offset set-record-entry-field
+                ctx name-token token-length-at
+                ctx record-index record-name-length-offset set-record-entry-field
+                ctx ctx-record-field-count
+                ctx record-index record-field-start-offset set-record-entry-field
+                0 ctx record-index record-field-count-offset set-record-entry-field
+                ctx ctx-program program-allocate-record-type
+                ctx record-index record-type-offset set-record-entry-field
+                ctx record-index name-token 1 + scan-record-fields
+                let next-token do
+                    record-index 1 + ctx set-ctx-record-count
+                    next-token
+                end
+            end
+        end
+    end
+end
+
 proc scan-macro-body ptr int -- int do
     let ctx body-start do
         body-start 0 true
@@ -1123,6 +1416,7 @@ proc scan-macro-body ptr int -- int do
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
                         ctx token-index "extern" token-equals ||
+                        ctx token-index "record" token-equals ||
                     do
                         "declarations are not allowed in macro bodies" fail
                         token-index 1 + depth true
@@ -1167,6 +1461,7 @@ proc validate-macro-body ptr int int -- do
                                     ctx token-index "proc" token-equals
                                     ctx token-index "macro" token-equals ||
                                     ctx token-index "extern" token-equals ||
+                                    ctx token-index "record" token-equals ||
                                 do
                                     "declarations are not allowed in macro bodies" fail
                                     token-index 1 + depth
@@ -1268,6 +1563,9 @@ proc scan-one-macro ptr int -- int do
                     "duplicate macro name" fail
                 end
             end
+            if ctx name-token find-record 0 >= do
+                ctx name-token fail-duplicate-declaration
+            end
             ctx ctx-macro-count
             let macro-index do
                 ctx name-token token-start-at ctx macro-index macro-name-start-offset set-macro-field
@@ -1308,6 +1606,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
                         ctx token-index "extern" token-equals ||
+                        ctx token-index "record" token-equals ||
                     do
                         "declarations are only allowed at top level" fail
                         depth
@@ -1367,6 +1666,9 @@ proc allocate-proc ptr int bool -- int do
                 10 eputc
                 1 exit
             end
+        end
+        if ctx name-token find-record 0 >= do
+            ctx name-token fail-duplicate-declaration
         end
 
         ctx ctx-proc-count
@@ -1632,6 +1934,9 @@ proc require-import-name ptr int -- do
             ctx token reserved-name
             ctx token "(" token-equals ||
             ctx token ")" token-equals ||
+            ctx token "int" token-equals ||
+            ctx token "bool" token-equals ||
+            ctx token "ptr" token-equals ||
         do
             "invalid imported name" fail
         end
@@ -1743,6 +2048,8 @@ proc scan-declarations ptr -- do
         0 ctx set-ctx-type-count
         0 ctx set-ctx-macro-count
         0 ctx set-ctx-import-count
+        0 ctx set-ctx-record-count
+        0 ctx set-ctx-record-field-count
         0
         while dup ctx ctx-token-count < do
             let token-index do
@@ -1772,6 +2079,11 @@ proc scan-declarations ptr -- do
                     ctx token-index "extern" token-equals &&
                 do
                     ctx token-index scan-one-extern
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "record" token-equals &&
+                do
+                    ctx token-index scan-one-record
                 else
                     if ctx ctx-is-root do
                         "only declarations and imports are allowed at top level" fail
@@ -2733,6 +3045,8 @@ proc initialize-module-source ptr ptr int -- do
         ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-types
         ctx ctx-token-count 1 + import-bytes * alloc ctx set-ctx-imports
         ctx ctx-token-count 1 + scope-bytes * alloc ctx set-ctx-scope
+        ctx ctx-token-count 1 + record-bytes * alloc ctx set-ctx-records
+        ctx ctx-token-count 1 + record-field-bytes * alloc ctx set-ctx-record-fields
         0 ctx set-ctx-scope-count
         resolve-new ctx set-ctx-resolve-state
         ctx scan-declarations
@@ -2908,8 +3222,15 @@ proc resolve-one-import ptr int -- do
                 end
                 let visible-token do
                     if
+                        target target-symbol scope-kind-at scope-record ==
+                        ctx visible-token record-identifier-token ! &&
+                    do
+                        "record import alias must be an identifier" fail
+                    end
+                    if
                         ctx visible-token find-proc 0 >=
                         ctx visible-token find-macro 0 >= ||
+                        ctx visible-token find-record 0 >= ||
                     do
                         "import alias conflict" fail
                     end
@@ -2946,6 +3267,22 @@ proc resolve-module-scope ptr -- do
             0
             while dup ctx ctx-import-count < do
                 dup ctx swap resolve-one-import
+                1 +
+            end
+            drop
+            0
+            while dup ctx ctx-record-count < do
+                dup
+                let record-index do
+                    ctx
+                    ctx
+                    ctx record-index record-name-start-at
+                    ctx record-index record-name-length-at
+                    scope-record
+                    ctx
+                    record-index
+                    add-scope-symbol
+                end
                 1 +
             end
             drop
@@ -2991,6 +3328,85 @@ proc resolve-all-module-scopes ptr -- do
         program program-module-head
         while dup int cast 0 != do
             dup resolve-module-scope
+            ctx-next-module
+        end
+        drop
+    end
+end
+
+proc resolve-record-type-token ptr int ptr int -- int do
+    let ctx token-index error-message error-length do
+        ctx ctx token-index find-scope-symbol
+        let symbol-index do
+            if
+                symbol-index 0 <
+                if dup ! do
+                    drop ctx symbol-index scope-kind-at scope-record !=
+                end
+            do
+                error-message error-length fail
+                0
+            else
+                ctx symbol-index scope-definition-module-at
+                ctx symbol-index scope-definition-index-at
+                record-type-at
+            end
+        end
+    end
+end
+
+proc resolve-module-signature-types ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-type-count < do
+            dup
+            let type-index do
+                ctx type-index type-at
+                let value-type do
+                    if value-type 0 < do
+                        ctx
+                        value-type unresolved-type-token-index
+                        "unknown type in procedure signature"
+                        resolve-record-type-token
+                        ctx ctx-types type-index cell-bytes * field-write
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc resolve-module-record-field-types ptr -- do
+    let ctx do
+        0
+        while dup ctx ctx-record-field-count < do
+            dup
+            let field-index do
+                ctx field-index record-field-type-at
+                let value-type do
+                    if value-type 0 < do
+                        ctx
+                        value-type unresolved-type-token-index
+                        "unknown type in record field"
+                        resolve-record-type-token
+                        ctx field-index set-record-field-type
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc resolve-all-types ptr -- do
+    let program do
+        program program-module-head
+        while dup int cast 0 != do
+            dup resolve-module-record-field-types
+            dup resolve-module-signature-types
             ctx-next-module
         end
         drop
@@ -3618,18 +4034,24 @@ proc compile-logic-comparison-intrinsic ptr int -- bool do
 end
 
 proc type-literal-base -- int do 100 end
+proc type-is-record int -- bool do type-record-base >= end
 
 proc compile-cast-intrinsic ptr -- do
     let cc do
         cc type-pop
         cc type-pop
         let target-literal source-type do
-            target-literal type-literal-base -
+            if target-literal 0 < do
+                0 target-literal -
+            else
+                target-literal type-literal-base -
+            end
             let target-type do
                 if
                     target-type type-int ==
                     target-type type-bool == ||
                     target-type type-ptr == ||
+                    target-type type-is-record ||
                     !
                 do
                     "cast target is not a type literal" fail
@@ -3640,6 +4062,8 @@ proc compile-cast-intrinsic ptr -- do
                     source-type type-bool == target-type type-int == && ||
                     source-type type-int == target-type type-ptr == && ||
                     source-type type-ptr == target-type type-int == && ||
+                    source-type type-ptr == target-type type-is-record && ||
+                    source-type type-is-record target-type type-ptr == && ||
                     !
                 do
                     "unsupported cast" fail
@@ -4065,6 +4489,196 @@ proc compile-procedure-call ptr int ptr int -- do
     end
 end
 
+proc first-index-of-byte-from ptr int int int -- int do
+    let bytes length value index do
+        if index length >= do
+            0 1 -
+        elif bytes index byte-read value == do
+            index
+        else
+            bytes length value index 1 + first-index-of-byte-from
+        end
+    end
+end
+
+proc first-index-of-byte ptr int int -- int do 0 first-index-of-byte-from end
+
+proc visible-record-definition ptr ptr int -- ptr int bool do
+    let scope bytes length do
+        scope bytes length 0 find-scope-symbol-from
+        let symbol-index do
+            if
+                symbol-index 0 >=
+                if dup do
+                    drop scope symbol-index scope-kind-at scope-record ==
+                end
+            do
+                scope symbol-index scope-definition-module-at
+                scope symbol-index scope-definition-index-at
+                true
+            else
+                0 ptr cast 0 1 - false
+            end
+        end
+    end
+end
+
+proc compile-record-type-word ptr int -- bool do
+    let cc token-index do
+        cc cc-scope-module
+        cc cc-defining-module token-index token-slice
+        visible-record-definition
+        let module record-index found do
+            if found do
+                module record-index record-type-at
+                let value-type do
+                    0 value-type -
+                    let literal-type do
+                        cc literal-type type-push
+                        cc literal-type emit-push-integer
+                        true
+                    end
+                end
+            else
+                false
+            end
+        end
+    end
+end
+
+proc emit-record-allocation ptr int -- do
+    let cc size do
+        cc emit-indent
+        "frog_push((Cell)(intptr_t)frog_alloc(" emit
+        size emit-unsigned
+        "));" emit
+        10 putc
+    end
+end
+
+proc compile-record-special ptr ptr int int -- bool do
+    let cc bytes length separator do
+        if separator 0 <= separator 1 + length >= || do
+            false
+        else
+            cc cc-scope-module bytes separator visible-record-definition
+            let module record-index found do
+                if found ! do
+                    false
+                else
+                    bytes separator 1 + +
+                    length separator 1 + -
+                    let operation operation-length do
+                        if operation operation-length "alloc" bytes-equal do
+                            module record-index record-type-at cc swap type-push
+                            cc module record-index record-field-count-at cell-bytes * emit-record-allocation
+                            true
+                        elif operation operation-length "sizeof" bytes-equal do
+                            cc type-int type-push
+                            cc module record-index record-field-count-at cell-bytes * emit-push-integer
+                            true
+                        else
+                            "unknown record operation" fail
+                            false
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc emit-record-field-read ptr int -- do
+    let cc byte-offset do
+        cc emit-indent
+        "{ const unsigned char *record = (const unsigned char *)(intptr_t)frog_pop(); frog_push(frog_read_i64(record + " emit
+        byte-offset emit-unsigned
+        ")); }" emit
+        10 putc
+    end
+end
+
+proc emit-record-field-write ptr int -- do
+    let cc byte-offset do
+        cc emit-indent
+        "{ unsigned char *record = (unsigned char *)(intptr_t)frog_pop(); Cell value = frog_pop(); frog_write_i64(record + " emit
+        byte-offset emit-unsigned
+        ", value); }" emit
+        10 putc
+    end
+end
+
+proc compile-record-field ptr ptr int int -- bool do
+    let cc bytes length separator do
+        if separator 0 <= separator 1 + length >= || do
+            false
+        else
+            cc cc-scope-module bytes separator visible-record-definition
+            let module record-index found do
+                if found ! do
+                    false
+                else
+                    separator 1 +
+                    let field-start do
+                        bytes length 1 - byte-read 33 ==
+                        let setter do
+                            length field-start -
+                            if setter do 1 - end
+                            let field-length do
+                                if field-length 0 <= do
+                                    "unknown record field" fail
+                                end
+                                module record-index bytes field-start + field-length find-record-field
+                                let field-index do
+                                    if field-index 0 < do
+                                        "unknown record field" fail
+                                    end
+                                    module record-index record-type-at
+                                    let record-type do
+                                        if setter do
+                                            cc record-type type-expect
+                                            cc module field-index record-field-type-at type-expect
+                                            cc module field-index record-field-byte-offset-at emit-record-field-write
+                                        else
+                                            cc record-type type-expect
+                                            cc module field-index record-field-type-at type-push
+                                            cc module field-index record-field-byte-offset-at emit-record-field-read
+                                        end
+                                        true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc compile-record-word ptr int -- bool do
+    let cc token-index do
+        cc cc-defining-module token-index token-slice
+        let bytes length do
+            bytes length 58 first-index-of-byte
+            let colon do
+                if colon 0 >= do
+                    cc bytes length colon compile-record-special
+                else
+                    bytes length 46 first-index-of-byte
+                    let dot do
+                        if dot 0 >= do
+                            cc bytes length dot compile-record-field
+                        else
+                            false
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 proc compile-type-word ptr int -- bool do
     let cc token-index do
         if cc cc-defining-module token-index "int" token-equals do
@@ -4080,7 +4694,7 @@ proc compile-type-word ptr int -- bool do
             cc type-literal-base type-ptr + emit-push-integer
             true
         else
-            false
+            cc token-index compile-record-type-word
         end
     end
 end
@@ -4123,6 +4737,7 @@ proc compile-ordinary-word ptr int -- do
                 cc cc-scope-module symbol-index scope-definition-index-at
                 compile-macro
             elif cc token-index compile-type-word do
+            elif cc token-index compile-record-word do
             elif cc token-index compile-intrinsic do
             else
                 cc token-index find-local
@@ -4445,6 +5060,7 @@ proc compile-source ptr int -- do
             0 ptr cast program set-program-module-tail
             0 program set-program-module-count
             0 program set-program-next-proc-id
+            type-record-base program set-program-next-record-type
             0 program set-program-token-count
             0 ptr cast program set-program-strings
             0 program set-program-string-count
@@ -4468,6 +5084,7 @@ proc compile-source ptr int -- do
                 program initialize-prelude
                 program initialize-string-pool
                 program resolve-all-module-scopes
+                program resolve-all-types
                 program validate-external-declarations
 
                 program emit-c-emitter-support

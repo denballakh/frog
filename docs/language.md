@@ -1,13 +1,13 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, imports, macros, external C functions, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, imports, macros, external C functions, and block keywords such as `proc`, `record`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 `compiler/frogc.frog` is the sole Frog compiler and typechecker. It emits C, which is compiled to the executable program; there is no separate interpreter or Python language implementation.
 
 ## Values And Literals
 
-- Supported runtime value classes are `int`, `bool`, `ptr`, and `type`.
-- Procedure signatures and casts can name `int`, `bool`, and `ptr`.
+- Supported runtime value classes are `int`, `bool`, `ptr`, nominal record handles, and `type`.
+- Procedure signatures and casts can name `int`, `bool`, `ptr`, and visible record types.
 - `int` is a signed 64-bit integer in generated C. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
@@ -34,6 +34,37 @@ end
 ```
 
 Procedure calls are statically checked against declared stack contracts and use the generated runtime cell stack.
+
+## Records
+
+Records define nominal, pointer-backed collections of typed fields:
+
+```frog
+record Node
+    next Node
+    value int
+    ready bool
+end
+
+proc value-of Node -- int do Node.value end
+
+proc main -- do
+    Node:alloc
+    let node do
+        41 node Node.value!
+        true node Node.ready!
+        node value-of print
+    end
+end
+```
+
+`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be `int`, `bool`, `ptr`, or any visible record type; a record-valued field stores another record handle rather than inline record data.
+
+Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
+
+Every field occupies one eight-byte Frog cell in declaration order, with no padding. `Name.field` reads a field with stack effect `Name -- FieldType`; `Name.field!` writes it with stack effect `FieldType Name --`. Type-level operations use `:` while fields use `.`, so a field named `sizeof` or `alloc` does not collide with `Name:sizeof` or `Name:alloc`.
+
+Record types are nominal. Two declarations with identical fields are different types, and field access requires the declared owner type. Explicit `ptr` to record and record to `ptr` casts are available for raw allocation and C FFI boundaries; direct casts between different record types are rejected.
 
 ## C Foreign Functions
 
@@ -70,7 +101,7 @@ end
 
 `macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. User-defined and imported macros expand before normal word resolution, so they can shadow intrinsics or procedures with the same name.
 
-Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
+Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, `record`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
 
 ## Standard Prelude
 
@@ -87,7 +118,7 @@ Prelude names are fallback definitions. Resolution prefers a user-defined or imp
 
 ## Imports
 
-Imports make procedures, external functions, and macros from another Frog file visible in the importing module:
+Imports make procedures, external functions, records, and macros from another Frog file visible in the importing module:
 
 ```frog
 from "math.frog" import inc
@@ -123,7 +154,7 @@ proc main -- do
 end
 ```
 
-Imported top-level code is ignored. Imported files contribute procedure, external-function, and macro definitions, but only the root module's `main` runs.
+Imported top-level code is ignored. Imported files contribute procedure, external-function, record, and macro definitions, but only the root module's `main` runs. Imported record aliases retain the original nominal identity and use the alias in type and field operations, such as `P:alloc` and `P.value`.
 
 Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 
@@ -157,12 +188,13 @@ end
 
 - `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
 - `extern frog-name c-symbol <c-inputs> -- [c-output] end` declares a non-variadic C function with zero or one output.
+- `record Name field Type ... end` defines a nominal pointer-backed record.
 - A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
 - Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid rather than being wrapped in a generated `main`.
-- Only procedure, external-function, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
+- Only procedure, external-function, record, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
-- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, external functions, or macros from another file.
+- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, external functions, records, or macros from another file.
 - `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
@@ -226,9 +258,9 @@ end
 ### Casts
 
 - `cast`: `x type -- y`
-- Casts currently allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, and `ptr`/`int` conversions.
+- Casts allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/record conversions.
 - Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
-- The destination type is pushed with the `int`, `bool`, or `ptr` type word.
+- The destination type is pushed with the `int`, `bool`, `ptr`, or visible record type word.
 
 ### Output And Debugging
 

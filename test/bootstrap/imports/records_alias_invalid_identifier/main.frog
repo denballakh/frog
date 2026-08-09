@@ -1,0 +1,3 @@
+from "shape.frog" import Point as P.Q
+
+proc main -- do end

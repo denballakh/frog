@@ -1,0 +1,9 @@
+from "shape.frog" import Point as P
+
+proc main -- do
+    P:alloc
+    let point do
+        8 point P.x!
+        point P.x print
+    end
+end

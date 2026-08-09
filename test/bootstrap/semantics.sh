@@ -68,6 +68,7 @@ run_ok characters $'65\n233\n8364\n128512\n'
 run_ok args $'3\n/\nfrog\npond\n' frog pond
 run_ok pointer_store $'65\n'
 run_ok c_ffi $'42\n42\n711\ntrue\nfalse\n'
+run_ok records_layout $'41\ntrue\ntrue\n32\n7\n'
 printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
     | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
 
@@ -152,3 +153,21 @@ run_source_error extern_contract_type \
 run_source_error extern_incompatible_contract \
     $'extern as-int abs c-int -- c-int end\nextern as-ptr abs c-int -- c-ptr end\nproc main -- do end\n' \
     'incompatible declarations for C symbol'
+run_source_error record_wrong_owner \
+    $'record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc Point.x drop end\n' \
+    'compile-time stack type mismatch'
+run_source_error record_wrong_value \
+    $'record Point x int end\nproc main -- do Point:alloc let point do true point Point.x! end end\n' \
+    'compile-time stack type mismatch'
+run_source_error record_unknown_field \
+    $'record Point x int end\nproc main -- do Point:alloc Point.y drop end\n' \
+    'unknown record field'
+run_source_error record_unknown_type \
+    $'record Point x Missing end\nproc main -- do end\n' \
+    'unknown type in record field'
+run_source_error record_duplicate_field \
+    $'record Point x int x bool end\nproc main -- do end\n' \
+    'duplicate record field: x'
+run_source_error record_unsupported_cast \
+    $'record Point x int end\nproc main -- do 1 Point cast drop end\n' \
+    'unsupported cast'

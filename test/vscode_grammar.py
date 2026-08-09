@@ -35,6 +35,10 @@ def main() -> None:
     numeric = named_pattern(literal_patterns, 'constant.numeric.frog')
     operators = dictionary(repository['operators'])
     operator = named_pattern(patterns(operators['patterns']), 'keyword.operator.frog')
+    keywords = dictionary(repository['keywords'])
+    keyword = named_pattern(patterns(keywords['patterns']), 'keyword.control.frog')
+    special = dictionary(repository['special'])
+    special_function = named_pattern(patterns(special['patterns']), 'support.function')
 
     assert string['begin'] == '"'
     assert string['end'] == '"'
@@ -43,6 +47,16 @@ def main() -> None:
     operator_pattern = operator['match']
     assert isinstance(operator_pattern, str)
     assert re.compile(operator_pattern).fullmatch('!ptr')
+
+    keyword_pattern = keyword['match']
+    special_pattern = special_function['match']
+    assert isinstance(keyword_pattern, str)
+    assert isinstance(special_pattern, str)
+    assert re.compile(keyword_pattern).fullmatch('record')
+    special_regex = re.compile(special_pattern)
+    assert special_regex.fullmatch('Node:alloc')
+    assert special_regex.fullmatch('Node:sizeof')
+    assert special_regex.fullmatch('Node.bytes') is None
 
     string_patterns = patterns(string['patterns'])
     assert all('include' not in pattern for pattern in string_patterns)

@@ -16,7 +16,7 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI process/file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
 
-The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, compile-time imports and macros, and block keywords such as `proc`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, nominal records, compile-time imports and macros, and block keywords such as `proc`, `record`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
@@ -144,12 +144,15 @@ Commands:
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 - `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
+- `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `Name.field`/`Name.field!` provide statically typed access.
+- Record fields occupy one eight-byte Cell in declaration order. Record-valued fields store handles, and only explicit `ptr`/record casts cross the nominal boundary.
 
 ## Implementation Conventions And Gotchas
 
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
 - When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and snapshot coverage, user-facing docs, and optionally the VS Code grammar.
 - String literals lower to a UTF-8 byte pointer and byte length (`ptr int`); generated globals and macro expansion must retain the defining module's literal identity.
+- Record type IDs are program-global and nominal. Imported aliases and reexports must retain the defining record identity; type-level operations use `:` and field operations use `.`.
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.
