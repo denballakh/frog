@@ -97,6 +97,7 @@ run_ok functions_layout $'42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue
 run_ok functions_macro_shadow $'99\n'
 run_ok optimizer_constant_add $'5\n18\n3\n9\n'
 run_ok optimizer_macro_shadow $'41\n'
+run_ok type_stack_growth $'42\n'
 run_status unions_wrong_variant 1
 run_status unions_invalid_tag 1
 run_status unions_negative_tag 1

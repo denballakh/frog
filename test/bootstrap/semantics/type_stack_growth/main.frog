@@ -1,0 +1,25 @@
+macro push1 1 end
+macro push2 push1 push1 end
+macro push4 push2 push2 end
+macro push8 push4 push4 end
+macro push16 push8 push8 end
+macro push32 push16 push16 end
+macro push64 push32 push32 end
+macro push128 push64 push64 end
+macro push256 push128 push128 end
+
+macro discard1 drop end
+macro discard2 discard1 discard1 end
+macro discard4 discard2 discard2 end
+macro discard8 discard4 discard4 end
+macro discard16 discard8 discard8 end
+macro discard32 discard16 discard16 end
+macro discard64 discard32 discard32 end
+macro discard128 discard64 discard64 end
+macro discard256 discard128 discard128 end
+
+proc main -- do
+    push256
+    discard256
+    42 print
+end

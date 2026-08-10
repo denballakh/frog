@@ -2708,7 +2708,10 @@ proc cc-indent-offset -- int do 72 end
 proc cc-program-offset -- int do 80 end
 proc cc-procedure-module-offset -- int do 88 end
 proc cc-scope-module-offset -- int do 96 end
-proc cc-bytes -- int do 104 end
+proc cc-emitting-offset -- int do 104 end
+proc cc-max-type-count-offset -- int do 112 end
+proc cc-type-capacity-offset -- int do 120 end
+proc cc-bytes -- int do 128 end
 
 proc block-if -- int do 1 end
 proc block-while -- int do 2 end
@@ -2745,6 +2748,9 @@ proc @cc-indent ptr -- int do cc-indent-offset field-read end
 proc @cc-program ptr -- ptr do cc-program-offset pointer-field-read end
 proc @cc-procedure-module ptr -- ptr do cc-procedure-module-offset pointer-field-read end
 proc @cc-scope-module ptr -- ptr do cc-scope-module-offset pointer-field-read end
+proc @cc-emitting ptr -- bool do cc-emitting-offset field-read 0 != end
+proc @cc-max-type-count ptr -- int do cc-max-type-count-offset field-read end
+proc @cc-type-capacity ptr -- int do cc-type-capacity-offset field-read end
 
 proc !cc-defining-module ptr ptr -- do cc-defining-module-offset pointer-field-write end
 proc !cc-proc int ptr -- do cc-proc-offset field-write end
@@ -2759,6 +2765,14 @@ proc !cc-indent int ptr -- do cc-indent-offset field-write end
 proc !cc-program ptr ptr -- do cc-program-offset pointer-field-write end
 proc !cc-procedure-module ptr ptr -- do cc-procedure-module-offset pointer-field-write end
 proc !cc-scope-module ptr ptr -- do cc-scope-module-offset pointer-field-write end
+proc !cc-emitting bool ptr -- do
+    let value cc do
+        if value do 1 else 0 end
+        cc cc-emitting-offset field-write
+    end
+end
+proc !cc-max-type-count int ptr -- do cc-max-type-count-offset field-write end
+proc !cc-type-capacity int ptr -- do cc-type-capacity-offset field-write end
 
 proc cc-type-address ptr int -- ptr do
     let cc index do
@@ -2766,10 +2780,40 @@ proc cc-type-address ptr int -- ptr do
     end
 end
 
+proc ensure-type-capacity ptr -- do
+    let cc do
+        if cc @cc-type-count cc @cc-type-capacity == do
+            if cc @cc-type-capacity max-int cell-bytes 2 * / > do
+                "internal compile-time type stack capacity overflow" fail
+            end
+            cc @cc-type-capacity 2 *
+            let new-capacity do
+                new-capacity cell-bytes * alloc
+                let new-stack do
+                    cc @cc-type-stack new-stack cc @cc-type-count cell-bytes * memory-copy
+                    new-stack cc !cc-type-stack
+                    new-capacity cc !cc-type-capacity
+                end
+            end
+        end
+    end
+end
+
 proc type-push ptr int -- do
     let cc value do
+        if cc @cc-emitting do
+            if cc @cc-type-count cc @cc-max-type-count >= do
+                "internal compile-time stack capacity exceeded" fail
+            end
+        end
+        cc ensure-type-capacity
         value cc cc @cc-type-count cc-type-address 0 field-write
         cc @cc-type-count 1 + cc !cc-type-count
+        if cc @cc-emitting ! do
+            if cc @cc-type-count cc @cc-max-type-count > do
+                cc @cc-type-count cc !cc-max-type-count
+            end
+        end
     end
 end
 
@@ -2961,9 +3005,11 @@ end
 
 proc emit-line ptr String -- do
     let cc code do
-        cc emit-indent
-        code emit
-        10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            code emit
+            10 putc
+        end
     end
 end
 
@@ -5021,8 +5067,10 @@ end
 
 proc emit-push-integer ptr int -- do
     let cc value do
-        cc emit-indent
-        "frog_push(" emit value emit-integer ");" emit 10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "frog_push(" emit value emit-integer ");" emit 10 putc
+        end
     end
 end
 
@@ -5030,26 +5078,32 @@ proc emit-push-string ptr int -- do
     let cc token-index do
         cc @cc-defining-module token-index token-value-at
         let string-index do
-            cc emit-indent
-            "frog_push((Cell)(intptr_t)&" emit
-            cc @cc-program string-index emit-string-symbol
-            ");" emit 10 putc
+            if cc @cc-emitting do
+                cc emit-indent
+                "frog_push((Cell)(intptr_t)&" emit
+                cc @cc-program string-index emit-string-symbol
+                ");" emit 10 putc
+            end
         end
     end
 end
 
 proc emit-call ptr ptr int -- do
     let cc module proc-index do
-        cc emit-indent
-        module proc-index proc-global-id-at emit-proc-name
-        "();" emit 10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            module proc-index proc-global-id-at emit-proc-name
+            "();" emit 10 putc
+        end
     end
 end
 
 proc emit-local-load ptr int -- do
     let cc local-id do
-        cc emit-indent
-        "frog_push(" emit local-id emit-local-name ");" emit 10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "frog_push(" emit local-id emit-local-name ");" emit 10 putc
+        end
     end
 end
 
@@ -5263,11 +5317,13 @@ proc bind-let-names ptr int int -- do
                 let value-type do
                     cc name-token value-type add-local
                     let local-id do
-                        cc emit-indent
-                        "Cell " emit local-id emit-local-name
-                        " = frog_pop();" emit 10 putc
-                        cc emit-indent
-                        "(void)" emit local-id emit-local-name ";" emit 10 putc
+                        if cc @cc-emitting do
+                            cc emit-indent
+                            "Cell " emit local-id emit-local-name
+                            " = frog_pop();" emit 10 putc
+                            cc emit-indent
+                            "(void)" emit local-id emit-local-name ";" emit 10 putc
+                        end
                     end
                 end
                 cc first-token count 1 - bind-let-names
@@ -5477,11 +5533,13 @@ end
 
 proc emit-record-allocation ptr int -- do
     let cc size do
-        cc emit-indent
-        "frog_push((Cell)(intptr_t)frog_alloc(" emit
-        size emit-unsigned
-        "));" emit
-        10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "frog_push((Cell)(intptr_t)frog_alloc(" emit
+            size emit-unsigned
+            "));" emit
+            10 putc
+        end
     end
 end
 
@@ -5519,21 +5577,25 @@ end
 
 proc emit-record-field-read ptr int -- do
     let cc byte-offset do
-        cc emit-indent
-        "{ const unsigned char *record = (const unsigned char *)(intptr_t)frog_pop(); frog_push(frog_read_i64(record + " emit
-        byte-offset emit-unsigned
-        ")); }" emit
-        10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "{ const unsigned char *record = (const unsigned char *)(intptr_t)frog_pop(); frog_push(frog_read_i64(record + " emit
+            byte-offset emit-unsigned
+            ")); }" emit
+            10 putc
+        end
     end
 end
 
 proc emit-record-field-write ptr int -- do
     let cc byte-offset do
-        cc emit-indent
-        "{ unsigned char *record = (unsigned char *)(intptr_t)frog_pop(); Cell value = frog_pop(); frog_write_i64(record + " emit
-        byte-offset emit-unsigned
-        ", value); }" emit
-        10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "{ unsigned char *record = (unsigned char *)(intptr_t)frog_pop(); Cell value = frog_pop(); frog_write_i64(record + " emit
+            byte-offset emit-unsigned
+            ", value); }" emit
+            10 putc
+        end
     end
 end
 
@@ -5610,55 +5672,61 @@ end
 
 proc emit-union-constructor ptr int bool -- do
     let cc tag has-payload do
-        cc emit-indent
-        "{ " emit
-        if has-payload do
-            "Cell payload = frog_pop(); " emit
+        if cc @cc-emitting do
+            cc emit-indent
+            "{ " emit
+            if has-payload do
+                "Cell payload = frog_pop(); " emit
+            end
+            "unsigned char *union_value = (unsigned char *)frog_alloc(" emit
+            union-storage-bytes emit-unsigned
+            "); frog_write_i64(union_value, " emit
+            tag emit-unsigned
+            "); frog_write_i64(union_value + " emit
+            union-payload-offset emit-unsigned
+            ", " emit
+            if has-payload do
+                "payload" emit
+            else
+                "0" emit
+            end
+            "); frog_push((Cell)(intptr_t)union_value); }" emit
+            10 putc
         end
-        "unsigned char *union_value = (unsigned char *)frog_alloc(" emit
-        union-storage-bytes emit-unsigned
-        "); frog_write_i64(union_value, " emit
-        tag emit-unsigned
-        "); frog_write_i64(union_value + " emit
-        union-payload-offset emit-unsigned
-        ", " emit
-        if has-payload do
-            "payload" emit
-        else
-            "0" emit
-        end
-        "); frog_push((Cell)(intptr_t)union_value); }" emit
-        10 putc
     end
 end
 
 proc emit-union-predicate ptr int int -- do
     let cc tag case-count do
-        cc emit-indent
-        "{ Cell raw = frog_pop(); const void *union_value = (const void *)(intptr_t)raw; Cell tag = frog_union_tag(union_value, " emit
-        case-count emit-unsigned
-        "); frog_push(raw); frog_push(tag == " emit
-        tag emit-unsigned
-        "); }" emit
-        10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "{ Cell raw = frog_pop(); const void *union_value = (const void *)(intptr_t)raw; Cell tag = frog_union_tag(union_value, " emit
+            case-count emit-unsigned
+            "); frog_push(raw); frog_push(tag == " emit
+            tag emit-unsigned
+            "); }" emit
+            10 putc
+        end
     end
 end
 
 proc emit-union-projection ptr int int bool -- do
     let cc tag case-count has-payload do
-        cc emit-indent
-        "{ const unsigned char *union_value = (const unsigned char *)(intptr_t)frog_pop(); if (frog_union_tag(union_value, " emit
-        case-count emit-unsigned
-        ") != " emit
-        tag emit-unsigned
-        ") frog_runtime_fail();" emit
-        if has-payload do
-            " frog_push(frog_read_i64(union_value + " emit
-            union-payload-offset emit-unsigned
-            "));" emit
+        if cc @cc-emitting do
+            cc emit-indent
+            "{ const unsigned char *union_value = (const unsigned char *)(intptr_t)frog_pop(); if (frog_union_tag(union_value, " emit
+            case-count emit-unsigned
+            ") != " emit
+            tag emit-unsigned
+            ") frog_runtime_fail();" emit
+            if has-payload do
+                " frog_push(frog_read_i64(union_value + " emit
+                union-payload-offset emit-unsigned
+                "));" emit
+            end
+            " }" emit
+            10 putc
         end
-        " }" emit
-        10 putc
     end
 end
 
@@ -5820,11 +5888,13 @@ end
 
 proc emit-function-call ptr ptr int -- do
     let cc function-module function-index do
-        cc emit-indent
-        "{ Cell function_id = frog_pop(); switch (function_id) {" emit
-        cc @cc-program function-module function-index emit-function-dispatch-cases
-        " default: frog_runtime_fail(); } }" emit
-        10 putc
+        if cc @cc-emitting do
+            cc emit-indent
+            "{ Cell function_id = frog_pop(); switch (function_id) {" emit
+            cc @cc-program function-module function-index emit-function-dispatch-cases
+            " default: frog_runtime_fail(); } }" emit
+            10 putc
+        end
     end
 end
 
@@ -6186,7 +6256,11 @@ proc create-compile-context ptr ptr int -- ptr do
             ctx cc !cc-defining-module
             ctx cc !cc-scope-module
             proc-index cc !cc-proc
-            program @program-token-count 1 + cell-bytes * alloc cc !cc-type-stack
+            program @program-token-count 1 +
+            let type-capacity do
+                type-capacity cell-bytes * alloc cc !cc-type-stack
+                type-capacity cc !cc-type-capacity
+            end
             0 cc !cc-type-count
             program @program-token-count 1 + block-bytes * alloc cc !cc-blocks
             0 cc !cc-block-count
@@ -6194,6 +6268,8 @@ proc create-compile-context ptr ptr int -- ptr do
             0 cc !cc-local-count
             0 cc !cc-next-local
             0 cc !cc-indent
+            false cc !cc-emitting
+            0 cc !cc-max-type-count
             cc
         end
     end
@@ -6286,30 +6362,51 @@ proc compile-external-procedure ptr int -- do
     end
 end
 
+proc validate-compiled-procedure ptr -- do
+    let cc do
+        if cc @cc-block-count 0 != do
+            "unclosed control-flow block" fail
+        end
+        if cc @cc-local-count 0 != do
+            "unclosed local scope" fail
+        end
+        cc require-proc-outputs
+    end
+end
+
+proc compile-procedure-body ptr ptr int -- do
+    let cc ctx proc-index do
+        cc 0 initialize-proc-inputs
+        cc
+        ctx proc-index proc-body-start-at
+        ctx proc-index proc-body-end-at
+        compile-body-range
+        cc validate-compiled-procedure
+    end
+end
+
 proc compile-procedure ptr ptr int -- do
     let program ctx proc-index do
         if ctx proc-index proc-external-at do
             ctx proc-index compile-external-procedure
         else
             program ctx proc-index create-compile-context
-            let cc do
-                cc 0 initialize-proc-inputs
-                "void " emit
-                ctx proc-index proc-global-id-at emit-proc-name
-                "(void) {" emit 10 putc
-                1 cc !cc-indent
-                cc
-                ctx proc-index proc-body-start-at
-                ctx proc-index proc-body-end-at
-                compile-body-range
-                if cc @cc-block-count 0 != do
-                    "unclosed control-flow block" fail
+            let measurement do
+                measurement ctx proc-index compile-procedure-body
+                measurement @cc-max-type-count
+                let max-type-count do
+                    program ctx proc-index create-compile-context
+                    let cc do
+                        true cc !cc-emitting
+                        max-type-count cc !cc-max-type-count
+                        "void " emit
+                        ctx proc-index proc-global-id-at emit-proc-name
+                        "(void) {" emit 10 putc
+                        1 cc !cc-indent
+                        cc ctx proc-index compile-procedure-body
+                        "}" emit 10 putc
+                    end
                 end
-                if cc @cc-local-count 0 != do
-                    "unclosed local scope" fail
-                end
-                cc require-proc-outputs
-                "}" emit 10 putc
             end
         end
     end
