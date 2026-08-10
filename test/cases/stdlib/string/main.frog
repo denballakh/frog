@@ -1,0 +1,46 @@
+from "../../../../stdlib/string.frog" import (
+    bytes-copy
+    bytes-equal
+    string-equal
+    ByteBuffer
+    byte-buffer-new
+    byte-buffer-push
+    byte-buffer-equal-string
+    byte-buffer-free
+)
+from "../../../../stdlib/libc.frog" import ( alloc free exit )
+
+proc assert bool -- do
+    let condition do
+        if condition do else 1 exit end
+    end
+end
+
+proc main -- do
+    "same" "same" string-equal assert
+    "same" "different" string-equal ! assert
+
+    3 alloc
+    let copied do
+        "abc" String.bytes copied 3 bytes-copy
+        copied 3 "abc" String.bytes 3 bytes-equal assert
+        copied free
+    end
+
+    0 byte-buffer-new
+    let buffer do
+        buffer @ByteBuffer.len 0 == assert
+        buffer @ByteBuffer.capacity 0 == assert
+
+        65 buffer byte-buffer-push
+        66 buffer byte-buffer-push
+        67 buffer byte-buffer-push
+
+        buffer @ByteBuffer.len 3 == assert
+        buffer @ByteBuffer.capacity 3 >= assert
+        buffer "ABC" byte-buffer-equal-string assert
+        buffer "ABD" byte-buffer-equal-string ! assert
+        buffer @ByteBuffer.bytes 1 + @u8 66 == assert
+        buffer byte-buffer-free
+    end
+end

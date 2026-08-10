@@ -1,0 +1,104 @@
+extern string-allocate froglang_alloc c-int -- c-ptr end
+extern string-free free c-ptr -- end
+
+proc bytes-copy ptr ptr int -- do
+    let source destination count do
+        0
+        while dup count < do
+            let index do
+                source index + @u8 destination index + !u8
+                index 1 +
+            end
+        end
+        drop
+    end
+end
+
+proc bytes-equal ptr int ptr int -- bool do
+    let first first-length second second-length do
+        if first-length second-length != do
+            false
+        else
+            0 true
+            while
+                peek index equal do
+                    index first-length < equal &&
+                end
+            do
+                let index equal do
+                    index 1 +
+                    equal
+                    first index + @u8 second index + @u8 == &&
+                end
+            end
+            let index equal do equal end
+        end
+    end
+end
+
+proc string-equal String String -- bool do
+    let first second do
+        first String.bytes first String.len
+        second String.bytes second String.len
+        bytes-equal
+    end
+end
+
+record ByteBuffer
+    bytes ptr
+    len int
+    capacity int
+end
+
+proc byte-buffer-new int -- ByteBuffer do
+    let capacity do
+        capacity string-allocate
+        let bytes do
+            ByteBuffer:alloc
+            let buffer do
+                bytes buffer !ByteBuffer.bytes
+                0 buffer !ByteBuffer.len
+                capacity buffer !ByteBuffer.capacity
+                buffer
+            end
+        end
+    end
+end
+
+proc byte-buffer-push int ByteBuffer -- do
+    let byte buffer do
+        if buffer @ByteBuffer.len buffer @ByteBuffer.capacity == do
+            if buffer @ByteBuffer.capacity 0 == do
+                1
+            else
+                buffer @ByteBuffer.capacity 2 *
+            end
+            let capacity do
+                capacity string-allocate
+                let bytes do
+                    buffer @ByteBuffer.bytes bytes buffer @ByteBuffer.len bytes-copy
+                    buffer @ByteBuffer.bytes string-free
+                    bytes buffer !ByteBuffer.bytes
+                    capacity buffer !ByteBuffer.capacity
+                end
+            end
+        end
+        byte buffer @ByteBuffer.bytes buffer @ByteBuffer.len + !u8
+        buffer @ByteBuffer.len 1 + buffer !ByteBuffer.len
+    end
+end
+
+proc byte-buffer-equal-string ByteBuffer String -- bool do
+    let buffer value do
+        buffer @ByteBuffer.bytes buffer @ByteBuffer.len
+        value String.bytes value String.len
+        bytes-equal
+    end
+end
+
+proc byte-buffer-free ByteBuffer -- do
+    let buffer do
+        buffer @ByteBuffer.bytes string-free
+        buffer ptr cast string-free
+    end
+end

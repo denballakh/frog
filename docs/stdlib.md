@@ -22,3 +22,23 @@ from "../stdlib/libc.frog" import ( alloc free putc getc eputc exit )
 
 The imported names are macros, so callers see the stack effects above rather
 than the return values of the underlying C I/O functions.
+
+## Strings And Byte Buffers
+
+`stdlib/string.frog` provides operations for literal `String` values and
+heap-backed byte buffers:
+
+- `bytes-copy`: `source destination count --` copies `count` bytes.
+- `bytes-equal`: `first first_len second second_len -- bool` compares byte
+  ranges.
+- `string-equal`: `String String -- bool` compares decoded string bytes.
+- `byte-buffer-new`: `capacity -- ByteBuffer` creates an empty buffer.
+- `byte-buffer-push`: `byte ByteBuffer --` appends one byte and grows the
+  buffer when necessary.
+- `byte-buffer-equal-string`: `ByteBuffer String -- bool` compares a buffer to
+  a string.
+- `byte-buffer-free`: `ByteBuffer --` releases a buffer and its storage.
+
+`ByteBuffer` exposes `bytes`, `len`, and `capacity` fields through the normal
+record operations. Its byte storage may move after `byte-buffer-push`, so code
+must load `@ByteBuffer.bytes` again after an append.
