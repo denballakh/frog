@@ -1311,37 +1311,6 @@ proc c-keyword ptr int -- bool do
     end
 end
 
-proc bytes-are-digits-from ptr int int -- bool do
-    let bytes length start do
-        start true
-        while
-            peek index valid do
-                index length < valid &&
-            end
-        do
-            let index valid do
-                index 1 +
-                valid bytes index byte-read is-digit &&
-            end
-        end
-        let index valid do valid end
-    end
-end
-
-proc generated-proc-symbol ptr int -- bool do
-    peek ctx token-index do token-slice
-        let bytes length do
-            if length 1 <= do
-                false
-            elif bytes 0 byte-read 112 != do
-                false
-            else
-                bytes length 1 bytes-are-digits-from
-            end
-        end
-    end
-end
-
 proc frog-internal-symbol ptr int -- bool do
     peek ctx token-index do token-slice
         let bytes length do
@@ -1363,7 +1332,6 @@ proc reserved-c-symbol ptr int -- bool do
         ctx token-index "main" token-equals ||
         ctx token-index "Cell" token-equals ||
         ctx token-index "FrogString" token-equals ||
-        ctx token-index generated-proc-symbol ||
         ctx token-index frog-internal-symbol ||
     end
 end
@@ -5628,7 +5596,7 @@ end
 
 proc emit-proc-signature ptr int -- do
     peek ctx proc-index do emit-proc-return-type
-        " p" emit ctx proc-index proc-global-id-at emit-unsigned
+        " " emit ctx proc-index emit-proc-name
         "(" emit ctx proc-index emit-proc-parameters ")" emit
     end
 end
@@ -5671,9 +5639,52 @@ end
 // END C EMITTER SUPPORT
 
 // BEGIN BODY COMPILER
-proc emit-proc-name int -- do
-    112 putc
-    emit-unsigned
+proc emit-uppercase-hex-digit int -- do
+    let digit do
+        if digit 10 < do
+            digit 48 +
+        else
+            digit 10 - 65 +
+        end
+        putc
+    end
+end
+
+proc emit-proc-name-byte int -- do
+    let byte do
+        if byte is-ascii-letter byte is-digit || do
+            byte putc
+        else
+            95 putc
+            byte 16 / emit-uppercase-hex-digit
+            byte 16 % emit-uppercase-hex-digit
+        end
+    end
+end
+
+proc emit-proc-source-name ptr int -- do
+    let bytes length do
+        0
+        while dup length < do
+            dup
+            let index do
+                bytes index byte-read emit-proc-name-byte
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-proc-name ptr int -- do
+    let ctx proc-index do
+        "frog_proc_" emit
+        ctx proc-index proc-global-id-at emit-unsigned
+        95 putc
+        ctx @ctx-source ctx proc-index proc-name-start-at +
+        ctx proc-index proc-name-length-at
+        emit-proc-source-name
+    end
 end
 
 proc emit-local-name int -- do
@@ -6243,16 +6254,16 @@ proc emit-procedure-invocation ptr ptr int int -- do
         let output-count do
             if output-count 0 == do
                 cc emit-indent
-                module proc-index proc-global-id-at emit-proc-name
+                module proc-index emit-proc-name
                 "(" emit cc module proc-index base emit-call-arguments ");" emit 10 putc
             elif output-count 1 == do
                 cc emit-indent cc base emit-slot " = " emit
-                module proc-index proc-global-id-at emit-proc-name
+                module proc-index emit-proc-name
                 "(" emit cc module proc-index base emit-call-arguments ");" emit 10 putc
             else
                 cc emit-indent
                 output-count emit-result-type-name " frog_call_result = " emit
-                module proc-index proc-global-id-at emit-proc-name
+                module proc-index emit-proc-name
                 "(" emit cc module proc-index base emit-call-arguments ");" emit 10 putc
                 cc base output-count emit-call-result-slots
             end
@@ -7752,7 +7763,7 @@ proc emit-main-wrapper ptr -- do
         let ctx do
             "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n" emit
             program emit-string-references
-            "  " emit ctx ctx @ctx-main-proc proc-global-id-at emit-proc-name
+            "  " emit ctx ctx @ctx-main-proc emit-proc-name
             "();\n  return 0;\n}\n" emit
         end
     end

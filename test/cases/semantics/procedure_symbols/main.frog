@@ -1,0 +1,11 @@
+proc alpha9 -- do end
+proc with_under -- do end
+proc ++ -- do end
+proc café -- do end
+
+proc main -- do
+    alpha9
+    with_under
+    ++
+    café
+end

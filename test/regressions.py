@@ -127,7 +127,7 @@ SEMANTIC_RUN_CASES = [
     RunCase('semantics', 'characters', 'semantics/characters/main.frog', b'65\n233\n8364\n128512\n'),
     RunCase('semantics', 'args', 'semantics/args/main.frog', b'3\n/\nfrog\npond\n', ('frog', 'pond')),
     RunCase('semantics', 'pointer_store', 'semantics/pointer_store/main.frog', b'65\n'),
-    RunCase('semantics', 'c_ffi', 'semantics/c_ffi/main.frog', b'42\n42\n711\ntrue\nfalse\n'),
+    RunCase('semantics', 'c_ffi', 'semantics/c_ffi/main.frog', b'42\n42\n9\n711\ntrue\nfalse\n'),
     RunCase('semantics', 'records_layout', 'semantics/records_layout/main.frog', b'41\ntrue\ntrue\n32\n7\n'),
     RunCase(
         'semantics',
@@ -145,6 +145,7 @@ SEMANTIC_RUN_CASES = [
     RunCase('semantics', 'optimizer_constant_add', 'semantics/optimizer_constant_add/main.frog', b'5\n18\n3\n9\n'),
     RunCase('semantics', 'optimizer_macro_shadow', 'semantics/optimizer_macro_shadow/main.frog', b'41\n'),
     RunCase('semantics', 'type_stack_growth', 'semantics/type_stack_growth/main.frog', b'42\n'),
+    RunCase('semantics', 'procedure_symbols', 'semantics/procedure_symbols/main.frog', b''),
     RunCase(
         'semantics',
         'constants',
@@ -390,7 +391,9 @@ SOURCE_ERROR_CASES = [
         'extern_internal_symbol', b'extern invalid frog_push c-int -- end\nproc main -- do end\n', 'invalid C symbol'
     ),
     SourceErrorCase(
-        'extern_generated_proc_symbol', b'extern invalid p0 -- c-int end\nproc main -- do end\n', 'invalid C symbol'
+        'extern_generated_proc_symbol',
+        b'extern invalid frog_proc_0_main -- c-int end\nproc main -- do end\n',
+        'invalid C symbol',
     ),
     SourceErrorCase(
         'extern_unknown_abi_type',
@@ -777,8 +780,11 @@ def extract_function(source: str, signature: str) -> str:
 
 def assert_semantic_c(generated: dict[str, str]) -> None:
     c_ffi = generated['semantics/c_ffi']
-    assert extract_function(c_ffi, 'Cell p1(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2)') == (
-        'Cell p1(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n'
+    assert extract_function(
+        c_ffi,
+        'Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2)',
+    ) == (
+        'Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n'
         '  return (Cell)ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), '
         '(void *)(intptr_t)frog_arg_2);\n'
         '}\n'
@@ -786,20 +792,20 @@ def assert_semantic_c(generated: dict[str, str]) -> None:
 
     functions = generated['semantics/functions_layout']
     for expected in (
-        'Cell p0(void);',
-        'void p2(void);',
-        'Cell p3(Cell frog_arg_0, Cell frog_arg_1);',
-        'frog_results_2 p4(Cell frog_arg_0);',
+        'Cell frog_proc_0_before_2Dinc(void);',
+        'void frog_proc_2_unit(void);',
+        'Cell frog_proc_3_add(Cell frog_arg_0, Cell frog_arg_1);',
+        'frog_results_2 frog_proc_4_duplicate(Cell frog_arg_0);',
         'typedef struct { Cell value_0; Cell value_1; } frog_results_2;',
-        'frog_results_2 frog_call_result = p4(frog_slots[0]);',
+        'frog_results_2 frog_call_result = frog_proc_4_duplicate(frog_slots[0]);',
         'frog_slots[1] = frog_call_result.value_1;',
-        'frog_slots[0] = p13(frog_slots[0]);',
+        'frog_slots[0] = frog_proc_13_countdown(frog_slots[0]);',
         'switch (function_id) {',
     ):
         assert expected in functions
 
     optimizer = generated['semantics/optimizer_constant_add']
-    main_block = extract_function(optimizer, 'void p0(void)')
+    main_block = extract_function(optimizer, 'void frog_proc_0_main(void)')
     folded_assignments = [
         line
         for line in main_block.splitlines(keepends=True)
@@ -819,6 +825,16 @@ def assert_semantic_c(generated: dict[str, str]) -> None:
     constants = generated['semantics/constants']
     assert constants.count('= 42;') == 5
     assert 'frog_slots[0] = frog_slots[0] * frog_slots[1];' not in constants
+
+    procedure_symbols = generated['semantics/procedure_symbols']
+    for expected in (
+        'void frog_proc_0_alpha9(void);',
+        'void frog_proc_1_with_5Funder(void);',
+        'void frog_proc_2__2B_2B(void);',
+        'void frog_proc_3_caf_C3_A9(void);',
+        'void frog_proc_4_main(void);',
+    ):
+        assert expected in procedure_symbols
 
 
 def string_symbol(source: str, value: str) -> str:

@@ -133,7 +133,7 @@ Commands:
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
-- Generated C uses a runtime cell stack and numeric procedure symbols, so source punctuation does not become a C identifier.
+- Generated C procedure names use `frog_proc_<global-id>_<encoded-source-name>`. ASCII letters and digits remain readable; every other UTF-8 byte, including `_`, is encoded as uppercase `_HH`. Numeric global IDs remain the function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
 
