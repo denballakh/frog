@@ -1035,8 +1035,8 @@ static uint8_t frog_string_2090424009_bytes[] = "int main(int argc, char **argv)
 static const FrogString frog_string_2090424009 = { frog_string_2090424009_bytes, 74 };
 static uint8_t frog_string_3046211155_bytes[] = "();\n  return 0;\n}\n";
 static const FrogString frog_string_3046211155 = { frog_string_3046211155_bytes, 18 };
-static uint8_t frog_string_125098186_bytes[] = "macro dup let a do a a end end\nmacro dup2 let a b do a b a b end end\nmacro drop let a do end end\nmacro swap let a b do b a end end\nmacro swap2 let a b c d do c d a b end end\nmacro rot let a b c do b c a end end\n";
-static const FrogString frog_string_125098186 = { frog_string_125098186_bytes, 211 };
+static uint8_t frog_string_721831238_bytes[] = "macro dup peek a do a end end\nmacro dup2 peek a b do a b end end\nmacro drop let a do end end\nmacro swap let a b do b a end end\nmacro swap2 let a b c d do c d a b end end\nmacro rot let a b c do b c a end end\n";
+static const FrogString frog_string_721831238 = { frog_string_721831238_bytes, 207 };
 static uint8_t frog_string_2854330299_bytes[] = "internal prelude symbol is not a macro";
 static const FrogString frog_string_2854330299 = { frog_string_2854330299_bytes, 38 };
 static uint8_t frog_string_722245873_bytes[] = ".";
@@ -37002,7 +37002,7 @@ void p873(Cell frog_arg_0) {
       {
         p315(frog_slots[0], frog_slots[1]);
       }
-      frog_slots[0] = (Cell)(intptr_t)&frog_string_125098186;
+      frog_slots[0] = (Cell)(intptr_t)&frog_string_721831238;
       {
         Cell l2 = frog_slots[0];
         (void)l2;
@@ -39163,7 +39163,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_1455760204;
   (void)&frog_string_2090424009;
   (void)&frog_string_3046211155;
-  (void)&frog_string_125098186;
+  (void)&frog_string_721831238;
   (void)&frog_string_2854330299;
   (void)&frog_string_722245873;
   (void)&frog_string_2382766391;

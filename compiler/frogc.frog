@@ -260,8 +260,7 @@ proc emit-bytes ptr int -- do
 end
 
 proc emit String -- do
-    let value do
-        value String.bytes value String.len emit-bytes
+    peek value do String.bytes value String.len emit-bytes
     end
 end
 
@@ -277,8 +276,7 @@ proc emit-error-bytes ptr int -- do
 end
 
 proc emit-error String -- do
-    let value do
-        value String.bytes value String.len emit-error-bytes
+    peek value do String.bytes value String.len emit-error-bytes
     end
 end
 
@@ -307,8 +305,7 @@ proc emit-integer int -- do
 end
 
 proc is-space int -- bool do
-    let byte do
-        byte 32 ==
+    peek byte do 32 ==
         byte 9 == ||
         byte 10 == ||
         byte 13 == ||
@@ -316,27 +313,23 @@ proc is-space int -- bool do
 end
 
 proc is-digit int -- bool do
-    let byte do
-        byte 48 >= byte 57 <= &&
+    peek byte do 48 >= byte 57 <= &&
     end
 end
 
 proc is-ascii-letter int -- bool do
-    let byte do
-        byte 65 >= byte 90 <= &&
+    peek byte do 65 >= byte 90 <= &&
         byte 97 >= byte 122 <= && ||
     end
 end
 
 proc is-c-identifier-start int -- bool do
-    let byte do
-        byte is-ascii-letter byte 95 == ||
+    peek byte do is-ascii-letter byte 95 == ||
     end
 end
 
 proc is-c-identifier-byte int -- bool do
-    let byte do
-        byte is-c-identifier-start byte is-digit ||
+    peek byte do is-c-identifier-start byte is-digit ||
     end
 end
 
@@ -375,8 +368,7 @@ proc bytes-equal ptr int ptr int -- bool do
         else
             0 true
             while
-                let index equal do
-                    index equal
+                peek index equal do
                     index first-length < equal &&
                 end
             do
@@ -392,8 +384,7 @@ proc bytes-equal ptr int ptr int -- bool do
 end
 
 proc bytes-equal-string ptr int String -- bool do
-    let bytes length value do
-        bytes length value String.bytes value String.len bytes-equal
+    peek bytes length value do String.bytes value String.len bytes-equal
     end
 end
 
@@ -537,49 +528,42 @@ proc set-string-field int ptr int int -- do
 end
 
 proc string-data-at ptr int -- ptr do
-    let program index do program index string-address string-bytes-offset pointer-field-read end
+    peek program index do string-address string-bytes-offset pointer-field-read end
 end
 proc string-length-at ptr int -- int do string-length-offset string-field end
 proc string-hash-at ptr int -- int do string-hash-offset string-field end
 proc string-collision-at ptr int -- int do string-collision-offset string-field end
 
 proc set-string-data ptr ptr int -- do
-    let data program index do data program index string-address string-bytes-offset pointer-field-write end
+    peek data program index do string-address string-bytes-offset pointer-field-write end
 end
 
 proc program-allocate-proc-id ptr -- int do
-    let program do
-        program @program-next-proc-id
-        let proc-id do
-            proc-id 1 + program !program-next-proc-id
+    peek program do @program-next-proc-id
+        peek proc-id do 1 + program !program-next-proc-id
             proc-id
         end
     end
 end
 
 proc program-allocate-nominal-type ptr -- int do
-    let program do
-        program @program-next-nominal-type
-        let nominal-type do
-            nominal-type 1 + program !program-next-nominal-type
+    peek program do @program-next-nominal-type
+        peek nominal-type do 1 + program !program-next-nominal-type
             nominal-type
         end
     end
 end
 
 proc program-allocate-function-type ptr -- int do
-    let program do
-        program @program-next-function-type
-        let function-type do
-            function-type 1 + program !program-next-function-type
+    peek program do @program-next-function-type
+        peek function-type do 1 + program !program-next-function-type
             function-type
         end
     end
 end
 
 proc program-add-module ptr ptr -- do
-    let program module do
-        program module !ctx-program
+    peek program module do !ctx-program
         program @program-module-count module !ctx-module-id
         0 ptr cast module !ctx-next-module
         if program @program-module-count 0 == do
@@ -632,8 +616,7 @@ proc token-equals ptr int String -- bool do
 end
 
 proc string-type-name ptr int -- bool do
-    let ctx token-index do
-        ctx token-index "String" token-equals
+    peek ctx token-index do "String" token-equals
     end
 end
 
@@ -659,8 +642,7 @@ proc source-byte ptr int -- int do
 end
 
 proc lex-advance ptr -- do
-    let ctx do
-        ctx @ctx-lex-index
+    peek ctx do @ctx-lex-index
         let index do
             ctx index source-byte
             let byte do
@@ -680,8 +662,7 @@ proc all-digits ptr int int -- bool do
     let source start length do
         0 true
         while
-            let index valid do
-                index valid
+            peek index valid do
                 index length < valid &&
             end
         do
@@ -724,8 +705,7 @@ proc parse-integer ptr int int int -- int do
         end
         0 0
         while
-            let index value do
-                index value index length <
+            peek index value do index length <
             end
         do
             let index value do
@@ -791,8 +771,7 @@ proc lex-string ptr int int int -- do
         let content-start do
             false
             while
-                let done do
-                    done done !
+                peek done do done !
                     ctx @ctx-lex-index ctx @ctx-source-length < &&
                 end
             do
@@ -1008,26 +987,25 @@ proc constant-body-start-at ptr int -- int do constant-body-start-offset constan
 proc constant-body-end-at ptr int -- int do constant-body-end-offset constant-field end
 proc constant-state-at ptr int -- int do constant-state-offset constant-field end
 proc constant-values-at ptr int -- ptr do
-    let ctx index do ctx index constant-address constant-values-offset pointer-field-read end
+    peek ctx index do constant-address constant-values-offset pointer-field-read end
 end
 proc constant-value-count-at ptr int -- int do constant-value-count-offset constant-field end
 
 proc set-constant-values ptr ptr int -- do
-    let values ctx index do
-        values ctx index constant-address constant-values-offset pointer-field-write
+    peek values ctx index do constant-address constant-values-offset pointer-field-write
     end
 end
 
 proc constant-value-address ptr int -- ptr do
-    let values index do values index constant-value-bytes * + end
+    peek values index do constant-value-bytes * + end
 end
 
 proc constant-value-type-at ptr int -- int do
-    let values index do values index constant-value-address constant-value-type-offset field-read end
+    peek values index do constant-value-address constant-value-type-offset field-read end
 end
 
 proc constant-value-payload-at ptr int -- int do
-    let values index do values index constant-value-address constant-value-payload-offset field-read end
+    peek values index do constant-value-address constant-value-payload-offset field-read end
 end
 
 proc set-constant-value int int ptr int -- do
@@ -1090,7 +1068,7 @@ proc record-field-byte-offset-at ptr int -- int do
     record-field-byte-offset-offset record-field-entry-field
 end
 proc set-record-field-type int ptr int -- do
-    let value ctx index do value ctx index record-field-type-offset set-record-field-entry-field end
+    peek value ctx index do record-field-type-offset set-record-field-entry-field end
 end
 
 proc union-address ptr int -- ptr do
@@ -1146,7 +1124,7 @@ proc union-case-payload-type-at ptr int -- int do
 end
 proc union-case-tag-at ptr int -- int do union-case-tag-offset union-case-entry-field end
 proc set-union-case-payload-type int ptr int -- do
-    let value ctx index do value ctx index union-case-payload-type-offset set-union-case-entry-field end
+    peek value ctx index do union-case-payload-type-offset set-union-case-entry-field end
 end
 
 proc function-address ptr int -- ptr do
@@ -1216,8 +1194,7 @@ proc require-word ptr int -- do
 end
 
 proc reserved-name ptr int -- bool do
-    let ctx token-index do
-        ctx token-index "proc" token-equals
+    peek ctx token-index do "proc" token-equals
         ctx token-index "macro" token-equals ||
         ctx token-index "const" token-equals ||
         ctx token-index "if" token-equals ||
@@ -1241,8 +1218,7 @@ proc reserved-name ptr int -- bool do
 end
 
 proc parse-c-abi-type-token ptr int -- int do
-    let ctx token-index do
-        ctx token-index require-word
+    peek ctx token-index do require-word
         if ctx token-index "c-int" token-equals do
             type-int
         elif ctx token-index "c-bool" token-equals do
@@ -1269,8 +1245,7 @@ proc c-identifier-suffix-valid ptr int int -- bool do
 end
 
 proc identifier-token ptr int -- bool do
-    let ctx token-index do
-        ctx token-index token-slice
+    peek ctx token-index do token-slice
         let bytes length do
             if length 0 == do
                 false
@@ -1284,8 +1259,7 @@ proc identifier-token ptr int -- bool do
 end
 
 proc c-keyword ptr int -- bool do
-    let ctx token-index do
-        ctx token-index "auto" token-equals
+    peek ctx token-index do "auto" token-equals
         ctx token-index "break" token-equals ||
         ctx token-index "case" token-equals ||
         ctx token-index "char" token-equals ||
@@ -1336,8 +1310,7 @@ proc bytes-are-digits-from ptr int int -- bool do
     let bytes length start do
         start true
         while
-            let index valid do
-                index valid
+            peek index valid do
                 index length < valid &&
             end
         do
@@ -1351,8 +1324,7 @@ proc bytes-are-digits-from ptr int int -- bool do
 end
 
 proc generated-proc-symbol ptr int -- bool do
-    let ctx token-index do
-        ctx token-index token-slice
+    peek ctx token-index do token-slice
         let bytes length do
             if length 1 <= do
                 false
@@ -1366,8 +1338,7 @@ proc generated-proc-symbol ptr int -- bool do
 end
 
 proc frog-internal-symbol ptr int -- bool do
-    let ctx token-index do
-        ctx token-index token-slice
+    peek ctx token-index do token-slice
         let bytes length do
             if length 5 < do
                 false
@@ -1383,8 +1354,7 @@ proc frog-internal-symbol ptr int -- bool do
 end
 
 proc reserved-c-symbol ptr int -- bool do
-    let ctx token-index do
-        ctx token-index c-keyword
+    peek ctx token-index do c-keyword
         ctx token-index "main" token-equals ||
         ctx token-index "Cell" token-equals ||
         ctx token-index "FrogString" token-equals ||
@@ -1394,8 +1364,7 @@ proc reserved-c-symbol ptr int -- bool do
 end
 
 proc valid-c-symbol ptr int -- bool do
-    let ctx token-index do
-        ctx token-index token-slice
+    peek ctx token-index do token-slice
         let bytes length do
             if length 0 == do
                 false
@@ -1411,8 +1380,7 @@ proc valid-c-symbol ptr int -- bool do
 end
 
 proc parse-type-token ptr int -- int do
-    let ctx token-index do
-        ctx token-index require-word
+    peek ctx token-index do require-word
         if ctx token-index "int" token-equals do
             type-int
         elif ctx token-index "bool" token-equals do
@@ -1934,8 +1902,7 @@ proc scan-one-union ptr int -- int do
 end
 
 proc parse-function-signature-type-token ptr int -- int do
-    let ctx token-index do
-        ctx token-index require-word
+    peek ctx token-index do require-word
         if ctx token-index reserved-name do
             "unknown type in function signature" fail
         end
@@ -1996,8 +1963,7 @@ proc scan-one-function ptr int -- int do
                 ctx function-index function-input-start-offset set-function-entry-field
                 name-token 1 + 0
                 while
-                    let token-index count do
-                        token-index count
+                    peek token-index count do
                         token-index ctx @ctx-token-count <
                         if dup do
                             drop
@@ -2023,8 +1989,7 @@ proc scan-one-function ptr int -- int do
                     ctx function-index function-output-start-offset set-function-entry-field
                     token-index 1 + 0
                     while
-                        let output-token output-count do
-                            output-token output-count
+                        peek output-token output-count do
                             output-token ctx @ctx-token-count <
                             if dup do
                                 drop ctx output-token "end" token-equals !
@@ -2054,8 +2019,7 @@ proc scan-macro-body ptr int -- int do
     let ctx body-start do
         body-start 0 true
         while
-            let token-index depth active do
-                token-index depth active active
+            peek token-index depth active do active
             end
         do
             let token-index depth active do
@@ -2117,8 +2081,7 @@ proc validate-macro-body ptr int int -- do
                 let has-elses do
                     body-start 0
                     while
-                        let token-index depth do
-                            token-index depth
+                        peek token-index depth do
                             token-index body-end <
                         end
                     do
@@ -2269,8 +2232,7 @@ proc scan-one-macro ptr int -- int do
 end
 
 proc constant-expression-forbidden-word ptr int -- bool do
-    let ctx token-index do
-        ctx token-index "if" token-equals
+    peek ctx token-index do "if" token-equals
         ctx token-index "elif" token-equals ||
         ctx token-index "else" token-equals ||
         ctx token-index "while" token-equals ||
@@ -2293,7 +2255,7 @@ proc scan-constant-body ptr int -- int do
     let ctx body-start do
         body-start true
         while
-            let token-index active do token-index active active end
+            peek token-index active do active end
         do
             let token-index active do
                 if token-index ctx @ctx-token-count >= do
@@ -2370,8 +2332,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
     let ctx body-start allow-outer-elif do
         body-start 1
         while
-            let token-index depth do
-                token-index depth
+            peek token-index depth do
                 depth 0 >
                 token-index ctx @ctx-token-count < &&
             end
@@ -2486,8 +2447,7 @@ proc scan-one-proc ptr int -- int do
                 ctx @ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
                 name-token 1 + 0
                 while
-                    let token-index count do
-                        token-index count
+                    peek token-index count do
                         token-index ctx @ctx-token-count <
                         if dup do
                             drop ctx token-index "--" token-equals !
@@ -2510,8 +2470,7 @@ proc scan-one-proc ptr int -- int do
                 ctx @ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
                 0
                 while
-                    let token-index count do
-                        token-index count
+                    peek token-index count do
                         token-index ctx @ctx-token-count <
                         if dup do
                             drop ctx token-index "do" token-equals !
@@ -2530,11 +2489,9 @@ proc scan-one-proc ptr int -- int do
                     output-count ctx proc-index proc-output-count-offset set-proc-field
                     token-index 1 +
                 end
-                let body-start do
-                    body-start ctx proc-index proc-body-start-offset set-proc-field
+                peek body-start do ctx proc-index proc-body-start-offset set-proc-field
                     ctx body-start scan-block-end
-                    let next-token do
-                        next-token 1 - ctx proc-index proc-body-end-offset set-proc-field
+                    peek next-token do 1 - ctx proc-index proc-body-end-offset set-proc-field
                         proc-index 1 + ctx !ctx-proc-count
 
                         if ctx name-token "main" token-equals do
@@ -2580,8 +2537,7 @@ proc scan-one-extern ptr int -- int do
                     ctx @ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
                     symbol-token 1 + 0
                     while
-                        let token-index count do
-                            token-index count
+                        peek token-index count do
                             token-index ctx @ctx-token-count <
                             if dup do
                                 drop ctx token-index "--" token-equals !
@@ -2604,8 +2560,7 @@ proc scan-one-extern ptr int -- int do
                     ctx @ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
                     0
                     while
-                        let token-index count do
-                            token-index count
+                        peek token-index count do
                             token-index ctx @ctx-token-count <
                             if dup do
                                 drop ctx token-index "end" token-equals !
@@ -2656,15 +2611,15 @@ proc import-path-token-at ptr int -- int do import-path-token-offset import-fiel
 proc import-name-token-at ptr int -- int do import-name-token-offset import-field end
 proc import-alias-token-at ptr int -- int do import-alias-token-offset import-field end
 proc import-target-module-at ptr int -- ptr do
-    let ctx index do ctx index import-address import-target-module-offset pointer-field-read end
+    peek ctx index do import-address import-target-module-offset pointer-field-read end
 end
 proc import-canonical-path-at ptr int -- ptr do
-    let ctx index do ctx index import-address import-canonical-path-offset pointer-field-read end
+    peek ctx index do import-address import-canonical-path-offset pointer-field-read end
 end
 proc import-canonical-path-length-at ptr int -- int do import-canonical-path-length-offset import-field end
 
 proc set-import-target-module ptr ptr int -- do
-    let module ctx index do module ctx index import-address import-target-module-offset pointer-field-write end
+    peek module ctx index do import-address import-target-module-offset pointer-field-write end
 end
 
 proc scope-address ptr int -- ptr do
@@ -2680,29 +2635,28 @@ proc set-scope-field int ptr int int -- do
 end
 
 proc scope-name-module-at ptr int -- ptr do
-    let ctx index do ctx index scope-address scope-name-module-offset pointer-field-read end
+    peek ctx index do scope-address scope-name-module-offset pointer-field-read end
 end
 proc scope-name-start-at ptr int -- int do scope-name-start-offset scope-field end
 proc scope-name-length-at ptr int -- int do scope-name-length-offset scope-field end
 proc scope-kind-at ptr int -- int do scope-kind-offset scope-field end
 proc scope-definition-module-at ptr int -- ptr do
-    let ctx index do ctx index scope-address scope-definition-module-offset pointer-field-read end
+    peek ctx index do scope-address scope-definition-module-offset pointer-field-read end
 end
 proc scope-definition-index-at ptr int -- int do scope-definition-index-offset scope-field end
 
 proc set-scope-name-module ptr ptr int -- do
-    let module ctx index do module ctx index scope-address scope-name-module-offset pointer-field-write end
+    peek module ctx index do scope-address scope-name-module-offset pointer-field-write end
 end
 proc set-scope-definition-module ptr ptr int -- do
-    let module ctx index do module ctx index scope-address scope-definition-module-offset pointer-field-write end
+    peek module ctx index do scope-address scope-definition-module-offset pointer-field-write end
 end
 
 proc token-contains-byte ptr int int -- bool do
     let ctx token byte do
         ctx token token-slice let bytes length do
             0 false
-            while let index found do
-                index found
+            while peek index found do
                 index length < found ! &&
             end do
                 let index found do
@@ -2716,8 +2670,7 @@ proc token-contains-byte ptr int int -- bool do
 end
 
 proc require-import-name ptr int -- do
-    let ctx token do
-        ctx token require-word
+    peek ctx token do require-word
         if ctx token "*" token-equals do
             "wildcard imports are not supported" fail
         end
@@ -3013,8 +2966,7 @@ proc ensure-type-capacity ptr -- do
                 "internal compile-time type stack capacity overflow" fail
             end
             cc @cc-type-capacity 2 *
-            let new-capacity do
-                new-capacity cell-bytes * alloc
+            peek new-capacity do cell-bytes * alloc
                 let new-stack do
                     cc @cc-type-stack new-stack cc @cc-type-count cell-bytes * memory-copy
                     new-stack cc !cc-type-stack
@@ -3049,8 +3001,7 @@ proc type-pop ptr -- int do
             "compile-time stack underflow" fail
         end
         cc @cc-type-count 1 -
-        let index do
-            index cc !cc-type-count
+        peek index do cc !cc-type-count
             cc index cc-type-address 0 field-read
         end
     end
@@ -3065,14 +3016,12 @@ proc type-expect ptr int -- do
 end
 
 proc type-at-depth ptr int -- int do
-    let cc index do
-        cc index cc-type-address 0 field-read
+    peek cc index do cc-type-address 0 field-read
     end
 end
 
 proc type-snapshot ptr -- ptr int do
-    let cc do
-        cc @cc-type-count 1 + cell-bytes * alloc
+    peek cc do @cc-type-count 1 + cell-bytes * alloc
         let snapshot do
             cc @cc-type-stack snapshot cc @cc-type-count cell-bytes * memory-copy
             snapshot cc @cc-type-count
@@ -3154,8 +3103,7 @@ proc top-block ptr -- ptr do
 end
 
 proc pop-block ptr -- ptr do
-    let cc do
-        cc top-block
+    peek cc do top-block
         cc @cc-block-count 1 - cc !cc-block-count
     end
 end
@@ -3213,8 +3161,7 @@ proc find-local-from ptr int int -- int do
 end
 
 proc find-local ptr int -- int do
-    let cc token-index do
-        cc token-index cc @cc-local-count 1 - find-local-from
+    peek cc token-index do cc @cc-local-count 1 - find-local-from
     end
 end
 
@@ -3240,7 +3187,7 @@ proc emit-line ptr String -- do
 end
 
 proc indent-more ptr -- do
-    let cc do cc @cc-indent 1 + cc !cc-indent end
+    peek cc do @cc-indent 1 + cc !cc-indent end
 end
 
 proc indent-less ptr -- do
@@ -3263,12 +3210,11 @@ proc raw-string-byte ptr int int -- int do
 end
 
 proc raw-string-length ptr int -- int do
-    let ctx token do ctx token token-length-at end
+    peek ctx token do token-length-at end
 end
 
 proc decoded-string-unit ptr int int -- int int do
-    let ctx token raw-index do
-        ctx token raw-index raw-string-byte
+    peek ctx token raw-index do raw-string-byte
         let byte do
             if byte 92 != do
                 byte 1
@@ -3313,8 +3259,7 @@ proc decoded-string-length ptr int -- int do
     let ctx token do
         0 0
         while
-            let raw-index count do
-                raw-index count
+            peek raw-index count do
                 raw-index ctx token raw-string-length <
             end
         do
@@ -3366,8 +3311,7 @@ proc hash-string-bytes ptr int -- int do
     let bytes length do
         0 fnv-offset-basis
         while
-            let index hash do
-                index hash index length <
+            peek index hash do index length <
             end
         do
             let index hash do
@@ -3397,8 +3341,7 @@ proc find-pooled-string ptr ptr int int -- int do
     let program bytes length hash do
         0 0 1 -
         while
-            let string-index found do
-                string-index found
+            peek string-index found do
                 string-index program @program-string-count < found 0 < &&
             end
         do
@@ -3419,8 +3362,7 @@ proc count-string-hash ptr int -- int do
     let program hash do
         0 0
         while
-            let string-index count do
-                string-index count string-index program @program-string-count <
+            peek string-index count do string-index program @program-string-count <
             end
         do
             let string-index count do
@@ -3453,8 +3395,7 @@ end
 proc intern-string-token ptr ptr int -- do
     let program ctx token do
         ctx token decoded-string-length
-        let length do
-            length alloc
+        peek length do alloc
             let bytes do
                 ctx token 0 bytes 0 decode-string-copy-from
                 bytes length hash-string-bytes
@@ -3491,8 +3432,7 @@ proc intern-module-strings ptr ptr -- do
 end
 
 proc initialize-string-pool ptr -- do
-    let program do
-        program @program-token-count 1 + string-bytes * alloc program !program-strings
+    peek program do @program-token-count 1 + string-bytes * alloc program !program-strings
         0 program !program-string-count
         program @program-module-head
         while dup int cast 0 != do
@@ -3528,8 +3468,7 @@ proc bytes-contain-byte ptr int int -- bool do
     let bytes length value do
         0 false
         while
-            let index found do
-                index found
+            peek index found do
                 index length < found ! &&
             end
         do
@@ -3547,7 +3486,7 @@ proc byte-in-range int int int -- bool do
 end
 
 proc utf8-continuation-byte int -- bool do
-    let value do value 128 191 byte-in-range end
+    peek value do 128 191 byte-in-range end
 end
 
 proc utf8-sequence-width ptr int int -- int do
@@ -3667,8 +3606,7 @@ end
 proc valid-utf8 ptr int -- bool do 0 valid-utf8-from end
 
 proc utf8-codepoint-at ptr int int -- int int do
-    let bytes length index do
-        bytes length index utf8-sequence-width
+    peek bytes length index do utf8-sequence-width
         let width do
             if width 0 == do
                 "invalid character literal" fail
@@ -3759,8 +3697,7 @@ proc collect-path-components ptr int bool ptr ptr int int -- int do
                 count
             else
                 bytes length start find-path-component-end
-                let next do
-                    next start -
+                peek next do start -
                     let component-length do
                         if bytes start component-length bytes-are-dot do
                             count
@@ -3831,8 +3768,7 @@ proc write-path-components ptr ptr ptr int ptr int int -- int do
 end
 
 proc normalize-import-path ptr int -- ptr int do
-    let ctx token do
-        ctx token decoded-string-length
+    peek ctx token do decoded-string-length
         let length do
             if length max-import-path-bytes > do
                 "import path exceeds max-import-path-bytes" fail
@@ -4071,8 +4007,7 @@ proc add-scope-symbol-from-token ptr ptr int int ptr int -- do
 end
 
 proc resolve-one-import ptr int -- do
-    let ctx import-index do
-        ctx import-index import-target-module-at
+    peek ctx import-index do import-target-module-at
         let target do
             if target int cast 0 == do
                 "internal import target is missing" fail
@@ -4254,8 +4189,7 @@ proc resolve-module-scope ptr -- do
 end
 
 proc resolve-all-module-scopes ptr -- do
-    let program do
-        program @program-module-head
+    peek program do @program-module-head
         while dup int cast 0 != do
             dup resolve-module-scope
             @ctx-next-module
@@ -4292,8 +4226,7 @@ proc create-constant-evaluator -- ptr do
     constant-evaluator-bytes alloc
     let evaluator do
         8
-        let capacity do
-            capacity constant-value-bytes * alloc evaluator !constant-evaluator-values
+        peek capacity do constant-value-bytes * alloc evaluator !constant-evaluator-values
             0 evaluator !constant-evaluator-count
             capacity evaluator !constant-evaluator-capacity
             evaluator
@@ -4305,8 +4238,7 @@ proc ensure-constant-evaluator-capacity ptr -- do
     let evaluator do
         if evaluator @constant-evaluator-count evaluator @constant-evaluator-capacity == do
             evaluator @constant-evaluator-capacity 2 *
-            let new-capacity do
-                new-capacity constant-value-bytes * alloc
+            peek new-capacity do constant-value-bytes * alloc
                 let new-values do
                     evaluator @constant-evaluator-values
                     new-values
@@ -4338,8 +4270,7 @@ proc constant-evaluator-pop ptr -- int int do
             "constant expression stack underflow" fail
         end
         evaluator @constant-evaluator-count 1 -
-        let index do
-            index evaluator !constant-evaluator-count
+        peek index do evaluator !constant-evaluator-count
             evaluator @constant-evaluator-values index constant-value-type-at
             evaluator @constant-evaluator-values index constant-value-payload-at
         end
@@ -4437,15 +4368,13 @@ proc require-constant-divisor int int -- do
 end
 
 proc checked-constant-divide int int -- int do
-    let left right do
-        left right require-constant-divisor
+    peek left right do require-constant-divisor
         left right /
     end
 end
 
 proc checked-constant-modulo int int -- int do
-    let left right do
-        left right require-constant-divisor
+    peek left right do require-constant-divisor
         left right %
     end
 end
@@ -4459,8 +4388,7 @@ proc require-constant-shift int int -- do
 end
 
 proc checked-constant-shift-left int int -- int do
-    let value count do
-        value count require-constant-shift
+    peek value count do require-constant-shift
         if value max-int count >> > do
             "constant integer overflow" fail
         end
@@ -4469,15 +4397,13 @@ proc checked-constant-shift-left int int -- int do
 end
 
 proc checked-constant-shift-right int int -- int do
-    let value count do
-        value count require-constant-shift
+    peek value count do require-constant-shift
         value count >>
     end
 end
 
 proc constant-int-binary-word ptr int -- bool do
-    let module token-index do
-        module token-index "+" token-equals
+    peek module token-index do "+" token-equals
         module token-index "-" token-equals ||
         module token-index "*" token-equals ||
         module token-index "/" token-equals ||
@@ -4491,8 +4417,7 @@ proc constant-int-binary-word ptr int -- bool do
 end
 
 proc constant-comparison-word ptr int -- bool do
-    let module token-index do
-        module token-index "==" token-equals
+    peek module token-index do "==" token-equals
         module token-index "!=" token-equals ||
         module token-index "<" token-equals ||
         module token-index ">" token-equals ||
@@ -4502,8 +4427,7 @@ proc constant-comparison-word ptr int -- bool do
 end
 
 proc constant-bool-binary-word ptr int -- bool do
-    let module token-index do
-        module token-index "&&" token-equals
+    peek module token-index do "&&" token-equals
         module token-index "||" token-equals ||
     end
 end
@@ -4590,12 +4514,10 @@ proc evaluate-constant-bool-binary ptr ptr int -- do
 end
 
 proc evaluate-constant-divmod ptr -- do
-    let evaluator do
-        evaluator type-int constant-evaluator-pop-expected
+    peek evaluator do type-int constant-evaluator-pop-expected
         let right do
             evaluator type-int constant-evaluator-pop-expected
-            let left do
-                left right checked-constant-divide
+            peek left do right checked-constant-divide
                 left right checked-constant-modulo
                 let quotient remainder do
                     evaluator type-int quotient constant-evaluator-push
@@ -4640,8 +4562,7 @@ proc evaluate-constant-intrinsic ptr ptr int -- bool do
 end
 
 proc constant-runtime-intrinsic-word ptr int -- bool do
-    let module token-index do
-        module token-index "read-file" token-equals
+    peek module token-index do "read-file" token-equals
         module token-index "cast" token-equals ||
         module token-index "alloc" token-equals ||
         module token-index "args" token-equals ||
@@ -4680,8 +4601,7 @@ proc scope-prefix-is-nominal ptr ptr int bool -- bool do
                 false
             else
                 scope symbol-index scope-kind-at
-                let kind do
-                    kind scope-record ==
+                peek kind do scope-record ==
                     kind scope-union == ||
                     kind scope-function == allow-function && ||
                 end
@@ -4706,8 +4626,7 @@ end
 proc constant-qualified-nominal-word ptr ptr int -- bool do
     let scope module token-index do
         module token-index token-slice
-        let bytes length do
-            bytes length 58 first-index-of-byte
+        peek bytes length do 58 first-index-of-byte
             let colon do
                 if colon 0 > colon 1 + length < && do
                     scope bytes colon true scope-prefix-is-nominal
@@ -4751,8 +4670,7 @@ proc constant-higher-priority-word ptr ptr int -- bool do
 end
 
 proc evaluate-constant ptr int -- do
-    let module constant-index do
-        module constant-index constant-state-at
+    peek module constant-index do constant-state-at
         let state do
             if state constant-evaluated == do
             elif state constant-evaluating == do
@@ -4760,8 +4678,7 @@ proc evaluate-constant ptr int -- do
             else
                 constant-evaluating module constant-index constant-state-offset set-constant-field
                 create-constant-evaluator
-                let evaluator do
-                    evaluator
+                peek evaluator do
                     module
                     module constant-index constant-body-start-at
                     module constant-index constant-body-end-at
@@ -4883,8 +4800,7 @@ proc evaluate-module-constants ptr -- do
 end
 
 proc evaluate-all-constants ptr -- do
-    let program do
-        program @program-module-head
+    peek program do @program-module-head
         while dup int cast 0 != do
             dup evaluate-module-constants
             @ctx-next-module
@@ -5018,8 +4934,7 @@ proc resolve-module-function-signature-types ptr -- do
 end
 
 proc resolve-all-types ptr -- do
-    let program do
-        program @program-module-head
+    peek program do @program-module-head
         while dup int cast 0 != do
             dup resolve-module-record-field-types
             dup resolve-module-union-case-types
@@ -5046,8 +4961,7 @@ proc external-inputs-equal ptr int ptr int -- bool do
         else
             0 true
             while
-                let input-index equal do
-                    input-index equal
+                peek input-index equal do
                     input-index first first-index proc-input-count-at < equal &&
                 end
             do
@@ -5079,8 +4993,7 @@ proc external-outputs-equal ptr int ptr int -- bool do
 end
 
 proc external-contracts-equal ptr int ptr int -- bool do
-    let first first-index second second-index do
-        first first-index second second-index external-inputs-equal
+    peek first first-index second second-index do external-inputs-equal
         first first-index second second-index external-outputs-equal &&
     end
 end
@@ -5108,8 +5021,7 @@ proc function-proc-inputs-equal ptr int ptr int -- bool do
         else
             0 true
             while
-                let input-index equal do
-                    input-index equal
+                peek input-index equal do
                     input-index function-module function-index function-input-count-at < equal &&
                 end
             do
@@ -5137,8 +5049,7 @@ proc function-proc-outputs-equal ptr int ptr int -- bool do
         else
             0 true
             while
-                let output-index equal do
-                    output-index equal
+                peek output-index equal do
                     output-index function-module function-index function-output-count-at < equal &&
                 end
             do
@@ -5156,8 +5067,7 @@ proc function-proc-outputs-equal ptr int ptr int -- bool do
 end
 
 proc function-proc-contracts-equal ptr int ptr int -- bool do
-    let function-module function-index proc-module proc-index do
-        function-module function-index proc-module proc-index function-proc-inputs-equal
+    peek function-module function-index proc-module proc-index do function-proc-inputs-equal
         function-module function-index proc-module proc-index function-proc-outputs-equal &&
     end
 end
@@ -5214,8 +5124,7 @@ proc validate-module-external-declarations ptr ptr -- do
 end
 
 proc validate-external-declarations ptr -- do
-    let program do
-        program @program-module-head
+    peek program do @program-module-head
         while dup int cast 0 != do
             dup program swap validate-module-external-declarations
             @ctx-next-module
@@ -5425,8 +5334,7 @@ proc emit-string-symbol ptr int -- do
 end
 
 proc emit-string-bytes-symbol ptr int -- do
-    let program string-index do
-        program string-index emit-string-symbol
+    peek program string-index do emit-string-symbol
         "_bytes" emit
     end
 end
@@ -5603,8 +5511,7 @@ proc ctx-max-proc-output-arity-from ptr int int -- int do
             maximum
         else
             ctx proc-index proc-output-count-at
-            let output-count do
-                output-count maximum result-arity-max
+            peek output-count do maximum result-arity-max
                 let next-maximum do
                     ctx proc-index 1 + next-maximum ctx-max-proc-output-arity-from
                 end
@@ -5621,8 +5528,7 @@ proc ctx-max-function-output-arity-from ptr int int -- int do
             maximum
         else
             ctx function-index function-output-count-at
-            let output-count do
-                output-count maximum result-arity-max
+            peek output-count do maximum result-arity-max
                 let next-maximum do
                     ctx function-index 1 + next-maximum ctx-max-function-output-arity-from
                 end
@@ -5640,10 +5546,8 @@ proc program-max-output-arity-from ptr ptr int -- int do
         else
             ctx ctx-max-proc-output-arity
             ctx ctx-max-function-output-arity
-            let proc-maximum function-maximum do
-                proc-maximum function-maximum result-arity-max
-                let ctx-maximum do
-                    ctx-maximum maximum result-arity-max
+            peek proc-maximum function-maximum do result-arity-max
+                peek ctx-maximum do maximum result-arity-max
                     let next-maximum do
                         program ctx @ctx-next-module next-maximum program-max-output-arity-from
                     end
@@ -5654,7 +5558,7 @@ proc program-max-output-arity-from ptr ptr int -- int do
 end
 
 proc program-max-output-arity ptr -- int do
-    let program do program program @program-module-head 0 program-max-output-arity-from end
+    peek program do program @program-module-head 0 program-max-output-arity-from end
 end
 
 proc emit-result-typedefs-from ptr int int -- do
@@ -5672,8 +5576,7 @@ proc emit-result-typedefs-from ptr int int -- do
 end
 
 proc emit-result-typedefs ptr -- do
-    let program do
-        program program-max-output-arity
+    peek program do program-max-output-arity
         let maximum do
             program maximum 2 emit-result-typedefs-from
         end
@@ -5681,8 +5584,7 @@ proc emit-result-typedefs ptr -- do
 end
 
 proc emit-proc-return-type ptr int -- do
-    let ctx proc-index do
-        ctx proc-index proc-output-count-at
+    peek ctx proc-index do proc-output-count-at
         let output-count do
             if output-count 0 == do
                 "void" emit
@@ -5720,8 +5622,7 @@ proc emit-proc-parameters ptr int -- do
 end
 
 proc emit-proc-signature ptr int -- do
-    let ctx proc-index do
-        ctx proc-index emit-proc-return-type
+    peek ctx proc-index do emit-proc-return-type
         " p" emit ctx proc-index proc-global-id-at emit-unsigned
         "(" emit ctx proc-index emit-proc-parameters ")" emit
     end
@@ -5751,8 +5652,7 @@ proc emit-prototypes ptr -- do
 end
 
 proc emit-c-emitter-support ptr -- do
-    let program do
-        program @program-root-module emit-c-preamble
+    peek program do @program-root-module emit-c-preamble
         program emit-string-globals
         program emit-result-typedefs
         program @program-module-head
@@ -5783,7 +5683,7 @@ proc emit-slot ptr int -- do
 end
 
 proc emit-top-slot ptr -- do
-    let cc do cc cc @cc-type-count 1 - emit-slot end
+    peek cc do cc @cc-type-count 1 - emit-slot end
 end
 
 proc check-proc-inputs ptr ptr int int -- do
@@ -5815,8 +5715,7 @@ proc push-proc-outputs ptr ptr int int -- do
 end
 
 proc apply-proc-contract ptr ptr int -- do
-    let cc module proc-index do
-        cc module proc-index module proc-index proc-input-count-at check-proc-inputs
+    peek cc module proc-index do module proc-index proc-input-count-at check-proc-inputs
         cc module proc-index 0 push-proc-outputs
     end
 end
@@ -5844,10 +5743,7 @@ proc push-function-outputs ptr ptr int int -- do
 end
 
 proc apply-function-contract ptr ptr int -- do
-    let cc module function-index do
-        cc
-        module
-        function-index
+    peek cc module function-index do
         module function-index function-input-count-at
         check-function-inputs
         cc module function-index 0 push-function-outputs
@@ -6036,8 +5932,7 @@ end
 proc type-is-function int -- bool do type-function-base >= end
 
 proc compile-cast-intrinsic ptr -- do
-    let cc do
-        cc type-pop
+    peek cc do type-pop
         cc type-pop
         let target-literal source-type do
             if target-literal 0 < do
@@ -6097,8 +5992,7 @@ proc compile-write-memory ptr String -- do
         cc type-int type-expect
         if cc @cc-emitting do
             cc @cc-type-count
-            let value-index do
-                value-index 1 +
+            peek value-index do 1 +
                 let pointer-index do
                     cc emit-indent function-name emit "((void *)(intptr_t)" emit
                     cc pointer-index emit-slot ", " emit cc value-index emit-slot ");" emit 10 putc
@@ -6138,8 +6032,7 @@ proc emit-write-pointer ptr -- do
     let cc do
         if cc @cc-emitting do
             cc @cc-type-count
-            let value-index do
-                value-index 1 +
+            peek value-index do 1 +
                 let pointer-index do
                     cc emit-indent "frog_write_ptr((void *)(intptr_t)" emit cc pointer-index emit-slot
                     ", (void *)(intptr_t)" emit cc value-index emit-slot ");" emit 10 putc
@@ -6320,7 +6213,7 @@ proc emit-call-arguments-from ptr ptr int int int -- do
 end
 
 proc emit-call-arguments ptr ptr int int -- do
-    let cc ctx proc-index base do cc ctx proc-index base 0 emit-call-arguments-from end
+    peek cc ctx proc-index base do 0 emit-call-arguments-from end
 end
 
 proc emit-call-result-slots ptr int int -- do
@@ -6394,8 +6287,7 @@ proc compile-if ptr -- do
 end
 
 proc compile-while ptr -- do
-    let cc do
-        cc block-while push-block drop
+    peek cc do block-while push-block drop
         cc "while (1) {" emit-line
         cc indent-more
     end
@@ -6415,8 +6307,7 @@ proc require-block-types ptr ptr -- do
 end
 
 proc compile-do ptr -- do
-    let cc do
-        cc top-block
+    peek cc do top-block
         let block do
             if block block-has-do-offset block-field 0 != do
                 "duplicate do in control-flow block" fail
@@ -6459,8 +6350,7 @@ proc compile-do ptr -- do
 end
 
 proc compile-else ptr -- do
-    let cc do
-        cc top-block
+    peek cc do top-block
         let block do
             if block block-kind-offset block-field block-if != do
                 "else outside if" fail
@@ -6489,8 +6379,7 @@ proc compile-else ptr -- do
 end
 
 proc compile-elif ptr -- do
-    let cc do
-        cc top-block
+    peek cc do top-block
         let block do
             if block block-kind-offset block-field block-if != do
                 "elif outside if" fail
@@ -6575,8 +6464,7 @@ proc close-end-chain ptr ptr -- do
 end
 
 proc compile-end ptr -- do
-    let cc do
-        cc pop-block
+    peek cc do pop-block
         let block do
             cc block close-end-chain
         end
@@ -6649,10 +6537,8 @@ proc restore-peek-names ptr int int -- do
 end
 
 proc compile-let ptr int -- int do
-    let cc let-token do
-        cc let-token 1 + "unterminated let binding" find-binding-do
-        let do-token do
-            do-token let-token 1 + -
+    peek cc let-token do 1 + "unterminated let binding" find-binding-do
+        peek do-token do let-token 1 + -
             let name-count do
                 if name-count 0 <= do
                     "let requires at least one name" fail
@@ -6665,10 +6551,8 @@ proc compile-let ptr int -- int do
 end
 
 proc compile-peek ptr int -- int do
-    let cc peek-token do
-        cc peek-token 1 + "unterminated peek binding" find-binding-do
-        let do-token do
-            do-token peek-token 1 + -
+    peek cc peek-token do 1 + "unterminated peek binding" find-binding-do
+        peek do-token do peek-token 1 + -
             let name-count do
                 if name-count 0 <= do
                     "peek requires at least one name" fail
@@ -6684,8 +6568,7 @@ end
 proc compile-local-reference ptr int int -- do
     let cc token-index local-index do
         cc local-index local-address
-        let local do
-            local local-type-offset local-field cc swap type-push
+        peek local do local-type-offset local-field cc swap type-push
             cc local local-id-offset local-field emit-local-load
         end
     end
@@ -6713,8 +6596,7 @@ end
 proc first-index-of-byte ptr int int -- int do 0 first-index-of-byte-from end
 
 proc visible-record-definition ptr ptr int -- ptr int bool do
-    let scope bytes length do
-        scope bytes length 0 find-scope-symbol-from
+    peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
                 symbol-index 0 >=
@@ -6733,8 +6615,7 @@ proc visible-record-definition ptr ptr int -- ptr int bool do
 end
 
 proc visible-union-definition ptr ptr int -- ptr int bool do
-    let scope bytes length do
-        scope bytes length 0 find-scope-symbol-from
+    peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
                 symbol-index 0 >=
@@ -6753,8 +6634,7 @@ proc visible-union-definition ptr ptr int -- ptr int bool do
 end
 
 proc visible-function-definition ptr ptr int -- ptr int bool do
-    let scope bytes length do
-        scope bytes length 0 find-scope-symbol-from
+    peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
                 symbol-index 0 >=
@@ -6773,8 +6653,7 @@ proc visible-function-definition ptr ptr int -- ptr int bool do
 end
 
 proc visible-procedure-definition ptr ptr int -- ptr int bool do
-    let scope bytes length do
-        scope bytes length 0 find-scope-symbol-from
+    peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
                 symbol-index 0 >=
@@ -6922,8 +6801,7 @@ proc emit-record-field-write ptr int -- do
     let cc byte-offset do
         if cc @cc-emitting do
             cc @cc-type-count
-            let value-index do
-                value-index 1 +
+            peek value-index do 1 +
                 let record-index do
                     cc emit-indent "frog_write_i64((unsigned char *)(intptr_t)" emit
                     cc record-index emit-slot " + " emit byte-offset emit-unsigned ", " emit
@@ -6978,8 +6856,7 @@ end
 proc compile-record-word ptr int -- bool do
     let cc token-index do
         cc @cc-defining-module token-index token-slice
-        let bytes length do
-            bytes length 58 first-index-of-byte
+        peek bytes length do 58 first-index-of-byte
             let colon do
                 if colon 0 >= do
                     cc bytes length colon compile-record-special
@@ -7041,8 +6918,7 @@ proc emit-union-predicate ptr int int -- do
     let cc tag case-count do
         if cc @cc-emitting do
             cc @cc-type-count 2 -
-            let union-index do
-                union-index 1 +
+            peek union-index do 1 +
                 let result-index do
                     cc emit-indent "{ const void *union_value = (const void *)(intptr_t)" emit
                     cc union-index emit-slot "; Cell union_tag = frog_union_tag(union_value, " emit
@@ -7177,8 +7053,7 @@ end
 proc compile-union-word ptr int -- bool do
     let cc token-index do
         cc @cc-defining-module token-index token-slice
-        let bytes length do
-            bytes length 58 first-index-of-byte
+        peek bytes length do 58 first-index-of-byte
             let colon do
                 if colon 0 >= do
                     cc bytes length colon compile-union-constructor
@@ -7326,8 +7201,7 @@ end
 proc compile-function-word ptr int -- bool do
     let cc token-index do
         cc @cc-defining-module token-index token-slice
-        let bytes length do
-            bytes length 58 first-index-of-byte
+        peek bytes length do 58 first-index-of-byte
             let colon do
                 if colon 0 >= do
                     cc bytes length colon compile-function-operation
@@ -7399,8 +7273,7 @@ proc compile-constant-values-from ptr ptr int int -- do
     let cc module constant-index value-index do
         if value-index module constant-index constant-value-count-at < do
             module constant-index constant-values-at
-            let values do
-                values value-index constant-value-type-at
+            peek values do value-index constant-value-type-at
                 values value-index constant-value-payload-at
                 let value-type payload do
                     cc value-type type-push
@@ -7419,8 +7292,7 @@ proc compile-constant-values-from ptr ptr int int -- do
 end
 
 proc compile-constant ptr ptr int -- do
-    let cc module constant-index do
-        cc module constant-index 0 compile-constant-values-from
+    peek cc module constant-index do 0 compile-constant-values-from
     end
 end
 
@@ -7665,8 +7537,7 @@ proc create-compile-context ptr ptr int -- ptr do
             ctx cc !cc-scope-module
             proc-index cc !cc-proc
             program @program-token-count 1 +
-            let type-capacity do
-                type-capacity cell-bytes * alloc cc !cc-type-stack
+            peek type-capacity do cell-bytes * alloc cc !cc-type-stack
                 type-capacity cc !cc-type-capacity
             end
             0 cc !cc-type-count
@@ -7694,8 +7565,7 @@ proc emit-ffi-argument-name int -- do
 end
 
 proc emit-external-argument ptr int int -- do
-    let ctx proc-index input-index do
-        ctx proc-index input-index proc-input-type-at
+    peek ctx proc-index input-index do proc-input-type-at
         let input-type do
             if input-type type-int == do
                 "(int)" emit input-index emit-ffi-argument-name
@@ -7721,16 +7591,14 @@ proc emit-external-arguments ptr int int -- do
 end
 
 proc emit-external-call-expression ptr int -- do
-    let ctx proc-index do
-        ctx proc-index emit-c-symbol "(" emit
+    peek ctx proc-index do emit-c-symbol "(" emit
         ctx proc-index 0 emit-external-arguments
         ")" emit
     end
 end
 
 proc compile-external-procedure ptr int -- do
-    let ctx proc-index do
-        ctx proc-index emit-proc-signature " {\n" emit
+    peek ctx proc-index do emit-proc-signature " {\n" emit
         if ctx proc-index proc-output-count-at 0 == do
             "  " emit ctx proc-index emit-external-call-expression ";\n" emit
         else
@@ -7832,8 +7700,7 @@ proc compile-procedure ptr ptr int -- do
             ctx proc-index compile-external-procedure
         else
             program ctx proc-index create-compile-context
-            let measurement do
-                measurement ctx proc-index compile-procedure-body
+            peek measurement do ctx proc-index compile-procedure-body
                 measurement @cc-max-type-count
                 let max-type-count do
                     program ctx proc-index create-compile-context
@@ -7866,8 +7733,7 @@ proc compile-module-procedures ptr ptr -- do
 end
 
 proc compile-all-procedures ptr -- do
-    let program do
-        program @program-module-head
+    peek program do @program-module-head
         while dup int cast 0 != do
             dup program swap compile-module-procedures
             @ctx-next-module
@@ -7877,8 +7743,7 @@ proc compile-all-procedures ptr -- do
 end
 
 proc emit-main-wrapper ptr -- do
-    let program do
-        program @program-root-module
+    peek program do @program-root-module
         let ctx do
             "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n" emit
             program emit-string-references
@@ -7954,8 +7819,8 @@ proc initialize-prelude ptr -- do
             resolve-new prelude !ctx-resolve-state
             false prelude !ctx-is-root
             program prelude program-add-module
-            "macro dup let a do a a end end
-macro dup2 let a b do a b a b end end
+            "macro dup peek a do a end end
+macro dup2 peek a b do a b end end
 macro drop let a do end end
 macro swap let a b do b a end end
 macro swap2 let a b c d do c d a b end end
@@ -7973,8 +7838,7 @@ end
 proc compile-prelude-macro ptr int -- bool do
     let cc token-index do
         cc @cc-program @program-prelude-module
-        let prelude do
-            prelude cc @cc-defining-module token-index find-scope-symbol
+        peek prelude do cc @cc-defining-module token-index find-scope-symbol
             let symbol-index do
                 if symbol-index 0 < do
                     false
@@ -8043,8 +7907,7 @@ proc last-index-of-byte ptr int int -- int do
     let bytes length value do
         0 0 1 -
         while
-            let index last-index do
-                index last-index index length <
+            peek index last-index do index length <
             end
         do
             let index last-index do
@@ -8057,8 +7920,7 @@ proc last-index-of-byte ptr int int -- int do
 end
 
 proc parent-path ptr -- ptr do
-    let path do
-        path cstring-length
+    peek path do cstring-length
         let length do
             path length 47 last-index-of-byte
             let slash do
@@ -8084,8 +7946,7 @@ proc replace-path-suffix ptr String -- ptr do
                 path path-length 46 last-index-of-byte
                 let base dot do
                     if dot base > do dot else path-length end
-                    let prefix-length do
-                        prefix-length suffix-length + 1 + alloc
+                    peek prefix-length do suffix-length + 1 + alloc
                         let result do
                             path result prefix-length memory-copy
                             suffix String.bytes result prefix-length + suffix-length memory-copy
@@ -8106,10 +7967,8 @@ proc set-pointer-at ptr int ptr -- do
 end
 
 proc allocate-pointer-array int -- ptr do
-    let count do
-        count 1 + cell-bytes * alloc
-        let array do
-            array count null-pointer set-pointer-at
+    peek count do 1 + cell-bytes * alloc
+        peek array do count null-pointer set-pointer-at
             array
         end
     end
@@ -8162,8 +8021,7 @@ Commands:
 end
 
 proc read-source-path ptr -- ptr int do
-    let path do
-        path path cstring-length read-file
+    peek path do path cstring-length read-file
         let source source-length success do
             if success do
                 source source-length
@@ -8235,8 +8093,7 @@ end
 proc compile-c-source ptr ptr -- int do
     let source executable do
         13 allocate-pointer-array
-        let arguments do
-            arguments 0 "gcc" String.bytes set-pointer-at
+        peek arguments do 0 "gcc" String.bytes set-pointer-at
             arguments 1 "-std=c11" String.bytes set-pointer-at
             arguments 2 "-pedantic" String.bytes set-pointer-at
             arguments 3 "-Wall" String.bytes set-pointer-at
@@ -8271,8 +8128,7 @@ end
 proc run-executable ptr -- int do
     let executable do
         1 allocate-pointer-array
-        let arguments do
-            arguments 0 executable set-pointer-at
+        peek arguments do 0 executable set-pointer-at
             cli-fork
             let child do
                 if child 0 < do
@@ -8320,8 +8176,7 @@ proc run-source ptr int ptr -- int do
 end
 
 proc run-file ptr -- int do
-    let path do
-        path read-source-path
+    peek path do read-source-path
         let source source-length do
             path parent-path
             let directory do
@@ -8386,8 +8241,7 @@ proc run-command ptr int -- do
                     "run -c requires exactly one CODE argument" cli-usage-error
                 end
                 argv 3 argv-at
-                let code do
-                    code code cstring-length "." String.bytes run-source exit
+                peek code do code cstring-length "." String.bytes run-source exit
                 end
             elif argument @u8 45 == do
                 "unknown run option: " argument cli-usage-error-value
@@ -8439,10 +8293,8 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
 end
 
 proc build-command ptr int -- do
-    let argv argc do
-        argv argc 2 null-pointer false parse-build-options
-        let source output should-run do
-            source output should-run build-file exit
+    peek argv argc do 2 null-pointer false parse-build-options
+        peek source output should-run do build-file exit
         end
     end
 end
