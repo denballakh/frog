@@ -177,48 +177,6 @@ record ModuleContext
     constant_count int
 end
 
-const ctx-source-offset 0 end
-const ctx-source-length-offset 8 end
-const ctx-tokens-offset 16 end
-const ctx-token-count-offset 24 end
-const ctx-procs-offset 32 end
-const ctx-proc-count-offset 40 end
-const ctx-types-offset 48 end
-const ctx-type-count-offset 56 end
-const ctx-lex-index-offset 64 end
-const ctx-lex-line-offset 72 end
-const ctx-lex-column-offset 80 end
-const ctx-main-proc-offset 88 end
-const ctx-macros-offset 96 end
-const ctx-macro-count-offset 104 end
-const ctx-program-offset 112 end
-const ctx-module-id-offset 120 end
-const ctx-next-module-offset 128 end
-const ctx-canonical-path-offset 136 end
-const ctx-canonical-path-length-offset 144 end
-const ctx-imports-offset 152 end
-const ctx-import-count-offset 160 end
-const ctx-scope-offset 168 end
-const ctx-scope-count-offset 176 end
-const ctx-load-state-offset 184 end
-const ctx-resolve-state-offset 192 end
-const ctx-is-root-offset 200 end
-const ctx-records-offset 208 end
-const ctx-record-count-offset 216 end
-const ctx-record-fields-offset 224 end
-const ctx-record-field-count-offset 232 end
-const ctx-unions-offset 240 end
-const ctx-union-count-offset 248 end
-const ctx-union-cases-offset 256 end
-const ctx-union-case-count-offset 264 end
-const ctx-functions-offset 272 end
-const ctx-function-count-offset 280 end
-const ctx-function-types-offset 288 end
-const ctx-function-type-count-offset 296 end
-const ctx-constants-offset 304 end
-const ctx-constant-count-offset 312 end
-const ctx-bytes 320 end
-
 const import-path-token-offset 0 end
 const import-name-token-offset 8 end
 const import-alias-token-offset 16 end
@@ -455,96 +413,9 @@ proc read-source -- ptr int do
     end
 end
 
-proc @ctx-source ptr -- ptr do ctx-source-offset pointer-field-read end
-proc @ctx-source-length ptr -- int do ctx-source-length-offset field-read end
-proc @ctx-tokens ptr -- ptr do ctx-tokens-offset pointer-field-read end
-proc @ctx-token-count ptr -- int do ctx-token-count-offset field-read end
-proc @ctx-procs ptr -- ptr do ctx-procs-offset pointer-field-read end
-proc @ctx-proc-count ptr -- int do ctx-proc-count-offset field-read end
-proc @ctx-types ptr -- ptr do ctx-types-offset pointer-field-read end
-proc @ctx-type-count ptr -- int do ctx-type-count-offset field-read end
-proc @ctx-lex-index ptr -- int do ctx-lex-index-offset field-read end
-proc @ctx-lex-line ptr -- int do ctx-lex-line-offset field-read end
-proc @ctx-lex-column ptr -- int do ctx-lex-column-offset field-read end
-proc @ctx-main-proc ptr -- int do ctx-main-proc-offset field-read end
-proc @ctx-macros ptr -- ptr do ctx-macros-offset pointer-field-read end
-proc @ctx-macro-count ptr -- int do ctx-macro-count-offset field-read end
-proc @ctx-program ptr -- ptr do ctx-program-offset pointer-field-read end
-proc @ctx-module-id ptr -- int do ctx-module-id-offset field-read end
-proc @ctx-next-module ptr -- ptr do ctx-next-module-offset pointer-field-read end
-proc @ctx-canonical-path ptr -- ptr do ctx-canonical-path-offset pointer-field-read end
-proc @ctx-canonical-path-length ptr -- int do ctx-canonical-path-length-offset field-read end
-proc @ctx-imports ptr -- ptr do ctx-imports-offset pointer-field-read end
-proc @ctx-import-count ptr -- int do ctx-import-count-offset field-read end
-proc @ctx-scope ptr -- ptr do ctx-scope-offset pointer-field-read end
-proc @ctx-scope-count ptr -- int do ctx-scope-count-offset field-read end
-proc @ctx-load-state ptr -- int do ctx-load-state-offset field-read end
-proc @ctx-resolve-state ptr -- int do ctx-resolve-state-offset field-read end
-proc @ctx-is-root ptr -- bool do ctx-is-root-offset field-read 0 != end
-proc @ctx-records ptr -- ptr do ctx-records-offset pointer-field-read end
-proc @ctx-record-count ptr -- int do ctx-record-count-offset field-read end
-proc @ctx-record-fields ptr -- ptr do ctx-record-fields-offset pointer-field-read end
-proc @ctx-record-field-count ptr -- int do ctx-record-field-count-offset field-read end
-proc @ctx-unions ptr -- ptr do ctx-unions-offset pointer-field-read end
-proc @ctx-union-count ptr -- int do ctx-union-count-offset field-read end
-proc @ctx-union-cases ptr -- ptr do ctx-union-cases-offset pointer-field-read end
-proc @ctx-union-case-count ptr -- int do ctx-union-case-count-offset field-read end
-proc @ctx-functions ptr -- ptr do ctx-functions-offset pointer-field-read end
-proc @ctx-function-count ptr -- int do ctx-function-count-offset field-read end
-proc @ctx-function-types ptr -- ptr do ctx-function-types-offset pointer-field-read end
-proc @ctx-function-type-count ptr -- int do ctx-function-type-count-offset field-read end
-proc @ctx-constants ptr -- ptr do ctx-constants-offset pointer-field-read end
-proc @ctx-constant-count ptr -- int do ctx-constant-count-offset field-read end
-
-proc !ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
-proc !ctx-source-length int ptr -- do ctx-source-length-offset field-write end
-proc !ctx-tokens ptr ptr -- do ctx-tokens-offset pointer-field-write end
-proc !ctx-token-count int ptr -- do ctx-token-count-offset field-write end
-proc !ctx-procs ptr ptr -- do ctx-procs-offset pointer-field-write end
-proc !ctx-proc-count int ptr -- do ctx-proc-count-offset field-write end
-proc !ctx-types ptr ptr -- do ctx-types-offset pointer-field-write end
-proc !ctx-type-count int ptr -- do ctx-type-count-offset field-write end
-proc !ctx-lex-index int ptr -- do ctx-lex-index-offset field-write end
-proc !ctx-lex-line int ptr -- do ctx-lex-line-offset field-write end
-proc !ctx-lex-column int ptr -- do ctx-lex-column-offset field-write end
-proc !ctx-main-proc int ptr -- do ctx-main-proc-offset field-write end
-proc !ctx-macros ptr ptr -- do ctx-macros-offset pointer-field-write end
-proc !ctx-macro-count int ptr -- do ctx-macro-count-offset field-write end
-proc !ctx-program ptr ptr -- do ctx-program-offset pointer-field-write end
-proc !ctx-module-id int ptr -- do ctx-module-id-offset field-write end
-proc !ctx-next-module ptr ptr -- do ctx-next-module-offset pointer-field-write end
-proc !ctx-canonical-path ptr ptr -- do ctx-canonical-path-offset pointer-field-write end
-proc !ctx-canonical-path-length int ptr -- do ctx-canonical-path-length-offset field-write end
-proc !ctx-imports ptr ptr -- do ctx-imports-offset pointer-field-write end
-proc !ctx-import-count int ptr -- do ctx-import-count-offset field-write end
-proc !ctx-scope ptr ptr -- do ctx-scope-offset pointer-field-write end
-proc !ctx-scope-count int ptr -- do ctx-scope-count-offset field-write end
-proc !ctx-load-state int ptr -- do ctx-load-state-offset field-write end
-proc !ctx-resolve-state int ptr -- do ctx-resolve-state-offset field-write end
-proc !ctx-records ptr ptr -- do ctx-records-offset pointer-field-write end
-proc !ctx-record-count int ptr -- do ctx-record-count-offset field-write end
-proc !ctx-record-fields ptr ptr -- do ctx-record-fields-offset pointer-field-write end
-proc !ctx-record-field-count int ptr -- do ctx-record-field-count-offset field-write end
-proc !ctx-unions ptr ptr -- do ctx-unions-offset pointer-field-write end
-proc !ctx-union-count int ptr -- do ctx-union-count-offset field-write end
-proc !ctx-union-cases ptr ptr -- do ctx-union-cases-offset pointer-field-write end
-proc !ctx-union-case-count int ptr -- do ctx-union-case-count-offset field-write end
-proc !ctx-functions ptr ptr -- do ctx-functions-offset pointer-field-write end
-proc !ctx-function-count int ptr -- do ctx-function-count-offset field-write end
-proc !ctx-function-types ptr ptr -- do ctx-function-types-offset pointer-field-write end
-proc !ctx-function-type-count int ptr -- do ctx-function-type-count-offset field-write end
-proc !ctx-constants ptr ptr -- do ctx-constants-offset pointer-field-write end
-proc !ctx-constant-count int ptr -- do ctx-constant-count-offset field-write end
-proc !ctx-is-root bool ptr -- do
-    let value ctx do
-        if value do 1 else 0 end
-        ctx ctx-is-root-offset field-write
-    end
-end
-
-proc @program-root-module ptr -- ptr do program-root-module-offset pointer-field-read end
-proc @program-module-head ptr -- ptr do program-module-head-offset pointer-field-read end
-proc @program-module-tail ptr -- ptr do program-module-tail-offset pointer-field-read end
+proc @program-root-module ptr -- ModuleContext do program-root-module-offset pointer-field-read ModuleContext cast end
+proc @program-module-head ptr -- ModuleContext do program-module-head-offset pointer-field-read ModuleContext cast end
+proc @program-module-tail ptr -- ModuleContext do program-module-tail-offset pointer-field-read ModuleContext cast end
 proc @program-module-count ptr -- int do program-module-count-offset field-read end
 proc @program-next-proc-id ptr -- int do program-next-proc-id-offset field-read end
 proc @program-token-count ptr -- int do program-token-count-offset field-read end
@@ -553,9 +424,9 @@ proc @program-string-count ptr -- int do program-string-count-offset field-read 
 proc @program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
 proc @program-next-function-type ptr -- int do program-next-function-type-offset field-read end
 
-proc !program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
-proc !program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
-proc !program-module-tail ptr ptr -- do program-module-tail-offset pointer-field-write end
+proc !program-root-module ModuleContext ptr -- do let value program do value ptr cast program program-root-module-offset pointer-field-write end end
+proc !program-module-head ModuleContext ptr -- do let value program do value ptr cast program program-module-head-offset pointer-field-write end end
+proc !program-module-tail ModuleContext ptr -- do let value program do value ptr cast program program-module-tail-offset pointer-field-write end end
 proc !program-module-count int ptr -- do program-module-count-offset field-write end
 proc !program-next-proc-id int ptr -- do program-next-proc-id-offset field-write end
 proc !program-token-count int ptr -- do program-token-count-offset field-write end
@@ -610,67 +481,67 @@ proc program-allocate-function-type ptr -- int do
     end
 end
 
-proc program-add-module ptr ptr -- do
-    peek program module do !ctx-program
-        program @program-module-count module !ctx-module-id
-        0 ptr cast module !ctx-next-module
+proc program-add-module ptr ModuleContext -- do
+    peek program module do !ModuleContext.program
+        program @program-module-count module !ModuleContext.module_id
+        0 ptr cast ModuleContext cast module !ModuleContext.next_module
         if program @program-module-count 0 == do
             module program !program-module-head
         else
-            module program @program-module-tail !ctx-next-module
+            module program @program-module-tail !ModuleContext.next_module
         end
         module program !program-module-tail
         program @program-module-count 1 + program !program-module-count
     end
 end
 
-proc token-address ptr int -- ptr do
+proc token-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-tokens index token-bytes * +
+        ctx @ModuleContext.tokens index token-bytes * +
     end
 end
 
-proc token-field ptr int int -- int do
+proc token-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index token-address offset field-read
     end
 end
 
-proc set-token-field int ptr int int -- do
+proc set-token-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index token-address offset field-write
     end
 end
 
-proc token-kind-at ptr int -- int do token-kind-offset token-field end
-proc token-start-at ptr int -- int do token-start-offset token-field end
-proc token-length-at ptr int -- int do token-length-offset token-field end
-proc token-value-at ptr int -- int do token-value-offset token-field end
-proc token-line-at ptr int -- int do token-line-offset token-field end
-proc token-column-at ptr int -- int do token-column-offset token-field end
+proc token-kind-at ModuleContext int -- int do token-kind-offset token-field end
+proc token-start-at ModuleContext int -- int do token-start-offset token-field end
+proc token-length-at ModuleContext int -- int do token-length-offset token-field end
+proc token-value-at ModuleContext int -- int do token-value-offset token-field end
+proc token-line-at ModuleContext int -- int do token-line-offset token-field end
+proc token-column-at ModuleContext int -- int do token-column-offset token-field end
 
-proc token-slice ptr int -- ptr int do
+proc token-slice ModuleContext int -- ptr int do
     let ctx index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx index token-start-at +
         ctx index token-length-at
     end
 end
 
-proc token-equals ptr int String -- bool do
+proc token-equals ModuleContext int String -- bool do
     let ctx index value do
         ctx index token-slice value bytes-equal-string
     end
 end
 
-proc string-type-name ptr int -- bool do
+proc string-type-name ModuleContext int -- bool do
     peek ctx token-index do "String" token-equals
     end
 end
 
-proc add-token ptr int int int int int int -- do
+proc add-token ModuleContext int int int int int int -- do
     let ctx kind start length value line column do
-        ctx @ctx-token-count
+        ctx @ModuleContext.token_count
         let index do
             kind ctx index token-kind-offset set-token-field
             start ctx index token-start-offset set-token-field
@@ -678,28 +549,28 @@ proc add-token ptr int int int int int int -- do
             value ctx index token-value-offset set-token-field
             line ctx index token-line-offset set-token-field
             column ctx index token-column-offset set-token-field
-            index 1 + ctx !ctx-token-count
+            index 1 + ctx !ModuleContext.token_count
         end
     end
 end
 
-proc source-byte ptr int -- int do
+proc source-byte ModuleContext int -- int do
     let ctx index do
-        ctx @ctx-source index byte-read
+        ctx @ModuleContext.source index byte-read
     end
 end
 
-proc lex-advance ptr -- do
-    peek ctx do @ctx-lex-index
+proc lex-advance ModuleContext -- do
+    peek ctx do @ModuleContext.lex_index
         let index do
             ctx index source-byte
             let byte do
-                index 1 + ctx !ctx-lex-index
+                index 1 + ctx !ModuleContext.lex_index
                 if byte 10 == do
-                    ctx @ctx-lex-line 1 + ctx !ctx-lex-line
-                    1 ctx !ctx-lex-column
+                    ctx @ModuleContext.lex_line 1 + ctx !ModuleContext.lex_line
+                    1 ctx !ModuleContext.lex_column
                 else
-                    ctx @ctx-lex-column 1 + ctx !ctx-lex-column
+                    ctx @ModuleContext.lex_column 1 + ctx !ModuleContext.lex_column
                 end
             end
         end
@@ -799,12 +670,12 @@ proc classify-word ptr int int -- int int do
     end
 end
 
-proc skip-comment ptr -- do
+proc skip-comment ModuleContext -- do
     let ctx do
         while
-            ctx @ctx-lex-index ctx @ctx-source-length <
+            ctx @ModuleContext.lex_index ctx @ModuleContext.source_length <
             if dup do
-                drop ctx ctx @ctx-lex-index source-byte 10 !=
+                drop ctx ctx @ModuleContext.lex_index source-byte 10 !=
             end
         do
             ctx lex-advance
@@ -812,26 +683,26 @@ proc skip-comment ptr -- do
     end
 end
 
-proc lex-string ptr int int int -- do
+proc lex-string ModuleContext int int int -- do
     let ctx start line column do
         ctx lex-advance
-        ctx @ctx-lex-index
+        ctx @ModuleContext.lex_index
         let content-start do
             false
             while
                 peek done do done !
-                    ctx @ctx-lex-index ctx @ctx-source-length < &&
+                    ctx @ModuleContext.lex_index ctx @ModuleContext.source_length < &&
                 end
             do
                 let done do
-                    ctx ctx @ctx-lex-index source-byte
+                    ctx ctx @ModuleContext.lex_index source-byte
                     let byte do
                         if byte 34 == do
                             true
                         else
                             if byte 92 == do
                                 ctx lex-advance
-                                if ctx @ctx-lex-index ctx @ctx-source-length >= do
+                                if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
                                     "unterminated string escape" fail
                                 end
                             end
@@ -842,10 +713,10 @@ proc lex-string ptr int int int -- do
                 end
             end
             drop
-            if ctx @ctx-lex-index ctx @ctx-source-length >= do
+            if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
                 "unterminated string literal" fail
             end
-            ctx @ctx-lex-index content-start -
+            ctx @ModuleContext.lex_index content-start -
             let content-length do
                 ctx token-string content-start content-length 0 line column add-token
             end
@@ -854,26 +725,26 @@ proc lex-string ptr int int int -- do
     end
 end
 
-proc lex-character ptr int int int -- do
+proc lex-character ModuleContext int int int -- do
     let ctx start line column do
         ctx lex-advance
-        if ctx @ctx-lex-index ctx @ctx-source-length >= do
+        if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
             "unterminated character literal" fail
         end
-        if ctx ctx @ctx-lex-index source-byte 10 == do
+        if ctx ctx @ModuleContext.lex_index source-byte 10 == do
             "unterminated character literal" fail
         end
-        if ctx ctx @ctx-lex-index source-byte 39 == do
+        if ctx ctx @ModuleContext.lex_index source-byte 39 == do
             "invalid character literal" fail
         end
-        ctx @ctx-source ctx @ctx-source-length ctx @ctx-lex-index utf8-codepoint-at
+        ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
         let value width do
             ctx width lex-advance-count
-            if ctx @ctx-lex-index ctx @ctx-source-length >= do
+            if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
                 "unterminated character literal" fail
             end
-            if ctx ctx @ctx-lex-index source-byte 39 != do
-                if ctx ctx @ctx-lex-index source-byte 10 == do
+            if ctx ctx @ModuleContext.lex_index source-byte 39 != do
+                if ctx ctx @ModuleContext.lex_index source-byte 10 == do
                     "unterminated character literal" fail
                 else
                     "invalid character literal" fail
@@ -885,22 +756,22 @@ proc lex-character ptr int int int -- do
     end
 end
 
-proc lex-word ptr int int int -- do
+proc lex-word ModuleContext int int int -- do
     let ctx start line column do
         while
-            ctx @ctx-lex-index ctx @ctx-source-length <
+            ctx @ModuleContext.lex_index ctx @ModuleContext.source_length <
             if dup do
-                drop ctx ctx @ctx-lex-index source-byte is-space !
+                drop ctx ctx @ModuleContext.lex_index source-byte is-space !
             end
         do
             ctx lex-advance
         end
-        ctx @ctx-lex-index start -
+        ctx @ModuleContext.lex_index start -
         let length do
-            if ctx @ctx-source start + length "//" bytes-equal-string do
+            if ctx @ModuleContext.source start + length "//" bytes-equal-string do
                 ctx skip-comment
             else
-                ctx @ctx-source start length classify-word
+                ctx @ModuleContext.source start length classify-word
                 let kind value do
                     ctx kind start length value line column add-token
                 end
@@ -909,22 +780,22 @@ proc lex-word ptr int int int -- do
     end
 end
 
-proc lex ptr -- do
+proc lex ModuleContext -- do
     let ctx do
-        0 ctx !ctx-token-count
-        0 ctx !ctx-lex-index
-        1 ctx !ctx-lex-line
-        1 ctx !ctx-lex-column
+        0 ctx !ModuleContext.token_count
+        0 ctx !ModuleContext.lex_index
+        1 ctx !ModuleContext.lex_line
+        1 ctx !ModuleContext.lex_column
 
-        while ctx @ctx-lex-index ctx @ctx-source-length < do
-            ctx ctx @ctx-lex-index source-byte
+        while ctx @ModuleContext.lex_index ctx @ModuleContext.source_length < do
+            ctx ctx @ModuleContext.lex_index source-byte
             let byte do
                 if byte is-space do
                     ctx lex-advance
                 else
-                    ctx @ctx-lex-index
-                    ctx @ctx-lex-line
-                    ctx @ctx-lex-column
+                    ctx @ModuleContext.lex_index
+                    ctx @ModuleContext.lex_line
+                    ctx @ModuleContext.lex_column
                     let start line column do
                         if byte 34 == do
                             ctx start line column lex-string
@@ -942,104 +813,104 @@ proc lex ptr -- do
     end
 end
 
-proc proc-address ptr int -- ptr do
+proc proc-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-procs index proc-bytes * +
+        ctx @ModuleContext.procs index proc-bytes * +
     end
 end
 
-proc proc-field ptr int int -- int do
+proc proc-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index proc-address offset field-read
     end
 end
 
-proc set-proc-field int ptr int int -- do
+proc set-proc-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index proc-address offset field-write
     end
 end
 
-proc proc-name-start-at ptr int -- int do proc-name-start-offset proc-field end
-proc proc-name-length-at ptr int -- int do proc-name-length-offset proc-field end
-proc proc-body-start-at ptr int -- int do proc-body-start-offset proc-field end
-proc proc-body-end-at ptr int -- int do proc-body-end-offset proc-field end
-proc proc-input-start-at ptr int -- int do proc-input-start-offset proc-field end
-proc proc-input-count-at ptr int -- int do proc-input-count-offset proc-field end
-proc proc-output-start-at ptr int -- int do proc-output-start-offset proc-field end
-proc proc-output-count-at ptr int -- int do proc-output-count-offset proc-field end
-proc proc-index-at ptr int -- int do proc-index-offset proc-field end
-proc proc-global-id-at ptr int -- int do proc-global-id-offset proc-field end
-proc proc-external-at ptr int -- bool do proc-external-offset proc-field 0 != end
-proc proc-c-symbol-token-at ptr int -- int do proc-c-symbol-token-offset proc-field end
+proc proc-name-start-at ModuleContext int -- int do proc-name-start-offset proc-field end
+proc proc-name-length-at ModuleContext int -- int do proc-name-length-offset proc-field end
+proc proc-body-start-at ModuleContext int -- int do proc-body-start-offset proc-field end
+proc proc-body-end-at ModuleContext int -- int do proc-body-end-offset proc-field end
+proc proc-input-start-at ModuleContext int -- int do proc-input-start-offset proc-field end
+proc proc-input-count-at ModuleContext int -- int do proc-input-count-offset proc-field end
+proc proc-output-start-at ModuleContext int -- int do proc-output-start-offset proc-field end
+proc proc-output-count-at ModuleContext int -- int do proc-output-count-offset proc-field end
+proc proc-index-at ModuleContext int -- int do proc-index-offset proc-field end
+proc proc-global-id-at ModuleContext int -- int do proc-global-id-offset proc-field end
+proc proc-external-at ModuleContext int -- bool do proc-external-offset proc-field 0 != end
+proc proc-c-symbol-token-at ModuleContext int -- int do proc-c-symbol-token-offset proc-field end
 
-proc set-proc-external bool ptr int -- do
+proc set-proc-external bool ModuleContext int -- do
     let value ctx index do
         if value do 1 else 0 end
         ctx index proc-external-offset set-proc-field
     end
 end
 
-proc macro-address ptr int -- ptr do
+proc macro-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-macros index macro-bytes * +
+        ctx @ModuleContext.macros index macro-bytes * +
     end
 end
 
-proc macro-field ptr int int -- int do
+proc macro-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index macro-address offset field-read
     end
 end
 
-proc set-macro-field int ptr int int -- do
+proc set-macro-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index macro-address offset field-write
     end
 end
 
-proc macro-name-start-at ptr int -- int do macro-name-start-offset macro-field end
-proc macro-name-length-at ptr int -- int do macro-name-length-offset macro-field end
-proc macro-body-start-at ptr int -- int do macro-body-start-offset macro-field end
-proc macro-body-end-at ptr int -- int do macro-body-end-offset macro-field end
-proc macro-expanding-at ptr int -- bool do macro-expanding-offset macro-field 0 != end
+proc macro-name-start-at ModuleContext int -- int do macro-name-start-offset macro-field end
+proc macro-name-length-at ModuleContext int -- int do macro-name-length-offset macro-field end
+proc macro-body-start-at ModuleContext int -- int do macro-body-start-offset macro-field end
+proc macro-body-end-at ModuleContext int -- int do macro-body-end-offset macro-field end
+proc macro-expanding-at ModuleContext int -- bool do macro-expanding-offset macro-field 0 != end
 
-proc set-macro-expanding bool ptr int -- do
+proc set-macro-expanding bool ModuleContext int -- do
     let value ctx index do
         if value do 1 else 0 end
         ctx index macro-expanding-offset set-macro-field
     end
 end
 
-proc constant-address ptr int -- ptr do
+proc constant-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-constants index constant-bytes * +
+        ctx @ModuleContext.constants index constant-bytes * +
     end
 end
 
-proc constant-field ptr int int -- int do
+proc constant-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index constant-address offset field-read
     end
 end
 
-proc set-constant-field int ptr int int -- do
+proc set-constant-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index constant-address offset field-write
     end
 end
 
-proc constant-name-start-at ptr int -- int do constant-name-start-offset constant-field end
-proc constant-name-length-at ptr int -- int do constant-name-length-offset constant-field end
-proc constant-body-start-at ptr int -- int do constant-body-start-offset constant-field end
-proc constant-body-end-at ptr int -- int do constant-body-end-offset constant-field end
-proc constant-state-at ptr int -- int do constant-state-offset constant-field end
-proc constant-values-at ptr int -- ptr do
+proc constant-name-start-at ModuleContext int -- int do constant-name-start-offset constant-field end
+proc constant-name-length-at ModuleContext int -- int do constant-name-length-offset constant-field end
+proc constant-body-start-at ModuleContext int -- int do constant-body-start-offset constant-field end
+proc constant-body-end-at ModuleContext int -- int do constant-body-end-offset constant-field end
+proc constant-state-at ModuleContext int -- int do constant-state-offset constant-field end
+proc constant-values-at ModuleContext int -- ptr do
     peek ctx index do constant-address constant-values-offset pointer-field-read end
 end
-proc constant-value-count-at ptr int -- int do constant-value-count-offset constant-field end
+proc constant-value-count-at ModuleContext int -- int do constant-value-count-offset constant-field end
 
-proc set-constant-values ptr ptr int -- do
+proc set-constant-values ptr ModuleContext int -- do
     peek values ctx index do constant-address constant-values-offset pointer-field-write
     end
 end
@@ -1063,177 +934,177 @@ proc set-constant-value int int ptr int -- do
     end
 end
 
-proc record-address ptr int -- ptr do
+proc record-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-records index record-bytes * +
+        ctx @ModuleContext.records index record-bytes * +
     end
 end
 
-proc record-entry-field ptr int int -- int do
+proc record-entry-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index record-address offset field-read
     end
 end
 
-proc set-record-entry-field int ptr int int -- do
+proc set-record-entry-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index record-address offset field-write
     end
 end
 
-proc record-name-start-at ptr int -- int do record-name-start-offset record-entry-field end
-proc record-name-length-at ptr int -- int do record-name-length-offset record-entry-field end
-proc record-field-start-at ptr int -- int do record-field-start-offset record-entry-field end
-proc record-field-count-at ptr int -- int do record-field-count-offset record-entry-field end
-proc record-type-at ptr int -- int do record-type-offset record-entry-field end
+proc record-name-start-at ModuleContext int -- int do record-name-start-offset record-entry-field end
+proc record-name-length-at ModuleContext int -- int do record-name-length-offset record-entry-field end
+proc record-field-start-at ModuleContext int -- int do record-field-start-offset record-entry-field end
+proc record-field-count-at ModuleContext int -- int do record-field-count-offset record-entry-field end
+proc record-type-at ModuleContext int -- int do record-type-offset record-entry-field end
 
-proc record-field-address ptr int -- ptr do
+proc record-field-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-record-fields index record-field-bytes * +
+        ctx @ModuleContext.record_fields index record-field-bytes * +
     end
 end
 
-proc record-field-entry-field ptr int int -- int do
+proc record-field-entry-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index record-field-address offset field-read
     end
 end
 
-proc set-record-field-entry-field int ptr int int -- do
+proc set-record-field-entry-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index record-field-address offset field-write
     end
 end
 
-proc record-field-name-start-at ptr int -- int do
+proc record-field-name-start-at ModuleContext int -- int do
     record-field-name-start-offset record-field-entry-field
 end
-proc record-field-name-length-at ptr int -- int do
+proc record-field-name-length-at ModuleContext int -- int do
     record-field-name-length-offset record-field-entry-field
 end
-proc record-field-type-at ptr int -- int do record-field-type-offset record-field-entry-field end
-proc record-field-byte-offset-at ptr int -- int do
+proc record-field-type-at ModuleContext int -- int do record-field-type-offset record-field-entry-field end
+proc record-field-byte-offset-at ModuleContext int -- int do
     record-field-byte-offset-offset record-field-entry-field
 end
-proc set-record-field-type int ptr int -- do
+proc set-record-field-type int ModuleContext int -- do
     peek value ctx index do record-field-type-offset set-record-field-entry-field end
 end
 
-proc union-address ptr int -- ptr do
+proc union-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-unions index union-bytes * +
+        ctx @ModuleContext.unions index union-bytes * +
     end
 end
 
-proc union-entry-field ptr int int -- int do
+proc union-entry-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index union-address offset field-read
     end
 end
 
-proc set-union-entry-field int ptr int int -- do
+proc set-union-entry-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index union-address offset field-write
     end
 end
 
-proc union-name-start-at ptr int -- int do union-name-start-offset union-entry-field end
-proc union-name-length-at ptr int -- int do union-name-length-offset union-entry-field end
-proc union-case-start-at ptr int -- int do union-case-start-offset union-entry-field end
-proc union-case-count-at ptr int -- int do union-case-count-offset union-entry-field end
-proc union-type-at ptr int -- int do union-type-offset union-entry-field end
+proc union-name-start-at ModuleContext int -- int do union-name-start-offset union-entry-field end
+proc union-name-length-at ModuleContext int -- int do union-name-length-offset union-entry-field end
+proc union-case-start-at ModuleContext int -- int do union-case-start-offset union-entry-field end
+proc union-case-count-at ModuleContext int -- int do union-case-count-offset union-entry-field end
+proc union-type-at ModuleContext int -- int do union-type-offset union-entry-field end
 
-proc union-case-address ptr int -- ptr do
+proc union-case-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-union-cases index union-case-bytes * +
+        ctx @ModuleContext.union_cases index union-case-bytes * +
     end
 end
 
-proc union-case-entry-field ptr int int -- int do
+proc union-case-entry-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index union-case-address offset field-read
     end
 end
 
-proc set-union-case-entry-field int ptr int int -- do
+proc set-union-case-entry-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index union-case-address offset field-write
     end
 end
 
-proc union-case-name-start-at ptr int -- int do
+proc union-case-name-start-at ModuleContext int -- int do
     union-case-name-start-offset union-case-entry-field
 end
-proc union-case-name-length-at ptr int -- int do
+proc union-case-name-length-at ModuleContext int -- int do
     union-case-name-length-offset union-case-entry-field
 end
-proc union-case-payload-type-at ptr int -- int do
+proc union-case-payload-type-at ModuleContext int -- int do
     union-case-payload-type-offset union-case-entry-field
 end
-proc union-case-tag-at ptr int -- int do union-case-tag-offset union-case-entry-field end
-proc set-union-case-payload-type int ptr int -- do
+proc union-case-tag-at ModuleContext int -- int do union-case-tag-offset union-case-entry-field end
+proc set-union-case-payload-type int ModuleContext int -- do
     peek value ctx index do union-case-payload-type-offset set-union-case-entry-field end
 end
 
-proc function-address ptr int -- ptr do
+proc function-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-functions index function-bytes * +
+        ctx @ModuleContext.functions index function-bytes * +
     end
 end
 
-proc function-entry-field ptr int int -- int do
+proc function-entry-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index function-address offset field-read
     end
 end
 
-proc set-function-entry-field int ptr int int -- do
+proc set-function-entry-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index function-address offset field-write
     end
 end
 
-proc function-name-start-at ptr int -- int do function-name-start-offset function-entry-field end
-proc function-name-length-at ptr int -- int do function-name-length-offset function-entry-field end
-proc function-input-start-at ptr int -- int do function-input-start-offset function-entry-field end
-proc function-input-count-at ptr int -- int do function-input-count-offset function-entry-field end
-proc function-output-start-at ptr int -- int do function-output-start-offset function-entry-field end
-proc function-output-count-at ptr int -- int do function-output-count-offset function-entry-field end
-proc function-type-at ptr int -- int do function-type-offset function-entry-field end
+proc function-name-start-at ModuleContext int -- int do function-name-start-offset function-entry-field end
+proc function-name-length-at ModuleContext int -- int do function-name-length-offset function-entry-field end
+proc function-input-start-at ModuleContext int -- int do function-input-start-offset function-entry-field end
+proc function-input-count-at ModuleContext int -- int do function-input-count-offset function-entry-field end
+proc function-output-start-at ModuleContext int -- int do function-output-start-offset function-entry-field end
+proc function-output-count-at ModuleContext int -- int do function-output-count-offset function-entry-field end
+proc function-type-at ModuleContext int -- int do function-type-offset function-entry-field end
 
-proc function-signature-type-at ptr int -- int do
+proc function-signature-type-at ModuleContext int -- int do
     let ctx index do
-        ctx @ctx-function-types index cell-bytes * field-read
+        ctx @ModuleContext.function_types index cell-bytes * field-read
     end
 end
 
-proc set-function-signature-type int ptr int -- do
+proc set-function-signature-type int ModuleContext int -- do
     let value ctx index do
-        value ctx @ctx-function-types index cell-bytes * field-write
+        value ctx @ModuleContext.function_types index cell-bytes * field-write
     end
 end
 
-proc add-function-signature-type ptr int -- do
+proc add-function-signature-type ModuleContext int -- do
     let ctx value do
-        value ctx ctx @ctx-function-type-count set-function-signature-type
-        ctx @ctx-function-type-count 1 + ctx !ctx-function-type-count
+        value ctx ctx @ModuleContext.function_type_count set-function-signature-type
+        ctx @ModuleContext.function_type_count 1 + ctx !ModuleContext.function_type_count
     end
 end
 
-proc type-at ptr int -- int do
+proc type-at ModuleContext int -- int do
     let ctx index do
-        ctx @ctx-types index cell-bytes * field-read
+        ctx @ModuleContext.types index cell-bytes * field-read
     end
 end
 
-proc add-type ptr int -- do
+proc add-type ModuleContext int -- do
     let ctx value do
-        value ctx @ctx-types ctx @ctx-type-count cell-bytes * field-write
-        ctx @ctx-type-count 1 + ctx !ctx-type-count
+        value ctx @ModuleContext.types ctx @ModuleContext.type_count cell-bytes * field-write
+        ctx @ModuleContext.type_count 1 + ctx !ModuleContext.type_count
     end
 end
 
-proc require-word ptr int -- do
+proc require-word ModuleContext int -- do
     let ctx token-index do
         if ctx token-index token-kind-at token-word != do
             "expected word token" fail
@@ -1241,7 +1112,7 @@ proc require-word ptr int -- do
     end
 end
 
-proc reserved-name ptr int -- bool do
+proc reserved-name ModuleContext int -- bool do
     peek ctx token-index do "proc" token-equals
         ctx token-index "macro" token-equals ||
         ctx token-index "const" token-equals ||
@@ -1265,7 +1136,7 @@ proc reserved-name ptr int -- bool do
     end
 end
 
-proc parse-c-abi-type-token ptr int -- int do
+proc parse-c-abi-type-token ModuleContext int -- int do
     peek ctx token-index do require-word
         if ctx token-index "c-int" token-equals do
             type-int
@@ -1292,7 +1163,7 @@ proc c-identifier-suffix-valid ptr int int -- bool do
     end
 end
 
-proc identifier-token ptr int -- bool do
+proc identifier-token ModuleContext int -- bool do
     peek ctx token-index do token-slice
         let bytes length do
             if length 0 == do
@@ -1306,7 +1177,7 @@ proc identifier-token ptr int -- bool do
     end
 end
 
-proc c-keyword ptr int -- bool do
+proc c-keyword ModuleContext int -- bool do
     peek ctx token-index do "auto" token-equals
         ctx token-index "break" token-equals ||
         ctx token-index "case" token-equals ||
@@ -1354,7 +1225,7 @@ proc c-keyword ptr int -- bool do
     end
 end
 
-proc frog-internal-symbol ptr int -- bool do
+proc frog-internal-symbol ModuleContext int -- bool do
     peek ctx token-index do token-slice
         let bytes length do
             if length 5 < do
@@ -1370,7 +1241,7 @@ proc frog-internal-symbol ptr int -- bool do
     end
 end
 
-proc reserved-c-symbol ptr int -- bool do
+proc reserved-c-symbol ModuleContext int -- bool do
     peek ctx token-index do c-keyword
         ctx token-index "main" token-equals ||
         ctx token-index "Cell" token-equals ||
@@ -1379,7 +1250,7 @@ proc reserved-c-symbol ptr int -- bool do
     end
 end
 
-proc valid-c-symbol ptr int -- bool do
+proc valid-c-symbol ModuleContext int -- bool do
     peek ctx token-index do token-slice
         let bytes length do
             if length 0 == do
@@ -1395,7 +1266,7 @@ proc valid-c-symbol ptr int -- bool do
     end
 end
 
-proc parse-type-token ptr int -- int do
+proc parse-type-token ModuleContext int -- int do
     peek ctx token-index do require-word
         if ctx token-index "int" token-equals do
             type-int
@@ -1418,9 +1289,9 @@ end
 
 proc unresolved-type-token-index int -- int do 0 swap - 1 - end
 
-proc proc-name-equals-token ptr int int -- bool do
+proc proc-name-equals-token ModuleContext int int -- bool do
     let ctx proc-index token-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx proc-index proc-name-start-at
         +
         ctx proc-index proc-name-length-at
@@ -1429,9 +1300,9 @@ proc proc-name-equals-token ptr int int -- bool do
     end
 end
 
-proc find-proc-from ptr int int -- int do
+proc find-proc-from ModuleContext int int -- int do
     let ctx token-index proc-index do
-        if proc-index ctx @ctx-proc-count >= do
+        if proc-index ctx @ModuleContext.proc_count >= do
             0 1 -
         elif ctx proc-index token-index proc-name-equals-token do
             proc-index
@@ -1441,13 +1312,13 @@ proc find-proc-from ptr int int -- int do
     end
 end
 
-proc find-proc ptr int -- int do
+proc find-proc ModuleContext int -- int do
     0 find-proc-from
 end
 
-proc macro-name-equals-token ptr int int -- bool do
+proc macro-name-equals-token ModuleContext int int -- bool do
     let ctx macro-index token-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx macro-index macro-name-start-at
         +
         ctx macro-index macro-name-length-at
@@ -1456,9 +1327,9 @@ proc macro-name-equals-token ptr int int -- bool do
     end
 end
 
-proc find-macro-from ptr int int -- int do
+proc find-macro-from ModuleContext int int -- int do
     let ctx token-index macro-index do
-        if macro-index ctx @ctx-macro-count >= do
+        if macro-index ctx @ModuleContext.macro_count >= do
             0 1 -
         elif ctx macro-index token-index macro-name-equals-token do
             macro-index
@@ -1468,13 +1339,13 @@ proc find-macro-from ptr int int -- int do
     end
 end
 
-proc find-macro ptr int -- int do
+proc find-macro ModuleContext int -- int do
     0 find-macro-from
 end
 
-proc constant-name-equals-token ptr int int -- bool do
+proc constant-name-equals-token ModuleContext int int -- bool do
     let ctx constant-index token-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx constant-index constant-name-start-at
         +
         ctx constant-index constant-name-length-at
@@ -1483,9 +1354,9 @@ proc constant-name-equals-token ptr int int -- bool do
     end
 end
 
-proc find-constant-from ptr int int -- int do
+proc find-constant-from ModuleContext int int -- int do
     let ctx token-index constant-index do
-        if constant-index ctx @ctx-constant-count >= do
+        if constant-index ctx @ModuleContext.constant_count >= do
             0 1 -
         elif ctx constant-index token-index constant-name-equals-token do
             constant-index
@@ -1495,13 +1366,13 @@ proc find-constant-from ptr int int -- int do
     end
 end
 
-proc find-constant ptr int -- int do
+proc find-constant ModuleContext int -- int do
     0 find-constant-from
 end
 
-proc record-name-equals-token ptr int int -- bool do
+proc record-name-equals-token ModuleContext int int -- bool do
     let ctx record-index token-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx record-index record-name-start-at
         +
         ctx record-index record-name-length-at
@@ -1510,9 +1381,9 @@ proc record-name-equals-token ptr int int -- bool do
     end
 end
 
-proc find-record-from ptr int int -- int do
+proc find-record-from ModuleContext int int -- int do
     let ctx token-index record-index do
-        if record-index ctx @ctx-record-count >= do
+        if record-index ctx @ModuleContext.record_count >= do
             0 1 -
         elif ctx record-index token-index record-name-equals-token do
             record-index
@@ -1522,11 +1393,11 @@ proc find-record-from ptr int int -- int do
     end
 end
 
-proc find-record ptr int -- int do 0 find-record-from end
+proc find-record ModuleContext int -- int do 0 find-record-from end
 
-proc record-field-name-equals-bytes ptr int ptr int -- bool do
+proc record-field-name-equals-bytes ModuleContext int ptr int -- bool do
     let ctx field-index bytes length do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx field-index record-field-name-start-at
         +
         ctx field-index record-field-name-length-at
@@ -1535,7 +1406,7 @@ proc record-field-name-equals-bytes ptr int ptr int -- bool do
     end
 end
 
-proc find-record-field-from ptr int ptr int int -- int do
+proc find-record-field-from ModuleContext int ptr int int -- int do
     let ctx record-index bytes length relative-index do
         if relative-index ctx record-index record-field-count-at >= do
             0 1 -
@@ -1552,11 +1423,11 @@ proc find-record-field-from ptr int ptr int int -- int do
     end
 end
 
-proc find-record-field ptr int ptr int -- int do 0 find-record-field-from end
+proc find-record-field ModuleContext int ptr int -- int do 0 find-record-field-from end
 
-proc union-name-equals-token ptr int int -- bool do
+proc union-name-equals-token ModuleContext int int -- bool do
     let ctx union-index token-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx union-index union-name-start-at
         +
         ctx union-index union-name-length-at
@@ -1565,9 +1436,9 @@ proc union-name-equals-token ptr int int -- bool do
     end
 end
 
-proc find-union-from ptr int int -- int do
+proc find-union-from ModuleContext int int -- int do
     let ctx token-index union-index do
-        if union-index ctx @ctx-union-count >= do
+        if union-index ctx @ModuleContext.union_count >= do
             0 1 -
         elif ctx union-index token-index union-name-equals-token do
             union-index
@@ -1577,11 +1448,11 @@ proc find-union-from ptr int int -- int do
     end
 end
 
-proc find-union ptr int -- int do 0 find-union-from end
+proc find-union ModuleContext int -- int do 0 find-union-from end
 
-proc union-case-name-equals-bytes ptr int ptr int -- bool do
+proc union-case-name-equals-bytes ModuleContext int ptr int -- bool do
     let ctx case-index bytes length do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx case-index union-case-name-start-at
         +
         ctx case-index union-case-name-length-at
@@ -1590,7 +1461,7 @@ proc union-case-name-equals-bytes ptr int ptr int -- bool do
     end
 end
 
-proc find-union-case-from ptr int ptr int int -- int do
+proc find-union-case-from ModuleContext int ptr int int -- int do
     let ctx union-index bytes length relative-index do
         if relative-index ctx union-index union-case-count-at >= do
             0 1 -
@@ -1607,11 +1478,11 @@ proc find-union-case-from ptr int ptr int int -- int do
     end
 end
 
-proc find-union-case ptr int ptr int -- int do 0 find-union-case-from end
+proc find-union-case ModuleContext int ptr int -- int do 0 find-union-case-from end
 
-proc function-name-equals-token ptr int int -- bool do
+proc function-name-equals-token ModuleContext int int -- bool do
     let ctx function-index token-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx function-index function-name-start-at
         +
         ctx function-index function-name-length-at
@@ -1620,9 +1491,9 @@ proc function-name-equals-token ptr int int -- bool do
     end
 end
 
-proc find-function-from ptr int int -- int do
+proc find-function-from ModuleContext int int -- int do
     let ctx token-index function-index do
-        if function-index ctx @ctx-function-count >= do
+        if function-index ctx @ModuleContext.function_count >= do
             0 1 -
         elif ctx function-index token-index function-name-equals-token do
             function-index
@@ -1632,9 +1503,9 @@ proc find-function-from ptr int int -- int do
     end
 end
 
-proc find-function ptr int -- int do 0 find-function-from end
+proc find-function ModuleContext int -- int do 0 find-function-from end
 
-proc fail-duplicate-declaration ptr int -- do
+proc fail-duplicate-declaration ModuleContext int -- do
     let ctx token-index do
         "frogc: " emit-error
         "duplicate declaration name: " emit-error
@@ -1644,9 +1515,9 @@ proc fail-duplicate-declaration ptr int -- do
     end
 end
 
-proc scan-record-fields ptr int int -- int do
+proc scan-record-fields ModuleContext int int -- int do
     let ctx record-index token-index do
-        if token-index ctx @ctx-token-count >= do
+        if token-index ctx @ModuleContext.token_count >= do
             "unterminated record declaration" fail
             token-index
         elif ctx token-index "end" token-equals do
@@ -1672,7 +1543,7 @@ proc scan-record-fields ptr int int -- int do
             token-index 1 +
             let type-token do
                 if
-                    type-token ctx @ctx-token-count >=
+                    type-token ctx @ModuleContext.token_count >=
                     if dup ! do
                         drop ctx type-token "end" token-equals
                     end
@@ -1683,7 +1554,7 @@ proc scan-record-fields ptr int int -- int do
                 if ctx type-token reserved-name do
                     "unknown type in record field" fail
                 end
-                ctx @ctx-record-field-count
+                ctx @ModuleContext.record_field_count
                 let field-index do
                     ctx token-index token-start-at
                     ctx field-index record-field-name-start-offset set-record-field-entry-field
@@ -1693,7 +1564,7 @@ proc scan-record-fields ptr int int -- int do
                     ctx field-index record-field-type-offset set-record-field-entry-field
                     ctx record-index record-field-count-at cell-bytes *
                     ctx field-index record-field-byte-offset-offset set-record-field-entry-field
-                    field-index 1 + ctx !ctx-record-field-count
+                    field-index 1 + ctx !ModuleContext.record_field_count
                     ctx record-index record-field-count-at 1 +
                     ctx record-index record-field-count-offset set-record-entry-field
                     ctx record-index type-token 1 + scan-record-fields
@@ -1703,11 +1574,11 @@ proc scan-record-fields ptr int int -- int do
     end
 end
 
-proc scan-one-record ptr int -- int do
+proc scan-one-record ModuleContext int -- int do
     let ctx record-token do
         record-token 1 +
         let name-token do
-            if name-token ctx @ctx-token-count >= do
+            if name-token ctx @ModuleContext.token_count >= do
                 "expected record name" fail
             end
             ctx name-token require-word
@@ -1737,20 +1608,20 @@ proc scan-one-record ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx @ctx-record-count
+            ctx @ModuleContext.record_count
             let record-index do
                 ctx name-token token-start-at
                 ctx record-index record-name-start-offset set-record-entry-field
                 ctx name-token token-length-at
                 ctx record-index record-name-length-offset set-record-entry-field
-                ctx @ctx-record-field-count
+                ctx @ModuleContext.record_field_count
                 ctx record-index record-field-start-offset set-record-entry-field
                 0 ctx record-index record-field-count-offset set-record-entry-field
-                ctx @ctx-program program-allocate-nominal-type
+                ctx @ModuleContext.program program-allocate-nominal-type
                 ctx record-index record-type-offset set-record-entry-field
                 ctx record-index name-token 1 + scan-record-fields
                 let next-token do
-                    record-index 1 + ctx !ctx-record-count
+                    record-index 1 + ctx !ModuleContext.record_count
                     next-token
                 end
             end
@@ -1758,9 +1629,9 @@ proc scan-one-record ptr int -- int do
     end
 end
 
-proc scan-union-cases ptr int int -- int do
+proc scan-union-cases ModuleContext int int -- int do
     let ctx union-index token-index do
-        if token-index ctx @ctx-token-count >= do
+        if token-index ctx @ModuleContext.token_count >= do
             "unterminated union declaration" fail
             token-index
         elif ctx token-index "end" token-equals do
@@ -1775,7 +1646,7 @@ proc scan-union-cases ptr int int -- int do
             token-index 1 +
             let name-token do
                 if
-                    name-token ctx @ctx-token-count >=
+                    name-token ctx @ModuleContext.token_count >=
                     if dup ! do
                         drop
                         ctx name-token "case" token-equals
@@ -1801,7 +1672,7 @@ proc scan-union-cases ptr int int -- int do
                         1 exit
                     end
                 end
-                ctx @ctx-union-case-count
+                ctx @ModuleContext.union_case_count
                 let case-index do
                     ctx name-token token-start-at
                     ctx case-index union-case-name-start-offset set-union-case-entry-field
@@ -1812,7 +1683,7 @@ proc scan-union-cases ptr int int -- int do
                     ctx case-index union-case-tag-offset set-union-case-entry-field
                     name-token 1 +
                     let after-name do
-                        if after-name ctx @ctx-token-count >= do
+                        if after-name ctx @ModuleContext.token_count >= do
                             "unterminated union declaration" fail
                         end
                         if
@@ -1829,7 +1700,7 @@ proc scan-union-cases ptr int int -- int do
                             ctx case-index union-case-payload-type-offset set-union-case-entry-field
                             after-name 1 +
                             let after-payload do
-                                if after-payload ctx @ctx-token-count >= do
+                                if after-payload ctx @ModuleContext.token_count >= do
                                     "unterminated union declaration" fail
                                 end
                                 if
@@ -1843,7 +1714,7 @@ proc scan-union-cases ptr int int -- int do
                             end
                         end
                         let next-token do
-                            case-index 1 + ctx !ctx-union-case-count
+                            case-index 1 + ctx !ModuleContext.union_case_count
                             ctx union-index union-case-count-at 1 +
                             ctx union-index union-case-count-offset set-union-entry-field
                             ctx union-index next-token scan-union-cases
@@ -1855,12 +1726,12 @@ proc scan-union-cases ptr int int -- int do
     end
 end
 
-proc scan-one-union ptr int -- int do
+proc scan-one-union ModuleContext int -- int do
     let ctx union-token do
         union-token 1 +
         let name-token do
             if
-                name-token ctx @ctx-token-count >=
+                name-token ctx @ModuleContext.token_count >=
                 if dup ! do
                     drop
                     ctx name-token "case" token-equals
@@ -1896,20 +1767,20 @@ proc scan-one-union ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx @ctx-union-count
+            ctx @ModuleContext.union_count
             let union-index do
                 ctx name-token token-start-at
                 ctx union-index union-name-start-offset set-union-entry-field
                 ctx name-token token-length-at
                 ctx union-index union-name-length-offset set-union-entry-field
-                ctx @ctx-union-case-count
+                ctx @ModuleContext.union_case_count
                 ctx union-index union-case-start-offset set-union-entry-field
                 0 ctx union-index union-case-count-offset set-union-entry-field
-                ctx @ctx-program program-allocate-nominal-type
+                ctx @ModuleContext.program program-allocate-nominal-type
                 ctx union-index union-type-offset set-union-entry-field
                 ctx union-index name-token 1 + scan-union-cases
                 let next-token do
-                    union-index 1 + ctx !ctx-union-count
+                    union-index 1 + ctx !ModuleContext.union_count
                     next-token
                 end
             end
@@ -1917,7 +1788,7 @@ proc scan-one-union ptr int -- int do
     end
 end
 
-proc parse-function-signature-type-token ptr int -- int do
+proc parse-function-signature-type-token ModuleContext int -- int do
     peek ctx token-index do require-word
         if ctx token-index reserved-name do
             "unknown type in function signature" fail
@@ -1926,12 +1797,12 @@ proc parse-function-signature-type-token ptr int -- int do
     end
 end
 
-proc scan-one-function ptr int -- int do
+proc scan-one-function ModuleContext int -- int do
     let ctx function-token do
         function-token 1 +
         let name-token do
             if
-                name-token ctx @ctx-token-count >=
+                name-token ctx @ModuleContext.token_count >=
                 if dup ! do
                     drop
                     ctx name-token "--" token-equals
@@ -1967,20 +1838,20 @@ proc scan-one-function ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx @ctx-function-count
+            ctx @ModuleContext.function_count
             let function-index do
                 ctx name-token token-start-at
                 ctx function-index function-name-start-offset set-function-entry-field
                 ctx name-token token-length-at
                 ctx function-index function-name-length-offset set-function-entry-field
-                ctx @ctx-program program-allocate-function-type
+                ctx @ModuleContext.program program-allocate-function-type
                 ctx function-index function-type-offset set-function-entry-field
-                ctx @ctx-function-type-count
+                ctx @ModuleContext.function_type_count
                 ctx function-index function-input-start-offset set-function-entry-field
                 name-token 1 + 0
                 while
                     peek token-index count do
-                        token-index ctx @ctx-token-count <
+                        token-index ctx @ModuleContext.token_count <
                         if dup do
                             drop
                             ctx token-index "--" token-equals !
@@ -1994,19 +1865,19 @@ proc scan-one-function ptr int -- int do
                     end
                 end
                 let token-index input-count do
-                    if token-index ctx @ctx-token-count >= do
+                    if token-index ctx @ModuleContext.token_count >= do
                         "expected -- in function signature" fail
                     end
                     if ctx token-index "--" token-equals ! do
                         "expected -- in function signature" fail
                     end
                     input-count ctx function-index function-input-count-offset set-function-entry-field
-                    ctx @ctx-function-type-count
+                    ctx @ModuleContext.function_type_count
                     ctx function-index function-output-start-offset set-function-entry-field
                     token-index 1 + 0
                     while
                         peek output-token output-count do
-                            output-token ctx @ctx-token-count <
+                            output-token ctx @ModuleContext.token_count <
                             if dup do
                                 drop ctx output-token "end" token-equals !
                             end
@@ -2018,11 +1889,11 @@ proc scan-one-function ptr int -- int do
                         end
                     end
                     let output-token output-count do
-                        if output-token ctx @ctx-token-count >= do
+                        if output-token ctx @ModuleContext.token_count >= do
                             "expected end after function signature" fail
                         end
                         output-count ctx function-index function-output-count-offset set-function-entry-field
-                        function-index 1 + ctx !ctx-function-count
+                        function-index 1 + ctx !ModuleContext.function_count
                         output-token 1 +
                     end
                 end
@@ -2031,7 +1902,7 @@ proc scan-one-function ptr int -- int do
     end
 end
 
-proc scan-macro-body ptr int -- int do
+proc scan-macro-body ModuleContext int -- int do
     let ctx body-start do
         body-start 0 true
         while
@@ -2039,7 +1910,7 @@ proc scan-macro-body ptr int -- int do
             end
         do
             let token-index depth active do
-                if token-index ctx @ctx-token-count >= do
+                if token-index ctx @ModuleContext.token_count >= do
                     "unterminated macro body" fail
                     token-index depth false
                 elif ctx token-index token-kind-at token-word == do
@@ -2087,7 +1958,7 @@ proc scan-macro-body ptr int -- int do
     end
 end
 
-proc validate-macro-body ptr int int -- do
+proc validate-macro-body ModuleContext int int -- do
     let ctx body-start body-end do
         body-end body-start - cell-bytes * alloc
         let kinds do
@@ -2202,11 +2073,11 @@ proc validate-macro-body ptr int int -- do
     end
 end
 
-proc scan-one-macro ptr int -- int do
+proc scan-one-macro ModuleContext int -- int do
     let ctx macro-token do
         macro-token 1 +
         let name-token do
-            if name-token ctx @ctx-token-count >= do
+            if name-token ctx @ModuleContext.token_count >= do
                 "expected macro name" fail
             end
             ctx name-token require-word
@@ -2229,7 +2100,7 @@ proc scan-one-macro ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx @ctx-macro-count
+            ctx @ModuleContext.macro_count
             let macro-index do
                 ctx name-token token-start-at ctx macro-index macro-name-start-offset set-macro-field
                 ctx name-token token-length-at ctx macro-index macro-name-length-offset set-macro-field
@@ -2239,7 +2110,7 @@ proc scan-one-macro ptr int -- int do
                     ctx name-token 1 + next-token 1 - validate-macro-body
                     name-token 1 + ctx macro-index macro-body-start-offset set-macro-field
                     next-token 1 - ctx macro-index macro-body-end-offset set-macro-field
-                    ctx @ctx-macro-count 1 + ctx !ctx-macro-count
+                    ctx @ModuleContext.macro_count 1 + ctx !ModuleContext.macro_count
                     next-token
                 end
             end
@@ -2247,7 +2118,7 @@ proc scan-one-macro ptr int -- int do
     end
 end
 
-proc constant-expression-forbidden-word ptr int -- bool do
+proc constant-expression-forbidden-word ModuleContext int -- bool do
     peek ctx token-index do "if" token-equals
         ctx token-index "elif" token-equals ||
         ctx token-index "else" token-equals ||
@@ -2267,14 +2138,14 @@ proc constant-expression-forbidden-word ptr int -- bool do
     end
 end
 
-proc scan-constant-body ptr int -- int do
+proc scan-constant-body ModuleContext int -- int do
     let ctx body-start do
         body-start true
         while
             peek token-index active do active end
         do
             let token-index active do
-                if token-index ctx @ctx-token-count >= do
+                if token-index ctx @ModuleContext.token_count >= do
                     "unterminated constant declaration" fail
                     token-index false
                 elif
@@ -2297,11 +2168,11 @@ proc scan-constant-body ptr int -- int do
     end
 end
 
-proc scan-one-constant ptr int -- int do
+proc scan-one-constant ModuleContext int -- int do
     let ctx constant-token do
         constant-token 1 +
         let name-token do
-            if name-token ctx @ctx-token-count >= do
+            if name-token ctx @ModuleContext.token_count >= do
                 "expected constant name" fail
             end
             ctx name-token require-word
@@ -2325,7 +2196,7 @@ proc scan-one-constant ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx @ctx-constant-count
+            ctx @ModuleContext.constant_count
             let constant-index do
                 ctx name-token token-start-at ctx constant-index constant-name-start-offset set-constant-field
                 ctx name-token token-length-at ctx constant-index constant-name-length-offset set-constant-field
@@ -2336,7 +2207,7 @@ proc scan-one-constant ptr int -- int do
                 let next-token do
                     name-token 1 + ctx constant-index constant-body-start-offset set-constant-field
                     next-token 1 - ctx constant-index constant-body-end-offset set-constant-field
-                    ctx @ctx-constant-count 1 + ctx !ctx-constant-count
+                    ctx @ModuleContext.constant_count 1 + ctx !ModuleContext.constant_count
                     next-token
                 end
             end
@@ -2344,13 +2215,13 @@ proc scan-one-constant ptr int -- int do
     end
 end
 
-proc scan-block-end-with-outer-elif ptr int bool -- int do
+proc scan-block-end-with-outer-elif ModuleContext int bool -- int do
     let ctx body-start allow-outer-elif do
         body-start 1
         while
             peek token-index depth do
                 depth 0 >
-                token-index ctx @ctx-token-count < &&
+                token-index ctx @ModuleContext.token_count < &&
             end
         do
             let token-index depth do
@@ -2409,12 +2280,12 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
     end
 end
 
-proc scan-block-end ptr int -- int do false scan-block-end-with-outer-elif end
-proc scan-ignored-block-end ptr int -- int do true scan-block-end-with-outer-elif end
+proc scan-block-end ModuleContext int -- int do false scan-block-end-with-outer-elif end
+proc scan-ignored-block-end ModuleContext int -- int do true scan-block-end-with-outer-elif end
 
-proc allocate-proc ptr int bool -- int do
+proc allocate-proc ModuleContext int bool -- int do
     let ctx name-token external do
-        if name-token ctx @ctx-token-count >= do
+        if name-token ctx @ModuleContext.token_count >= do
             "expected procedure name" fail
         end
         ctx name-token require-word
@@ -2442,29 +2313,29 @@ proc allocate-proc ptr int bool -- int do
             ctx name-token fail-duplicate-declaration
         end
 
-        ctx @ctx-proc-count
+        ctx @ModuleContext.proc_count
         let proc-index do
             ctx name-token token-start-at ctx proc-index proc-name-start-offset set-proc-field
             ctx name-token token-length-at ctx proc-index proc-name-length-offset set-proc-field
             proc-index ctx proc-index proc-index-offset set-proc-field
-            ctx @ctx-program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
+            ctx @ModuleContext.program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
             external ctx proc-index set-proc-external
             proc-index
         end
     end
 end
 
-proc scan-one-proc ptr int -- int do
+proc scan-one-proc ModuleContext int -- int do
     let ctx proc-token do
         proc-token 1 +
         let name-token do
             ctx name-token false allocate-proc
             let proc-index do
-                ctx @ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
+                ctx @ModuleContext.type_count ctx proc-index proc-input-start-offset set-proc-field
                 name-token 1 + 0
                 while
                     peek token-index count do
-                        token-index ctx @ctx-token-count <
+                        token-index ctx @ModuleContext.token_count <
                         if dup do
                             drop ctx token-index "--" token-equals !
                         end
@@ -2476,18 +2347,18 @@ proc scan-one-proc ptr int -- int do
                     end
                 end
                 let token-index input-count do
-                    if token-index ctx @ctx-token-count >= do
+                    if token-index ctx @ModuleContext.token_count >= do
                         "expected -- in procedure signature" fail
                     end
                     input-count ctx proc-index proc-input-count-offset set-proc-field
                     token-index 1 +
                 end
 
-                ctx @ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
+                ctx @ModuleContext.type_count ctx proc-index proc-output-start-offset set-proc-field
                 0
                 while
                     peek token-index count do
-                        token-index ctx @ctx-token-count <
+                        token-index ctx @ModuleContext.token_count <
                         if dup do
                             drop ctx token-index "do" token-equals !
                         end
@@ -2499,7 +2370,7 @@ proc scan-one-proc ptr int -- int do
                     end
                 end
                 let token-index output-count do
-                    if token-index ctx @ctx-token-count >= do
+                    if token-index ctx @ModuleContext.token_count >= do
                         "expected do after procedure signature" fail
                     end
                     output-count ctx proc-index proc-output-count-offset set-proc-field
@@ -2508,10 +2379,10 @@ proc scan-one-proc ptr int -- int do
                 peek body-start do ctx proc-index proc-body-start-offset set-proc-field
                     ctx body-start scan-block-end
                     peek next-token do 1 - ctx proc-index proc-body-end-offset set-proc-field
-                        proc-index 1 + ctx !ctx-proc-count
+                        proc-index 1 + ctx !ModuleContext.proc_count
 
                         if ctx name-token "main" token-equals do
-                            if ctx @ctx-main-proc 0 >= do
+                            if ctx @ModuleContext.main_proc 0 >= do
                                 "duplicate main procedure" fail
                             end
                             if
@@ -2520,7 +2391,7 @@ proc scan-one-proc ptr int -- int do
                             do
                                 "main must have an empty stack contract" fail
                             end
-                            proc-index ctx !ctx-main-proc
+                            proc-index ctx !ModuleContext.main_proc
                         end
                         next-token
                     end
@@ -2530,7 +2401,7 @@ proc scan-one-proc ptr int -- int do
     end
 end
 
-proc scan-one-extern ptr int -- int do
+proc scan-one-extern ModuleContext int -- int do
     let ctx extern-token do
         extern-token 1 +
         let name-token do
@@ -2541,7 +2412,7 @@ proc scan-one-extern ptr int -- int do
                 end
                 name-token 1 +
                 let symbol-token do
-                    if symbol-token ctx @ctx-token-count >= do
+                    if symbol-token ctx @ModuleContext.token_count >= do
                         "expected C symbol" fail
                     end
                     ctx symbol-token require-word
@@ -2550,11 +2421,11 @@ proc scan-one-extern ptr int -- int do
                     end
                     symbol-token ctx proc-index proc-c-symbol-token-offset set-proc-field
 
-                    ctx @ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
+                    ctx @ModuleContext.type_count ctx proc-index proc-input-start-offset set-proc-field
                     symbol-token 1 + 0
                     while
                         peek token-index count do
-                            token-index ctx @ctx-token-count <
+                            token-index ctx @ModuleContext.token_count <
                             if dup do
                                 drop ctx token-index "--" token-equals !
                             end
@@ -2566,18 +2437,18 @@ proc scan-one-extern ptr int -- int do
                         end
                     end
                     let token-index input-count do
-                        if token-index ctx @ctx-token-count >= do
+                        if token-index ctx @ModuleContext.token_count >= do
                             "expected -- in external signature" fail
                         end
                         input-count ctx proc-index proc-input-count-offset set-proc-field
                         token-index 1 +
                     end
 
-                    ctx @ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
+                    ctx @ModuleContext.type_count ctx proc-index proc-output-start-offset set-proc-field
                     0
                     while
                         peek token-index count do
-                            token-index ctx @ctx-token-count <
+                            token-index ctx @ModuleContext.token_count <
                             if dup do
                                 drop ctx token-index "end" token-equals !
                             end
@@ -2589,14 +2460,14 @@ proc scan-one-extern ptr int -- int do
                         end
                     end
                     let token-index output-count do
-                        if token-index ctx @ctx-token-count >= do
+                        if token-index ctx @ModuleContext.token_count >= do
                             "expected end after external signature" fail
                         end
                         if output-count 1 > do
                             "external procedure may return at most one value" fail
                         end
                         output-count ctx proc-index proc-output-count-offset set-proc-field
-                        proc-index 1 + ctx !ctx-proc-count
+                        proc-index 1 + ctx !ModuleContext.proc_count
                         token-index 1 +
                     end
                 end
@@ -2605,70 +2476,70 @@ proc scan-one-extern ptr int -- int do
     end
 end
 
-proc import-address ptr int -- ptr do
+proc import-address ModuleContext int -- ptr do
     let ctx index do
-        ctx @ctx-imports index import-bytes * +
+        ctx @ModuleContext.imports index import-bytes * +
     end
 end
 
-proc import-field ptr int int -- int do
+proc import-field ModuleContext int int -- int do
     let ctx index offset do
         ctx index import-address offset field-read
     end
 end
 
-proc set-import-field int ptr int int -- do
+proc set-import-field int ModuleContext int int -- do
     let value ctx index offset do
         value ctx index import-address offset field-write
     end
 end
 
-proc import-path-token-at ptr int -- int do import-path-token-offset import-field end
-proc import-name-token-at ptr int -- int do import-name-token-offset import-field end
-proc import-alias-token-at ptr int -- int do import-alias-token-offset import-field end
-proc import-target-module-at ptr int -- ptr do
-    peek ctx index do import-address import-target-module-offset pointer-field-read end
+proc import-path-token-at ModuleContext int -- int do import-path-token-offset import-field end
+proc import-name-token-at ModuleContext int -- int do import-name-token-offset import-field end
+proc import-alias-token-at ModuleContext int -- int do import-alias-token-offset import-field end
+proc import-target-module-at ModuleContext int -- ModuleContext do
+    peek ctx index do import-address import-target-module-offset pointer-field-read ModuleContext cast end
 end
-proc import-canonical-path-at ptr int -- ptr do
+proc import-canonical-path-at ModuleContext int -- ptr do
     peek ctx index do import-address import-canonical-path-offset pointer-field-read end
 end
-proc import-canonical-path-length-at ptr int -- int do import-canonical-path-length-offset import-field end
+proc import-canonical-path-length-at ModuleContext int -- int do import-canonical-path-length-offset import-field end
 
-proc set-import-target-module ptr ptr int -- do
-    peek module ctx index do import-address import-target-module-offset pointer-field-write end
+proc set-import-target-module ModuleContext ModuleContext int -- do
+    let module ctx index do module ptr cast ctx index import-address import-target-module-offset pointer-field-write end
 end
 
-proc scope-address ptr int -- ptr do
-    let ctx index do ctx @ctx-scope index scope-bytes * + end
+proc scope-address ModuleContext int -- ptr do
+    let ctx index do ctx @ModuleContext.scope index scope-bytes * + end
 end
 
-proc scope-field ptr int int -- int do
+proc scope-field ModuleContext int int -- int do
     let ctx index offset do ctx index scope-address offset field-read end
 end
 
-proc set-scope-field int ptr int int -- do
+proc set-scope-field int ModuleContext int int -- do
     let value ctx index offset do value ctx index scope-address offset field-write end
 end
 
-proc scope-name-module-at ptr int -- ptr do
-    peek ctx index do scope-address scope-name-module-offset pointer-field-read end
+proc scope-name-module-at ModuleContext int -- ModuleContext do
+    peek ctx index do scope-address scope-name-module-offset pointer-field-read ModuleContext cast end
 end
-proc scope-name-start-at ptr int -- int do scope-name-start-offset scope-field end
-proc scope-name-length-at ptr int -- int do scope-name-length-offset scope-field end
-proc scope-kind-at ptr int -- int do scope-kind-offset scope-field end
-proc scope-definition-module-at ptr int -- ptr do
-    peek ctx index do scope-address scope-definition-module-offset pointer-field-read end
+proc scope-name-start-at ModuleContext int -- int do scope-name-start-offset scope-field end
+proc scope-name-length-at ModuleContext int -- int do scope-name-length-offset scope-field end
+proc scope-kind-at ModuleContext int -- int do scope-kind-offset scope-field end
+proc scope-definition-module-at ModuleContext int -- ModuleContext do
+    peek ctx index do scope-address scope-definition-module-offset pointer-field-read ModuleContext cast end
 end
-proc scope-definition-index-at ptr int -- int do scope-definition-index-offset scope-field end
+proc scope-definition-index-at ModuleContext int -- int do scope-definition-index-offset scope-field end
 
-proc set-scope-name-module ptr ptr int -- do
-    peek module ctx index do scope-address scope-name-module-offset pointer-field-write end
+proc set-scope-name-module ModuleContext ModuleContext int -- do
+    let module ctx index do module ptr cast ctx index scope-address scope-name-module-offset pointer-field-write end
 end
-proc set-scope-definition-module ptr ptr int -- do
-    peek module ctx index do scope-address scope-definition-module-offset pointer-field-write end
+proc set-scope-definition-module ModuleContext ModuleContext int -- do
+    let module ctx index do module ptr cast ctx index scope-address scope-definition-module-offset pointer-field-write end
 end
 
-proc token-contains-byte ptr int int -- bool do
+proc token-contains-byte ModuleContext int int -- bool do
     let ctx token byte do
         ctx token token-slice let bytes length do
             0 false
@@ -2685,7 +2556,7 @@ proc token-contains-byte ptr int int -- bool do
     end
 end
 
-proc require-import-name ptr int -- do
+proc require-import-name ModuleContext int -- do
     peek ctx token do require-word
         if ctx token "*" token-equals do
             "wildcard imports are not supported" fail
@@ -2707,32 +2578,32 @@ proc require-import-name ptr int -- do
     end
 end
 
-proc add-import ptr int int int ptr int -- do
+proc add-import ModuleContext int int int ptr int -- do
     let ctx path-token name-token alias-token canonical canonical-length do
-        ctx @ctx-import-count let import-index do
+        ctx @ModuleContext.import_count let import-index do
             path-token ctx import-index import-path-token-offset set-import-field
             name-token ctx import-index import-name-token-offset set-import-field
             alias-token ctx import-index import-alias-token-offset set-import-field
-            0 ptr cast ctx import-index import-address import-target-module-offset pointer-field-write
+            0 ptr cast ModuleContext cast ctx import-index set-import-target-module
             canonical ctx import-index import-address import-canonical-path-offset pointer-field-write
             canonical-length ctx import-index import-canonical-path-length-offset set-import-field
-            ctx @ctx-import-count 1 + ctx !ctx-import-count
+            ctx @ModuleContext.import_count 1 + ctx !ModuleContext.import_count
         end
     end
 end
 
-proc scan-import-item ptr int ptr int int -- int do
+proc scan-import-item ModuleContext int ptr int int -- int do
     let ctx path-token canonical canonical-length token do
-        if token ctx @ctx-token-count >= do "expected imported name" fail end
+        if token ctx @ModuleContext.token_count >= do "expected imported name" fail end
         ctx token require-import-name
         token let name-token do
             token 1 + let next-token do
-                if next-token ctx @ctx-token-count >= do
+                if next-token ctx @ModuleContext.token_count >= do
                     ctx path-token name-token 0 1 - canonical canonical-length add-import
                     next-token
                 elif ctx next-token "as" token-equals do
                     next-token 1 + let alias-token do
-                        if alias-token ctx @ctx-token-count >= do "expected import alias" fail end
+                        if alias-token ctx @ModuleContext.token_count >= do "expected import alias" fail end
                         ctx alias-token require-import-name
                         ctx path-token name-token alias-token canonical canonical-length add-import
                         alias-token 1 +
@@ -2746,9 +2617,9 @@ proc scan-import-item ptr int ptr int int -- int do
     end
 end
 
-proc import-list-continues ptr int -- bool do
+proc import-list-continues ModuleContext int -- bool do
     let ctx token do
-        if token ctx @ctx-token-count >= do
+        if token ctx @ModuleContext.token_count >= do
             false
         else
             ctx token ")" token-equals !
@@ -2756,27 +2627,27 @@ proc import-list-continues ptr int -- bool do
     end
 end
 
-proc scan-one-import ptr int -- int do
+proc scan-one-import ModuleContext int -- int do
     let ctx token do
         token 1 + let path-token do
-            if path-token ctx @ctx-token-count >= do "expected import path string" fail end
+            if path-token ctx @ModuleContext.token_count >= do "expected import path string" fail end
             if ctx path-token token-kind-at token-string != do "expected import path string" fail end
             path-token 1 + let import-token do
-                if import-token ctx @ctx-token-count >= do "expected import after import path" fail end
+                if import-token ctx @ModuleContext.token_count >= do "expected import after import path" fail end
                 if ctx import-token "import" token-equals ! do "expected import after import path" fail end
                 ctx path-token normalize-import-path let canonical canonical-length do
                     import-token 1 + let item-token do
-                        if item-token ctx @ctx-token-count >= do "expected imported name" fail end
+                        if item-token ctx @ModuleContext.token_count >= do "expected imported name" fail end
                         if ctx item-token "(" token-equals do
                             item-token 1 + let next-token do
-                                if next-token ctx @ctx-token-count >= do "expected ) after import list" fail end
+                                if next-token ctx @ModuleContext.token_count >= do "expected ) after import list" fail end
                                 if ctx next-token ")" token-equals do "expected imported name" fail end
                                 next-token
                                 while dup ctx swap import-list-continues do
                                     let list-token do ctx path-token canonical canonical-length list-token scan-import-item end
                                 end
                                 let list-token do
-                                    if list-token ctx @ctx-token-count >= do "expected ) after import list" fail end
+                                    if list-token ctx @ModuleContext.token_count >= do "expected ) after import list" fail end
                                     if ctx list-token ")" token-equals ! do
                                         if ctx list-token 44 token-contains-byte do "commas are not valid in import lists" fail end
                                         "expected ) after import list" fail
@@ -2794,7 +2665,7 @@ proc scan-one-import ptr int -- int do
     end
 end
 
-proc token-starts-block ptr int -- bool do
+proc token-starts-block ModuleContext int -- bool do
     let ctx token do
         if ctx token token-kind-at token-word != do
             false
@@ -2807,21 +2678,21 @@ proc token-starts-block ptr int -- bool do
     end
 end
 
-proc scan-declarations ptr -- do
+proc scan-declarations ModuleContext -- do
     let ctx do
-        0 ctx !ctx-proc-count
-        0 ctx !ctx-type-count
-        0 ctx !ctx-macro-count
-        0 ctx !ctx-constant-count
-        0 ctx !ctx-import-count
-        0 ctx !ctx-record-count
-        0 ctx !ctx-record-field-count
-        0 ctx !ctx-union-count
-        0 ctx !ctx-union-case-count
-        0 ctx !ctx-function-count
-        0 ctx !ctx-function-type-count
+        0 ctx !ModuleContext.proc_count
+        0 ctx !ModuleContext.type_count
+        0 ctx !ModuleContext.macro_count
+        0 ctx !ModuleContext.constant_count
+        0 ctx !ModuleContext.import_count
+        0 ctx !ModuleContext.record_count
+        0 ctx !ModuleContext.record_field_count
+        0 ctx !ModuleContext.union_count
+        0 ctx !ModuleContext.union_case_count
+        0 ctx !ModuleContext.function_count
+        0 ctx !ModuleContext.function_type_count
         0
-        while dup ctx @ctx-token-count < do
+        while dup ctx @ModuleContext.token_count < do
             let token-index do
                 if
                     ctx token-index token-kind-at token-word ==
@@ -2870,7 +2741,7 @@ proc scan-declarations ptr -- do
                 do
                     ctx token-index scan-one-function
                 else
-                    if ctx @ctx-is-root do
+                    if ctx @ModuleContext.is_root do
                         "only declarations and imports are allowed at top level" fail
                         token-index 1 +
                     elif ctx token-index token-starts-block do
@@ -2882,8 +2753,8 @@ proc scan-declarations ptr -- do
             end
         end
         drop
-        if ctx @ctx-is-root do
-            if ctx @ctx-main-proc 0 < do
+        if ctx @ModuleContext.is_root do
+            if ctx @ModuleContext.main_proc 0 < do
                 "missing main procedure" fail
             end
         end
@@ -2930,7 +2801,7 @@ const local-id-offset 24 end
 const local-module-offset 32 end
 const local-bytes 40 end
 
-proc @cc-defining-module ptr -- ptr do cc-defining-module-offset pointer-field-read end
+proc @cc-defining-module ptr -- ModuleContext do cc-defining-module-offset pointer-field-read ModuleContext cast end
 proc @cc-proc ptr -- int do cc-proc-offset field-read end
 proc @cc-type-stack ptr -- ptr do cc-type-stack-offset pointer-field-read end
 proc @cc-type-count ptr -- int do cc-type-count-offset field-read end
@@ -2941,13 +2812,13 @@ proc @cc-local-count ptr -- int do cc-local-count-offset field-read end
 proc @cc-next-local ptr -- int do cc-next-local-offset field-read end
 proc @cc-indent ptr -- int do cc-indent-offset field-read end
 proc @cc-program ptr -- ptr do cc-program-offset pointer-field-read end
-proc @cc-procedure-module ptr -- ptr do cc-procedure-module-offset pointer-field-read end
-proc @cc-scope-module ptr -- ptr do cc-scope-module-offset pointer-field-read end
+proc @cc-procedure-module ptr -- ModuleContext do cc-procedure-module-offset pointer-field-read ModuleContext cast end
+proc @cc-scope-module ptr -- ModuleContext do cc-scope-module-offset pointer-field-read ModuleContext cast end
 proc @cc-emitting ptr -- bool do cc-emitting-offset field-read 0 != end
 proc @cc-max-type-count ptr -- int do cc-max-type-count-offset field-read end
 proc @cc-type-capacity ptr -- int do cc-type-capacity-offset field-read end
 
-proc !cc-defining-module ptr ptr -- do cc-defining-module-offset pointer-field-write end
+proc !cc-defining-module ModuleContext ptr -- do let value cc do value ptr cast cc cc-defining-module-offset pointer-field-write end end
 proc !cc-proc int ptr -- do cc-proc-offset field-write end
 proc !cc-type-stack ptr ptr -- do cc-type-stack-offset pointer-field-write end
 proc !cc-type-count int ptr -- do cc-type-count-offset field-write end
@@ -2958,8 +2829,8 @@ proc !cc-local-count int ptr -- do cc-local-count-offset field-write end
 proc !cc-next-local int ptr -- do cc-next-local-offset field-write end
 proc !cc-indent int ptr -- do cc-indent-offset field-write end
 proc !cc-program ptr ptr -- do cc-program-offset pointer-field-write end
-proc !cc-procedure-module ptr ptr -- do cc-procedure-module-offset pointer-field-write end
-proc !cc-scope-module ptr ptr -- do cc-scope-module-offset pointer-field-write end
+proc !cc-procedure-module ModuleContext ptr -- do let value cc do value ptr cast cc cc-procedure-module-offset pointer-field-write end end
+proc !cc-scope-module ModuleContext ptr -- do let value cc do value ptr cast cc cc-scope-module-offset pointer-field-write end end
 proc !cc-emitting bool ptr -- do
     let value cc do
         if value do 1 else 0 end
@@ -3133,6 +3004,9 @@ end
 proc local-field ptr int -- int do field-read end
 proc set-local-field int ptr int -- do field-write end
 
+proc @local-module ptr -- ModuleContext do local-module-offset pointer-field-read ModuleContext cast end
+proc !local-module ModuleContext ptr -- do let value local do value ptr cast local local-module-offset pointer-field-write end end
+
 proc add-local ptr int int -- int do
     let cc name-token value-type do
         cc cc @cc-local-count local-address
@@ -3141,7 +3015,7 @@ proc add-local ptr int int -- int do
             cc @cc-defining-module name-token token-length-at local local-name-length-offset set-local-field
             value-type local local-type-offset set-local-field
             cc @cc-next-local local local-id-offset set-local-field
-            cc @cc-defining-module local local-module-offset pointer-field-write
+            cc @cc-defining-module local !local-module
             cc @cc-local-count 1 + cc !cc-local-count
             cc @cc-next-local
             cc @cc-next-local 1 + cc !cc-next-local
@@ -3151,7 +3025,7 @@ end
 
 proc local-name-equals ptr ptr int -- bool do
     let cc local token-index do
-        local local-module-offset pointer-field-read @ctx-source
+        local @local-module @ModuleContext.source
         local local-name-start-offset local-field +
         local local-name-length-offset local-field
         cc @cc-defining-module token-index token-slice
@@ -3216,20 +3090,20 @@ proc indent-less ptr -- do
 end
 
 // BEGIN C EMITTER SUPPORT
-proc raw-string-byte ptr int int -- int do
+proc raw-string-byte ModuleContext int int -- int do
     let ctx token raw-index do
-        ctx @ctx-source
+        ctx @ModuleContext.source
         ctx token token-start-at
         raw-index +
         byte-read
     end
 end
 
-proc raw-string-length ptr int -- int do
+proc raw-string-length ModuleContext int -- int do
     peek ctx token do token-length-at end
 end
 
-proc decoded-string-unit ptr int int -- int int do
+proc decoded-string-unit ModuleContext int int -- int int do
     peek ctx token raw-index do raw-string-byte
         let byte do
             if byte 92 != do
@@ -3271,7 +3145,7 @@ proc decoded-string-unit ptr int int -- int int do
     end
 end
 
-proc decoded-string-length ptr int -- int do
+proc decoded-string-length ModuleContext int -- int do
     let ctx token do
         0 0
         while
@@ -3290,7 +3164,7 @@ proc decoded-string-length ptr int -- int do
     end
 end
 
-proc decoded-string-byte-from ptr int int int -- int do
+proc decoded-string-byte-from ModuleContext int int int -- int do
     let ctx token raw-index byte-index do
         if raw-index ctx token raw-string-length >= do
             "decoded string byte index out of bounds" fail
@@ -3306,13 +3180,13 @@ proc decoded-string-byte-from ptr int int int -- int do
     end
 end
 
-proc decoded-string-byte ptr int int -- int do
+proc decoded-string-byte ModuleContext int int -- int do
     let ctx token byte-index do
         ctx token 0 byte-index decoded-string-byte-from
     end
 end
 
-proc decode-string-copy-from ptr int int ptr int -- do
+proc decode-string-copy-from ModuleContext int int ptr int -- do
     let ctx token raw-index destination destination-index do
         if raw-index ctx token raw-string-length < do
             ctx token raw-index decoded-string-unit let value width do
@@ -3408,7 +3282,7 @@ proc add-pooled-string ptr ptr int int int -- int do
     end
 end
 
-proc intern-string-token ptr ptr int -- do
+proc intern-string-token ptr ModuleContext int -- do
     let program ctx token do
         ctx token decoded-string-length
         peek length do alloc
@@ -3431,10 +3305,10 @@ proc intern-string-token ptr ptr int -- do
     end
 end
 
-proc intern-module-strings ptr ptr -- do
+proc intern-module-strings ptr ModuleContext -- do
     let program ctx do
         0
-        while dup ctx @ctx-token-count < do
+        while dup ctx @ModuleContext.token_count < do
             dup
             let token do
                 if ctx token token-kind-at token-string == do
@@ -3451,9 +3325,9 @@ proc initialize-string-pool ptr -- do
     peek program do @program-token-count 1 + string-bytes * alloc program !program-strings
         0 program !program-string-count
         program @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup program swap intern-module-strings
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
@@ -3649,7 +3523,7 @@ proc utf8-codepoint-at ptr int int -- int int do
     end
 end
 
-proc lex-advance-count ptr int -- do
+proc lex-advance-count ModuleContext int -- do
     let ctx remaining do
         remaining
         while dup 0 > do
@@ -3783,7 +3657,7 @@ proc write-path-components ptr ptr ptr int ptr int int -- int do
     end
 end
 
-proc normalize-import-path ptr int -- ptr int do
+proc normalize-import-path ModuleContext int -- ptr int do
     peek ctx token do decoded-string-length
         let length do
             if length max-import-path-bytes > do
@@ -3841,66 +3715,66 @@ proc normalize-import-path ptr int -- ptr int do
     end
 end
 
-proc initialize-module-source ptr ptr int -- do
+proc initialize-module-source ModuleContext ptr int -- do
     let ctx source source-length do
         if source-length max-source-bytes > do
             "source exceeds max-source-bytes" fail
         end
-        source ctx !ctx-source
-        source-length ctx !ctx-source-length
-        source-length 1 + token-bytes * alloc ctx !ctx-tokens
-        0 ctx !ctx-token-count
-        0 1 - ctx !ctx-main-proc
+        source ctx !ModuleContext.source
+        source-length ctx !ModuleContext.source_length
+        source-length 1 + token-bytes * alloc ctx !ModuleContext.tokens
+        0 ctx !ModuleContext.token_count
+        0 1 - ctx !ModuleContext.main_proc
         ctx lex
-        ctx @ctx-program @program-token-count ctx @ctx-token-count + ctx @ctx-program !program-token-count
+        ctx @ModuleContext.program @program-token-count ctx @ModuleContext.token_count + ctx @ModuleContext.program !program-token-count
 
-        ctx @ctx-token-count 1 + proc-bytes * alloc ctx !ctx-procs
-        ctx @ctx-token-count 1 + macro-bytes * alloc ctx !ctx-macros
-        ctx @ctx-token-count 1 + constant-bytes * alloc ctx !ctx-constants
-        ctx @ctx-token-count 1 + cell-bytes * alloc ctx !ctx-types
-        ctx @ctx-token-count 1 + import-bytes * alloc ctx !ctx-imports
-        ctx @ctx-token-count 1 + scope-bytes * alloc ctx !ctx-scope
-        ctx @ctx-token-count 1 + record-bytes * alloc ctx !ctx-records
-        ctx @ctx-token-count 1 + record-field-bytes * alloc ctx !ctx-record-fields
-        ctx @ctx-token-count 1 + union-bytes * alloc ctx !ctx-unions
-        ctx @ctx-token-count 1 + union-case-bytes * alloc ctx !ctx-union-cases
-        ctx @ctx-token-count 1 + function-bytes * alloc ctx !ctx-functions
-        ctx @ctx-token-count 1 + cell-bytes * alloc ctx !ctx-function-types
-        0 ctx !ctx-scope-count
-        resolve-new ctx !ctx-resolve-state
+        ctx @ModuleContext.token_count 1 + proc-bytes * alloc ctx !ModuleContext.procs
+        ctx @ModuleContext.token_count 1 + macro-bytes * alloc ctx !ModuleContext.macros
+        ctx @ModuleContext.token_count 1 + constant-bytes * alloc ctx !ModuleContext.constants
+        ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.types
+        ctx @ModuleContext.token_count 1 + import-bytes * alloc ctx !ModuleContext.imports
+        ctx @ModuleContext.token_count 1 + scope-bytes * alloc ctx !ModuleContext.scope
+        ctx @ModuleContext.token_count 1 + record-bytes * alloc ctx !ModuleContext.records
+        ctx @ModuleContext.token_count 1 + record-field-bytes * alloc ctx !ModuleContext.record_fields
+        ctx @ModuleContext.token_count 1 + union-bytes * alloc ctx !ModuleContext.unions
+        ctx @ModuleContext.token_count 1 + union-case-bytes * alloc ctx !ModuleContext.union_cases
+        ctx @ModuleContext.token_count 1 + function-bytes * alloc ctx !ModuleContext.functions
+        ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.function_types
+        0 ctx !ModuleContext.scope_count
+        resolve-new ctx !ModuleContext.resolve_state
         ctx scan-declarations
     end
 end
 
-proc find-module-by-path-from ptr ptr int -- ptr do
+proc find-module-by-path-from ModuleContext ptr int -- ModuleContext do
     let module path path-length do
-        if module int cast 0 == do
-            0 ptr cast
-        elif module @ctx-is-root do
-            module @ctx-next-module path path-length find-module-by-path-from
+        if module ptr cast int cast 0 == do
+            0 ptr cast ModuleContext cast
+        elif module @ModuleContext.is_root do
+            module @ModuleContext.next_module path path-length find-module-by-path-from
         elif
-            module @ctx-canonical-path
-            module @ctx-canonical-path-length
+            module @ModuleContext.canonical_path
+            module @ModuleContext.canonical_path_length
             path path-length
             bytes-equal
         do
             module
         else
-            module @ctx-next-module path path-length find-module-by-path-from
+            module @ModuleContext.next_module path path-length find-module-by-path-from
         end
     end
 end
 
-proc find-module-by-path ptr ptr int -- ptr do
+proc find-module-by-path ptr ptr int -- ModuleContext do
     let program path path-length do
         program @program-module-head path path-length find-module-by-path-from
     end
 end
 
-proc load-module-imports ptr ptr -- do
+proc load-module-imports ptr ModuleContext -- do
     let program module do
         0
-        while dup module @ctx-import-count < do
+        while dup module @ModuleContext.import_count < do
             dup let import-index do
                 program module import-index load-import-target drop
             end
@@ -3910,15 +3784,15 @@ proc load-module-imports ptr ptr -- do
     end
 end
 
-proc load-import-target ptr ptr int -- ptr do
+proc load-import-target ptr ModuleContext int -- ModuleContext do
     let program importing-module import-index do
         importing-module import-index import-canonical-path-at
         importing-module import-index import-canonical-path-length-at
         let canonical canonical-length do
             program canonical canonical-length find-module-by-path
             let existing do
-                if existing int cast 0 != do
-                    if existing @ctx-load-state load-loading == do
+                if existing ptr cast int cast 0 != do
+                    if existing @ModuleContext.load_state load-loading == do
                         "cyclic import" fail
                     end
                     existing importing-module import-index set-import-target-module
@@ -3929,21 +3803,21 @@ proc load-import-target ptr ptr int -- ptr do
                         if success ! do
                             "import file not found" fail
                         end
-                        ctx-bytes alloc
+                        ModuleContext:alloc
                         let module do
-                            canonical module !ctx-canonical-path
-                            canonical-length module !ctx-canonical-path-length
-                            0 ptr cast module !ctx-imports
-                            0 module !ctx-import-count
-                            0 ptr cast module !ctx-scope
-                            0 module !ctx-scope-count
-                            load-loading module !ctx-load-state
-                            resolve-new module !ctx-resolve-state
-                            false module !ctx-is-root
+                            canonical module !ModuleContext.canonical_path
+                            canonical-length module !ModuleContext.canonical_path_length
+                            0 ptr cast module !ModuleContext.imports
+                            0 module !ModuleContext.import_count
+                            0 ptr cast module !ModuleContext.scope
+                            0 module !ModuleContext.scope_count
+                            load-loading module !ModuleContext.load_state
+                            resolve-new module !ModuleContext.resolve_state
+                            false module !ModuleContext.is_root
                             program module program-add-module
                             module source source-length initialize-module-source
                             program module load-module-imports
-                            load-loaded module !ctx-load-state
+                            load-loaded module !ModuleContext.load_state
                             module importing-module import-index set-import-target-module
                             module
                         end
@@ -3954,9 +3828,9 @@ proc load-import-target ptr ptr int -- ptr do
     end
 end
 
-proc scope-name-equals ptr int ptr int -- bool do
+proc scope-name-equals ModuleContext int ptr int -- bool do
     let ctx scope-index bytes length do
-        ctx scope-index scope-name-module-at @ctx-source
+        ctx scope-index scope-name-module-at @ModuleContext.source
         ctx scope-index scope-name-start-at +
         ctx scope-index scope-name-length-at
         bytes length
@@ -3964,9 +3838,9 @@ proc scope-name-equals ptr int ptr int -- bool do
     end
 end
 
-proc find-scope-symbol-from ptr ptr int int -- int do
+proc find-scope-symbol-from ModuleContext ptr int int -- int do
     let ctx bytes length scope-index do
-        if scope-index ctx @ctx-scope-count >= do
+        if scope-index ctx @ModuleContext.scope_count >= do
             0 1 -
         elif ctx scope-index bytes length scope-name-equals do
             scope-index
@@ -3976,7 +3850,7 @@ proc find-scope-symbol-from ptr ptr int int -- int do
     end
 end
 
-proc find-scope-symbol ptr ptr int -- int do
+proc find-scope-symbol ModuleContext ModuleContext int -- int do
     let ctx name-module token do
         name-module token token-slice
         let bytes length do
@@ -3985,18 +3859,18 @@ proc find-scope-symbol ptr ptr int -- int do
     end
 end
 
-proc scope-symbols-identical ptr int ptr int -- bool do
+proc scope-symbols-identical ModuleContext int ModuleContext int -- bool do
     let first first-index second second-index do
         first first-index scope-kind-at second second-index scope-kind-at ==
-        first first-index scope-definition-module-at int cast
-        second second-index scope-definition-module-at int cast == &&
+        first first-index scope-definition-module-at ptr cast int cast
+        second second-index scope-definition-module-at ptr cast int cast == &&
         first first-index scope-definition-index-at second second-index scope-definition-index-at == &&
     end
 end
 
-proc add-scope-symbol ptr ptr int int int ptr int -- do
+proc add-scope-symbol ModuleContext ModuleContext int int int ModuleContext int -- do
     let ctx name-module name-start name-length kind definition-module definition-index do
-        ctx @ctx-scope-count
+        ctx @ModuleContext.scope_count
         let scope-index do
             name-module ctx scope-index set-scope-name-module
             name-start ctx scope-index scope-name-start-offset set-scope-field
@@ -4004,12 +3878,12 @@ proc add-scope-symbol ptr ptr int int int ptr int -- do
             kind ctx scope-index scope-kind-offset set-scope-field
             definition-module ctx scope-index set-scope-definition-module
             definition-index ctx scope-index scope-definition-index-offset set-scope-field
-            ctx @ctx-scope-count 1 + ctx !ctx-scope-count
+            ctx @ModuleContext.scope_count 1 + ctx !ModuleContext.scope_count
         end
     end
 end
 
-proc add-scope-symbol-from-token ptr ptr int int ptr int -- do
+proc add-scope-symbol-from-token ModuleContext ModuleContext int int ModuleContext int -- do
     let ctx name-module token kind definition-module definition-index do
         ctx
         name-module
@@ -4022,10 +3896,10 @@ proc add-scope-symbol-from-token ptr ptr int int ptr int -- do
     end
 end
 
-proc resolve-one-import ptr int -- do
+proc resolve-one-import ModuleContext int -- do
     peek ctx import-index do import-target-module-at
         let target do
-            if target int cast 0 == do
+            if target ptr cast int cast 0 == do
                 "internal import target is missing" fail
             end
             target resolve-module-scope
@@ -4089,22 +3963,22 @@ proc resolve-one-import ptr int -- do
     end
 end
 
-proc resolve-module-scope ptr -- do
+proc resolve-module-scope ModuleContext -- do
     let ctx do
-        if ctx @ctx-resolve-state resolve-resolved == do
+        if ctx @ModuleContext.resolve_state resolve-resolved == do
         else
-            if ctx @ctx-resolve-state resolve-resolving == do
+            if ctx @ModuleContext.resolve_state resolve-resolving == do
                 "cyclic import" fail
             end
-            resolve-resolving ctx !ctx-resolve-state
+            resolve-resolving ctx !ModuleContext.resolve_state
             0
-            while dup ctx @ctx-import-count < do
+            while dup ctx @ModuleContext.import_count < do
                 dup ctx swap resolve-one-import
                 1 +
             end
             drop
             0
-            while dup ctx @ctx-record-count < do
+            while dup ctx @ModuleContext.record_count < do
                 dup
                 let record-index do
                     ctx
@@ -4120,7 +3994,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx @ctx-union-count < do
+            while dup ctx @ModuleContext.union_count < do
                 dup
                 let union-index do
                     ctx
@@ -4136,7 +4010,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx @ctx-function-count < do
+            while dup ctx @ModuleContext.function_count < do
                 dup
                 let function-index do
                     ctx
@@ -4152,7 +4026,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx @ctx-macro-count < do
+            while dup ctx @ModuleContext.macro_count < do
                 dup
                 let macro-index do
                     ctx
@@ -4168,7 +4042,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx @ctx-constant-count < do
+            while dup ctx @ModuleContext.constant_count < do
                 dup
                 let constant-index do
                     ctx
@@ -4184,7 +4058,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx @ctx-proc-count < do
+            while dup ctx @ModuleContext.proc_count < do
                 dup
                 let proc-index do
                     ctx
@@ -4199,16 +4073,16 @@ proc resolve-module-scope ptr -- do
                 1 +
             end
             drop
-            resolve-resolved ctx !ctx-resolve-state
+            resolve-resolved ctx !ModuleContext.resolve_state
         end
     end
 end
 
 proc resolve-all-module-scopes ptr -- do
     peek program do @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup resolve-module-scope
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
@@ -4418,7 +4292,7 @@ proc checked-constant-shift-right int int -- int do
     end
 end
 
-proc constant-int-binary-word ptr int -- bool do
+proc constant-int-binary-word ModuleContext int -- bool do
     peek module token-index do "+" token-equals
         module token-index "-" token-equals ||
         module token-index "*" token-equals ||
@@ -4432,7 +4306,7 @@ proc constant-int-binary-word ptr int -- bool do
     end
 end
 
-proc constant-comparison-word ptr int -- bool do
+proc constant-comparison-word ModuleContext int -- bool do
     peek module token-index do "==" token-equals
         module token-index "!=" token-equals ||
         module token-index "<" token-equals ||
@@ -4442,13 +4316,13 @@ proc constant-comparison-word ptr int -- bool do
     end
 end
 
-proc constant-bool-binary-word ptr int -- bool do
+proc constant-bool-binary-word ModuleContext int -- bool do
     peek module token-index do "&&" token-equals
         module token-index "||" token-equals ||
     end
 end
 
-proc evaluate-constant-int-binary ptr ptr int -- do
+proc evaluate-constant-int-binary ptr ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-int constant-evaluator-pop-expected
         let right do
@@ -4483,7 +4357,7 @@ proc evaluate-constant-int-binary ptr ptr int -- do
     end
 end
 
-proc evaluate-constant-comparison ptr ptr int -- do
+proc evaluate-constant-comparison ptr ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-int constant-evaluator-pop-expected
         let right do
@@ -4510,7 +4384,7 @@ proc evaluate-constant-comparison ptr ptr int -- do
     end
 end
 
-proc evaluate-constant-bool-binary ptr ptr int -- do
+proc evaluate-constant-bool-binary ptr ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-bool constant-evaluator-pop-expected
         let right do
@@ -4544,7 +4418,7 @@ proc evaluate-constant-divmod ptr -- do
     end
 end
 
-proc evaluate-constant-unary ptr ptr int -- do
+proc evaluate-constant-unary ptr ModuleContext int -- do
     let evaluator module token-index do
         if module token-index "~" token-equals do
             evaluator type-int constant-evaluator-pop-expected
@@ -4556,7 +4430,7 @@ proc evaluate-constant-unary ptr ptr int -- do
     end
 end
 
-proc evaluate-constant-intrinsic ptr ptr int -- bool do
+proc evaluate-constant-intrinsic ptr ModuleContext int -- bool do
     let evaluator module token-index do
         if module token-index constant-int-binary-word do
             evaluator module token-index evaluate-constant-int-binary true
@@ -4577,7 +4451,7 @@ proc evaluate-constant-intrinsic ptr ptr int -- bool do
     end
 end
 
-proc constant-runtime-intrinsic-word ptr int -- bool do
+proc constant-runtime-intrinsic-word ModuleContext int -- bool do
     peek module token-index do "read-file" token-equals
         module token-index "cast" token-equals ||
         module token-index "alloc" token-equals ||
@@ -4609,7 +4483,7 @@ proc constant-runtime-intrinsic-word ptr int -- bool do
     end
 end
 
-proc scope-prefix-is-nominal ptr ptr int bool -- bool do
+proc scope-prefix-is-nominal ModuleContext ptr int bool -- bool do
     let scope bytes length allow-function do
         scope bytes length 0 find-scope-symbol-from
         let symbol-index do
@@ -4626,7 +4500,7 @@ proc scope-prefix-is-nominal ptr ptr int bool -- bool do
     end
 end
 
-proc scope-prefix-has-kind ptr ptr int int -- bool do
+proc scope-prefix-has-kind ModuleContext ptr int int -- bool do
     let scope bytes length expected-kind do
         scope bytes length 0 find-scope-symbol-from
         let symbol-index do
@@ -4639,7 +4513,7 @@ proc scope-prefix-has-kind ptr ptr int int -- bool do
     end
 end
 
-proc constant-qualified-nominal-word ptr ptr int -- bool do
+proc constant-qualified-nominal-word ModuleContext ModuleContext int -- bool do
     let scope module token-index do
         module token-index token-slice
         peek bytes length do 58 first-index-of-byte
@@ -4672,7 +4546,7 @@ proc constant-qualified-nominal-word ptr ptr int -- bool do
     end
 end
 
-proc constant-higher-priority-word ptr ptr int -- bool do
+proc constant-higher-priority-word ModuleContext ModuleContext int -- bool do
     let scope module token-index do
         module token-index "int" token-equals
         module token-index "bool" token-equals ||
@@ -4685,7 +4559,7 @@ proc constant-higher-priority-word ptr ptr int -- bool do
     end
 end
 
-proc evaluate-constant ptr int -- do
+proc evaluate-constant ModuleContext int -- do
     peek module constant-index do constant-state-at
         let state do
             if state constant-evaluated == do
@@ -4721,7 +4595,7 @@ proc evaluate-constant ptr int -- do
     end
 end
 
-proc append-constant-values ptr ptr int -- do
+proc append-constant-values ptr ModuleContext int -- do
     let evaluator module constant-index do
         module constant-index evaluate-constant
         module constant-index constant-values-at
@@ -4743,7 +4617,7 @@ proc append-constant-values ptr ptr int -- do
     end
 end
 
-proc scope-symbol-has-kind ptr int int -- bool do
+proc scope-symbol-has-kind ModuleContext int int -- bool do
     let scope symbol-index kind do
         if symbol-index 0 < do
             false
@@ -4753,7 +4627,7 @@ proc scope-symbol-has-kind ptr int int -- bool do
     end
 end
 
-proc evaluate-constant-word ptr ptr int -- do
+proc evaluate-constant-word ptr ModuleContext int -- do
     let evaluator module token-index do
         module module token-index find-scope-symbol
         let symbol-index do
@@ -4774,7 +4648,7 @@ proc evaluate-constant-word ptr ptr int -- do
     end
 end
 
-proc evaluate-constant-token ptr ptr int -- do
+proc evaluate-constant-token ptr ModuleContext int -- do
     let evaluator module token-index do
         module token-index token-kind-at
         let kind do
@@ -4793,7 +4667,7 @@ proc evaluate-constant-token ptr ptr int -- do
     end
 end
 
-proc evaluate-constant-range ptr ptr int int -- do
+proc evaluate-constant-range ptr ModuleContext int int -- do
     let evaluator module token-index body-end do
         token-index
         while dup body-end < do
@@ -4804,10 +4678,10 @@ proc evaluate-constant-range ptr ptr int int -- do
     end
 end
 
-proc evaluate-module-constants ptr -- do
+proc evaluate-module-constants ModuleContext -- do
     let module do
         0
-        while dup module @ctx-constant-count < do
+        while dup module @ModuleContext.constant_count < do
             dup module swap evaluate-constant
             1 +
         end
@@ -4817,15 +4691,15 @@ end
 
 proc evaluate-all-constants ptr -- do
     peek program do @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup evaluate-module-constants
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
 end
 
-proc resolve-nominal-type-token ptr int String -- int do
+proc resolve-nominal-type-token ModuleContext int String -- int do
     let ctx token-index error-message do
         ctx ctx token-index find-scope-symbol
         let symbol-index do
@@ -4857,10 +4731,10 @@ proc resolve-nominal-type-token ptr int String -- int do
     end
 end
 
-proc resolve-module-signature-types ptr -- do
+proc resolve-module-signature-types ModuleContext -- do
     let ctx do
         0
-        while dup ctx @ctx-type-count < do
+        while dup ctx @ModuleContext.type_count < do
             dup
             let type-index do
                 ctx type-index type-at
@@ -4870,7 +4744,7 @@ proc resolve-module-signature-types ptr -- do
                         value-type unresolved-type-token-index
                         "unknown type in procedure signature"
                         resolve-nominal-type-token
-                        ctx @ctx-types type-index cell-bytes * field-write
+                        ctx @ModuleContext.types type-index cell-bytes * field-write
                     end
                 end
             end
@@ -4880,10 +4754,10 @@ proc resolve-module-signature-types ptr -- do
     end
 end
 
-proc resolve-module-record-field-types ptr -- do
+proc resolve-module-record-field-types ModuleContext -- do
     let ctx do
         0
-        while dup ctx @ctx-record-field-count < do
+        while dup ctx @ModuleContext.record_field_count < do
             dup
             let field-index do
                 ctx field-index record-field-type-at
@@ -4903,10 +4777,10 @@ proc resolve-module-record-field-types ptr -- do
     end
 end
 
-proc resolve-module-union-case-types ptr -- do
+proc resolve-module-union-case-types ModuleContext -- do
     let ctx do
         0
-        while dup ctx @ctx-union-case-count < do
+        while dup ctx @ModuleContext.union_case_count < do
             dup
             let case-index do
                 ctx case-index union-case-payload-type-at
@@ -4926,10 +4800,10 @@ proc resolve-module-union-case-types ptr -- do
     end
 end
 
-proc resolve-module-function-signature-types ptr -- do
+proc resolve-module-function-signature-types ModuleContext -- do
     let ctx do
         0
-        while dup ctx @ctx-function-type-count < do
+        while dup ctx @ModuleContext.function_type_count < do
             dup
             let type-index do
                 ctx type-index function-signature-type-at
@@ -4951,18 +4825,18 @@ end
 
 proc resolve-all-types ptr -- do
     peek program do @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup resolve-module-record-field-types
             dup resolve-module-union-case-types
             dup resolve-module-function-signature-types
             dup resolve-module-signature-types
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
 end
 
-proc external-symbols-equal ptr int ptr int -- bool do
+proc external-symbols-equal ModuleContext int ModuleContext int -- bool do
     let first first-index second second-index do
         first first first-index proc-c-symbol-token-at token-slice
         second second second-index proc-c-symbol-token-at token-slice
@@ -4970,7 +4844,7 @@ proc external-symbols-equal ptr int ptr int -- bool do
     end
 end
 
-proc external-inputs-equal ptr int ptr int -- bool do
+proc external-inputs-equal ModuleContext int ModuleContext int -- bool do
     let first first-index second second-index do
         if first first-index proc-input-count-at second second-index proc-input-count-at != do
             false
@@ -4994,7 +4868,7 @@ proc external-inputs-equal ptr int ptr int -- bool do
     end
 end
 
-proc external-outputs-equal ptr int ptr int -- bool do
+proc external-outputs-equal ModuleContext int ModuleContext int -- bool do
     let first first-index second second-index do
         if first first-index proc-output-count-at second second-index proc-output-count-at != do
             false
@@ -5008,25 +4882,25 @@ proc external-outputs-equal ptr int ptr int -- bool do
     end
 end
 
-proc external-contracts-equal ptr int ptr int -- bool do
+proc external-contracts-equal ModuleContext int ModuleContext int -- bool do
     peek first first-index second second-index do external-inputs-equal
         first first-index second second-index external-outputs-equal &&
     end
 end
 
-proc function-input-type-at ptr int int -- int do
+proc function-input-type-at ModuleContext int int -- int do
     let ctx function-index input-index do
         ctx ctx function-index function-input-start-at input-index + function-signature-type-at
     end
 end
 
-proc function-output-type-at ptr int int -- int do
+proc function-output-type-at ModuleContext int int -- int do
     let ctx function-index output-index do
         ctx ctx function-index function-output-start-at output-index + function-signature-type-at
     end
 end
 
-proc function-proc-inputs-equal ptr int ptr int -- bool do
+proc function-proc-inputs-equal ModuleContext int ModuleContext int -- bool do
     let function-module function-index proc-module proc-index do
         if
             function-module function-index function-input-count-at
@@ -5054,7 +4928,7 @@ proc function-proc-inputs-equal ptr int ptr int -- bool do
     end
 end
 
-proc function-proc-outputs-equal ptr int ptr int -- bool do
+proc function-proc-outputs-equal ModuleContext int ModuleContext int -- bool do
     let function-module function-index proc-module proc-index do
         if
             function-module function-index function-output-count-at
@@ -5082,13 +4956,13 @@ proc function-proc-outputs-equal ptr int ptr int -- bool do
     end
 end
 
-proc function-proc-contracts-equal ptr int ptr int -- bool do
+proc function-proc-contracts-equal ModuleContext int ModuleContext int -- bool do
     peek function-module function-index proc-module proc-index do function-proc-inputs-equal
         function-module function-index proc-module proc-index function-proc-outputs-equal &&
     end
 end
 
-proc require-external-compatible-with-module ptr int ptr int -- do
+proc require-external-compatible-with-module ModuleContext int ModuleContext int -- do
     let ctx proc-index other limit do
         0
         while dup limit < do
@@ -5108,25 +4982,25 @@ proc require-external-compatible-with-module ptr int ptr int -- do
     end
 end
 
-proc require-external-compatible-with-earlier ptr ptr int -- do
+proc require-external-compatible-with-earlier ptr ModuleContext int -- do
     let program ctx proc-index do
         program @program-module-head
-        while dup int cast ctx int cast != do
+        while dup ptr cast int cast ctx ptr cast int cast != do
             dup
             let other do
-                ctx proc-index other other @ctx-proc-count require-external-compatible-with-module
+                ctx proc-index other other @ModuleContext.proc_count require-external-compatible-with-module
             end
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
         ctx proc-index ctx proc-index require-external-compatible-with-module
     end
 end
 
-proc validate-module-external-declarations ptr ptr -- do
+proc validate-module-external-declarations ptr ModuleContext -- do
     let program ctx do
         0
-        while dup ctx @ctx-proc-count < do
+        while dup ctx @ModuleContext.proc_count < do
             dup
             let proc-index do
                 if ctx proc-index proc-external-at do
@@ -5141,16 +5015,15 @@ end
 
 proc validate-external-declarations ptr -- do
     peek program do @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup program swap validate-module-external-declarations
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
 end
 
-proc emit-c-preamble ptr -- do
-    drop
+proc emit-c-preamble -- do
     "#define _POSIX_C_SOURCE 200809L
 
 #include <errno.h>
@@ -5412,13 +5285,13 @@ proc emit-c-abi-type int -- do
     end
 end
 
-proc emit-c-symbol ptr int -- do
+proc emit-c-symbol ModuleContext int -- do
     let ctx proc-index do
         ctx ctx proc-index proc-c-symbol-token-at token-slice emit-bytes
     end
 end
 
-proc emit-c-parameter-types ptr int int -- do
+proc emit-c-parameter-types ModuleContext int int -- do
     let ctx proc-index input-index do
         if input-index ctx proc-index proc-input-count-at < do
             if input-index 0 != do ", " emit end
@@ -5430,7 +5303,7 @@ proc emit-c-parameter-types ptr int int -- do
     end
 end
 
-proc emit-external-c-prototype ptr int -- do
+proc emit-external-c-prototype ModuleContext int -- do
     let ctx proc-index do
         "extern " emit
         if ctx proc-index proc-output-count-at 0 == do
@@ -5469,9 +5342,9 @@ proc emit-result-typedef int -- do
     end
 end
 
-proc ctx-proc-uses-result-arity-from ptr int int -- bool do
+proc ctx-proc-uses-result-arity-from ModuleContext int int -- bool do
     let ctx output-count proc-index do
-        if proc-index ctx @ctx-proc-count >= do
+        if proc-index ctx @ModuleContext.proc_count >= do
             false
         elif ctx proc-index proc-output-count-at output-count == do
             true
@@ -5481,9 +5354,9 @@ proc ctx-proc-uses-result-arity-from ptr int int -- bool do
     end
 end
 
-proc ctx-function-uses-result-arity-from ptr int int -- bool do
+proc ctx-function-uses-result-arity-from ModuleContext int int -- bool do
     let ctx output-count function-index do
-        if function-index ctx @ctx-function-count >= do
+        if function-index ctx @ModuleContext.function_count >= do
             false
         elif ctx function-index function-output-count-at output-count == do
             true
@@ -5493,7 +5366,7 @@ proc ctx-function-uses-result-arity-from ptr int int -- bool do
     end
 end
 
-proc ctx-uses-result-arity ptr int -- bool do
+proc ctx-uses-result-arity ModuleContext int -- bool do
     let ctx output-count do
         if ctx output-count 0 ctx-proc-uses-result-arity-from do
             true
@@ -5503,14 +5376,14 @@ proc ctx-uses-result-arity ptr int -- bool do
     end
 end
 
-proc modules-use-result-arity ptr int ptr -- bool do
+proc modules-use-result-arity ptr int ModuleContext -- bool do
     let program output-count ctx do
-        if ctx int cast 0 == do
+        if ctx ptr cast int cast 0 == do
             false
         elif ctx output-count ctx-uses-result-arity do
             true
         else
-            program output-count ctx @ctx-next-module modules-use-result-arity
+            program output-count ctx @ModuleContext.next_module modules-use-result-arity
         end
     end
 end
@@ -5521,9 +5394,9 @@ proc result-arity-max int int -- int do
     end
 end
 
-proc ctx-max-proc-output-arity-from ptr int int -- int do
+proc ctx-max-proc-output-arity-from ModuleContext int int -- int do
     let ctx proc-index maximum do
-        if proc-index ctx @ctx-proc-count >= do
+        if proc-index ctx @ModuleContext.proc_count >= do
             maximum
         else
             ctx proc-index proc-output-count-at
@@ -5536,11 +5409,11 @@ proc ctx-max-proc-output-arity-from ptr int int -- int do
     end
 end
 
-proc ctx-max-proc-output-arity ptr -- int do 0 0 ctx-max-proc-output-arity-from end
+proc ctx-max-proc-output-arity ModuleContext -- int do 0 0 ctx-max-proc-output-arity-from end
 
-proc ctx-max-function-output-arity-from ptr int int -- int do
+proc ctx-max-function-output-arity-from ModuleContext int int -- int do
     let ctx function-index maximum do
-        if function-index ctx @ctx-function-count >= do
+        if function-index ctx @ModuleContext.function_count >= do
             maximum
         else
             ctx function-index function-output-count-at
@@ -5553,11 +5426,11 @@ proc ctx-max-function-output-arity-from ptr int int -- int do
     end
 end
 
-proc ctx-max-function-output-arity ptr -- int do 0 0 ctx-max-function-output-arity-from end
+proc ctx-max-function-output-arity ModuleContext -- int do 0 0 ctx-max-function-output-arity-from end
 
-proc program-max-output-arity-from ptr ptr int -- int do
+proc program-max-output-arity-from ptr ModuleContext int -- int do
     let program ctx maximum do
-        if ctx int cast 0 == do
+        if ctx ptr cast int cast 0 == do
             maximum
         else
             ctx ctx-max-proc-output-arity
@@ -5565,7 +5438,7 @@ proc program-max-output-arity-from ptr ptr int -- int do
             peek proc-maximum function-maximum do result-arity-max
                 peek ctx-maximum do maximum result-arity-max
                     let next-maximum do
-                        program ctx @ctx-next-module next-maximum program-max-output-arity-from
+                        program ctx @ModuleContext.next_module next-maximum program-max-output-arity-from
                     end
                 end
             end
@@ -5599,7 +5472,7 @@ proc emit-result-typedefs ptr -- do
     end
 end
 
-proc emit-proc-return-type ptr int -- do
+proc emit-proc-return-type ModuleContext int -- do
     peek ctx proc-index do proc-output-count-at
         let output-count do
             if output-count 0 == do
@@ -5617,7 +5490,7 @@ proc emit-proc-argument-name int -- do
     "frog_arg_" emit emit-unsigned
 end
 
-proc emit-proc-parameters-from ptr int int -- do
+proc emit-proc-parameters-from ModuleContext int int -- do
     let ctx proc-index input-index do
         if input-index ctx proc-index proc-input-count-at < do
             if input-index 0 != do ", " emit end
@@ -5627,7 +5500,7 @@ proc emit-proc-parameters-from ptr int int -- do
     end
 end
 
-proc emit-proc-parameters ptr int -- do
+proc emit-proc-parameters ModuleContext int -- do
     let ctx proc-index do
         if ctx proc-index proc-input-count-at 0 == do
             "void" emit
@@ -5637,14 +5510,14 @@ proc emit-proc-parameters ptr int -- do
     end
 end
 
-proc emit-proc-signature ptr int -- do
+proc emit-proc-signature ModuleContext int -- do
     peek ctx proc-index do emit-proc-return-type
         " " emit ctx proc-index emit-proc-name
         "(" emit ctx proc-index emit-proc-parameters ")" emit
     end
 end
 
-proc emit-c-prototype ptr int -- do
+proc emit-c-prototype ModuleContext int -- do
     let ctx proc-index do
         if ctx proc-index proc-external-at do
             ctx proc-index emit-external-c-prototype
@@ -5653,10 +5526,10 @@ proc emit-c-prototype ptr int -- do
     end
 end
 
-proc emit-prototypes ptr -- do
+proc emit-prototypes ModuleContext -- do
     let ctx do
         0
-        while dup ctx @ctx-proc-count < do
+        while dup ctx @ModuleContext.proc_count < do
             dup
             let proc-index do
                 ctx proc-index emit-c-prototype
@@ -5668,13 +5541,14 @@ proc emit-prototypes ptr -- do
 end
 
 proc emit-c-emitter-support ptr -- do
-    peek program do @program-root-module emit-c-preamble
+    let program do
+        emit-c-preamble
         program emit-string-globals
         program emit-result-typedefs
         program @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup emit-prototypes
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
@@ -5719,12 +5593,12 @@ proc emit-proc-source-name ptr int -- do
     end
 end
 
-proc emit-proc-name ptr int -- do
+proc emit-proc-name ModuleContext int -- do
     let ctx proc-index do
         "frog_proc_" emit
         ctx proc-index proc-global-id-at emit-unsigned
         95 putc
-        ctx @ctx-source ctx proc-index proc-name-start-at +
+        ctx @ModuleContext.source ctx proc-index proc-name-start-at +
         ctx proc-index proc-name-length-at
         emit-proc-source-name
     end
@@ -5745,7 +5619,7 @@ proc emit-top-slot ptr -- do
     peek cc do cc @cc-type-count 1 - emit-slot end
 end
 
-proc check-proc-inputs ptr ptr int int -- do
+proc check-proc-inputs ptr ModuleContext int int -- do
     let cc module proc-index remaining do
         if remaining 0 > do
             module
@@ -5760,7 +5634,7 @@ proc check-proc-inputs ptr ptr int int -- do
     end
 end
 
-proc push-proc-outputs ptr ptr int int -- do
+proc push-proc-outputs ptr ModuleContext int int -- do
     let cc module proc-index output-index do
         if output-index module proc-index proc-output-count-at < do
             module
@@ -5773,13 +5647,13 @@ proc push-proc-outputs ptr ptr int int -- do
     end
 end
 
-proc apply-proc-contract ptr ptr int -- do
+proc apply-proc-contract ptr ModuleContext int -- do
     peek cc module proc-index do module proc-index proc-input-count-at check-proc-inputs
         cc module proc-index 0 push-proc-outputs
     end
 end
 
-proc check-function-inputs ptr ptr int int -- do
+proc check-function-inputs ptr ModuleContext int int -- do
     let cc module function-index remaining do
         if remaining 0 > do
             module function-index remaining 1 - function-input-type-at
@@ -5791,7 +5665,7 @@ proc check-function-inputs ptr ptr int int -- do
     end
 end
 
-proc push-function-outputs ptr ptr int int -- do
+proc push-function-outputs ptr ModuleContext int int -- do
     let cc module function-index output-index do
         if output-index module function-index function-output-count-at < do
             module function-index output-index function-output-type-at
@@ -5801,7 +5675,7 @@ proc push-function-outputs ptr ptr int int -- do
     end
 end
 
-proc apply-function-contract ptr ptr int -- do
+proc apply-function-contract ptr ModuleContext int -- do
     peek cc module function-index do
         module function-index function-input-count-at
         check-function-inputs
@@ -6261,7 +6135,7 @@ proc emit-push-string ptr int -- do
     end
 end
 
-proc emit-call-arguments-from ptr ptr int int int -- do
+proc emit-call-arguments-from ptr ModuleContext int int int -- do
     let cc ctx proc-index base input-index do
         if input-index ctx proc-index proc-input-count-at < do
             if input-index 0 != do ", " emit end
@@ -6271,7 +6145,7 @@ proc emit-call-arguments-from ptr ptr int int int -- do
     end
 end
 
-proc emit-call-arguments ptr ptr int int -- do
+proc emit-call-arguments ptr ModuleContext int int -- do
     peek cc ctx proc-index base do 0 emit-call-arguments-from end
 end
 
@@ -6291,7 +6165,7 @@ proc emit-call-result-slots ptr int int -- do
     end
 end
 
-proc emit-procedure-invocation ptr ptr int int -- do
+proc emit-procedure-invocation ptr ModuleContext int int -- do
     let cc module proc-index base do
         module proc-index proc-output-count-at
         let output-count do
@@ -6314,7 +6188,7 @@ proc emit-procedure-invocation ptr ptr int int -- do
     end
 end
 
-proc emit-call ptr ptr int -- do
+proc emit-call ptr ModuleContext int -- do
     let cc module proc-index do
         if cc @cc-emitting do
             module proc-index proc-output-count-at
@@ -6532,7 +6406,7 @@ end
 
 proc find-binding-do ptr int String -- int do
     let cc token-index error-message do
-        if token-index cc @cc-defining-module @ctx-token-count >= do
+        if token-index cc @cc-defining-module @ModuleContext.token_count >= do
             error-message fail
             token-index
         elif cc @cc-defining-module token-index "do" token-equals do
@@ -6633,7 +6507,7 @@ proc compile-local-reference ptr int int -- do
     end
 end
 
-proc compile-procedure-call ptr int ptr int -- do
+proc compile-procedure-call ptr int ModuleContext int -- do
     let cc token-index module proc-index do
         cc module proc-index apply-proc-contract
         cc module proc-index emit-call
@@ -6654,7 +6528,7 @@ end
 
 proc first-index-of-byte ptr int int -- int do 0 first-index-of-byte-from end
 
-proc visible-record-definition ptr ptr int -- ptr int bool do
+proc visible-record-definition ModuleContext ptr int -- ModuleContext int bool do
     peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
@@ -6667,13 +6541,13 @@ proc visible-record-definition ptr ptr int -- ptr int bool do
                 scope symbol-index scope-definition-index-at
                 true
             else
-                0 ptr cast 0 1 - false
+                0 ptr cast ModuleContext cast 0 1 - false
             end
         end
     end
 end
 
-proc visible-union-definition ptr ptr int -- ptr int bool do
+proc visible-union-definition ModuleContext ptr int -- ModuleContext int bool do
     peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
@@ -6686,13 +6560,13 @@ proc visible-union-definition ptr ptr int -- ptr int bool do
                 scope symbol-index scope-definition-index-at
                 true
             else
-                0 ptr cast 0 1 - false
+                0 ptr cast ModuleContext cast 0 1 - false
             end
         end
     end
 end
 
-proc visible-function-definition ptr ptr int -- ptr int bool do
+proc visible-function-definition ModuleContext ptr int -- ModuleContext int bool do
     peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
@@ -6705,13 +6579,13 @@ proc visible-function-definition ptr ptr int -- ptr int bool do
                 scope symbol-index scope-definition-index-at
                 true
             else
-                0 ptr cast 0 1 - false
+                0 ptr cast ModuleContext cast 0 1 - false
             end
         end
     end
 end
 
-proc visible-procedure-definition ptr ptr int -- ptr int bool do
+proc visible-procedure-definition ModuleContext ptr int -- ModuleContext int bool do
     peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
             if
@@ -6724,7 +6598,7 @@ proc visible-procedure-definition ptr ptr int -- ptr int bool do
                 scope symbol-index scope-definition-index-at
                 true
             else
-                0 ptr cast 0 1 - false
+                0 ptr cast ModuleContext cast 0 1 - false
             end
         end
     end
@@ -7131,10 +7005,10 @@ proc compile-union-word ptr int -- bool do
     end
 end
 
-proc emit-function-dispatch-module ptr ptr int ptr int -- do
+proc emit-function-dispatch-module ptr ModuleContext int ModuleContext int -- do
     let cc function-module function-index proc-module base do
         0
-        while dup proc-module @ctx-proc-count < do
+        while dup proc-module @ModuleContext.proc_count < do
             dup
             let proc-index do
                 if
@@ -7157,20 +7031,20 @@ proc emit-function-dispatch-module ptr ptr int ptr int -- do
     end
 end
 
-proc emit-function-dispatch-cases ptr ptr ptr int int -- do
+proc emit-function-dispatch-cases ptr ptr ModuleContext int int -- do
     let cc program function-module function-index base do
         program @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             let proc-module do
                 cc function-module function-index proc-module base emit-function-dispatch-module
-                proc-module @ctx-next-module
+                proc-module @ModuleContext.next_module
             end
         end
         drop
     end
 end
 
-proc emit-function-call ptr ptr int -- do
+proc emit-function-call ptr ModuleContext int -- do
     let cc function-module function-index do
         if cc @cc-emitting do
             function-module function-index function-output-count-at
@@ -7328,7 +7202,7 @@ proc compile-type-word ptr int -- bool do
     end
 end
 
-proc compile-constant-values-from ptr ptr int int -- do
+proc compile-constant-values-from ptr ModuleContext int int -- do
     let cc module constant-index value-index do
         if value-index module constant-index constant-value-count-at < do
             module constant-index constant-values-at
@@ -7350,12 +7224,12 @@ proc compile-constant-values-from ptr ptr int int -- do
     end
 end
 
-proc compile-constant ptr ptr int -- do
+proc compile-constant ptr ModuleContext int -- do
     peek cc module constant-index do 0 compile-constant-values-from
     end
 end
 
-proc compile-macro ptr ptr int -- do
+proc compile-macro ptr ModuleContext int -- do
     let cc module macro-index do
         if module macro-index macro-expanding-at do
             "recursive macro expansion" fail
@@ -7586,7 +7460,7 @@ proc compile-body-range ptr int int -- do
     end
 end
 
-proc create-compile-context ptr ptr int -- ptr do
+proc create-compile-context ptr ModuleContext int -- ptr do
     let program ctx proc-index do
         cc-bytes alloc
         let cc do
@@ -7613,7 +7487,7 @@ proc create-compile-context ptr ptr int -- ptr do
     end
 end
 
-proc proc-input-type-at ptr int int -- int do
+proc proc-input-type-at ModuleContext int int -- int do
     let ctx proc-index input-index do
         ctx ctx proc-index proc-input-start-at input-index + type-at
     end
@@ -7623,7 +7497,7 @@ proc emit-ffi-argument-name int -- do
     emit-proc-argument-name
 end
 
-proc emit-external-argument ptr int int -- do
+proc emit-external-argument ModuleContext int int -- do
     peek ctx proc-index input-index do proc-input-type-at
         let input-type do
             if input-type type-int == do
@@ -7639,7 +7513,7 @@ proc emit-external-argument ptr int int -- do
     end
 end
 
-proc emit-external-arguments ptr int int -- do
+proc emit-external-arguments ModuleContext int int -- do
     let ctx proc-index input-index do
         if input-index ctx proc-index proc-input-count-at < do
             if input-index 0 != do ", " emit end
@@ -7649,14 +7523,14 @@ proc emit-external-arguments ptr int int -- do
     end
 end
 
-proc emit-external-call-expression ptr int -- do
+proc emit-external-call-expression ModuleContext int -- do
     peek ctx proc-index do emit-c-symbol "(" emit
         ctx proc-index 0 emit-external-arguments
         ")" emit
     end
 end
 
-proc compile-external-procedure ptr int -- do
+proc compile-external-procedure ModuleContext int -- do
     peek ctx proc-index do emit-proc-signature " {\n" emit
         if ctx proc-index proc-output-count-at 0 == do
             "  " emit ctx proc-index emit-external-call-expression ";\n" emit
@@ -7696,7 +7570,7 @@ proc validate-compiled-procedure ptr -- do
     end
 end
 
-proc compile-procedure-body ptr ptr int -- do
+proc compile-procedure-body ptr ModuleContext int -- do
     let cc ctx proc-index do
         cc 0 initialize-proc-inputs
         cc
@@ -7707,7 +7581,7 @@ proc compile-procedure-body ptr ptr int -- do
     end
 end
 
-proc emit-proc-input-slots ptr ptr int int -- do
+proc emit-proc-input-slots ptr ModuleContext int int -- do
     let cc ctx proc-index input-index do
         if input-index ctx proc-index proc-input-count-at < do
             cc emit-indent cc input-index emit-slot " = frog_arg_" emit input-index emit-unsigned ";" emit 10 putc
@@ -7738,7 +7612,7 @@ proc emit-proc-return-values ptr int -- do
     end
 end
 
-proc emit-proc-return ptr ptr int -- do
+proc emit-proc-return ptr ModuleContext int -- do
     let cc ctx proc-index do
         ctx proc-index proc-output-count-at
         let output-count do
@@ -7753,7 +7627,7 @@ proc emit-proc-return ptr ptr int -- do
     end
 end
 
-proc compile-procedure ptr ptr int -- do
+proc compile-procedure ptr ModuleContext int -- do
     let program ctx proc-index do
         if ctx proc-index proc-external-at do
             ctx proc-index compile-external-procedure
@@ -7780,10 +7654,10 @@ proc compile-procedure ptr ptr int -- do
     end
 end
 
-proc compile-module-procedures ptr ptr -- do
+proc compile-module-procedures ptr ModuleContext -- do
     let program ctx do
         0
-        while dup ctx @ctx-proc-count < do
+        while dup ctx @ModuleContext.proc_count < do
             dup program ctx rot compile-procedure
             1 +
         end
@@ -7793,9 +7667,9 @@ end
 
 proc compile-all-procedures ptr -- do
     peek program do @program-module-head
-        while dup int cast 0 != do
+        while dup ptr cast int cast 0 != do
             dup program swap compile-module-procedures
-            @ctx-next-module
+            @ModuleContext.next_module
         end
         drop
     end
@@ -7806,7 +7680,7 @@ proc emit-main-wrapper ptr -- do
         let ctx do
             "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n" emit
             program emit-string-references
-            "  " emit ctx ctx @ctx-main-proc emit-proc-name
+            "  " emit ctx ctx @ModuleContext.main_proc emit-proc-name
             "();\n  return 0;\n}\n" emit
         end
     end
@@ -7818,9 +7692,9 @@ proc compile-source ptr int -- do
     let source source-length do
         program-bytes alloc
         let program do
-            0 ptr cast program !program-root-module
-            0 ptr cast program !program-module-head
-            0 ptr cast program !program-module-tail
+            0 ptr cast ModuleContext cast program !program-root-module
+            0 ptr cast ModuleContext cast program !program-module-head
+            0 ptr cast ModuleContext cast program !program-module-tail
             0 program !program-module-count
             0 program !program-next-proc-id
             type-nominal-base program !program-next-nominal-type
@@ -7828,23 +7702,23 @@ proc compile-source ptr int -- do
             0 program !program-token-count
             0 ptr cast program !program-strings
             0 program !program-string-count
-            0 ptr cast program !program-prelude-module
-            ctx-bytes alloc
+            0 ptr cast ModuleContext cast program !program-prelude-module
+            ModuleContext:alloc
             let ctx do
-                0 ptr cast ctx !ctx-canonical-path
-                0 ctx !ctx-canonical-path-length
-                0 ptr cast ctx !ctx-imports
-                0 ctx !ctx-import-count
-                0 ptr cast ctx !ctx-scope
-                0 ctx !ctx-scope-count
-                load-loading ctx !ctx-load-state
-                resolve-new ctx !ctx-resolve-state
-                true ctx !ctx-is-root
+                0 ptr cast ctx !ModuleContext.canonical_path
+                0 ctx !ModuleContext.canonical_path_length
+                0 ptr cast ctx !ModuleContext.imports
+                0 ctx !ModuleContext.import_count
+                0 ptr cast ctx !ModuleContext.scope
+                0 ctx !ModuleContext.scope_count
+                load-loading ctx !ModuleContext.load_state
+                resolve-new ctx !ModuleContext.resolve_state
+                true ctx !ModuleContext.is_root
                 program ctx program-add-module
                 ctx program !program-root-module
                 ctx source source-length initialize-module-source
                 program ctx load-module-imports
-                load-loaded ctx !ctx-load-state
+                load-loaded ctx !ModuleContext.load_state
                 program initialize-prelude
                 program initialize-string-pool
                 program resolve-all-module-scopes
@@ -7861,22 +7735,22 @@ proc compile-source ptr int -- do
 end
 
 const program-prelude-module-offset 64 end
-proc @program-prelude-module ptr -- ptr do program-prelude-module-offset pointer-field-read end
-proc !program-prelude-module ptr ptr -- do program-prelude-module-offset pointer-field-write end
+proc @program-prelude-module ptr -- ModuleContext do program-prelude-module-offset pointer-field-read ModuleContext cast end
+proc !program-prelude-module ModuleContext ptr -- do let value program do value ptr cast program program-prelude-module-offset pointer-field-write end end
 
 proc initialize-prelude ptr -- do
     let program do
-        ctx-bytes alloc
+        ModuleContext:alloc
         let prelude do
-            0 ptr cast prelude !ctx-canonical-path
-            0 prelude !ctx-canonical-path-length
-            0 ptr cast prelude !ctx-imports
-            0 prelude !ctx-import-count
-            0 ptr cast prelude !ctx-scope
-            0 prelude !ctx-scope-count
-            load-loading prelude !ctx-load-state
-            resolve-new prelude !ctx-resolve-state
-            false prelude !ctx-is-root
+            0 ptr cast prelude !ModuleContext.canonical_path
+            0 prelude !ModuleContext.canonical_path_length
+            0 ptr cast prelude !ModuleContext.imports
+            0 prelude !ModuleContext.import_count
+            0 ptr cast prelude !ModuleContext.scope
+            0 prelude !ModuleContext.scope_count
+            load-loading prelude !ModuleContext.load_state
+            resolve-new prelude !ModuleContext.resolve_state
+            false prelude !ModuleContext.is_root
             program prelude program-add-module
             "macro dup peek a do a end end
 macro dup2 peek a b do a b end end
@@ -7888,7 +7762,7 @@ macro rot let a b c do b c a end end
             let source do
                 prelude source String.bytes source String.len initialize-module-source
             end
-            load-loaded prelude !ctx-load-state
+            load-loaded prelude !ModuleContext.load_state
             prelude program !program-prelude-module
         end
     end
