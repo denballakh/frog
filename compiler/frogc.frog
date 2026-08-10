@@ -134,6 +134,49 @@ const function-output-count-offset 40 end
 const function-type-offset 48 end
 const function-bytes 56 end
 
+record ModuleContext
+    source ptr
+    source_length int
+    tokens ptr
+    token_count int
+    procs ptr
+    proc_count int
+    types ptr
+    type_count int
+    lex_index int
+    lex_line int
+    lex_column int
+    main_proc int
+    macros ptr
+    macro_count int
+    program ptr
+    module_id int
+    next_module ModuleContext
+    canonical_path ptr
+    canonical_path_length int
+    imports ptr
+    import_count int
+    scope ptr
+    scope_count int
+    load_state int
+    resolve_state int
+    is_root bool
+    records ptr
+    record_count int
+    record_fields ptr
+    record_field_count int
+    unions ptr
+    union_count int
+    union_cases ptr
+    union_case_count int
+    functions ptr
+    function_count int
+    function_types ptr
+    function_type_count int
+    constants ptr
+    constant_count int
+end
+
 const ctx-source-offset 0 end
 const ctx-source-length-offset 8 end
 const ctx-tokens-offset 16 end
