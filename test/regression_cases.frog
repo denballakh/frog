@@ -1,4 +1,4 @@
-from "framework.frog" import ( FrogTestContext frog-run-case frog-run-status-case frog-error-fixture frog-error-source frog-large-path-error )
+from "framework.frog" import ( FrogTestContext frog-run-case frog-run-status-case frog-error-fixture frog-error-source frog-large-path-error frog-stable-string-symbol )
 
 proc run-regression-cases FrogTestContext -- do
     let context do
@@ -211,7 +211,7 @@ proc run-regression-cases FrogTestContext -- do
         "proc main -- do \"x\" @u8 drop end\n" "test/cases/strings" "frogc: compile-time stack type mismatch\n" "strings-error/string-as-ptr" context frog-error-source
         "proc main -- do \"x\" 1 + drop end\n" "test/cases/strings" "frogc: invalid operand types for pointer/integer arithmetic\n" "strings-error/string-as-int" context frog-error-source
         context frog-large-path-error
+        context frog-stable-string-symbol
     end
 end
-
 
