@@ -53,10 +53,22 @@ heap-backed byte buffers:
 - `bytes-copy`: `source destination count --` copies `count` bytes.
 - `bytes-equal`: `first first_len second second_len -- bool` compares byte
   ranges.
+- `bytes-index-of`: `bytes bytes_len needle needle_len -- int` returns the
+  first byte offset of `needle`, or `-1`; an empty needle has offset `0`.
+- `bytes-contain`: `bytes bytes_len needle needle_len -- bool` tests whether a
+  byte range contains a needle.
+- `bytes-starts-with`: `bytes bytes_len prefix prefix_len -- bool` tests whether
+  a byte range starts with a prefix; every range starts with an empty prefix.
+- `bytes-count`: `bytes bytes_len needle needle_len -- int` counts
+  non-overlapping occurrences; an empty needle counts as `0`.
 - `string-equal`: `String String -- bool` compares decoded string bytes.
+- `string-starts-with`: `String String -- bool` tests a string prefix.
 - `byte-buffer-new`: `capacity -- ByteBuffer` creates an empty buffer.
 - `byte-buffer-push`: `byte ByteBuffer --` appends one byte and grows the
   buffer when necessary.
+- `byte-buffer-append-bytes`: `bytes len ByteBuffer --` appends a byte range.
+- `byte-buffer-append-string`: `String ByteBuffer --` appends a string's
+  bytes.
 - `byte-buffer-equal-string`: `ByteBuffer String -- bool` compares a buffer to
   a string.
 - `byte-buffer-free`: `ByteBuffer --` releases a buffer and its storage.
@@ -75,8 +87,10 @@ from "../stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv
     subprocess-arg
+    subprocess-arg-pointer
     subprocess-argv-free
     subprocess-run
+    subprocess-run-bytes
     completed-process-free
 )
 
@@ -102,6 +116,8 @@ end
 - `subprocess-arg`: `String argv index --` assigns one argument. Argument
   strings must not contain embedded NUL bytes, and the caller must use an index
   below the count supplied to `subprocess-argv`.
+- `subprocess-arg-pointer`: `ptr argv index --` assigns an already
+  NUL-terminated C-string pointer as a borrowed argument.
 - `subprocess-argv-free`: `ptr --` releases the array. It does not release the
   string literals referenced by the array.
 - `subprocess-run`: `argv input -- CompletedProcess` inherits the current
@@ -110,6 +126,10 @@ end
 - `subprocess-run-in`: `argv input cwd -- CompletedProcess` behaves the same way
   after changing the child to `cwd`. An empty `cwd` inherits the current
   directory.
+- `subprocess-run-bytes`: `argv input input_len -- CompletedProcess` supplies a
+  raw byte range as standard input, including embedded NUL and non-UTF-8 bytes.
+- `subprocess-run-bytes-in`: `argv input input_len cwd -- CompletedProcess`
+  combines raw-byte input with a child working directory.
 - `completed-process-free`: `CompletedProcess --` releases both captured buffers
   and the result record.
 

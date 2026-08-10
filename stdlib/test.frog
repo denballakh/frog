@@ -1,4 +1,5 @@
 from "libc.frog" import ( free eputc exit )
+from "string.frog" import bytes-equal
 
 record TestSuite
     checks int
@@ -49,31 +50,9 @@ proc check-int-equal int int String TestSuite -- do
     end
 end
 
-proc test-bytes-equal ptr int ptr int -- bool do
-    let first first-length second second-length do
-        if first-length second-length != do
-            false
-        else
-            0 true
-            while
-                peek index equal do
-                    index first-length < equal &&
-                end
-            do
-                let index equal do
-                    index 1 +
-                    equal
-                    first index + @u8 second index + @u8 == &&
-                end
-            end
-            let index equal do equal end
-        end
-    end
-end
-
 proc check-bytes-equal ptr int ptr int String TestSuite -- do
     let actual actual-length expected expected-length name suite do
-        actual actual-length expected expected-length test-bytes-equal
+        actual actual-length expected expected-length bytes-equal
         name suite check
     end
 end

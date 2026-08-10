@@ -102,12 +102,12 @@ proc subprocess-read-stream ptr SubprocessCapture -- do
     end
 end
 
-proc subprocess-write-input String ptr -- do
-    let input stream do
+proc subprocess-write-input ptr int ptr -- do
+    let input input-length stream do
         0
-        while dup input String.len < do
+        while dup input-length < do
             let index do
-                if input String.bytes index + @u8 stream subprocess-file-putc 0 < do subprocess-fail end
+                if input index + @u8 stream subprocess-file-putc 0 < do subprocess-fail end
                 index 1 +
             end
         end
@@ -134,6 +134,12 @@ proc subprocess-arg String ptr int -- do
     end
 end
 
+proc subprocess-arg-pointer ptr ptr int -- do
+    let value argv index do
+        value argv index subprocess-pointer-bytes * + !ptr
+    end
+end
+
 proc subprocess-argv-free ptr -- do free end
 
 proc subprocess-run-child ptr ptr ptr ptr String -- do
@@ -152,15 +158,15 @@ proc subprocess-run-child ptr ptr ptr ptr String -- do
     end
 end
 
-proc subprocess-run-with ptr String String -- CompletedProcess do
-    let argv input cwd do
+proc subprocess-run-with ptr ptr int String -- CompletedProcess do
+    let argv input input-length cwd do
         subprocess-checked-stream
         let stdin do
             subprocess-checked-stream
             let stdout do
                 subprocess-checked-stream
                 let stderr do
-                    input stdin subprocess-write-input
+                    input input-length stdin subprocess-write-input
                     fork
                     let child do
                         if child 0 < do subprocess-fail end
@@ -204,13 +210,25 @@ end
 
 proc subprocess-run ptr String -- CompletedProcess do
     let argv input do
-        argv input "" subprocess-run-with
+        argv input String.bytes input String.len "" subprocess-run-with
     end
 end
 
 proc subprocess-run-in ptr String String -- CompletedProcess do
     let argv input cwd do
-        argv input cwd subprocess-run-with
+        argv input String.bytes input String.len cwd subprocess-run-with
+    end
+end
+
+proc subprocess-run-bytes ptr ptr int -- CompletedProcess do
+    let argv input input-length do
+        argv input input-length "" subprocess-run-with
+    end
+end
+
+proc subprocess-run-bytes-in ptr ptr int String -- CompletedProcess do
+    let argv input input-length cwd do
+        argv input input-length cwd subprocess-run-with
     end
 end
 

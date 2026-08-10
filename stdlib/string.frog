@@ -35,11 +35,92 @@ proc bytes-equal ptr int ptr int -- bool do
     end
 end
 
+proc bytes-index-of ptr int ptr int -- int do
+    let bytes bytes-length needle needle-length do
+        if needle-length 0 == do
+            0
+        elif bytes-length 0 < do
+            0 1 -
+        elif needle-length 0 < do
+            0 1 -
+        elif bytes-length needle-length < do
+            0 1 -
+        else
+            0 false
+            while peek index found do
+                index bytes-length needle-length - <= found ! &&
+            end
+            do
+                let index found do
+                    if bytes index + needle-length needle needle-length bytes-equal do
+                        index true
+                    else
+                        index 1 + false
+                    end
+                end
+            end
+            let index found do
+                if found do index else 0 1 - end
+            end
+        end
+    end
+end
+
+proc bytes-contain ptr int ptr int -- bool do
+    bytes-index-of 0 >=
+end
+
+proc bytes-starts-with ptr int ptr int -- bool do
+    let bytes bytes-length prefix prefix-length do
+        if bytes-length 0 < prefix-length 0 < || do
+            false
+        elif prefix-length bytes-length > do
+            false
+        else
+            bytes prefix-length prefix prefix-length bytes-equal
+        end
+    end
+end
+
+proc bytes-count ptr int ptr int -- int do
+    let bytes bytes-length needle needle-length do
+        if needle-length 0 == do
+            0
+        else
+            0 0
+            while peek index count do
+                index bytes-length <
+            end
+            do
+                let index count do
+                    bytes index + bytes-length index - needle needle-length bytes-index-of
+                    let found do
+                        if found 0 < do
+                            bytes-length count
+                        else
+                            index found + needle-length + count 1 +
+                        end
+                    end
+                end
+            end
+            let index count do count end
+        end
+    end
+end
+
 proc string-equal String String -- bool do
     let first second do
         first String.bytes first String.len
         second String.bytes second String.len
         bytes-equal
+    end
+end
+
+proc string-starts-with String String -- bool do
+    let value prefix do
+        value String.bytes value String.len
+        prefix String.bytes prefix String.len
+        bytes-starts-with
     end
 end
 
@@ -84,6 +165,25 @@ proc byte-buffer-push int ByteBuffer -- do
         end
         byte buffer @ByteBuffer.bytes buffer @ByteBuffer.len + !u8
         buffer @ByteBuffer.len 1 + buffer !ByteBuffer.len
+    end
+end
+
+proc byte-buffer-append-bytes ptr int ByteBuffer -- do
+    let bytes length buffer do
+        0
+        while dup length < do
+            let index do
+                bytes index + @u8 buffer byte-buffer-push
+                index 1 +
+            end
+        end
+        drop
+    end
+end
+
+proc byte-buffer-append-string String ByteBuffer -- do
+    let value buffer do
+        value String.bytes value String.len buffer byte-buffer-append-bytes
     end
 end
 

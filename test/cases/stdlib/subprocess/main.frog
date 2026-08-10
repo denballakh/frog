@@ -1,4 +1,4 @@
-from "../../../../stdlib/subprocess.frog" import ( CompletedProcess subprocess-argv subprocess-arg subprocess-argv-free subprocess-run subprocess-run-in completed-process-free )
+from "../../../../stdlib/subprocess.frog" import ( CompletedProcess subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free subprocess-run subprocess-run-in subprocess-run-bytes completed-process-free )
 from "../../../../stdlib/libc.frog" import exit
 
 proc require bool -- do
@@ -20,6 +20,39 @@ proc main -- do
             result @CompletedProcess.stdout @u8 120 == require
             result @CompletedProcess.stderr_len 3 == require
             result @CompletedProcess.stderr @u8 101 == require
+            result completed-process-free
+        end
+        argv subprocess-argv-free
+    end
+
+    3 subprocess-argv
+    let argv do
+        "sh" argv 0 subprocess-arg
+        "-c" argv 1 subprocess-arg
+        "cat" argv 2 subprocess-arg
+        "\0\xFFx" let input do
+            argv input String.bytes input String.len subprocess-run-bytes
+            let result do
+                result @CompletedProcess.returncode 0 == require
+                result @CompletedProcess.stdout_len 3 == require
+                result @CompletedProcess.stdout @u8 0 == require
+                result @CompletedProcess.stdout 1 + @u8 255 == require
+                result @CompletedProcess.stdout 2 + @u8 120 == require
+                result completed-process-free
+            end
+        end
+        argv subprocess-argv-free
+    end
+
+    4 subprocess-argv
+    let argv do
+        "sh" argv 0 subprocess-arg
+        "-c" argv 1 subprocess-arg
+        "test -n \"$0\"" argv 2 subprocess-arg
+        args drop @ptr argv 3 subprocess-arg-pointer
+        argv "" subprocess-run
+        let result do
+            result @CompletedProcess.returncode 0 == require
             result completed-process-free
         end
         argv subprocess-argv-free
