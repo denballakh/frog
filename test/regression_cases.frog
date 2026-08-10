@@ -1,0 +1,217 @@
+from "framework.frog" import ( FrogTestContext frog-run-case frog-run-status-case frog-error-fixture frog-error-source frog-large-path-error )
+
+proc run-regression-cases FrogTestContext -- do
+    let context do
+        "test/cases/imports/direct_proc/main.frog" "test/cases/imports/direct_proc" "42\n" "" 0 "" "" "" "imports/direct_proc" context frog-run-case
+        "test/cases/imports/group_alias_identity/main.frog" "test/cases/imports/group_alias_identity" "6\n4\n6\n" "" 0 "" "" "" "imports/group_alias_identity" context frog-run-case
+        "test/cases/imports/nested_reexport_scope/main.frog" "test/cases/imports/nested_reexport_scope" "7\n" "" 0 "" "" "" "imports/nested_reexport_scope" context frog-run-case
+        "test/cases/imports/macro_scope/main.frog" "test/cases/imports/macro_scope" "18\n" "" 0 "" "" "" "imports/macro_scope" context frog-run-case
+        "test/cases/imports/module_relative_nested/main.frog" "test/cases/imports/module_relative_nested" "99\n" "" 0 "" "" "" "imports/module_relative_nested" context frog-run-case
+        "test/cases/imports/macro_reexport_scope/main.frog" "test/cases/imports/macro_reexport_scope" "14\n" "" 0 "" "" "" "imports/macro_reexport_scope" context frog-run-case
+        "test/cases/imports/extern_reexport/main.frog" "test/cases/imports/extern_reexport" "9\n" "" 0 "" "" "" "imports/extern_reexport" context frog-run-case
+        "test/cases/imports/one_byte_path/main.frog" "test/cases/imports/one_byte_path" "21\n" "" 0 "" "" "" "imports/one_byte_path" context frog-run-case
+        "test/cases/imports/string_module_ids/main.frog" "test/cases/imports/string_module_ids" "PDR\n" "" 0 "" "" "" "imports/string_module_ids" context frog-run-case
+        "test/cases/imports/path_length_limit/main.frog" "test/cases/imports/path_length_limit" "33\n" "" 0 "" "" "" "imports/path_length_limit" context frog-run-case
+        "test/cases/imports/ignored_control_flow/main.frog" "test/cases/imports/ignored_control_flow" "44\n" "" 0 "" "" "" "imports/ignored_control_flow" context frog-run-case
+        "test/cases/imports/utf8_path/main.frog" "test/cases/imports/utf8_path" "55\n" "" 0 "" "" "" "imports/utf8_path" context frog-run-case
+        "test/cases/imports/records_alias/main.frog" "test/cases/imports/records_alias" "8\n" "" 0 "" "" "" "imports/records_alias" context frog-run-case
+        "test/cases/imports/records_reexport/main.frog" "test/cases/imports/records_reexport" "13\n" "" 0 "" "" "" "imports/records_reexport" context frog-run-case
+        "test/cases/imports/unions_alias/main.frog" "test/cases/imports/unions_alias" "true\n8\n" "" 0 "" "" "" "imports/unions_alias" context frog-run-case
+        "test/cases/imports/unions_reexport/main.frog" "test/cases/imports/unions_reexport" "13\n" "" 0 "" "" "" "imports/unions_reexport" context frog-run-case
+        "test/cases/imports/unions_macro_private/main.frog" "test/cases/imports/unions_macro_private" "21\n" "" 0 "" "" "" "imports/unions_macro_private" context frog-run-case
+        "test/cases/imports/functions_direct/main.frog" "test/cases/imports/functions_direct" "42\n" "" 0 "" "" "" "imports/functions_direct" context frog-run-case
+        "test/cases/imports/functions_alias/main.frog" "test/cases/imports/functions_alias" "6\n" "" 0 "" "" "" "imports/functions_alias" context frog-run-case
+        "test/cases/imports/functions_reexport/main.frog" "test/cases/imports/functions_reexport" "43\n" "" 0 "" "" "" "imports/functions_reexport" context frog-run-case
+        "test/cases/imports/functions_macro_private/main.frog" "test/cases/imports/functions_macro_private" "42\n" "" 0 "" "" "" "imports/functions_macro_private" context frog-run-case
+        "test/cases/imports/functions_extern/main.frog" "test/cases/imports/functions_extern" "77\n" "" 0 "" "" "" "imports/functions_extern" context frog-run-case
+        "test/cases/imports/optimizer_macro_scope/main.frog" "test/cases/imports/optimizer_macro_scope" "41\n" "" 0 "" "" "" "imports/optimizer_macro_scope" context frog-run-case
+        "test/cases/imports/constants_reexport/main.frog" "test/cases/imports/constants_reexport" "42\n" "" 0 "" "" "" "imports/constants_reexport" context frog-run-case
+        "test/cases/imports/peek_macro/main.frog" "test/cases/imports/peek_macro" "7\n4\n3\n" "" 0 "" "" "" "imports/peek_macro" context frog-run-case
+        "test/cases/semantics/bool_cast/main.frog" "test/cases/semantics/bool_cast" "1\n0\n1\n" "" 0 "" "" "" "semantics/bool_cast" context frog-run-case
+        "test/cases/semantics/integer_max/main.frog" "test/cases/semantics/integer_max" "9223372036854775807\n" "" 0 "" "" "" "semantics/integer_max" context frog-run-case
+        "test/cases/semantics/integer_bases/main.frog" "test/cases/semantics/integer_bases" "0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n" "" 0 "" "" "" "semantics/integer_bases" context frog-run-case
+        "test/cases/semantics/prelude_shadow/main.frog" "test/cases/semantics/prelude_shadow" "42\n7\n2\n1\n6\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n" "" 0 "" "" "" "semantics/prelude_shadow" context frog-run-case
+        "test/cases/semantics/macro_shadow/main.frog" "test/cases/semantics/macro_shadow" "11\n21\n31\n" "" 0 "" "" "" "semantics/macro_shadow" context frog-run-case
+        "test/cases/semantics/characters/main.frog" "test/cases/semantics/characters" "65\n233\n8364\n128512\n" "" 0 "" "" "" "semantics/characters" context frog-run-case
+        "test/cases/semantics/args/main.frog" "test/cases/semantics/args" "3\n/\nfrog\npond\n" "" 0 "" "frog" "pond" "semantics/args" context frog-run-case
+        "test/cases/semantics/pointer_store/main.frog" "test/cases/semantics/pointer_store" "65\n" "" 0 "" "" "" "semantics/pointer_store" context frog-run-case
+        "test/cases/semantics/c_ffi/main.frog" "test/cases/semantics/c_ffi" "42\n42\n9\n711\ntrue\nfalse\n" "" 0 "test/cases/semantics/c_ffi/helper.c" "" "" "semantics/c_ffi" context frog-run-case
+        "test/cases/semantics/records_layout/main.frog" "test/cases/semantics/records_layout" "41\ntrue\ntrue\n32\n7\n" "" 0 "" "" "" "semantics/records_layout" context frog-run-case
+        "test/cases/semantics/unions_layout/main.frog" "test/cases/semantics/unions_layout" "true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n" "" 0 "" "" "" "semantics/unions_layout" context frog-run-case
+        "test/cases/semantics/functions_layout/main.frog" "test/cases/semantics/functions_layout" "42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n11\n22\n99\n11\n22\n77\n17\n" "" 0 "test/cases/semantics/functions_layout/helper.c" "" "" "semantics/functions_layout" context frog-run-case
+        "test/cases/semantics/functions_macro_shadow/main.frog" "test/cases/semantics/functions_macro_shadow" "99\n" "" 0 "" "" "" "semantics/functions_macro_shadow" context frog-run-case
+        "test/cases/semantics/optimizer_constant_add/main.frog" "test/cases/semantics/optimizer_constant_add" "5\n18\n3\n9\n" "" 0 "" "" "" "semantics/optimizer_constant_add" context frog-run-case
+        "test/cases/semantics/optimizer_macro_shadow/main.frog" "test/cases/semantics/optimizer_macro_shadow" "41\n" "" 0 "" "" "" "semantics/optimizer_macro_shadow" context frog-run-case
+        "test/cases/semantics/type_stack_growth/main.frog" "test/cases/semantics/type_stack_growth" "42\n" "" 0 "" "" "" "semantics/type_stack_growth" context frog-run-case
+        "test/cases/semantics/procedure_symbols/main.frog" "test/cases/semantics/procedure_symbols" "" "" 0 "" "" "" "semantics/procedure_symbols" context frog-run-case
+        "test/cases/semantics/constants/main.frog" "test/cases/semantics/constants" "42\n42\n42\n42\ntrue\n42\n4\n-5\ntrue\n9223372036854775807\n99\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0\n3\n9\n" "" 0 "" "" "" "semantics/constants" context frog-run-case
+        "test/cases/semantics/constants_operators/main.frog" "test/cases/semantics/constants_operators" "13\n5\n36\n2\n1\n1\n2\n8\n2\n7\n2\n5\n-1\nfalse\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse\ntrue\nfalse\n" "" 0 "" "" "" "semantics/constants_operators" context frog-run-case
+        "test/cases/semantics/peek/main.frog" "test/cases/semantics/peek" "3\n3\ntrue\ntrue\n7\n4\n3\n2\n1\n2\n1\n" "" 0 "" "" "" "semantics/peek" context frog-run-case
+        "test/cases/semantics/unions_wrong_variant/main.frog" "test/cases/semantics/unions_wrong_variant" "" 1 "semantics/unions_wrong_variant" context frog-run-status-case
+        "test/cases/semantics/unions_invalid_tag/main.frog" "test/cases/semantics/unions_invalid_tag" "" 1 "semantics/unions_invalid_tag" context frog-run-status-case
+        "test/cases/semantics/unions_negative_tag/main.frog" "test/cases/semantics/unions_negative_tag" "" 1 "semantics/unions_negative_tag" context frog-run-status-case
+        "test/cases/semantics/unions_null/main.frog" "test/cases/semantics/unions_null" "" 1 "semantics/unions_null" context frog-run-status-case
+        "test/cases/semantics/functions_unknown_proc/main.frog" "test/cases/semantics/functions_unknown_proc" "" 1 "semantics/functions_unknown_proc" context frog-run-status-case
+        "test/cases/semantics/functions_incompatible_proc/main.frog" "test/cases/semantics/functions_incompatible_proc" "" 1 "semantics/functions_incompatible_proc" context frog-run-status-case
+        "test/cases/strings/main.frog" "test/cases/strings" "true\ntrue\ntrue\ntrue\ntrue\ntrue\n98\ntrue\ntrue\n178\n239\n9\n65\n34\n92\n10\n0\n255\n63\n63\n47\n33\n10\n47\n34\n34\n" "" 0 "" "" "" "strings/strings" context frog-run-case
+        "test/cases/strings/types.frog" "test/cases/strings" "5\n5\n5\n4\n" "" 0 "" "" "" "strings/string_types" context frog-run-case
+        "test/cases/standalone/read_file.frog" "test/cases/standalone" "#\ntrue\n0\nfalse\n" "" 0 "" "" "" "standalone/read_file" context frog-run-case
+        "test/cases/standalone/macros.frog" "test/cases/standalone" "1\n2\n3\n3\n2\n1\n1\n2\n1\n6\n7\n9\n7\n" "" 0 "" "" "" "standalone/macros" context frog-run-case
+        "test/cases/stdlib/libc/main.frog" "test/cases/stdlib/libc" "A" "E" 0 "" "" "" "stdlib/libc" context frog-run-case
+        "test/cases/stdlib/string/main.frog" "test/cases/stdlib/string" "" "" 0 "" "" "" "stdlib/string" context frog-run-case
+        "test/cases/stdlib/subprocess/main.frog" "test/cases/stdlib/subprocess" "" "" 0 "" "" "" "stdlib/subprocess" context frog-run-case
+        "test/cases/stdlib/test/pass.frog" "test/cases/stdlib/test" "" "" 0 "" "" "" "stdlib/test_pass" context frog-run-case
+        "test/cases/stdlib/test/fail.frog" "test/cases/stdlib/test" "" "FAIL: first failure\nFAIL: second failure\n" 1 "" "" "" "stdlib/test_fail" context frog-run-case
+        "test/cases/imports/missing_file/main.frog" "test/cases/imports/missing_file" "frogc: import file not found\n" "imports-error/missing_file" context frog-error-fixture
+        "test/cases/imports/missing_name/main.frog" "test/cases/imports/missing_name" "frogc: imported name not found\n" "imports-error/missing_name" context frog-error-fixture
+        "test/cases/imports/extern_contract_conflict/main.frog" "test/cases/imports/extern_contract_conflict" "frogc: incompatible declarations for C symbol\n" "imports-error/extern_contract_conflict" context frog-error-fixture
+        "test/cases/imports/alias_conflict/main.frog" "test/cases/imports/alias_conflict" "frogc: import alias conflict\n" "imports-error/alias_conflict" context frog-error-fixture
+        "test/cases/imports/local_alias_conflict/main.frog" "test/cases/imports/local_alias_conflict" "frogc: import alias conflict\n" "imports-error/local_alias_conflict" context frog-error-fixture
+        "test/cases/imports/direct_cycle/main.frog" "test/cases/imports/direct_cycle" "frogc: cyclic import\n" "imports-error/direct_cycle" context frog-error-fixture
+        "test/cases/imports/self_cycle/main.frog" "test/cases/imports/self_cycle" "frogc: cyclic import\n" "imports-error/self_cycle" context frog-error-fixture
+        "test/cases/imports/wildcard/main.frog" "test/cases/imports/wildcard" "frogc: wildcard imports are not supported\n" "imports-error/wildcard" context frog-error-fixture
+        "test/cases/imports/comma/main.frog" "test/cases/imports/comma" "frogc: commas are not valid in import lists\n" "imports-error/comma" context frog-error-fixture
+        "test/cases/imports/module_alias/main.frog" "test/cases/imports/module_alias" "frogc: module aliases are not supported\n" "imports-error/module_alias" context frog-error-fixture
+        "test/cases/imports/nested_import/main.frog" "test/cases/imports/nested_import" "frogc: imports are only allowed at top level\n" "imports-error/nested_import" context frog-error-fixture
+        "test/cases/imports/unterminated_group/main.frog" "test/cases/imports/unterminated_group" "frogc: expected ) after import list\n" "imports-error/unterminated_group" context frog-error-fixture
+        "test/cases/imports/ignored_if_import/main.frog" "test/cases/imports/ignored_if_import" "frogc: imports are only allowed at top level\n" "imports-error/ignored_if_import" context frog-error-fixture
+        "test/cases/imports/ignored_while_import/main.frog" "test/cases/imports/ignored_while_import" "frogc: imports are only allowed at top level\n" "imports-error/ignored_while_import" context frog-error-fixture
+        "test/cases/imports/ignored_let_import/main.frog" "test/cases/imports/ignored_let_import" "frogc: imports are only allowed at top level\n" "imports-error/ignored_let_import" context frog-error-fixture
+        "test/cases/imports/reserved_alias/main.frog" "test/cases/imports/reserved_alias" "frogc: invalid imported name\n" "imports-error/reserved_alias" context frog-error-fixture
+        "test/cases/imports/ungrouped_parenthesis/main.frog" "test/cases/imports/ungrouped_parenthesis" "frogc: invalid imported name\n" "imports-error/ungrouped_parenthesis" context frog-error-fixture
+        "test/cases/imports/invalid_utf8_path/main.frog" "test/cases/imports/invalid_utf8_path" "frogc: import path must be valid UTF-8\n" "imports-error/invalid_utf8_path" context frog-error-fixture
+        "test/cases/imports/truncated_utf8_path/main.frog" "test/cases/imports/truncated_utf8_path" "frogc: import path must be valid UTF-8\n" "imports-error/truncated_utf8_path" context frog-error-fixture
+        "test/cases/imports/overlong_utf8_path/main.frog" "test/cases/imports/overlong_utf8_path" "frogc: import path must be valid UTF-8\n" "imports-error/overlong_utf8_path" context frog-error-fixture
+        "test/cases/imports/surrogate_utf8_path/main.frog" "test/cases/imports/surrogate_utf8_path" "frogc: import path must be valid UTF-8\n" "imports-error/surrogate_utf8_path" context frog-error-fixture
+        "test/cases/imports/above_unicode_utf8_path/main.frog" "test/cases/imports/above_unicode_utf8_path" "frogc: import path must be valid UTF-8\n" "imports-error/above_unicode_utf8_path" context frog-error-fixture
+        "test/cases/imports/path_too_long/main.frog" "test/cases/imports/path_too_long" "frogc: import path exceeds max-import-path-bytes\n" "imports-error/path_too_long" context frog-error-fixture
+        "test/cases/imports/records_collision/main.frog" "test/cases/imports/records_collision" "frogc: import alias conflict\n" "imports-error/records_collision" context frog-error-fixture
+        "test/cases/imports/records_alias_reserved/main.frog" "test/cases/imports/records_alias_reserved" "frogc: invalid imported name\n" "imports-error/records_alias_reserved" context frog-error-fixture
+        "test/cases/imports/records_alias_invalid_identifier/main.frog" "test/cases/imports/records_alias_invalid_identifier" "frogc: record import alias must be an identifier\n" "imports-error/records_alias_invalid_identifier" context frog-error-fixture
+        "test/cases/imports/unions_collision/main.frog" "test/cases/imports/unions_collision" "frogc: import alias conflict\n" "imports-error/unions_collision" context frog-error-fixture
+        "test/cases/imports/unions_alias_reserved/main.frog" "test/cases/imports/unions_alias_reserved" "frogc: invalid imported name\n" "imports-error/unions_alias_reserved" context frog-error-fixture
+        "test/cases/imports/unions_alias_invalid_identifier/main.frog" "test/cases/imports/unions_alias_invalid_identifier" "frogc: union import alias must be an identifier\n" "imports-error/unions_alias_invalid_identifier" context frog-error-fixture
+        "test/cases/imports/unions_nominal_mismatch/main.frog" "test/cases/imports/unions_nominal_mismatch" "frogc: compile-time stack type mismatch\n" "imports-error/unions_nominal_mismatch" context frog-error-fixture
+        "test/cases/imports/functions_alias_reserved/main.frog" "test/cases/imports/functions_alias_reserved" "frogc: invalid imported name\n" "imports-error/functions_alias_reserved" context frog-error-fixture
+        "test/cases/imports/functions_alias_invalid_identifier/main.frog" "test/cases/imports/functions_alias_invalid_identifier" "frogc: function import alias must be an identifier\n" "imports-error/functions_alias_invalid_identifier" context frog-error-fixture
+        "test/cases/imports/functions_alias_collision/main.frog" "test/cases/imports/functions_alias_collision" "frogc: import alias conflict\n" "imports-error/functions_alias_collision" context frog-error-fixture
+        "test/cases/imports/functions_nominal_mismatch/main.frog" "test/cases/imports/functions_nominal_mismatch" "frogc: compile-time stack type mismatch\n" "imports-error/functions_nominal_mismatch" context frog-error-fixture
+        "test/cases/semantics/integer_overflow/main.frog" "test/cases/semantics/integer_overflow" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_overflow" context frog-error-fixture
+        "test/cases/semantics/character_empty/main.frog" "test/cases/semantics/character_empty" "frogc: invalid character literal\n" "semantics-error/character_empty" context frog-error-fixture
+        "test/cases/semantics/character_two_codepoints/main.frog" "test/cases/semantics/character_two_codepoints" "frogc: invalid character literal\n" "semantics-error/character_two_codepoints" context frog-error-fixture
+        "test/cases/standalone/macro_recursive.frog" "test/cases/standalone" "frogc: recursive macro expansion\n" "standalone-error/macro_recursive" context frog-error-fixture
+        "test/cases/standalone/macro_invalid.frog" "test/cases/standalone" "frogc: else outside macro if block\n" "standalone-error/macro_invalid" context frog-error-fixture
+        "test/cases/standalone/macro_reserved_name.frog" "test/cases/standalone" "frogc: reserved keyword cannot be a macro name\n" "standalone-error/macro_reserved_name" context frog-error-fixture
+        "const bad 1 0 / end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant division by zero\n" "semantics-error/constant_divide_by_zero" context frog-error-source
+        "const bad 9223372036854775807 1 + end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_overflow" context frog-error-source
+        "const bad 0 9223372036854775807 - 1 - 1 - end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_subtract_overflow" context frog-error-source
+        "const bad 9223372036854775807 2 * end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_multiply_positive_overflow" context frog-error-source
+        "const bad 9223372036854775807 0 2 - * end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_multiply_positive_negative_overflow" context frog-error-source
+        "const bad 0 9223372036854775807 - 2 * end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_multiply_negative_positive_overflow" context frog-error-source
+        "const bad 0 9223372036854775807 - 0 2 - * end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_multiply_negative_overflow" context frog-error-source
+        "const bad 0 9223372036854775807 - 1 - 0 1 - * end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_multiply_min_overflow" context frog-error-source
+        "const bad 0 9223372036854775807 - 1 - 0 1 - / end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_divide_overflow" context frog-error-source
+        "const bad 0 9223372036854775807 - 1 - 0 1 - % end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_modulo_overflow" context frog-error-source
+        "const bad 1 63 << end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid shift in constant expression\n" "semantics-error/constant_invalid_shift" context frog-error-source
+        "const bad 0 1 - 1 << end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid shift in constant expression\n" "semantics-error/constant_negative_shift_value" context frog-error-source
+        "const bad 1 0 1 - << end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid shift in constant expression\n" "semantics-error/constant_negative_shift_count" context frog-error-source
+        "const bad 2 62 << end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant integer overflow\n" "semantics-error/constant_shift_overflow" context frog-error-source
+        "const bad 1 + end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant expression stack underflow\n" "semantics-error/constant_stack_underflow" context frog-error-source
+        "const bad true 1 + end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant expression type mismatch\n" "semantics-error/constant_type_mismatch" context frog-error-source
+        "const bad end\nproc main -- do end\n" "test/cases/semantics" "frogc: constant must produce at least one value\n" "semantics-error/constant_empty_result" context frog-error-source
+        "const first second end\nconst second first end\nproc main -- do end\n" "test/cases/semantics" "frogc: recursive constant\n" "semantics-error/constant_recursion" context frog-error-source
+        "const bad print end\nproc main -- do end\n" "test/cases/semantics" "frogc: unsupported constant expression word\n" "semantics-error/constant_unsupported_word" context frog-error-source
+        "const print 41 end\nconst value print end\nproc main -- do value print end\n" "test/cases/semantics" "frogc: unsupported constant expression word\n" "semantics-error/constant_builtin_precedence" context frog-error-source
+        "record Point x int end\nconst @Point.x 41 end\nconst value @Point.x end\nproc main -- do end\n" "test/cases/semantics" "frogc: unsupported constant expression word\n" "semantics-error/constant_record_getter_precedence" context frog-error-source
+        "macro twice dup + end\nconst bad 1 twice end\nproc main -- do end\n" "test/cases/semantics" "frogc: unsupported constant expression word\n" "semantics-error/constant_unsupported_macro" context frog-error-source
+        "const value 1 end\nconst value 2 end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate constant name\n" "semantics-error/constant_duplicate" context frog-error-source
+        "const value 1 end\nproc value -- int do 2 end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate declaration name: value\n" "semantics-error/constant_procedure_conflict" context frog-error-source
+        "proc main -- do const bad 1 end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/constant_inside_proc" context frog-error-source
+        "macro bad const value 1 end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/constant_inside_macro" context frog-error-source
+        "proc main -- do peek do end end\n" "test/cases/semantics" "frogc: peek requires at least one name\n" "semantics-error/peek_empty" context frog-error-source
+        "proc main -- do 1 peek first second do end end\n" "test/cases/semantics" "frogc: compile-time stack underflow\n" "semantics-error/peek_underflow" context frog-error-source
+        "proc main -- do 1 peek value end end\n" "test/cases/semantics" "frogc: unterminated peek binding\n" "semantics-error/peek_unterminated" context frog-error-source
+        "proc main -- do 1 peek value do end value drop end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/peek_scope" context frog-error-source
+        "const bad 1 peek value do end end\nproc main -- do end\n" "test/cases/semantics" "frogc: unsupported constant expression word\n" "semantics-error/peek_in_constant" context frog-error-source
+        "proc main -- do 0b print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_binary_missing_digits" context frog-error-source
+        "proc main -- do 0b102 print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_binary_invalid_digit" context frog-error-source
+        "proc main -- do 0o8 print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_octal_invalid_digit" context frog-error-source
+        "proc main -- do 0x print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_hex_missing_digits" context frog-error-source
+        "proc main -- do 0xg print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_hex_invalid_digit" context frog-error-source
+        "proc main -- do 0x1.2 print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_hex_trailing_punctuation" context frog-error-source
+        "proc main -- do 0b1000000000000000000000000000000000000000000000000000000000000000 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_binary_overflow" context frog-error-source
+        "proc main -- do 0o1000000000000000000000 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_octal_overflow" context frog-error-source
+        "proc main -- do 0x8000000000000000 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_hex_overflow" context frog-error-source
+        "proc main -- do '\x80' drop end\n" "test/cases/semantics" "frogc: invalid character literal\n" "semantics-error/character_malformed_utf8" context frog-error-source
+        "proc main -- do '\xE2\x82' drop end\n" "test/cases/semantics" "frogc: invalid character literal\n" "semantics-error/character_truncated_utf8" context frog-error-source
+        "proc main -- do if true end end\n" "test/cases/semantics" "frogc: if requires do before end\n" "semantics-error/if_without_do" context frog-error-source
+        "proc main -- do if true else end end\n" "test/cases/semantics" "frogc: else requires a preceding if arm and do\n" "semantics-error/else_without_do" context frog-error-source
+        "proc main -- do while end end\n" "test/cases/semantics" "frogc: while requires do before end\n" "semantics-error/while_without_do" context frog-error-source
+        "extern magnitude not-valid c-int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_invalid_c_symbol" context frog-error-source
+        "extern invalid int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_c_keyword" context frog-error-source
+        "extern invalid frog_push c-int -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_internal_symbol" context frog-error-source
+        "extern invalid frog_proc_0_main -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_generated_proc_symbol" context frog-error-source
+        "extern magnitude abs int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown C ABI type\n" "semantics-error/extern_unknown_abi_type" context frog-error-source
+        "extern pair abs c-int -- c-int c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: external procedure may return at most one value\n" "semantics-error/extern_multiple_outputs" context frog-error-source
+        "extern magnitude abs c-int -- c-int\n" "test/cases/semantics" "frogc: expected end after external signature\n" "semantics-error/extern_missing_end" context frog-error-source
+        "extern main abs c-int -- c-int end\n" "test/cases/semantics" "frogc: main cannot be external\n" "semantics-error/extern_main" context frog-error-source
+        "proc main -- do extern magnitude abs c-int -- c-int end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/extern_inside_proc" context frog-error-source
+        "macro bad extern magnitude abs c-int -- c-int end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/extern_inside_macro" context frog-error-source
+        "extern magnitude abs c-int -- c-int end\nproc main -- do true magnitude drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/extern_contract_type" context frog-error-source
+        "extern as-int abs c-int -- c-int end\nextern as-ptr abs c-int -- c-ptr end\nproc main -- do end\n" "test/cases/semantics" "frogc: incompatible declarations for C symbol\n" "semantics-error/extern_incompatible_contract" context frog-error-source
+        "record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc @Point.x drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/record_wrong_owner" context frog-error-source
+        "record Point x int end\nproc main -- do Point:alloc let point do true point !Point.x end end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/record_wrong_value" context frog-error-source
+        "record Point x int end\nproc main -- do Point:alloc @Point.y drop end\n" "test/cases/semantics" "frogc: unknown record field\n" "semantics-error/record_unknown_field" context frog-error-source
+        "record Point x int end\nproc main -- do Point:alloc Point.x drop end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/record_legacy_getter" context frog-error-source
+        "record Point x int end\nproc main -- do 1 Point:alloc Point.x! end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/record_legacy_setter" context frog-error-source
+        "record Point x Missing end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown type in record field\n" "semantics-error/record_unknown_type" context frog-error-source
+        "record Point x int x bool end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate record field: x\n" "semantics-error/record_duplicate_field" context frog-error-source
+        "record Point x int end\nproc main -- do 1 Point cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/record_unsupported_cast" context frog-error-source
+        "union Maybe end\nproc main -- do end\n" "test/cases/semantics" "frogc: union must declare at least one variant\n" "semantics-error/union_empty" context frog-error-source
+        "union Maybe case x case x end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate union variant: x\n" "semantics-error/union_duplicate_variant" context frog-error-source
+        "union Maybe case some Missing end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown type in union variant\n" "semantics-error/union_unknown_type" context frog-error-source
+        "union Maybe case pair int bool end\nproc main -- do end\n" "test/cases/semantics" "frogc: union variant may carry at most one value\n" "semantics-error/union_multiple_payloads" context frog-error-source
+        "union Maybe case none end\nproc main -- do Maybe:other drop end\n" "test/cases/semantics" "frogc: unknown union variant\n" "semantics-error/union_unknown_variant" context frog-error-source
+        "union Maybe case some int end\nproc main -- do true Maybe:some drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/union_wrong_payload_type" context frog-error-source
+        "union Maybe case none end\nproc main -- do 1 Maybe cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/union_unsupported_cast" context frog-error-source
+        "proc main -- do union Maybe case none end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/union_inside_proc" context frog-error-source
+        "macro bad union Maybe case none end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/union_inside_macro" context frog-error-source
+        "union end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected union name\n" "semantics-error/union_missing_name" context frog-error-source
+        "union P.Q case none end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid union name\n" "semantics-error/union_invalid_name" context frog-error-source
+        "union Maybe case end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected union variant name\n" "semantics-error/union_missing_variant_name" context frog-error-source
+        "union Maybe case P.Q end\nproc main -- do end\n" "test/cases/semantics" "frogc: union variant name must be an identifier\n" "semantics-error/union_invalid_variant_name" context frog-error-source
+        "fn Mapper int -- int end\nproc nope bool -- int do drop 0 end\nproc main -- do Mapper:ref:nope drop end\n" "test/cases/semantics" "frogc: function reference contract mismatch\n" "semantics-error/function_contract_mismatch" context frog-error-source
+        "fn Mapper -- end\nproc main -- do Mapper:ref:missing drop end\n" "test/cases/semantics" "frogc: function reference target not found\n" "semantics-error/function_target_not_found" context frog-error-source
+        "fn Mapper -- end\nproc main -- do Mapper:nope drop end\n" "test/cases/semantics" "frogc: unknown function operation\n" "semantics-error/function_unknown_operation" context frog-error-source
+        "fn Mapper -- end\nproc main -- do Mapper:ref drop end\n" "test/cases/semantics" "frogc: expected function reference target\n" "semantics-error/function_missing_target" context frog-error-source
+        "fn Mapper Missing -- int end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown type in function signature\n" "semantics-error/function_unknown_signature_type" context frog-error-source
+        "fn -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected function name\n" "semantics-error/function_missing_name" context frog-error-source
+        "fn P.Q -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid function name\n" "semantics-error/function_invalid_name" context frog-error-source
+        "fn Mapper int end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected -- in function signature\n" "semantics-error/function_missing_separator" context frog-error-source
+        "fn Mapper -- int" "test/cases/semantics" "frogc: expected end after function signature\n" "semantics-error/function_missing_end" context frog-error-source
+        "proc main -- do fn Mapper -- end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/function_inside_proc" context frog-error-source
+        "macro bad fn Mapper -- end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/function_inside_macro" context frog-error-source
+        "fn Mapper int -- int end\nproc inc int -- int do 1 + end\nproc main -- do true Mapper:ref:inc Mapper:call drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/function_call_type_mismatch" context frog-error-source
+        "fn Mapper int -- int end\nproc main -- do 1 Mapper cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/function_unsupported_int_cast" context frog-error-source
+        "fn Mapper int -- int end\nproc main -- do 0 ptr cast Mapper cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/function_unsupported_ptr_cast" context frog-error-source
+        "fn First -- end\nfn Second -- end\nproc target -- do end\nproc main -- do First:ref:target Second cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/function_unsupported_function_cast" context frog-error-source
+        "fn Mapper -- end\nfn Mapper -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate function name: Mapper\n" "semantics-error/function_duplicate_name" context frog-error-source
+        "record Mapper value int end\nfn Mapper -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate declaration name: Mapper\n" "semantics-error/function_declaration_collision" context frog-error-source
+        "fn Pair int -- int int end\nproc one int -- int do end\nproc main -- do Pair:ref:one drop end\n" "test/cases/semantics" "frogc: function reference contract mismatch\n" "semantics-error/function_output_contract_mismatch" context frog-error-source
+        "macro + 1 2 + end\nproc main -- do + drop end\n" "test/cases/semantics" "frogc: recursive macro expansion\n" "semantics-error/optimizer_recursive_macro_shadow" context frog-error-source
+        "proc main -- do 1 true + drop end\n" "test/cases/semantics" "frogc: invalid operand types for pointer/integer arithmetic\n" "semantics-error/optimizer_type_error" context frog-error-source
+        "record String value int end\nproc main -- do end\n" "test/cases/strings" "frogc: invalid record name\n" "strings-error/reserved-string-record" context frog-error-source
+        "union String case value end\nproc main -- do end\n" "test/cases/strings" "frogc: invalid union name\n" "strings-error/reserved-string-union" context frog-error-source
+        "fn String -- end\nproc main -- do end\n" "test/cases/strings" "frogc: invalid function name\n" "strings-error/reserved-string-function" context frog-error-source
+        "proc String -- do end\n" "test/cases/strings" "frogc: reserved keyword cannot be a procedure name\n" "strings-error/reserved-string-procedure" context frog-error-source
+        "macro String 1 end\nproc main -- do end\n" "test/cases/strings" "frogc: reserved keyword cannot be a macro name\n" "strings-error/reserved-string-macro" context frog-error-source
+        "proc main -- do 1 let String do end end\n" "test/cases/strings" "frogc: String cannot be a local name\n" "strings-error/reserved-string-local" context frog-error-source
+        "from \"lib.frog\" import shared as String\nproc main -- do end\n" "test/cases/strings" "frogc: invalid imported name\n" "strings-error/reserved-string-import" context frog-error-source
+        "extern bad FrogString -- c-int end\nproc main -- do bad drop end\n" "test/cases/strings" "frogc: invalid C symbol\n" "strings-error/reserved-c-string-symbol" context frog-error-source
+        "proc main -- do \"x\" @u8 drop end\n" "test/cases/strings" "frogc: compile-time stack type mismatch\n" "strings-error/string-as-ptr" context frog-error-source
+        "proc main -- do \"x\" 1 + drop end\n" "test/cases/strings" "frogc: invalid operand types for pointer/integer arithmetic\n" "strings-error/string-as-int" context frog-error-source
+        context frog-large-path-error
+    end
+end
+
+

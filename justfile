@@ -23,11 +23,16 @@ fmt: _black
 check: typecheck fmt _vscode-grammar
 
 [group("test")]
-test: check bootstrap-check
+test: check bootstrap-check frog-regressions
     python -m test
     git diff --exit-code HEAD -- test/snapshots
     git status --short -- test/snapshots
     test -z "$(git status --porcelain -- test/snapshots)"
+
+[group("test")]
+frog-regressions: frogc-seed
+    build/frogc build -o build/frog-tests test/runner.frog
+    build/frog-tests "{{justfile_directory()}}/build/frogc" "{{justfile_directory()}}/build/frog-test-case.exe"
 
 _compile-frogc source output:
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"

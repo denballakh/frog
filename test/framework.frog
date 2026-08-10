@@ -1,0 +1,314 @@
+from "../stdlib/libc.frog" import free
+from "../stdlib/string.frog" import (
+    bytes-equal bytes-contain
+    ByteBuffer byte-buffer-new byte-buffer-push
+    byte-buffer-append-string byte-buffer-free
+)
+from "../stdlib/subprocess.frog" import (
+    CompletedProcess
+    subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
+    subprocess-run subprocess-run-bytes subprocess-run-bytes-in
+    completed-process-free
+)
+from "../stdlib/test.frog" import ( TestSuite test-suite check test-finish )
+
+record FrogTestContext
+    compiler ptr
+    executable ptr
+    suite TestSuite
+end
+
+proc frog-test-context ptr ptr -- FrogTestContext do
+    let compiler executable do
+        FrogTestContext:alloc
+        peek context do
+            compiler context !FrogTestContext.compiler
+            executable context !FrogTestContext.executable
+            test-suite context !FrogTestContext.suite
+        end
+    end
+end
+
+proc frog-test-finish FrogTestContext -- do
+    let context do
+        context @FrogTestContext.suite
+        context ptr cast free
+        test-finish
+    end
+end
+
+proc frog-compiler-argv FrogTestContext -- ptr do
+    let context do
+        1 subprocess-argv
+        peek arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+        end
+    end
+end
+
+proc frog-compile-bytes ptr int String FrogTestContext -- CompletedProcess do
+    let source source-length cwd context do
+        context frog-compiler-argv
+        let arguments do
+            arguments source source-length cwd subprocess-run-bytes-in
+            arguments subprocess-argv-free
+        end
+    end
+end
+
+proc frog-compile-source String String FrogTestContext -- CompletedProcess do
+    let source cwd context do
+        source String.bytes source String.len cwd context frog-compile-bytes
+    end
+end
+
+proc frog-compile-fixture String String FrogTestContext -- CompletedProcess do
+    let source-path cwd context do
+        source-path String.bytes source-path String.len read-file
+        let source source-length success do
+            success drop
+            source source-length cwd context frog-compile-bytes
+            source free
+        end
+    end
+end
+
+proc frog-compiler-succeeded CompletedProcess -- bool do
+    let result do
+        result @CompletedProcess.returncode 0 ==
+        result @CompletedProcess.stderr_len 0 == &&
+    end
+end
+
+proc frog-generated-c-has-no-legacy-stack CompletedProcess -- bool do
+    let result do
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "FrogStack" String.bytes "FrogStack" String.len bytes-contain !
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "frog_stack" String.bytes "frog_stack" String.len bytes-contain ! &&
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "frog_slots" String.bytes "frog_slots" String.len bytes-contain ! &&
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "frog_push" String.bytes "frog_push" String.len bytes-contain ! &&
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "frog_pop" String.bytes "frog_pop" String.len bytes-contain ! &&
+    end
+end
+
+proc frog-check-compiler CompletedProcess String FrogTestContext -- bool do
+    let result name context do
+        result frog-compiler-succeeded
+        peek succeeded do
+            succeeded name context @FrogTestContext.suite check
+            if succeeded do
+                result frog-generated-c-has-no-legacy-stack
+                name context @FrogTestContext.suite check
+            end
+        end
+    end
+end
+
+proc frog-gcc-argv String FrogTestContext -- ptr do
+    let helper context do
+        if helper String.len 0 > do 14 else 13 end
+        subprocess-argv
+        peek arguments do
+            "gcc" arguments 0 subprocess-arg
+            "-std=c11" arguments 1 subprocess-arg
+            "-pedantic" arguments 2 subprocess-arg
+            "-Wall" arguments 3 subprocess-arg
+            "-Wextra" arguments 4 subprocess-arg
+            "-Wconversion" arguments 5 subprocess-arg
+            "-Werror" arguments 6 subprocess-arg
+            "-O2" arguments 7 subprocess-arg
+            "-x" arguments 8 subprocess-arg
+            "c" arguments 9 subprocess-arg
+            "-" arguments 10 subprocess-arg
+            if helper String.len 0 > do
+                helper arguments 11 subprocess-arg
+                "-o" arguments 12 subprocess-arg
+                context @FrogTestContext.executable arguments 13 subprocess-arg-pointer
+            else
+                "-o" arguments 11 subprocess-arg
+                context @FrogTestContext.executable arguments 12 subprocess-arg-pointer
+            end
+        end
+    end
+end
+
+proc frog-build-generated CompletedProcess String FrogTestContext -- CompletedProcess do
+    let compiler-result helper context do
+        helper context frog-gcc-argv
+        let arguments do
+            arguments
+            compiler-result @CompletedProcess.stdout
+            compiler-result @CompletedProcess.stdout_len
+            subprocess-run-bytes
+            arguments subprocess-argv-free
+        end
+    end
+end
+
+proc frog-build-succeeded CompletedProcess -- bool do
+    let result do
+        result @CompletedProcess.returncode 0 ==
+        result @CompletedProcess.stdout_len 0 == &&
+        result @CompletedProcess.stderr_len 0 == &&
+    end
+end
+
+proc frog-runtime-argv String String FrogTestContext -- ptr do
+    let first second context do
+        if second String.len 0 > do 3
+        elif first String.len 0 > do 2
+        else 1
+        end
+        subprocess-argv
+        peek arguments do
+            context @FrogTestContext.executable arguments 0 subprocess-arg-pointer
+            if first String.len 0 > do first arguments 1 subprocess-arg end
+            if second String.len 0 > do second arguments 2 subprocess-arg end
+        end
+    end
+end
+
+proc frog-run-generated String String FrogTestContext -- CompletedProcess do
+    let first second context do
+        first second context frog-runtime-argv
+        let arguments do
+            arguments "" subprocess-run
+            arguments subprocess-argv-free
+        end
+    end
+end
+
+proc frog-process-equals CompletedProcess String String int -- bool do
+    let result expected-stdout expected-stderr expected-status do
+        result @CompletedProcess.returncode expected-status ==
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        expected-stdout String.bytes expected-stdout String.len bytes-equal &&
+        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+        expected-stderr String.bytes expected-stderr String.len bytes-equal &&
+    end
+end
+
+proc frog-process-status-equals CompletedProcess String int -- bool do
+    let result expected-stderr expected-status do
+        result @CompletedProcess.returncode expected-status ==
+        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+        expected-stderr String.bytes expected-stderr String.len bytes-equal &&
+    end
+end
+
+proc frog-run-case String String String String int String String String String FrogTestContext -- do
+    let source-path cwd expected-stdout expected-stderr expected-status helper first second name context do
+        source-path cwd context frog-compile-fixture
+        let compiler-result do
+            if compiler-result name context frog-check-compiler do
+                compiler-result helper context frog-build-generated
+                let build-result do
+                    build-result frog-build-succeeded
+                    let build-succeeded do
+                        build-succeeded name context @FrogTestContext.suite check
+                        if build-succeeded do
+                            first second context frog-run-generated
+                            let run-result do
+                                run-result expected-stdout expected-stderr expected-status frog-process-equals
+                                name context @FrogTestContext.suite check
+                                run-result completed-process-free
+                            end
+                        end
+                    end
+                    build-result completed-process-free
+                end
+            end
+            compiler-result completed-process-free
+        end
+    end
+end
+
+proc frog-run-status-case String String String int String FrogTestContext -- do
+    let source-path cwd expected-stderr expected-status name context do
+        source-path cwd context frog-compile-fixture
+        let compiler-result do
+            if compiler-result name context frog-check-compiler do
+                compiler-result "" context frog-build-generated
+                let build-result do
+                    build-result frog-build-succeeded
+                    let build-succeeded do
+                        build-succeeded name context @FrogTestContext.suite check
+                        if build-succeeded do
+                            "" "" context frog-run-generated
+                            let run-result do
+                                run-result expected-stderr expected-status frog-process-status-equals
+                                name context @FrogTestContext.suite check
+                                run-result completed-process-free
+                            end
+                        end
+                    end
+                    build-result completed-process-free
+                end
+            end
+            compiler-result completed-process-free
+        end
+    end
+end
+
+proc frog-check-compile-error CompletedProcess String String FrogTestContext -- do
+    let result expected-stderr name context do
+        result @CompletedProcess.returncode 0 !=
+        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+        expected-stderr String.bytes expected-stderr String.len bytes-equal &&
+        name context @FrogTestContext.suite check
+    end
+end
+
+proc frog-error-fixture String String String String FrogTestContext -- do
+    let source-path cwd expected-stderr name context do
+        source-path cwd context frog-compile-fixture
+        let result do
+            result expected-stderr name context frog-check-compile-error
+            result completed-process-free
+        end
+    end
+end
+
+proc frog-error-source String String String String FrogTestContext -- do
+    let source cwd expected-stderr name context do
+        source cwd context frog-compile-source
+        let result do
+            result expected-stderr name context frog-check-compile-error
+            result completed-process-free
+        end
+    end
+end
+
+proc frog-large-path-error FrogTestContext -- do
+    let context do
+        65536 byte-buffer-new
+        let source do
+            "from \"" source byte-buffer-append-string
+            0
+            while dup 65536 < do
+                let index do
+                    97 source byte-buffer-push
+                    index 1 +
+                end
+            end
+            drop
+            "\" import value\nproc main -- do value print end\n"
+            source byte-buffer-append-string
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            "test/cases/imports" context frog-compile-bytes
+            let result do
+                result
+                "frogc: import path exceeds max-import-path-bytes\n"
+                "imports-error/large_path"
+                context
+                frog-check-compile-error
+                result completed-process-free
+            end
+            source byte-buffer-free
+        end
+    end
+end

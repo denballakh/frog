@@ -1,0 +1,21 @@
+from "../stdlib/libc.frog" import exit
+from "framework.frog" import (
+    frog-test-context frog-test-finish
+)
+from "regression_cases.frog" import run-regression-cases
+
+const pointer-bytes 8 end
+
+proc main -- do
+    args
+    let argv argc do
+        if argc 3 != do 2 exit end
+        argv pointer-bytes + @ptr
+        argv pointer-bytes 2 * + @ptr
+        frog-test-context
+        let context do
+            context run-regression-cases
+            context frog-test-finish
+        end
+    end
+end
