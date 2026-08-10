@@ -473,30 +473,30 @@ proc set-ctx-is-root bool ptr -- do
     end
 end
 
-proc program-root-module ptr -- ptr do program-root-module-offset pointer-field-read end
-proc program-module-head ptr -- ptr do program-module-head-offset pointer-field-read end
-proc program-module-tail ptr -- ptr do program-module-tail-offset pointer-field-read end
-proc program-module-count ptr -- int do program-module-count-offset field-read end
-proc program-next-proc-id ptr -- int do program-next-proc-id-offset field-read end
-proc program-token-count ptr -- int do program-token-count-offset field-read end
-proc program-strings ptr -- ptr do program-strings-offset pointer-field-read end
-proc program-string-count ptr -- int do program-string-count-offset field-read end
-proc program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
-proc program-next-function-type ptr -- int do program-next-function-type-offset field-read end
+proc @program-root-module ptr -- ptr do program-root-module-offset pointer-field-read end
+proc @program-module-head ptr -- ptr do program-module-head-offset pointer-field-read end
+proc @program-module-tail ptr -- ptr do program-module-tail-offset pointer-field-read end
+proc @program-module-count ptr -- int do program-module-count-offset field-read end
+proc @program-next-proc-id ptr -- int do program-next-proc-id-offset field-read end
+proc @program-token-count ptr -- int do program-token-count-offset field-read end
+proc @program-strings ptr -- ptr do program-strings-offset pointer-field-read end
+proc @program-string-count ptr -- int do program-string-count-offset field-read end
+proc @program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
+proc @program-next-function-type ptr -- int do program-next-function-type-offset field-read end
 
-proc set-program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
-proc set-program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
-proc set-program-module-tail ptr ptr -- do program-module-tail-offset pointer-field-write end
-proc set-program-module-count int ptr -- do program-module-count-offset field-write end
-proc set-program-next-proc-id int ptr -- do program-next-proc-id-offset field-write end
-proc set-program-token-count int ptr -- do program-token-count-offset field-write end
-proc set-program-strings ptr ptr -- do program-strings-offset pointer-field-write end
-proc set-program-string-count int ptr -- do program-string-count-offset field-write end
-proc set-program-next-nominal-type int ptr -- do program-next-nominal-type-offset field-write end
-proc set-program-next-function-type int ptr -- do program-next-function-type-offset field-write end
+proc !program-root-module ptr ptr -- do program-root-module-offset pointer-field-write end
+proc !program-module-head ptr ptr -- do program-module-head-offset pointer-field-write end
+proc !program-module-tail ptr ptr -- do program-module-tail-offset pointer-field-write end
+proc !program-module-count int ptr -- do program-module-count-offset field-write end
+proc !program-next-proc-id int ptr -- do program-next-proc-id-offset field-write end
+proc !program-token-count int ptr -- do program-token-count-offset field-write end
+proc !program-strings ptr ptr -- do program-strings-offset pointer-field-write end
+proc !program-string-count int ptr -- do program-string-count-offset field-write end
+proc !program-next-nominal-type int ptr -- do program-next-nominal-type-offset field-write end
+proc !program-next-function-type int ptr -- do program-next-function-type-offset field-write end
 
 proc string-address ptr int -- ptr do
-    let program index do program program-strings index string-bytes * + end
+    let program index do program @program-strings index string-bytes * + end
 end
 
 proc string-field ptr int int -- int do
@@ -519,9 +519,9 @@ end
 
 proc program-allocate-proc-id ptr -- int do
     let program do
-        program program-next-proc-id
+        program @program-next-proc-id
         let proc-id do
-            proc-id 1 + program set-program-next-proc-id
+            proc-id 1 + program !program-next-proc-id
             proc-id
         end
     end
@@ -529,9 +529,9 @@ end
 
 proc program-allocate-nominal-type ptr -- int do
     let program do
-        program program-next-nominal-type
+        program @program-next-nominal-type
         let nominal-type do
-            nominal-type 1 + program set-program-next-nominal-type
+            nominal-type 1 + program !program-next-nominal-type
             nominal-type
         end
     end
@@ -539,9 +539,9 @@ end
 
 proc program-allocate-function-type ptr -- int do
     let program do
-        program program-next-function-type
+        program @program-next-function-type
         let function-type do
-            function-type 1 + program set-program-next-function-type
+            function-type 1 + program !program-next-function-type
             function-type
         end
     end
@@ -550,15 +550,15 @@ end
 proc program-add-module ptr ptr -- do
     let program module do
         program module set-ctx-program
-        program program-module-count module set-ctx-module-id
+        program @program-module-count module set-ctx-module-id
         0 ptr cast module set-ctx-next-module
-        if program program-module-count 0 == do
-            module program set-program-module-head
+        if program @program-module-count 0 == do
+            module program !program-module-head
         else
-            module program program-module-tail set-ctx-next-module
+            module program @program-module-tail set-ctx-next-module
         end
-        module program set-program-module-tail
-        program program-module-count 1 + program set-program-module-count
+        module program !program-module-tail
+        program @program-module-count 1 + program !program-module-count
     end
 end
 
@@ -3127,7 +3127,7 @@ proc find-pooled-string ptr ptr int int -- int do
         while
             let string-index found do
                 string-index found
-                string-index program program-string-count < found 0 < &&
+                string-index program @program-string-count < found 0 < &&
             end
         do
             let string-index found do
@@ -3148,7 +3148,7 @@ proc count-string-hash ptr int -- int do
         0 0
         while
             let string-index count do
-                string-index count string-index program program-string-count <
+                string-index count string-index program @program-string-count <
             end
         do
             let string-index count do
@@ -3166,13 +3166,13 @@ end
 
 proc add-pooled-string ptr ptr int int int -- int do
     let program bytes length hash collision do
-        program program-string-count
+        program @program-string-count
         let string-index do
             bytes program string-index set-string-data
             length program string-index string-length-offset set-string-field
             hash program string-index string-hash-offset set-string-field
             collision program string-index string-collision-offset set-string-field
-            string-index 1 + program set-program-string-count
+            string-index 1 + program !program-string-count
             string-index
         end
     end
@@ -3220,9 +3220,9 @@ end
 
 proc initialize-string-pool ptr -- do
     let program do
-        program program-token-count 1 + string-bytes * alloc program set-program-strings
-        0 program set-program-string-count
-        program program-module-head
+        program @program-token-count 1 + string-bytes * alloc program !program-strings
+        0 program !program-string-count
+        program @program-module-head
         while dup int cast 0 != do
             dup program swap intern-module-strings
             ctx-next-module
@@ -3628,7 +3628,7 @@ proc initialize-module-source ptr ptr int -- do
         0 ctx set-ctx-token-count
         0 1 - ctx set-ctx-main-proc
         ctx lex
-        ctx ctx-program program-token-count ctx ctx-token-count + ctx ctx-program set-program-token-count
+        ctx ctx-program @program-token-count ctx ctx-token-count + ctx ctx-program !program-token-count
 
         ctx ctx-token-count 1 + proc-bytes * alloc ctx set-ctx-procs
         ctx ctx-token-count 1 + macro-bytes * alloc ctx set-ctx-macros
@@ -3668,7 +3668,7 @@ end
 
 proc find-module-by-path ptr ptr int -- ptr do
     let program path path-length do
-        program program-module-head path path-length find-module-by-path-from
+        program @program-module-head path path-length find-module-by-path-from
     end
 end
 
@@ -3965,7 +3965,7 @@ end
 
 proc resolve-all-module-scopes ptr -- do
     let program do
-        program program-module-head
+        program @program-module-head
         while dup int cast 0 != do
             dup resolve-module-scope
             ctx-next-module
@@ -4100,7 +4100,7 @@ end
 
 proc resolve-all-types ptr -- do
     let program do
-        program program-module-head
+        program @program-module-head
         while dup int cast 0 != do
             dup resolve-module-record-field-types
             dup resolve-module-union-case-types
@@ -4265,7 +4265,7 @@ end
 
 proc require-external-compatible-with-earlier ptr ptr int -- do
     let program ctx proc-index do
-        program program-module-head
+        program @program-module-head
         while dup int cast ctx int cast != do
             dup
             let other do
@@ -4296,7 +4296,7 @@ end
 
 proc validate-external-declarations ptr -- do
     let program do
-        program program-module-head
+        program @program-module-head
         while dup int cast 0 != do
             dup program swap validate-module-external-declarations
             ctx-next-module
@@ -4556,7 +4556,7 @@ end
 proc emit-string-globals ptr -- do
     let program do
         0
-        while dup program program-string-count < do
+        while dup program @program-string-count < do
             dup
             let string-index do
                 program string-index emit-c-string-literal
@@ -4570,7 +4570,7 @@ end
 proc emit-string-references ptr -- do
     let program do
         0
-        while dup program program-string-count < do
+        while dup program @program-string-count < do
             dup
             let string-index do
                 "  (void)&" emit program string-index emit-string-symbol ";\n" emit
@@ -4658,9 +4658,9 @@ end
 
 proc emit-c-emitter-support ptr -- do
     let program do
-        program program-root-module emit-c-preamble
+        program @program-root-module emit-c-preamble
         program emit-string-globals
-        program program-module-head
+        program @program-module-head
         while dup int cast 0 != do
             dup emit-prototypes
             ctx-next-module
@@ -5807,7 +5807,7 @@ end
 
 proc emit-function-dispatch-cases ptr ptr int -- do
     let program function-module function-index do
-        program program-module-head
+        program @program-module-head
         while dup int cast 0 != do
             let proc-module do
                 function-module function-index proc-module emit-function-dispatch-module
@@ -6186,11 +6186,11 @@ proc create-compile-context ptr ptr int -- ptr do
             ctx cc set-cc-defining-module
             ctx cc set-cc-scope-module
             proc-index cc set-cc-proc
-            program program-token-count 1 + cell-bytes * alloc cc set-cc-type-stack
+            program @program-token-count 1 + cell-bytes * alloc cc set-cc-type-stack
             0 cc set-cc-type-count
-            program program-token-count 1 + block-bytes * alloc cc set-cc-blocks
+            program @program-token-count 1 + block-bytes * alloc cc set-cc-blocks
             0 cc set-cc-block-count
-            program program-token-count 1 + local-bytes * alloc cc set-cc-locals
+            program @program-token-count 1 + local-bytes * alloc cc set-cc-locals
             0 cc set-cc-local-count
             0 cc set-cc-next-local
             0 cc set-cc-indent
@@ -6328,7 +6328,7 @@ end
 
 proc compile-all-procedures ptr -- do
     let program do
-        program program-module-head
+        program @program-module-head
         while dup int cast 0 != do
             dup program swap compile-module-procedures
             ctx-next-module
@@ -6339,7 +6339,7 @@ end
 
 proc emit-main-wrapper ptr -- do
     let program do
-        program program-root-module
+        program @program-root-module
         let ctx do
             "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n" emit
             program emit-string-references
@@ -6355,17 +6355,17 @@ proc compile-source ptr int -- do
     let source source-length do
         program-bytes alloc
         let program do
-            0 ptr cast program set-program-root-module
-            0 ptr cast program set-program-module-head
-            0 ptr cast program set-program-module-tail
-            0 program set-program-module-count
-            0 program set-program-next-proc-id
-            type-nominal-base program set-program-next-nominal-type
-            type-function-base program set-program-next-function-type
-            0 program set-program-token-count
-            0 ptr cast program set-program-strings
-            0 program set-program-string-count
-            0 ptr cast program set-program-prelude-module
+            0 ptr cast program !program-root-module
+            0 ptr cast program !program-module-head
+            0 ptr cast program !program-module-tail
+            0 program !program-module-count
+            0 program !program-next-proc-id
+            type-nominal-base program !program-next-nominal-type
+            type-function-base program !program-next-function-type
+            0 program !program-token-count
+            0 ptr cast program !program-strings
+            0 program !program-string-count
+            0 ptr cast program !program-prelude-module
             ctx-bytes alloc
             let ctx do
                 0 ptr cast ctx set-ctx-canonical-path
@@ -6378,7 +6378,7 @@ proc compile-source ptr int -- do
                 resolve-new ctx set-ctx-resolve-state
                 true ctx set-ctx-is-root
                 program ctx program-add-module
-                ctx program set-program-root-module
+                ctx program !program-root-module
                 ctx source source-length initialize-module-source
                 program ctx load-module-imports
                 load-loaded ctx set-ctx-load-state
@@ -6397,8 +6397,8 @@ proc compile-source ptr int -- do
 end
 
 proc program-prelude-module-offset -- int do 64 end
-proc program-prelude-module ptr -- ptr do program-prelude-module-offset pointer-field-read end
-proc set-program-prelude-module ptr ptr -- do program-prelude-module-offset pointer-field-write end
+proc @program-prelude-module ptr -- ptr do program-prelude-module-offset pointer-field-read end
+proc !program-prelude-module ptr ptr -- do program-prelude-module-offset pointer-field-write end
 
 proc initialize-prelude ptr -- do
     let program do
@@ -6425,14 +6425,14 @@ macro rot let a b c do b c a end end
                 prelude source String.bytes source String.len initialize-module-source
             end
             load-loaded prelude set-ctx-load-state
-            prelude program set-program-prelude-module
+            prelude program !program-prelude-module
         end
     end
 end
 
 proc compile-prelude-macro ptr int -- bool do
     let cc token-index do
-        cc cc-program program-prelude-module
+        cc cc-program @program-prelude-module
         let prelude do
             prelude cc cc-defining-module token-index find-scope-symbol
             let symbol-index do
