@@ -33,7 +33,7 @@ proc inc int -- int do
 end
 ```
 
-Procedure calls are statically checked against declared stack contracts and use the generated runtime cell stack.
+Procedure calls are statically checked against declared stack contracts. Generated C passes inputs as ordinary arguments and returns outputs directly or in a result struct; each procedure uses a fixed-size local cell array for intermediate values.
 
 ## Records
 
@@ -116,7 +116,7 @@ proc main -- do
 end
 ```
 
-`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and external Frog procedures are supported because external declarations also have generated Frog stack wrappers.
+`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and external Frog procedures are supported because external declarations also have generated procedure wrappers with the same call ABI.
 
 `Name:call` has stack effect `<inputs> Name -- <outputs>`: the function reference is on top of its inputs. Function-reference types are nominal, so independently declared types with identical contracts are not interchangeable. They may appear in procedure signatures, record fields, union payloads, and other function-reference contracts.
 
