@@ -140,7 +140,7 @@ end
 
 The supported ABI types are `c-int` (Frog `int`, C `int`), `c-bool` (Frog `bool`, C `int` normalized to zero or one), and `c-ptr` (Frog `ptr`, C `void *`). An external function may consume any number of values and return zero or one value. It cannot be variadic.
 
-The C symbol must be an ASCII C identifier that is not a C11 keyword or a generated-C name. The `frog_` prefix, numeric wrapper names such as `p0`, `main`, `Cell`, and `FrogStack` are reserved. Generated code declares and calls the symbol directly, so it must be provided by the C implementation or supplied when the generated C is linked. Frog does not load libraries dynamically or process C headers.
+The C symbol must be an ASCII C identifier that is not a C11 keyword or a generated-C name. The `frog_` prefix, numeric wrapper names such as `p0`, `main`, `Cell`, and `FrogString` are reserved. Generated code declares and calls the symbol directly, so it must be provided by the C implementation or supplied when the generated C is linked. Frog does not load libraries dynamically or process C headers.
 
 External functions use normal Frog name resolution and static stack-contract checking. They can be imported, aliased, and reexported like Frog procedures. Multiple Frog names may bind the same C symbol only when every declaration has the same ABI contract.
 

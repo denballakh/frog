@@ -34,9 +34,13 @@ grep -q '^static uint8_t frog_string_2771466528_1_bytes\[\] = ' "$output/strings
 grep -q '^static const FrogString frog_string_2771466528_1 = { frog_string_2771466528_1_bytes, 8 };$' "$output/strings.c"
 same_symbol=$(sed -n 's/^static uint8_t \(frog_string_[0-9_]*\)_bytes\[\] = "same";$/\1/p' "$output/strings.c")
 test -n "$same_symbol"
-test "$(grep -F -c "frog_push((Cell)(intptr_t)&$same_symbol);" "$output/strings.c")" -eq 3
-if sed -n '/^void p[0-9][0-9]*(void) {$/,/^}$/p' "$output/strings.c" | grep -q 'frog_alloc('; then
+test "$(grep -F -c "= (Cell)(intptr_t)&$same_symbol;" "$output/strings.c")" -eq 3
+if [[ $(grep -c 'frog_alloc(' "$output/strings.c") -ne 1 ]]; then
     echo 'string literal use must not allocate' >&2
+    exit 1
+fi
+if grep -Eq 'FrogStack|frog_stack|frog_push|frog_pop' "$output/strings.c"; then
+    echo 'generated runtime stack symbol in strings.c' >&2
     exit 1
 fi
 

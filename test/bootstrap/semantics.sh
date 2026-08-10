@@ -10,6 +10,7 @@ compiler=$1
 fixtures=$(cd "$(dirname "$0")/semantics" && pwd)
 output=$(cd "$(dirname "$0")/../.." && pwd)/build/bootstrap-semantics
 mkdir -p "$output"
+generated_sources=()
 
 run_ok() {
     local case_name=$1
@@ -21,6 +22,7 @@ run_ok() {
         cd "$fixture"
         "$compiler" < main.frog > "$output/$case_name.c"
     )
+    generated_sources+=("$output/$case_name.c")
     local sources=("$output/$case_name.c")
     if [[ -f "$fixture/helper.c" ]]; then
         sources+=("$fixture/helper.c")
@@ -40,6 +42,7 @@ run_status() {
         cd "$fixture"
         "$compiler" < main.frog > "$output/$case_name.c"
     )
+    generated_sources+=("$output/$case_name.c")
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 \
         "$output/$case_name.c" -o "$output/$case_name"
     local actual_status
@@ -111,16 +114,21 @@ grep -Fq 'void p2(void);' "$output/functions_layout.c"
 grep -Fq 'Cell p3(Cell frog_arg_0, Cell frog_arg_1);' "$output/functions_layout.c"
 grep -Fq 'frog_results_2 p4(Cell frog_arg_0);' "$output/functions_layout.c"
 grep -Fq 'typedef struct { Cell value_0; Cell value_1; } frog_results_2;' "$output/functions_layout.c"
-grep -Fq 'Cell frog_call_arg_1 = frog_pop();' "$output/functions_layout.c"
-grep -Fq 'frog_results_2 frog_call_result = p4(frog_call_arg_0);' "$output/functions_layout.c"
-grep -Fq 'frog_push(frog_call_result.value_1);' "$output/functions_layout.c"
-grep -Fq 'frog_push(p13(frog_call_arg_0));' "$output/functions_layout.c"
+grep -Fq 'frog_results_2 frog_call_result = p4(frog_slots[0]);' "$output/functions_layout.c"
+grep -Fq 'frog_slots[1] = frog_call_result.value_1;' "$output/functions_layout.c"
+grep -Fq 'frog_slots[0] = p13(frog_slots[0]);' "$output/functions_layout.c"
 grep -Fq 'switch (function_id) {' "$output/functions_layout.c"
-printf '%s' $'  frog_push(5);\n  frog_push(18);\n  frog_push(9);\n' \
+printf '%s' $'  frog_slots[0] = 5;\n  frog_slots[0] = 18;\n  frog_slots[0] = 9;\n' \
     | cmp - <(sed -n '/^void p0(void) {$/,/^}$/p' "$output/optimizer_constant_add.c" \
-        | sed -n '/^  frog_push(5);$/p; /^  frog_push(18);$/p; /^  frog_push(9);$/p')
-printf '%s' $'    frog_push(9223372036854775807);\n    frog_push(1);\n    { Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a + b); }\n' \
-    | cmp - <(sed -n '/^    frog_push(9223372036854775807);$/,+2p' "$output/optimizer_constant_add.c")
+        | sed -n '/^  frog_slots\[0\] = 5;$/p; /^  frog_slots\[0\] = 18;$/p; /^  frog_slots\[0\] = 9;$/p')
+printf '%s' $'    frog_slots[0] = 9223372036854775807;\n    frog_slots[1] = 1;\n    frog_slots[0] = frog_slots[0] + frog_slots[1];\n' \
+    | cmp - <(sed -n '/^    frog_slots\[0\] = 9223372036854775807;$/,+2p' "$output/optimizer_constant_add.c")
+for generated in "${generated_sources[@]}"; do
+    if grep -Eq 'FrogStack|frog_stack|frog_push|frog_pop' "$generated"; then
+        echo "generated runtime stack symbol in $generated" >&2
+        exit 1
+    fi
+done
 
 run_error integer_overflow 'integer literal exceeds the signed 64-bit range'
 run_source_error integer_binary_missing_digits \
