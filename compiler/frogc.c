@@ -95,6 +95,14 @@ void frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; 
 void frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 
+void* froglang_tmpfile(void) { return tmpfile(); }
+int froglang_file_putc(int byte, void* stream) { return fputc(byte, (FILE*)stream); }
+int froglang_file_getc(void* stream) { return fgetc((FILE*)stream); }
+void froglang_file_rewind(void* stream) { rewind((FILE*)stream); }
+int froglang_file_flush(void* stream) { return fflush((FILE*)stream); }
+int froglang_file_descriptor(void* stream) { return fileno((FILE*)stream); }
+int froglang_file_close(void* stream) { return fclose((FILE*)stream); }
+
 int froglang_fork(void) {
   if (fflush(NULL) != 0) return -1;
   return (int)fork();
@@ -633,6 +641,8 @@ static uint8_t frog_string_2133239333_bytes[] = "Cell frog_read_i8(const void* p
 static const FrogString frog_string_2133239333 = { frog_string_2133239333_bytes, 1262 };
 static uint8_t frog_string_3742174043_bytes[] = "void frog_write_i8(void* ptr, Cell value) { int8_t stored = (int8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i16(void* ptr, Cell value) { int16_t stored = (int16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i32(void* ptr, Cell value) { int32_t stored = (int32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_i64(void* ptr, Cell value) { int64_t stored = (int64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }\nvoid frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }\n\n";
 static const FrogString frog_string_3742174043 = { frog_string_3742174043_bytes, 947 };
+static uint8_t frog_string_4160032937_bytes[] = "void* froglang_tmpfile(void) { return tmpfile(); }\nint froglang_file_putc(int byte, void* stream) { return fputc(byte, (FILE*)stream); }\nint froglang_file_getc(void* stream) { return fgetc((FILE*)stream); }\nvoid froglang_file_rewind(void* stream) { rewind((FILE*)stream); }\nint froglang_file_flush(void* stream) { return fflush((FILE*)stream); }\nint froglang_file_descriptor(void* stream) { return fileno((FILE*)stream); }\nint froglang_file_close(void* stream) { return fclose((FILE*)stream); }\n\n";
+static const FrogString frog_string_4160032937 = { frog_string_4160032937_bytes, 496 };
 static uint8_t frog_string_3934789336_bytes[] = "int froglang_fork(void) {\n  if (fflush(NULL) != 0) return -1;\n  return (int)fork();\n}\nint froglang_create_file(void* path) { return open((const char*)path, O_WRONLY | O_CREAT | O_TRUNC, 0600); }\nint froglang_dup2(int old_fd, int new_fd) { return dup2(old_fd, new_fd); }\nint froglang_close(int fd) { return close(fd); }\nint froglang_chdir(void* path) { return chdir((const char*)path); }\nint froglang_execv(void* path, void* arguments) { return execv((const char*)path, (char* const*)arguments); }\nint froglang_execvp(void* file, void* arguments) { return execvp((const char*)file, (char* const*)arguments); }\n\nint froglang_ensure_directory(void* path) {\n  const char* directory = (const char*)path;\n  if (mkdir(directory, 0777) != 0 && errno != EEXIST) return -1;\n  struct stat info;\n  if (stat(directory, &info) != 0 || !S_ISDIR(info.st_mode)) return -1;\n  return 0;\n}\n\nint froglang_path_exists(void* path) {\n  struct stat info;\n  return stat((const char*)path, &info) == 0;\n}\n\nint froglang_wait_child(int child) {\n  int status;\n  while (waitpid((pid_t)child, &status, 0) < 0) {\n    if (errno != EINTR) return -1;\n  }\n  if (WIFEXITED(status)) return WEXITSTATUS(status);\n  if (WIFSIGNALED(status)) return 128 + WTERMSIG(status);\n  return 1;\n}\n\nvoid froglang_finish_child(int status) {\n  if (fflush(stdout) != 0) status = 1;\n  _exit(status);\n}\n\nvoid froglang_reset_child_signals(void) {\n  struct sigaction action;\n  memset(&action, 0, sizeof(action));\n  action.sa_handler = SIG_DFL;\n  sigemptyset(&action.sa_mask);\n  (void)sigaction(SIGINT, &action, NULL);\n  (void)sigaction(SIGTERM, &action, NULL);\n  (void)sigaction(SIGPIPE, &action, NULL);\n  (void)sigaction(SIGHUP, &action, NULL);\n}\n\n";
 static const FrogString frog_string_3934789336 = { frog_string_3934789336_bytes, 1688 };
 static uint8_t frog_string_2802433275_bytes[] = "\\\"";
@@ -22856,6 +22866,10 @@ void frog_proc_389_emit_2Dc_2Dpreamble(void) {
   {
     frog_proc_8_emit(frog_value_0);
   }
+  frog_value_0 = (Cell)(intptr_t)&frog_string_4160032937;
+  {
+    frog_proc_8_emit(frog_value_0);
+  }
   frog_value_0 = (Cell)(intptr_t)&frog_string_3934789336;
   {
     frog_proc_8_emit(frog_value_0);
@@ -36626,6 +36640,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_2569117768;
   (void)&frog_string_2133239333;
   (void)&frog_string_3742174043;
+  (void)&frog_string_4160032937;
   (void)&frog_string_3934789336;
   (void)&frog_string_2802433275;
   (void)&frog_string_889784709;

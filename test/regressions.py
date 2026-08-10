@@ -216,6 +216,7 @@ STANDALONE_RUN_CASES = [
 STDLIB_RUN_CASES = [
     RunCase('stdlib', 'libc', 'stdlib/libc/main.frog', b'A'),
     RunCase('stdlib', 'string', 'stdlib/string/main.frog', b''),
+    RunCase('stdlib', 'subprocess', 'stdlib/subprocess/main.frog', b''),
 ]
 
 

@@ -1,0 +1,231 @@
+extern subprocess-alloc froglang_alloc c-int -- c-ptr end
+extern subprocess-free free c-ptr -- end
+extern subprocess-eputc froglang_eputc c-int -- end
+extern subprocess-fork froglang_fork -- c-int end
+extern subprocess-dup2 froglang_dup2 c-int c-int -- c-int end
+extern subprocess-chdir froglang_chdir c-ptr -- c-int end
+extern subprocess-execvp froglang_execvp c-ptr c-ptr -- c-int end
+extern subprocess-wait froglang_wait_child c-int -- c-int end
+extern subprocess-finish froglang_finish_child c-int -- end
+extern subprocess-tmpfile froglang_tmpfile -- c-ptr end
+extern subprocess-file-putc froglang_file_putc c-int c-ptr -- c-int end
+extern subprocess-file-getc froglang_file_getc c-ptr -- c-int end
+extern subprocess-file-rewind froglang_file_rewind c-ptr -- end
+extern subprocess-file-flush froglang_file_flush c-ptr -- c-int end
+extern subprocess-file-descriptor froglang_file_descriptor c-ptr -- c-int end
+extern subprocess-file-close froglang_file_close c-ptr -- c-int end
+
+const subprocess-pointer-bytes 8 end
+const subprocess-capture-initial-capacity 256 end
+
+record CompletedProcess
+    stdout ptr
+    stdout_len int
+    stderr ptr
+    stderr_len int
+    returncode int
+end
+
+record SubprocessCapture
+    bytes ptr
+    len int
+    capacity int
+end
+
+proc subprocess-fail -- do
+    "subprocess: operation failed\n"
+    let message do
+        0
+        while dup message String.len < do
+            let index do
+                message String.bytes index + @u8 subprocess-eputc
+                index 1 +
+            end
+        end
+        drop
+    end
+    1 subprocess-finish
+end
+
+proc subprocess-bytes-copy ptr ptr int -- do
+    let source destination count do
+        0
+        while dup count < do
+            let index do
+                source index + @u8 destination index + !u8
+                index 1 +
+            end
+        end
+        drop
+    end
+end
+
+proc subprocess-checked-stream -- ptr do
+    subprocess-tmpfile
+    if dup int cast 0 == do subprocess-fail end
+end
+
+proc subprocess-capture-new -- SubprocessCapture do
+    subprocess-capture-initial-capacity subprocess-alloc
+    let bytes do
+        SubprocessCapture:alloc
+        let capture do
+            bytes capture !SubprocessCapture.bytes
+            0 capture !SubprocessCapture.len
+            subprocess-capture-initial-capacity capture !SubprocessCapture.capacity
+            capture
+        end
+    end
+end
+
+proc subprocess-capture-push int SubprocessCapture -- do
+    let byte capture do
+        if capture @SubprocessCapture.len capture @SubprocessCapture.capacity == do
+            capture @SubprocessCapture.capacity 2 *
+            let capacity do
+                capacity subprocess-alloc
+                let bytes do
+                    capture @SubprocessCapture.bytes bytes capture @SubprocessCapture.len subprocess-bytes-copy
+                    capture @SubprocessCapture.bytes subprocess-free
+                    bytes capture !SubprocessCapture.bytes
+                    capacity capture !SubprocessCapture.capacity
+                end
+            end
+        end
+        byte capture @SubprocessCapture.bytes capture @SubprocessCapture.len + !u8
+        capture @SubprocessCapture.len 1 + capture !SubprocessCapture.len
+    end
+end
+
+proc subprocess-read-stream ptr SubprocessCapture -- do
+    let stream capture do
+        stream subprocess-file-getc
+        while dup 0 >= do
+            let byte do
+                byte capture subprocess-capture-push
+                stream subprocess-file-getc
+            end
+        end
+        drop
+    end
+end
+
+proc subprocess-write-input String ptr -- do
+    let input stream do
+        0
+        while dup input String.len < do
+            let index do
+                if input String.bytes index + @u8 stream subprocess-file-putc 0 < do subprocess-fail end
+                index 1 +
+            end
+        end
+        drop
+        if stream subprocess-file-flush 0 != do subprocess-fail end
+        stream subprocess-file-rewind
+    end
+end
+
+proc subprocess-argv int -- ptr do
+    let count do
+        if count 0 < do subprocess-fail end
+        count 1 + subprocess-pointer-bytes * subprocess-alloc
+        let argv do
+            0 ptr cast argv count subprocess-pointer-bytes * + !ptr
+            argv
+        end
+    end
+end
+
+proc subprocess-arg String ptr int -- do
+    let value argv index do
+        value String.bytes argv index subprocess-pointer-bytes * + !ptr
+    end
+end
+
+proc subprocess-argv-free ptr -- do subprocess-free end
+
+proc subprocess-run-child ptr ptr ptr ptr String -- do
+    let argv input output errors cwd do
+        if input subprocess-file-descriptor 0 subprocess-dup2 0 < do subprocess-fail end
+        if output subprocess-file-descriptor 1 subprocess-dup2 0 < do subprocess-fail end
+        if errors subprocess-file-descriptor 2 subprocess-dup2 0 < do subprocess-fail end
+        if cwd String.len 0 > do
+            if cwd String.bytes subprocess-chdir 0 != do subprocess-fail end
+        end
+        input subprocess-file-close drop
+        output subprocess-file-close drop
+        errors subprocess-file-close drop
+        argv @ptr argv subprocess-execvp drop
+        127 subprocess-finish
+    end
+end
+
+proc subprocess-run-with ptr String String -- CompletedProcess do
+    let argv input cwd do
+        subprocess-checked-stream
+        let stdin do
+            subprocess-checked-stream
+            let stdout do
+                subprocess-checked-stream
+                let stderr do
+                    input stdin subprocess-write-input
+                    subprocess-fork
+                    let child do
+                        if child 0 < do subprocess-fail end
+                        if child 0 == do
+                            argv stdin stdout stderr cwd subprocess-run-child
+                        end
+                        child subprocess-wait
+                        let returncode do
+                            if returncode 0 < do subprocess-fail end
+                            stdout subprocess-file-rewind
+                            stderr subprocess-file-rewind
+                            subprocess-capture-new
+                            let captured-stdout do
+                                subprocess-capture-new
+                                let captured-stderr do
+                                    stdout captured-stdout subprocess-read-stream
+                                    stderr captured-stderr subprocess-read-stream
+                                    if stdin subprocess-file-close 0 != do subprocess-fail end
+                                    if stdout subprocess-file-close 0 != do subprocess-fail end
+                                    if stderr subprocess-file-close 0 != do subprocess-fail end
+                                    CompletedProcess:alloc
+                                    let result do
+                                        captured-stdout @SubprocessCapture.bytes result !CompletedProcess.stdout
+                                        captured-stdout @SubprocessCapture.len result !CompletedProcess.stdout_len
+                                        captured-stderr @SubprocessCapture.bytes result !CompletedProcess.stderr
+                                        captured-stderr @SubprocessCapture.len result !CompletedProcess.stderr_len
+                                        returncode result !CompletedProcess.returncode
+                                        captured-stdout ptr cast subprocess-free
+                                        captured-stderr ptr cast subprocess-free
+                                        result
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc subprocess-run ptr String -- CompletedProcess do
+    let argv input do
+        argv input "" subprocess-run-with
+    end
+end
+
+proc subprocess-run-in ptr String String -- CompletedProcess do
+    let argv input cwd do
+        argv input cwd subprocess-run-with
+    end
+end
+
+proc completed-process-free CompletedProcess -- do
+    let result do
+        result @CompletedProcess.stdout subprocess-free
+        result @CompletedProcess.stderr subprocess-free
+        result ptr cast subprocess-free
+    end
+end

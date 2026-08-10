@@ -42,3 +42,57 @@ heap-backed byte buffers:
 `ByteBuffer` exposes `bytes`, `len`, and `capacity` fields through the normal
 record operations. Its byte storage may move after `byte-buffer-push`, so code
 must load `@ByteBuffer.bytes` again after an append.
+
+## Subprocesses
+
+`stdlib/subprocess.frog` runs a program with captured standard output and
+standard error:
+
+```frog
+from "../stdlib/subprocess.frog" import (
+    CompletedProcess
+    subprocess-argv
+    subprocess-arg
+    subprocess-argv-free
+    subprocess-run
+    completed-process-free
+)
+
+proc main -- do
+    2 subprocess-argv
+    let argv do
+        "printf" argv 0 subprocess-arg
+        "frog" argv 1 subprocess-arg
+
+        argv "" subprocess-run
+        let result do
+            result @CompletedProcess.returncode print
+            result @CompletedProcess.stdout_len print
+            result completed-process-free
+        end
+
+        argv subprocess-argv-free
+    end
+end
+```
+
+- `subprocess-argv`: `count -- ptr` allocates a null-terminated argument array.
+- `subprocess-arg`: `String argv index --` assigns one argument. Argument
+  strings must not contain embedded NUL bytes, and the caller must use an index
+  below the count supplied to `subprocess-argv`.
+- `subprocess-argv-free`: `ptr --` releases the array. It does not release the
+  string literals referenced by the array.
+- `subprocess-run`: `argv input -- CompletedProcess` inherits the current
+  directory and environment, supplies the `String` as standard input, waits for
+  completion, and captures standard output and standard error separately.
+- `subprocess-run-in`: `argv input cwd -- CompletedProcess` behaves the same way
+  after changing the child to `cwd`. An empty `cwd` inherits the current
+  directory.
+- `completed-process-free`: `CompletedProcess --` releases both captured buffers
+  and the result record.
+
+`CompletedProcess.stdout` and `CompletedProcess.stderr` are byte pointers whose
+lengths are stored in `stdout_len` and `stderr_len`; the buffers are not
+NUL-terminated. `returncode` is the child exit status, or `128` plus the signal
+number when the child is terminated by a signal. Commands are executed directly
+without a shell, timeout, or environment rewriting.

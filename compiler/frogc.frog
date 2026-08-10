@@ -5062,6 +5062,15 @@ void frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; 
 void frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 
 " emit
+    "void* froglang_tmpfile(void) { return tmpfile(); }
+int froglang_file_putc(int byte, void* stream) { return fputc(byte, (FILE*)stream); }
+int froglang_file_getc(void* stream) { return fgetc((FILE*)stream); }
+void froglang_file_rewind(void* stream) { rewind((FILE*)stream); }
+int froglang_file_flush(void* stream) { return fflush((FILE*)stream); }
+int froglang_file_descriptor(void* stream) { return fileno((FILE*)stream); }
+int froglang_file_close(void* stream) { return fclose((FILE*)stream); }
+
+" emit
     "int froglang_fork(void) {
   if (fflush(NULL) != 0) return -1;
   return (int)fork();

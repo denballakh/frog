@@ -44,6 +44,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
   represented by the scalar C FFI directly.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
   manually managed growable `ByteBuffer` record.
+- `stdlib/subprocess.frog`: Direct child execution with literal argv/input,
+  optional child cwd, captured stdout/stderr, and explicit result ownership.
 - `test/__main__.py`: Main Python test orchestration for native regressions, example files, CLI cases, inline snippets, multi-file imports, snapshots, and black-box build-artifact assertions. It invokes the Frog-written compiler and CLI in subprocesses and contains no language implementation.
 - `test/regressions.py`: Assertion-only Python runner for exact diagnostics, strict generated-C compilation, executable output/status, helper-C linkage, and generated-C properties.
 - `test/cases/`: Import, language-semantics, string, and standalone regression fixtures used by `test/regressions.py`.
