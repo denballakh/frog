@@ -16,8 +16,8 @@ proc main -- do
 
     Holder:alloc
     let holder do
-        "field" holder Holder.value!
-        holder Holder.value String.len print
+        "field" holder !Holder.value
+        holder @Holder.value String.len print
     end
 
     "union" MaybeString:some MaybeString.some String.len print

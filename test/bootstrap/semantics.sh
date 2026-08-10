@@ -158,6 +158,7 @@ run_source_error constant_empty_result $'const bad end\nproc main -- do end\n' '
 run_source_error constant_recursion $'const first second end\nconst second first end\nproc main -- do end\n' 'recursive constant'
 run_source_error constant_unsupported_word $'const bad print end\nproc main -- do end\n' 'unsupported constant expression word'
 run_source_error constant_builtin_precedence $'const print 41 end\nconst value print end\nproc main -- do value print end\n' 'unsupported constant expression word'
+run_source_error constant_record_getter_precedence $'record Point x int end\nconst @Point.x 41 end\nconst value @Point.x end\nproc main -- do end\n' 'unsupported constant expression word'
 run_source_error constant_unsupported_macro $'macro twice dup + end\nconst bad 1 twice end\nproc main -- do end\n' 'unsupported constant expression word'
 run_source_error constant_duplicate $'const value 1 end\nconst value 2 end\nproc main -- do end\n' 'duplicate constant name'
 run_source_error constant_procedure_conflict $'const value 1 end\nproc value -- int do 2 end\nproc main -- do end\n' 'duplicate declaration name: value'
@@ -244,14 +245,20 @@ run_source_error extern_incompatible_contract \
     $'extern as-int abs c-int -- c-int end\nextern as-ptr abs c-int -- c-ptr end\nproc main -- do end\n' \
     'incompatible declarations for C symbol'
 run_source_error record_wrong_owner \
-    $'record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc Point.x drop end\n' \
+    $'record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc @Point.x drop end\n' \
     'compile-time stack type mismatch'
 run_source_error record_wrong_value \
-    $'record Point x int end\nproc main -- do Point:alloc let point do true point Point.x! end end\n' \
+    $'record Point x int end\nproc main -- do Point:alloc let point do true point !Point.x end end\n' \
     'compile-time stack type mismatch'
 run_source_error record_unknown_field \
-    $'record Point x int end\nproc main -- do Point:alloc Point.y drop end\n' \
+    $'record Point x int end\nproc main -- do Point:alloc @Point.y drop end\n' \
     'unknown record field'
+run_source_error record_legacy_getter \
+    $'record Point x int end\nproc main -- do Point:alloc Point.x drop end\n' \
+    'unknown word'
+run_source_error record_legacy_setter \
+    $'record Point x int end\nproc main -- do 1 Point:alloc Point.x! end\n' \
+    'unknown word'
 run_source_error record_unknown_type \
     $'record Point x Missing end\nproc main -- do end\n' \
     'unknown type in record field'

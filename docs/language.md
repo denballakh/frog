@@ -46,13 +46,13 @@ record Node
     ready bool
 end
 
-proc value-of Node -- int do Node.value end
+proc value-of Node -- int do @Node.value end
 
 proc main -- do
     Node:alloc
     let node do
-        41 node Node.value!
-        true node Node.ready!
+        41 node !Node.value
+        true node !Node.ready
         node value-of print
     end
 end
@@ -62,7 +62,7 @@ end
 
 Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
 
-Every field occupies one eight-byte Frog cell in declaration order, with no padding. `Name.field` reads a field with stack effect `Name -- FieldType`; `Name.field!` writes it with stack effect `FieldType Name --`. Type-level operations use `:` while fields use `.`, so a field named `sizeof` or `alloc` does not collide with `Name:sizeof` or `Name:alloc`.
+`@Name.field` reads a field with stack effect `Name -- FieldType`; `!Name.field` writes it with stack effect `FieldType Name --`. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
 
 Record types are nominal. Two declarations with identical fields are different types, and field access requires the declared owner type. Explicit `ptr` to record and record to `ptr` casts are available for raw allocation and C FFI boundaries; direct casts between different record types are rejected.
 
@@ -232,7 +232,7 @@ proc main -- do
 end
 ```
 
-Imported top-level code is ignored. Imported files contribute procedure, external-function, constant, record, union, function-reference-type, and macro definitions, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `P.value`, `M:some`, `M.some?`, and `F:call`.
+Imported top-level code is ignored. Imported files contribute procedure, external-function, constant, record, union, function-reference-type, and macro definitions, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `M:some`, `M.some?`, and `F:call`.
 
 Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 

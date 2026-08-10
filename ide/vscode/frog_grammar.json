@@ -54,7 +54,7 @@
     "special": {
       "patterns": [
         {
-          "match": "(?<!\\S)[A-Za-z_][A-Za-z0-9_]*:ref:[^\\s]+(?!\\S)|\\bString\\.(bytes|len)\\b|\\b[A-Za-z_][A-Za-z0-9_]*:[A-Za-z_][A-Za-z0-9_]*\\b|\\b[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*\\?|\\?|\\b(dup|dup2|drop|swap|swap2|rot|cast|alloc|args|print|putc|getc|read-file|eputc|exit)\\b",
+          "match": "(?<!\\S)[A-Za-z_][A-Za-z0-9_]*:ref:[^\\s]+(?!\\S)|(?<!\\S)[@!][A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*(?!\\S)|\\bString\\.(bytes|len)\\b|\\b[A-Za-z_][A-Za-z0-9_]*:[A-Za-z_][A-Za-z0-9_]*\\b|\\b[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*\\?|\\?|\\b(dup|dup2|drop|swap|swap2|rot|cast|alloc|args|print|putc|getc|read-file|eputc|exit)\\b",
           "name": "support.function"
         }
       ]

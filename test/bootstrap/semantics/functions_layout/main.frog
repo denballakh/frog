@@ -38,7 +38,7 @@ proc unit -- do end
 proc add int int -- int do + end
 proc duplicate int -- int int do dup end
 extern ffi-answer ffi_test_answer -- c-int end
-proc box-value Box -- int do Box.value end
+proc box-value Box -- int do @Box.value end
 proc maybe-value Maybe -- int do Maybe.some end
 proc apply Mapper int -- int do
     let mapper value do
@@ -71,7 +71,7 @@ proc main -- do
 
     Box:alloc
     let box do
-        8 box Box.value!
+        8 box !Box.value
         box BoxValue:ref:box-value BoxValue:call print
     end
     5 Maybe:some MaybeValue:ref:maybe-value MaybeValue:call print
@@ -85,8 +85,8 @@ proc main -- do
 
     Stored:alloc
     let stored do
-        Mapper:ref:inc stored Stored.mapper!
-        4 stored Stored.mapper Mapper:call print
+        Mapper:ref:inc stored !Stored.mapper
+        4 stored @Stored.mapper Mapper:call print
     end
     Mapper:ref:inc OptionalMapper:some OptionalMapper.some
     let mapper do

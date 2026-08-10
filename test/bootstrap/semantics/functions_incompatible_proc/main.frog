@@ -11,6 +11,6 @@ proc main -- do
     Slot:alloc
     let slot do
         0 slot ptr cast !i64
-        1 slot Slot.value Mapper:call drop
+        1 slot @Slot.value Mapper:call drop
     end
 end

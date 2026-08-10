@@ -4684,6 +4684,19 @@ proc scope-prefix-is-nominal ptr ptr int bool -- bool do
     end
 end
 
+proc scope-prefix-has-kind ptr ptr int int -- bool do
+    let scope bytes length expected-kind do
+        scope bytes length 0 find-scope-symbol-from
+        let symbol-index do
+            if symbol-index 0 < do
+                false
+            else
+                scope symbol-index scope-kind-at expected-kind ==
+            end
+        end
+    end
+end
+
 proc constant-qualified-nominal-word ptr ptr int -- bool do
     let scope module token-index do
         module token-index token-slice
@@ -4696,7 +4709,18 @@ proc constant-qualified-nominal-word ptr ptr int -- bool do
                     bytes length 46 first-index-of-byte
                     let dot do
                         if dot 0 > dot 1 + length < && do
-                            scope bytes dot false scope-prefix-is-nominal
+                            if
+                                bytes 0 byte-read 64 ==
+                                bytes 0 byte-read 33 == ||
+                            do
+                                if dot 1 <= do
+                                    false
+                                else
+                                    scope bytes 1 + dot 1 - scope-record scope-prefix-has-kind
+                                end
+                            else
+                                scope bytes dot scope-union scope-prefix-has-kind
+                            end
                         else
                             false
                         end
@@ -6866,44 +6890,37 @@ proc emit-record-field-write ptr int -- do
     end
 end
 
-proc compile-record-field ptr ptr int int -- bool do
-    let cc bytes length separator do
-        if separator 0 <= separator 1 + length >= || do
+proc compile-record-field ptr ptr int int bool -- bool do
+    let cc bytes length separator setter do
+        if separator 1 <= separator 1 + length >= || do
             false
         else
-            cc @cc-scope-module bytes separator visible-record-definition
+            cc @cc-scope-module bytes 1 + separator 1 - visible-record-definition
             let module record-index found do
                 if found ! do
                     false
                 else
                     separator 1 +
                     let field-start do
-                        bytes length 1 - byte-read 33 ==
-                        let setter do
-                            length field-start -
-                            if setter do 1 - end
-                            let field-length do
-                                if field-length 0 <= do
+                        length field-start -
+                        let field-length do
+                            module record-index bytes field-start + field-length find-record-field
+                            let field-index do
+                                if field-index 0 < do
                                     "unknown record field" fail
                                 end
-                                module record-index bytes field-start + field-length find-record-field
-                                let field-index do
-                                    if field-index 0 < do
-                                        "unknown record field" fail
+                                module record-index record-type-at
+                                let record-type do
+                                    if setter do
+                                        cc record-type type-expect
+                                        cc module field-index record-field-type-at type-expect
+                                        cc module field-index record-field-byte-offset-at emit-record-field-write
+                                    else
+                                        cc record-type type-expect
+                                        cc module field-index record-field-type-at type-push
+                                        cc module field-index record-field-byte-offset-at emit-record-field-read
                                     end
-                                    module record-index record-type-at
-                                    let record-type do
-                                        if setter do
-                                            cc record-type type-expect
-                                            cc module field-index record-field-type-at type-expect
-                                            cc module field-index record-field-byte-offset-at emit-record-field-write
-                                        else
-                                            cc record-type type-expect
-                                            cc module field-index record-field-type-at type-push
-                                            cc module field-index record-field-byte-offset-at emit-record-field-read
-                                        end
-                                        true
-                                    end
+                                    true
                                 end
                             end
                         end
@@ -6923,13 +6940,24 @@ proc compile-record-word ptr int -- bool do
                 if colon 0 >= do
                     cc bytes length colon compile-record-special
                 else
-                    bytes length 46 first-index-of-byte
-                    let dot do
-                        if dot 0 >= do
-                            cc bytes length dot compile-record-field
-                        else
-                            false
+                    if
+                        length 0 >
+                        if dup do
+                            drop
+                            bytes 0 byte-read 64 ==
+                            bytes 0 byte-read 33 == ||
                         end
+                    do
+                        bytes length 46 first-index-of-byte
+                        let dot do
+                            if dot 0 >= do
+                                cc bytes length dot bytes 0 byte-read 33 == compile-record-field
+                            else
+                                false
+                            end
+                        end
+                    else
+                        false
                     end
                 end
             end

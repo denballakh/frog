@@ -47,15 +47,15 @@ proc main -- do
 
     Payload:alloc
     let payload do
-        7 payload Payload.value!
-        Maybe:none payload Payload.maybe!
-        payload Payload.maybe Maybe.none
+        7 payload !Payload.value
+        Maybe:none payload !Payload.maybe
+        payload @Payload.maybe Maybe.none
         payload Box:full
         let boxed do
             boxed Box.full?
             let box matches do
                 matches print
-                box Box.full Payload.value print
+                box Box.full @Payload.value print
             end
         end
     end
