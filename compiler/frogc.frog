@@ -91,11 +91,6 @@ const constant-value-type-offset 0 end
 const constant-value-payload-offset 8 end
 const constant-value-bytes 16 end
 
-const constant-evaluator-values-offset 0 end
-const constant-evaluator-count-offset 8 end
-const constant-evaluator-capacity-offset 16 end
-const constant-evaluator-bytes 24 end
-
 const record-name-start-offset 0 end
 const record-name-length-offset 8 end
 const record-field-start-offset 16 end
@@ -175,6 +170,12 @@ record ModuleContext
     function_type_count int
     constants ptr
     constant_count int
+end
+
+record ConstantEvaluator
+    values ptr
+    count int
+    capacity int
 end
 
 record ImportEntry
@@ -4052,86 +4053,62 @@ proc resolve-all-module-scopes ptr -- do
     end
 end
 
-proc @constant-evaluator-values ptr -- ptr do
-    constant-evaluator-values-offset pointer-field-read
-end
-
-proc @constant-evaluator-count ptr -- int do
-    constant-evaluator-count-offset field-read
-end
-
-proc @constant-evaluator-capacity ptr -- int do
-    constant-evaluator-capacity-offset field-read
-end
-
-proc !constant-evaluator-values ptr ptr -- do
-    constant-evaluator-values-offset pointer-field-write
-end
-
-proc !constant-evaluator-count int ptr -- do
-    constant-evaluator-count-offset field-write
-end
-
-proc !constant-evaluator-capacity int ptr -- do
-    constant-evaluator-capacity-offset field-write
-end
-
-proc create-constant-evaluator -- ptr do
-    constant-evaluator-bytes alloc
+proc create-constant-evaluator -- ConstantEvaluator do
+    ConstantEvaluator:alloc
     let evaluator do
         8
-        peek capacity do constant-value-bytes * alloc evaluator !constant-evaluator-values
-            0 evaluator !constant-evaluator-count
-            capacity evaluator !constant-evaluator-capacity
+        peek capacity do constant-value-bytes * alloc evaluator !ConstantEvaluator.values
+            0 evaluator !ConstantEvaluator.count
+            capacity evaluator !ConstantEvaluator.capacity
             evaluator
         end
     end
 end
 
-proc ensure-constant-evaluator-capacity ptr -- do
+proc ensure-constant-evaluator-capacity ConstantEvaluator -- do
     let evaluator do
-        if evaluator @constant-evaluator-count evaluator @constant-evaluator-capacity == do
-            evaluator @constant-evaluator-capacity 2 *
+        if evaluator @ConstantEvaluator.count evaluator @ConstantEvaluator.capacity == do
+            evaluator @ConstantEvaluator.capacity 2 *
             peek new-capacity do constant-value-bytes * alloc
                 let new-values do
-                    evaluator @constant-evaluator-values
+                    evaluator @ConstantEvaluator.values
                     new-values
-                    evaluator @constant-evaluator-count constant-value-bytes *
+                    evaluator @ConstantEvaluator.count constant-value-bytes *
                     memory-copy
-                    new-values evaluator !constant-evaluator-values
-                    new-capacity evaluator !constant-evaluator-capacity
+                    new-values evaluator !ConstantEvaluator.values
+                    new-capacity evaluator !ConstantEvaluator.capacity
                 end
             end
         end
     end
 end
 
-proc constant-evaluator-push ptr int int -- do
+proc constant-evaluator-push ConstantEvaluator int int -- do
     let evaluator type payload do
         evaluator ensure-constant-evaluator-capacity
         type
         payload
-        evaluator @constant-evaluator-values
-        evaluator @constant-evaluator-count
+        evaluator @ConstantEvaluator.values
+        evaluator @ConstantEvaluator.count
         set-constant-value
-        evaluator @constant-evaluator-count 1 + evaluator !constant-evaluator-count
+        evaluator @ConstantEvaluator.count 1 + evaluator !ConstantEvaluator.count
     end
 end
 
-proc constant-evaluator-pop ptr -- int int do
+proc constant-evaluator-pop ConstantEvaluator -- int int do
     let evaluator do
-        if evaluator @constant-evaluator-count 0 <= do
+        if evaluator @ConstantEvaluator.count 0 <= do
             "constant expression stack underflow" fail
         end
-        evaluator @constant-evaluator-count 1 -
-        peek index do evaluator !constant-evaluator-count
-            evaluator @constant-evaluator-values index constant-value-type-at
-            evaluator @constant-evaluator-values index constant-value-payload-at
+        evaluator @ConstantEvaluator.count 1 -
+        peek index do evaluator !ConstantEvaluator.count
+            evaluator @ConstantEvaluator.values index constant-value-type-at
+            evaluator @ConstantEvaluator.values index constant-value-payload-at
         end
     end
 end
 
-proc constant-evaluator-pop-expected ptr int -- int do
+proc constant-evaluator-pop-expected ConstantEvaluator int -- int do
     let evaluator expected-type do
         evaluator constant-evaluator-pop
         let actual-type payload do
@@ -4286,7 +4263,7 @@ proc constant-bool-binary-word ModuleContext int -- bool do
     end
 end
 
-proc evaluate-constant-int-binary ptr ModuleContext int -- do
+proc evaluate-constant-int-binary ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-int constant-evaluator-pop-expected
         let right do
@@ -4321,7 +4298,7 @@ proc evaluate-constant-int-binary ptr ModuleContext int -- do
     end
 end
 
-proc evaluate-constant-comparison ptr ModuleContext int -- do
+proc evaluate-constant-comparison ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-int constant-evaluator-pop-expected
         let right do
@@ -4348,7 +4325,7 @@ proc evaluate-constant-comparison ptr ModuleContext int -- do
     end
 end
 
-proc evaluate-constant-bool-binary ptr ModuleContext int -- do
+proc evaluate-constant-bool-binary ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-bool constant-evaluator-pop-expected
         let right do
@@ -4367,7 +4344,7 @@ proc evaluate-constant-bool-binary ptr ModuleContext int -- do
     end
 end
 
-proc evaluate-constant-divmod ptr -- do
+proc evaluate-constant-divmod ConstantEvaluator -- do
     peek evaluator do type-int constant-evaluator-pop-expected
         let right do
             evaluator type-int constant-evaluator-pop-expected
@@ -4382,7 +4359,7 @@ proc evaluate-constant-divmod ptr -- do
     end
 end
 
-proc evaluate-constant-unary ptr ModuleContext int -- do
+proc evaluate-constant-unary ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         if module token-index "~" token-equals do
             evaluator type-int constant-evaluator-pop-expected
@@ -4394,7 +4371,7 @@ proc evaluate-constant-unary ptr ModuleContext int -- do
     end
 end
 
-proc evaluate-constant-intrinsic ptr ModuleContext int -- bool do
+proc evaluate-constant-intrinsic ConstantEvaluator ModuleContext int -- bool do
     let evaluator module token-index do
         if module token-index constant-int-binary-word do
             evaluator module token-index evaluate-constant-int-binary true
@@ -4537,14 +4514,14 @@ proc evaluate-constant ModuleContext int -- do
                     module constant-index constant-body-start-at
                     module constant-index constant-body-end-at
                     evaluate-constant-range
-                    evaluator @constant-evaluator-count
+                    evaluator @ConstantEvaluator.count
                     let value-count do
                         if value-count 0 == do
                             "constant must produce at least one value" fail
                         end
                         value-count constant-value-bytes * alloc
                         let values do
-                            evaluator @constant-evaluator-values
+                            evaluator @ConstantEvaluator.values
                             values
                             value-count constant-value-bytes *
                             memory-copy
@@ -4559,7 +4536,7 @@ proc evaluate-constant ModuleContext int -- do
     end
 end
 
-proc append-constant-values ptr ModuleContext int -- do
+proc append-constant-values ConstantEvaluator ModuleContext int -- do
     let evaluator module constant-index do
         module constant-index evaluate-constant
         module constant-index constant-values-at
@@ -4591,7 +4568,7 @@ proc scope-symbol-has-kind ModuleContext int int -- bool do
     end
 end
 
-proc evaluate-constant-word ptr ModuleContext int -- do
+proc evaluate-constant-word ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         module module token-index find-scope-symbol
         let symbol-index do
@@ -4612,7 +4589,7 @@ proc evaluate-constant-word ptr ModuleContext int -- do
     end
 end
 
-proc evaluate-constant-token ptr ModuleContext int -- do
+proc evaluate-constant-token ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         module token-index token-kind-at
         let kind do
@@ -4631,7 +4608,7 @@ proc evaluate-constant-token ptr ModuleContext int -- do
     end
 end
 
-proc evaluate-constant-range ptr ModuleContext int int -- do
+proc evaluate-constant-range ConstantEvaluator ModuleContext int int -- do
     let evaluator module token-index body-end do
         token-index
         while dup body-end < do
