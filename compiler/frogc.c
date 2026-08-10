@@ -298,6 +298,8 @@ static uint8_t frog_string_1348362735_bytes[] = "_Static_assert";
 static const FrogString frog_string_1348362735 = { frog_string_1348362735_bytes, 14 };
 static uint8_t frog_string_487493054_bytes[] = "_Thread_local";
 static const FrogString frog_string_487493054 = { frog_string_487493054_bytes, 13 };
+static uint8_t frog_string_4237282472_bytes[] = "frog_";
+static const FrogString frog_string_4237282472 = { frog_string_4237282472_bytes, 5 };
 static uint8_t frog_string_3935363592_bytes[] = "main";
 static const FrogString frog_string_3935363592 = { frog_string_3935363592_bytes, 4 };
 static uint8_t frog_string_3909778389_bytes[] = "Cell";
@@ -7033,6 +7035,8 @@ Cell frog_proc_174_frog_2Dinternal_2Dsymbol(Cell frog_arg_0, Cell frog_arg_1) {
   (void)&frog_value_1;
   Cell frog_value_2;
   (void)&frog_value_2;
+  Cell frog_value_3;
+  (void)&frog_value_3;
   frog_value_0 = frog_arg_0;
   frog_value_1 = frog_arg_1;
   {
@@ -7052,51 +7056,34 @@ Cell frog_proc_174_frog_2Dinternal_2Dsymbol(Cell frog_arg_0, Cell frog_arg_1) {
       (void)l2;
       Cell l3 = frog_value_0;
       (void)l3;
-      frog_value_0 = l2;
-      frog_value_1 = 5;
-      frog_value_0 = frog_value_0 < frog_value_1;
-      if (frog_value_0 != 0) {
-        frog_value_0 = 0;
-      } else {
-        frog_value_0 = l3;
-        frog_value_1 = 0;
-        {
-          frog_value_0 = frog_proc_4_byte_2Dread(frog_value_0, frog_value_1);
+      frog_value_0 = l3;
+      frog_value_1 = l2;
+      frog_value_2 = (Cell)(intptr_t)&frog_string_4237282472;
+      {
+        Cell l4 = frog_value_2;
+        (void)l4;
+        Cell l5 = frog_value_1;
+        (void)l5;
+        Cell l6 = frog_value_0;
+        (void)l6;
+        frog_value_0 = l4;
+        { const FrogString *value = (const FrogString *)(intptr_t)frog_value_0; frog_value_0 = value->len; }
+        frog_value_1 = l5;
+        frog_value_0 = frog_value_0 > frog_value_1;
+        if (frog_value_0 != 0) {
+          frog_value_0 = 0;
+        } else {
+          frog_value_0 = l6;
+          frog_value_1 = l4;
+          { const FrogString *value = (const FrogString *)(intptr_t)frog_value_1; frog_value_1 = value->len; }
+          frog_value_2 = l4;
+          { const FrogString *value = (const FrogString *)(intptr_t)frog_value_2; frog_value_2 = (Cell)(intptr_t)value->bytes; }
+          frog_value_3 = l4;
+          { const FrogString *value = (const FrogString *)(intptr_t)frog_value_3; frog_value_3 = value->len; }
+          {
+            frog_value_0 = frog_proc_22_bytes_2Dequal(frog_value_0, frog_value_1, frog_value_2, frog_value_3);
+          }
         }
-        frog_value_1 = 102;
-        frog_value_0 = frog_value_0 == frog_value_1;
-        frog_value_1 = l3;
-        frog_value_2 = 1;
-        {
-          frog_value_1 = frog_proc_4_byte_2Dread(frog_value_1, frog_value_2);
-        }
-        frog_value_2 = 114;
-        frog_value_1 = frog_value_1 == frog_value_2;
-        frog_value_0 = frog_value_0 && frog_value_1;
-        frog_value_1 = l3;
-        frog_value_2 = 2;
-        {
-          frog_value_1 = frog_proc_4_byte_2Dread(frog_value_1, frog_value_2);
-        }
-        frog_value_2 = 111;
-        frog_value_1 = frog_value_1 == frog_value_2;
-        frog_value_0 = frog_value_0 && frog_value_1;
-        frog_value_1 = l3;
-        frog_value_2 = 3;
-        {
-          frog_value_1 = frog_proc_4_byte_2Dread(frog_value_1, frog_value_2);
-        }
-        frog_value_2 = 103;
-        frog_value_1 = frog_value_1 == frog_value_2;
-        frog_value_0 = frog_value_0 && frog_value_1;
-        frog_value_1 = l3;
-        frog_value_2 = 4;
-        {
-          frog_value_1 = frog_proc_4_byte_2Dread(frog_value_1, frog_value_2);
-        }
-        frog_value_2 = 95;
-        frog_value_1 = frog_value_1 == frog_value_2;
-        frog_value_0 = frog_value_0 && frog_value_1;
       }
     }
   }
@@ -36905,6 +36892,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_963964839;
   (void)&frog_string_1348362735;
   (void)&frog_string_487493054;
+  (void)&frog_string_4237282472;
   (void)&frog_string_3935363592;
   (void)&frog_string_3909778389;
   (void)&frog_string_233243634;

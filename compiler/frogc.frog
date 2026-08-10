@@ -403,6 +403,16 @@ proc bytes-equal-string ptr int String -- bool do
     end
 end
 
+macro bytes-starts-with-string
+    let bytes length prefix do
+        if prefix String.len length > do
+            false
+        else
+            bytes prefix String.len prefix String.bytes prefix String.len bytes-equal
+        end
+    end
+end
+
 proc read-source -- ptr int do
     max-source-bytes alloc
     let source do
@@ -1173,7 +1183,7 @@ proc c-identifier-suffix-valid ptr int int -- bool do
 end
 
 proc identifier-token ModuleContext int -- bool do
-    peek ctx token-index do token-slice
+    let ctx token-index do ctx token-index token-slice
         let bytes length do
             if length 0 == do
                 false
@@ -1187,7 +1197,7 @@ proc identifier-token ModuleContext int -- bool do
 end
 
 proc c-keyword ModuleContext int -- bool do
-    peek ctx token-index do "auto" token-equals
+    let ctx token-index do ctx token-index "auto" token-equals
         ctx token-index "break" token-equals ||
         ctx token-index "case" token-equals ||
         ctx token-index "char" token-equals ||
@@ -1235,23 +1245,15 @@ proc c-keyword ModuleContext int -- bool do
 end
 
 proc frog-internal-symbol ModuleContext int -- bool do
-    peek ctx token-index do token-slice
+    let ctx token-index do ctx token-index token-slice
         let bytes length do
-            if length 5 < do
-                false
-            else
-                bytes 0 byte-read 102 ==
-                bytes 1 byte-read 114 == &&
-                bytes 2 byte-read 111 == &&
-                bytes 3 byte-read 103 == &&
-                bytes 4 byte-read 95 == &&
-            end
+            bytes length "frog_" bytes-starts-with-string
         end
     end
 end
 
 proc reserved-c-symbol ModuleContext int -- bool do
-    peek ctx token-index do c-keyword
+    let ctx token-index do ctx token-index c-keyword
         ctx token-index "main" token-equals ||
         ctx token-index "Cell" token-equals ||
         ctx token-index "FrogString" token-equals ||
@@ -1260,7 +1262,7 @@ proc reserved-c-symbol ModuleContext int -- bool do
 end
 
 proc valid-c-symbol ModuleContext int -- bool do
-    peek ctx token-index do token-slice
+    let ctx token-index do ctx token-index token-slice
         let bytes length do
             if length 0 == do
                 false
