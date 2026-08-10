@@ -103,7 +103,7 @@ Useful direct commands:
 - Snapshots are self-contained Markdown-style `.out` files. They embed the Frog source or CLI command under test before the captured output.
 - Each example, inline, and multi-file corpus case runs once through the `build/frogc run` path.
 - Inline cases use immutable `SourceSpec` values to materialize an explicit `proc main -- do ... end`; declaration-order and malformed-structure cases use the appropriate structural fields or verbatim raw source.
-- Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and cover imported procedures, macros, reexports, root-relative paths, conflicts, cycles, and rejected syntax.
+- Import-system behavior tests live in `test/__main__.py` as multi-file cases. They write temporary directory trees under `test/tmp_fs/` and cover imported procedures, macros, reexports, module-relative paths, conflicts, cycles, and rejected syntax.
 - Use `just show-diff` to inspect snapshot changes.
 - Use `just approve-diff` to approve snapshot changes ONLY IF YOU ARE ABSOLUTELY SURE the regenerated outputs are correct.
 - After behavior changes, inspect the regenerated snapshot `.out` files to confirm the new output is intentional.
@@ -138,9 +138,9 @@ Commands:
 ## Compiler Pipeline
 
 - `compiler/frogc.frog` is the sole lexer, parser/declaration scanner, module loader, typechecker, macro expander, and C emitter.
-- The compiler reads root source bytes from stdin and writes generated C to stdout. Imported files are loaded relative to the root compiler process's working directory.
+- The compiler reads root source bytes from stdin and writes generated C to stdout. Root imports are loaded relative to the compiler process's working directory; nested imports are loaded relative to the importing module's lexical path.
 - The supported import syntax is `from "path.frog" import name`, `from "path.frog" import name as alias`, and grouped whitespace-separated imports such as `from "path.frog" import ( x y z )`. Wildcards, commas, and `import "path.frog" as mod` are rejected for now.
-- Import paths are resolved relative to the root file being compiled, not relative to the importing module. Use explicit paths such as `"pkg/math.frog"` for subdirectory files.
+- Relative import paths are resolved from the directory containing the importing module. Canonicalization is lexical and does not resolve symlinks.
 - Imported files contribute procedures, records, unions, function-reference types, and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
@@ -162,6 +162,7 @@ Commands:
 - `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary macros imported from `stdlib/libc.frog`, not language intrinsics.
+- Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Keep C adapters only where the scalar FFI cannot express the platform signature or the operation needs wait/status or child-process policy.
 - `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `@Name.field`/`!Name.field` provide statically typed access.
 - Record fields occupy one eight-byte Cell in declaration order. Record-valued fields store handles, and only explicit `ptr`/record casts cross the nominal boundary.
 - `union Name case Variant [PayloadType] ... end` defines a nominal pointer-backed tagged union with zero or one payload Cell per variant. `Name:variant` constructs, `Name.variant?` preserves and tests a validated handle, and `Name.variant` performs a checked projection.

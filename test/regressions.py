@@ -47,7 +47,7 @@ IMPORT_RUN_CASES = [
     RunCase('imports', 'group_alias_identity', 'imports/group_alias_identity/main.frog', b'6\n4\n6\n'),
     RunCase('imports', 'nested_reexport_scope', 'imports/nested_reexport_scope/main.frog', b'7\n'),
     RunCase('imports', 'macro_scope', 'imports/macro_scope/main.frog', b'18\n'),
-    RunCase('imports', 'root_relative_nested', 'imports/root_relative_nested/main.frog', b'11\n'),
+    RunCase('imports', 'module_relative_nested', 'imports/module_relative_nested/main.frog', b'99\n'),
     RunCase('imports', 'macro_reexport_scope', 'imports/macro_reexport_scope/main.frog', b'14\n'),
     RunCase('imports', 'extern_reexport', 'imports/extern_reexport/main.frog', b'9\n'),
     RunCase('imports', 'one_byte_path', 'imports/one_byte_path/main.frog', b'21\n'),

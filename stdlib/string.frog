@@ -1,5 +1,4 @@
-extern string-allocate froglang_alloc c-int -- c-ptr end
-extern string-free free c-ptr -- end
+from "libc.frog" import ( alloc free )
 
 proc bytes-copy ptr ptr int -- do
     let source destination count do
@@ -52,7 +51,7 @@ end
 
 proc byte-buffer-new int -- ByteBuffer do
     let capacity do
-        capacity string-allocate
+        capacity alloc
         let bytes do
             ByteBuffer:alloc
             let buffer do
@@ -74,10 +73,10 @@ proc byte-buffer-push int ByteBuffer -- do
                 buffer @ByteBuffer.capacity 2 *
             end
             let capacity do
-                capacity string-allocate
+                capacity alloc
                 let bytes do
                     buffer @ByteBuffer.bytes bytes buffer @ByteBuffer.len bytes-copy
-                    buffer @ByteBuffer.bytes string-free
+                    buffer @ByteBuffer.bytes free
                     bytes buffer !ByteBuffer.bytes
                     capacity buffer !ByteBuffer.capacity
                 end
@@ -98,7 +97,7 @@ end
 
 proc byte-buffer-free ByteBuffer -- do
     let buffer do
-        buffer @ByteBuffer.bytes string-free
-        buffer ptr cast string-free
+        buffer @ByteBuffer.bytes free
+        buffer ptr cast free
     end
 end

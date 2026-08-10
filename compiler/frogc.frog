@@ -3,7 +3,11 @@
 // The bootstrap compiler deliberately uses only the bootstrap-v1 language
 // profile.  It reads one Frog source file from stdin and writes C to stdout.
 
-from "../stdlib/libc.frog" import ( alloc putc getc eputc exit )
+from "../stdlib/libc.frog" import (
+    alloc putc getc eputc exit
+    fork create-file dup2 close chdir execv execvp
+    ensure-directory wait-child finish-child reset-child-signals
+)
 
 const cell-bytes 8 end
 
@@ -3603,55 +3607,102 @@ proc write-path-components ptr ptr ptr int ptr int int -- int do
     end
 end
 
-proc normalize-import-path ModuleContext int -- ptr int do
+proc import-directory-length ModuleContext ptr int -- int do
+    let ctx bytes length do
+        if ctx @ModuleContext.is_root length 0 == || do
+            0
+        elif bytes 0 byte-read 47 == do
+            0
+        else
+            ctx @ModuleContext.canonical_path
+            ctx @ModuleContext.canonical_path_length
+            47 last-index-of-byte
+            let slash do
+                if slash 0 < do 0
+                elif slash 0 == do 1
+                else slash end
+            end
+        end
+    end
+end
+
+proc decoded-import-path ModuleContext int -- ptr int do
     peek ctx token do decoded-string-length
-        let length do
-            if length max-import-path-bytes > do
+        let decoded-length do
+            if decoded-length max-import-path-bytes > do
                 "import path exceeds max-import-path-bytes" fail
             end
-            length alloc
-            let bytes do
-                ctx token 0 bytes 0 decode-string-copy-from
-                if bytes length valid-utf8 ! do
+            decoded-length alloc
+            let decoded do
+                ctx token 0 decoded 0 decode-string-copy-from
+                if decoded decoded-length valid-utf8 ! do
                     "import path must be valid UTF-8" fail
                 end
-                if bytes length 0 bytes-contain-byte do
+                if decoded decoded-length 0 bytes-contain-byte do
                     "import file not found" fail
                 end
-                length 1 + cell-bytes * alloc
-                let starts do
-                    length 1 + cell-bytes * alloc
-                    let lengths do
-                        if length 0 > do
-                            bytes 0 byte-read 47 ==
+                ctx decoded decoded-length import-directory-length
+                let directory-length do
+                    directory-length decoded-length + 1 + alloc
+                    let bytes do
+                        if directory-length 0 > do
+                            ctx @ModuleContext.canonical_path bytes directory-length memory-copy
+                            bytes directory-length append-path-separator
                         else
-                            false
+                            0
                         end
-                        let absolute do
-                            bytes length absolute starts lengths 0 0 collect-path-components
-                            let count do
-                                length 2 + alloc
-                                let output do
-                                    if count 0 == do
-                                        if absolute do
-                                            47 output 0 byte-write
-                                        else
-                                            46 output 0 byte-write
-                                        end
-                                        output 1
-                                    else
-                                        if absolute do
-                                            47 output 0 byte-write
-                                            1
-                                        else
-                                            0
-                                        end
-                                        let output-index do
-                                            output
-                                            bytes starts lengths count output 0 output-index write-path-components
-                                        end
-                                    end
+                        let decoded-start do
+                            decoded bytes decoded-start + decoded-length memory-copy
+                            bytes decoded-start decoded-length +
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc normalize-import-path ModuleContext int -- ptr int do
+    decoded-import-path
+    let bytes length do
+        length 1 + cell-bytes * alloc
+        let starts do
+            length 1 + cell-bytes * alloc
+            let lengths do
+                if length 0 > do
+                    bytes 0 byte-read 47 ==
+                else
+                    false
+                end
+                let absolute do
+                    bytes length absolute starts lengths 0 0 collect-path-components
+                    let count do
+                        length 2 + alloc
+                        let output do
+                            if count 0 == do
+                                if absolute do
+                                    47 output 0 byte-write
+                                else
+                                    46 output 0 byte-write
                                 end
+                                output 1
+                            else
+                                if absolute do
+                                    47 output 0 byte-write
+                                    1
+                                else
+                                    0
+                                end
+                                let output-index do
+                                    output
+                                    bytes starts lengths count output 0 output-index write-path-components
+                                end
+                            end
+                            let canonical canonical-length do
+                                if canonical-length max-import-path-bytes > do
+                                    "import path exceeds max-import-path-bytes" fail
+                                end
+                                canonical canonical-length
                             end
                         end
                     end
@@ -5073,8 +5124,6 @@ int froglang_file_close(void* stream) { return fclose((FILE*)stream); }
   return (int)fork();
 }
 int froglang_create_file(void* path) { return open((const char*)path, O_WRONLY | O_CREAT | O_TRUNC, 0600); }
-int froglang_dup2(int old_fd, int new_fd) { return dup2(old_fd, new_fd); }
-int froglang_close(int fd) { return close(fd); }
 int froglang_chdir(void* path) { return chdir((const char*)path); }
 int froglang_execv(void* path, void* arguments) { return execv((const char*)path, (char* const*)arguments); }
 int froglang_execvp(void* file, void* arguments) { return execvp((const char*)file, (char* const*)arguments); }
@@ -5085,11 +5134,6 @@ int froglang_ensure_directory(void* path) {
   struct stat info;
   if (stat(directory, &info) != 0 || !S_ISDIR(info.st_mode)) return -1;
   return 0;
-}
-
-int froglang_path_exists(void* path) {
-  struct stat info;
-  return stat((const char*)path, &info) == 0;
 }
 
 int froglang_wait_child(int child) {
@@ -7715,19 +7759,6 @@ proc compile-prelude-macro ptr int -- bool do
     end
 end
 
-extern cli-fork froglang_fork -- c-int end
-extern cli-create-file froglang_create_file c-ptr -- c-int end
-extern cli-dup2 froglang_dup2 c-int c-int -- c-int end
-extern cli-close froglang_close c-int -- c-int end
-extern cli-chdir froglang_chdir c-ptr -- c-int end
-extern cli-execv froglang_execv c-ptr c-ptr -- c-int end
-extern cli-execvp froglang_execvp c-ptr c-ptr -- c-int end
-extern cli-ensure-directory froglang_ensure_directory c-ptr -- c-int end
-extern cli-path-exists froglang_path_exists c-ptr -- c-bool end
-extern cli-wait-child froglang_wait_child c-int -- c-int end
-extern cli-finish-child froglang_finish_child c-int -- end
-extern cli-reset-child-signals froglang_reset_child_signals -- end
-
 proc null-pointer -- ptr do 0 ptr cast end
 
 proc cstring-length ptr -- int do
@@ -7884,11 +7915,7 @@ proc read-source-path ptr -- ptr int do
             if success do
                 source source-length
             else
-                if path cli-path-exists do
-                    "unable to read" path cli-error-path
-                else
-                    "source file not found" path cli-error-path
-                end
+                "unable to read source" path cli-error-path
                 1 exit
                 null-pointer 0
             end
@@ -7897,7 +7924,7 @@ proc read-source-path ptr -- ptr int do
 end
 
 proc wait-for-child int -- int do
-    cli-wait-child
+    wait-child
     let status do
         if status 0 < do
             "unable to wait for child" cli-error
@@ -7910,36 +7937,36 @@ end
 
 proc compile-frog-source ptr int ptr ptr -- int do
     let source source-length directory output do
-        output cli-create-file
+        output create-file
         let output-fd do
             if output-fd 0 < do
                 "unable to prepare compiler input or output" cli-error
                 1
             else
-                cli-fork
+                fork
                 let child do
                     if child 0 < do
-                        output-fd cli-close drop
+                        output-fd close drop
                         "unable to fork compiler" cli-error
                         1
                     elif child 0 == do
-                        cli-reset-child-signals
-                        output-fd 1 cli-dup2 0 <
-                        directory cli-chdir 0 != ||
+                        reset-child-signals
+                        output-fd 1 dup2 0 <
+                        directory chdir 0 != ||
                         let preparation-failed do
-                            output-fd cli-close drop
+                            output-fd close drop
                             if preparation-failed do
                                 "unable to prepare compiler child" cli-error
-                                1 cli-finish-child
+                                1 finish-child
                                 1
                             else
                                 source source-length compile-source
-                                0 cli-finish-child
+                                0 finish-child
                                 0
                             end
                         end
                     else
-                        output-fd cli-close drop
+                        output-fd close drop
                         child wait-for-child
                     end
                 end
@@ -7964,16 +7991,16 @@ proc compile-c-source ptr ptr -- int do
             arguments 10 source set-pointer-at
             arguments 11 "-o" String.bytes set-pointer-at
             arguments 12 executable set-pointer-at
-            cli-fork
+            fork
             let child do
                 if child 0 < do
                     "unable to fork gcc" cli-error
                     1
                 elif child 0 == do
-                    cli-reset-child-signals
-                    "gcc" String.bytes arguments cli-execvp drop
+                    reset-child-signals
+                    "gcc" String.bytes arguments execvp drop
                     "unable to run gcc" cli-error
-                    127 cli-finish-child
+                    127 finish-child
                     127
                 else
                     child wait-for-child
@@ -7987,18 +8014,18 @@ proc run-executable ptr -- int do
     let executable do
         1 allocate-pointer-array
         peek arguments do 0 executable set-pointer-at
-            cli-fork
+            fork
             let child do
                 if child 0 < do
                     "unable to fork executable" cli-error
                     1
                 elif child 0 == do
-                    cli-reset-child-signals
-                    executable arguments cli-execv drop
+                    reset-child-signals
+                    executable arguments execv drop
                     "unable to run " emit-error
                     executable executable cstring-length emit-error-bytes
                     10 eputc
-                    127 cli-finish-child
+                    127 finish-child
                     127
                 else
                     child wait-for-child
@@ -8010,7 +8037,7 @@ end
 
 proc run-source ptr int ptr -- int do
     let source source-length directory do
-        if "build" String.bytes cli-ensure-directory 0 != do
+        if "build" String.bytes ensure-directory 0 != do
             "unable to create build directory" cli-error
             1
         else

@@ -1,6 +1,4 @@
-extern test-free free c-ptr -- end
-extern test-eputc froglang_eputc c-int -- end
-extern test-exit exit c-int -- end
+from "libc.frog" import ( free eputc exit )
 
 record TestSuite
     checks int
@@ -12,7 +10,7 @@ proc test-emit-error String -- do
         0
         while dup value String.len < do
             let index do
-                value String.bytes index + @u8 test-eputc
+                value String.bytes index + @u8 eputc
                 index 1 +
             end
         end
@@ -23,7 +21,7 @@ end
 proc test-report-failure String -- do
     "FAIL: " test-emit-error
     test-emit-error
-    10 test-eputc
+    10 eputc
 end
 
 proc test-suite -- TestSuite do
@@ -92,8 +90,8 @@ proc test-finish TestSuite -- do
     let suite do
         suite @TestSuite.failures
         let failures do
-            suite ptr cast test-free
-            if failures 0 > do 1 test-exit end
+            suite ptr cast free
+            if failures 0 > do 1 exit end
         end
     end
 end

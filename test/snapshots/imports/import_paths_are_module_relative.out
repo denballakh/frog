@@ -1,0 +1,51 @@
+# Snapshot: imports/import_paths_are_module_relative
+
+### Source: `test/tmp_fs/import_paths_are_module_relative/main.frog`
+
+```frog
+from "pkg/use.frog" import value
+
+proc main -- do
+    value print
+end
+```
+
+### Source: `test/tmp_fs/import_paths_are_module_relative/math.frog`
+
+```frog
+proc value -- int do 999 end
+```
+
+### Source: `test/tmp_fs/import_paths_are_module_relative/pkg/math.frog`
+
+```frog
+proc value -- int do 7 end
+```
+
+### Source: `test/tmp_fs/import_paths_are_module_relative/pkg/use.frog`
+
+```frog
+
+            // "math.frog" resolves beside this importing module, under pkg/
+            from "math.frog" import value as module_value
+
+            proc value -- int do module_value end
+            
+```
+
+### Main: `test/tmp_fs/import_paths_are_module_relative/main.frog`
+
+### Run
+
+Command:
+
+```text
+build/frogc run test/tmp_fs/import_paths_are_module_relative/main.frog
+```
+
+Output:
+
+```text
+7
+```
+

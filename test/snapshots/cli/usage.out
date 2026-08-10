@@ -57,7 +57,7 @@ build/frogc run test/tmp_fs/missing.frog
 Output:
 
 ```text
-frogc: source file not found: test/tmp_fs/missing.frog
+frogc: unable to read source: test/tmp_fs/missing.frog
 [EXIT CODE] 1
 ```
 

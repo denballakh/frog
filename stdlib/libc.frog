@@ -4,6 +4,17 @@ extern libc-putchar putchar c-int -- c-int end
 extern libc-getchar getchar -- c-int end
 extern libc-eputchar froglang_eputc c-int -- end
 extern libc-exit exit c-int -- end
+extern fork froglang_fork -- c-int end
+extern create-file froglang_create_file c-ptr -- c-int end
+extern dup2 dup2 c-int c-int -- c-int end
+extern close close c-int -- c-int end
+extern chdir froglang_chdir c-ptr -- c-int end
+extern execv froglang_execv c-ptr c-ptr -- c-int end
+extern execvp froglang_execvp c-ptr c-ptr -- c-int end
+extern ensure-directory froglang_ensure_directory c-ptr -- c-int end
+extern wait-child froglang_wait_child c-int -- c-int end
+extern finish-child froglang_finish_child c-int -- end
+extern reset-child-signals froglang_reset_child_signals -- end
 
 macro alloc libc-allocate end
 macro free libc-free end

@@ -1,7 +1,7 @@
 # Standard Library
 
 Standard-library modules are ordinary Frog source files under `stdlib/`. Import
-paths remain relative to the root source file, so a file in `examples/` can
+paths are relative to the importing source file, so a file in `examples/` can
 import libc operations with:
 
 ```frog
@@ -22,6 +22,28 @@ from "../stdlib/libc.frog" import ( alloc free putc getc eputc exit )
 
 The imported names are macros, so callers see the stack effects above rather
 than the return values of the underlying C I/O functions.
+
+The module also exposes the POSIX operations used by the compiler and
+subprocess library:
+
+- `fork`: `-- int`
+- `create-file`: `path -- int`
+- `dup2`: `old_fd new_fd -- int`
+- `close`: `fd -- int`
+- `chdir`: `path -- int`
+- `execv`: `path argv -- int`
+- `execvp`: `file argv -- int`
+- `ensure-directory`: `path -- int`
+- `wait-child`: `pid -- int`
+- `finish-child`: `status --`
+- `reset-child-signals`: `--`
+
+Paths and argument arrays use NUL-terminated C strings. `create-file` opens a
+write-only, truncated file with mode `0600`. `ensure-directory` accepts an
+existing directory. `wait-child` waits through interrupted system calls and
+returns a normal exit status or `128` plus the terminating signal. The other
+integer-returning operations return a negative value on failure. `finish-child`
+flushes standard output and terminates without running parent cleanup code.
 
 ## Strings And Byte Buffers
 

@@ -406,29 +406,29 @@ file_code_examples = [
         },
     ),
     FileCodeExample(
-        name='import_paths_are_root_relative',
+        name='import_paths_are_module_relative',
         root=SourceSpec(before_main='from "pkg/use.frog" import value', body='value print'),
         files={
             'math.frog': 'proc value -- int do 999 end\n',
             'pkg/math.frog': 'proc value -- int do 7 end\n',
             'pkg/use.frog': '''
-            // "math.frog" resolves from the root file directory, not from pkg/
-            from "math.frog" import value as root_value
+            // "math.frog" resolves beside this importing module, under pkg/
+            from "math.frog" import value as module_value
 
-            proc value -- int do root_value end
+            proc value -- int do module_value end
             ''',
         },
     ),
     FileCodeExample(
-        name='explicit_subdir_import_path',
+        name='explicit_parent_import_path',
         root=SourceSpec(before_main='from "pkg/use.frog" import value', body='value print'),
         files={
             'math.frog': 'proc value -- int do 999 end\n',
             'pkg/math.frog': 'proc value -- int do 7 end\n',
             'pkg/use.frog': '''
-            from "pkg/math.frog" import value as pkg_value
+            from "../math.frog" import value as root_value
 
-            proc value -- int do pkg_value end
+            proc value -- int do root_value end
             ''',
         },
     ),

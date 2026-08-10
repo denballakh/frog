@@ -222,7 +222,7 @@ Only `from "path" import ...` is supported. Module alias imports such as `import
 
 Import declarations are collected before procedure bodies are compiled, so imported names can be used before the import declaration appears in the file.
 
-Import paths are resolved relative to the root file being compiled, not relative to the importing module. For example, inside `pkg/use.frog`, `from "math.frog" import value` refers to the root-level `math.frog`; use `from "pkg/math.frog" import value` for the file under `pkg/`.
+Relative import paths are resolved from the directory containing the importing module. For example, inside `pkg/use.frog`, `from "math.frog" import value` refers to `pkg/math.frog`, while `from "../math.frog" import value` refers to the root-level `math.frog`.
 
 If the root source path is a symbolic link, imports are resolved from the lexical directory containing that link, not from the linked file's physical directory.
 

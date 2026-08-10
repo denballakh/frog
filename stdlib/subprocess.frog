@@ -1,12 +1,4 @@
-extern subprocess-alloc froglang_alloc c-int -- c-ptr end
-extern subprocess-free free c-ptr -- end
-extern subprocess-eputc froglang_eputc c-int -- end
-extern subprocess-fork froglang_fork -- c-int end
-extern subprocess-dup2 froglang_dup2 c-int c-int -- c-int end
-extern subprocess-chdir froglang_chdir c-ptr -- c-int end
-extern subprocess-execvp froglang_execvp c-ptr c-ptr -- c-int end
-extern subprocess-wait froglang_wait_child c-int -- c-int end
-extern subprocess-finish froglang_finish_child c-int -- end
+from "libc.frog" import ( alloc free eputc fork dup2 chdir execvp wait-child finish-child )
 extern subprocess-tmpfile froglang_tmpfile -- c-ptr end
 extern subprocess-file-putc froglang_file_putc c-int c-ptr -- c-int end
 extern subprocess-file-getc froglang_file_getc c-ptr -- c-int end
@@ -38,13 +30,13 @@ proc subprocess-fail -- do
         0
         while dup message String.len < do
             let index do
-                message String.bytes index + @u8 subprocess-eputc
+                message String.bytes index + @u8 eputc
                 index 1 +
             end
         end
         drop
     end
-    1 subprocess-finish
+    1 finish-child
 end
 
 proc subprocess-bytes-copy ptr ptr int -- do
@@ -66,7 +58,7 @@ proc subprocess-checked-stream -- ptr do
 end
 
 proc subprocess-capture-new -- SubprocessCapture do
-    subprocess-capture-initial-capacity subprocess-alloc
+    subprocess-capture-initial-capacity alloc
     let bytes do
         SubprocessCapture:alloc
         let capture do
@@ -83,10 +75,10 @@ proc subprocess-capture-push int SubprocessCapture -- do
         if capture @SubprocessCapture.len capture @SubprocessCapture.capacity == do
             capture @SubprocessCapture.capacity 2 *
             let capacity do
-                capacity subprocess-alloc
+                capacity alloc
                 let bytes do
                     capture @SubprocessCapture.bytes bytes capture @SubprocessCapture.len subprocess-bytes-copy
-                    capture @SubprocessCapture.bytes subprocess-free
+                    capture @SubprocessCapture.bytes free
                     bytes capture !SubprocessCapture.bytes
                     capacity capture !SubprocessCapture.capacity
                 end
@@ -128,7 +120,7 @@ end
 proc subprocess-argv int -- ptr do
     let count do
         if count 0 < do subprocess-fail end
-        count 1 + subprocess-pointer-bytes * subprocess-alloc
+        count 1 + subprocess-pointer-bytes * alloc
         let argv do
             0 ptr cast argv count subprocess-pointer-bytes * + !ptr
             argv
@@ -142,21 +134,21 @@ proc subprocess-arg String ptr int -- do
     end
 end
 
-proc subprocess-argv-free ptr -- do subprocess-free end
+proc subprocess-argv-free ptr -- do free end
 
 proc subprocess-run-child ptr ptr ptr ptr String -- do
     let argv input output errors cwd do
-        if input subprocess-file-descriptor 0 subprocess-dup2 0 < do subprocess-fail end
-        if output subprocess-file-descriptor 1 subprocess-dup2 0 < do subprocess-fail end
-        if errors subprocess-file-descriptor 2 subprocess-dup2 0 < do subprocess-fail end
+        if input subprocess-file-descriptor 0 dup2 0 < do subprocess-fail end
+        if output subprocess-file-descriptor 1 dup2 0 < do subprocess-fail end
+        if errors subprocess-file-descriptor 2 dup2 0 < do subprocess-fail end
         if cwd String.len 0 > do
-            if cwd String.bytes subprocess-chdir 0 != do subprocess-fail end
+            if cwd String.bytes chdir 0 != do subprocess-fail end
         end
         input subprocess-file-close drop
         output subprocess-file-close drop
         errors subprocess-file-close drop
-        argv @ptr argv subprocess-execvp drop
-        127 subprocess-finish
+        argv @ptr argv execvp drop
+        127 finish-child
     end
 end
 
@@ -169,13 +161,13 @@ proc subprocess-run-with ptr String String -- CompletedProcess do
                 subprocess-checked-stream
                 let stderr do
                     input stdin subprocess-write-input
-                    subprocess-fork
+                    fork
                     let child do
                         if child 0 < do subprocess-fail end
                         if child 0 == do
                             argv stdin stdout stderr cwd subprocess-run-child
                         end
-                        child subprocess-wait
+                        child wait-child
                         let returncode do
                             if returncode 0 < do subprocess-fail end
                             stdout subprocess-file-rewind
@@ -196,8 +188,8 @@ proc subprocess-run-with ptr String String -- CompletedProcess do
                                         captured-stderr @SubprocessCapture.bytes result !CompletedProcess.stderr
                                         captured-stderr @SubprocessCapture.len result !CompletedProcess.stderr_len
                                         returncode result !CompletedProcess.returncode
-                                        captured-stdout ptr cast subprocess-free
-                                        captured-stderr ptr cast subprocess-free
+                                        captured-stdout ptr cast free
+                                        captured-stderr ptr cast free
                                         result
                                     end
                                 end
@@ -224,8 +216,8 @@ end
 
 proc completed-process-free CompletedProcess -- do
     let result do
-        result @CompletedProcess.stdout subprocess-free
-        result @CompletedProcess.stderr subprocess-free
-        result ptr cast subprocess-free
+        result @CompletedProcess.stdout free
+        result @CompletedProcess.stderr free
+        result ptr cast free
     end
 end
