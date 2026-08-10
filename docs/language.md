@@ -1,6 +1,6 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 `compiler/frogc.frog` is the sole Frog compiler and typechecker. It emits C, which is compiled to the executable program; there is no separate interpreter or Python language implementation.
 
@@ -159,13 +159,33 @@ end
 
 `macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. User-defined and imported macros expand before normal word resolution, so they can shadow intrinsics or procedures with the same name.
 
-Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, `record`, `union`, `fn`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
+Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, `record`, `union`, `fn`, `const`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
+
+## Compile-Time Constants
+
+Constants evaluate a restricted postfix expression once during compilation and expand each use into the resulting typed literals:
+
+```frog
+const max-int 1 62 << 1 62 << 1 - + end
+const answer-and-ready 6 7 * true end
+
+proc main -- do
+    max-int print
+    answer-and-ready print print // true, then 42
+end
+```
+
+`const name <expression> end` starts evaluation with an empty stack, infers the result arity and types, and requires at least one result. Results may be `int`, `bool`, or `String`; character literals produce `int`. Multiple results retain their bottom-to-top order. A use emits integer or bool assignments and pooled String references directly, so the defining arithmetic is not emitted or reevaluated at runtime.
+
+Constant expressions accept literals, visible constant references, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. They do not execute macros, procedures, control flow, local bindings, allocation, memory or I/O operations, casts, or nominal-type operations. Integer overflow, division by zero, and invalid shifts are compile errors. Constant shifts require a non-negative value and a count from 0 through 62.
+
+Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a prelude macro.
 
 ## Standard Prelude
 
 The compiler embeds a small Frog source module containing `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot`. These words are ordinary macros implemented with `let`; they do not have compiler intrinsic implementations and do not require a standard-library file at runtime.
 
-Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported procedure, and finally a prelude macro. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
+Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a prelude macro. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
 
 - `dup`: `a -- a a`
 - `dup2`: `a b -- a b a b`
@@ -176,7 +196,7 @@ Prelude names are fallback definitions. Resolution prefers a user-defined or imp
 
 ## Imports
 
-Imports make procedures, external functions, records, unions, function-reference types, and macros from another Frog file visible in the importing module:
+Imports make procedures, external functions, constants, records, unions, function-reference types, and macros from another Frog file visible in the importing module:
 
 ```frog
 from "math.frog" import inc
@@ -212,7 +232,7 @@ proc main -- do
 end
 ```
 
-Imported top-level code is ignored. Imported files contribute procedure, external-function, record, union, function-reference-type, and macro definitions, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `P.value`, `M:some`, `M.some?`, and `F:call`.
+Imported top-level code is ignored. Imported files contribute procedure, external-function, constant, record, union, function-reference-type, and macro definitions, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `P.value`, `M:some`, `M.some?`, and `F:call`.
 
 Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 
@@ -249,12 +269,13 @@ end
 - `record Name field Type ... end` defines a nominal pointer-backed record.
 - `union Name case Variant [PayloadType] ... end` defines a nominal pointer-backed tagged union.
 - `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract.
+- `const name <expression> end` eagerly evaluates a restricted expression and defines one or more typed literal values.
 - A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
 - Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid rather than being wrapped in a generated `main`.
-- Only procedure, external-function, record, union, function-reference, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
+- Only procedure, external-function, constant, record, union, function-reference, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
-- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, external functions, records, unions, function-reference types, or macros from another file.
+- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, external functions, constants, records, unions, function-reference types, or macros from another file.
 - `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
@@ -339,4 +360,4 @@ Broader optimization is left to the C compiler. The peephole rewrite may reduce 
 
 ## Generated C Limits
 
-Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`. Passing a Frog `int` outside the C implementation's `int` range through `c-int` is also implementation-defined.
+Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Compile-time constant arithmetic is checked separately and rejects those cases before C emission. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`. Passing a Frog `int` outside the C implementation's `int` range through `c-int` is also implementation-defined.

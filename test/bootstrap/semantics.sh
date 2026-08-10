@@ -101,6 +101,8 @@ run_ok functions_macro_shadow $'99\n'
 run_ok optimizer_constant_add $'5\n18\n3\n9\n'
 run_ok optimizer_macro_shadow $'41\n'
 run_ok type_stack_growth $'42\n'
+run_ok constants $'42\n42\n42\n42\ntrue\n42\n4\n-5\ntrue\n9223372036854775807\n99\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0\n3\n9\n'
+run_ok constants_operators $'13\n5\n36\n2\n1\n1\n2\n8\n2\n7\n2\n5\n-1\nfalse\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse\ntrue\nfalse\n'
 run_status unions_wrong_variant 1
 run_status unions_invalid_tag 1
 run_status unions_negative_tag 1
@@ -123,6 +125,11 @@ printf '%s' $'  frog_slots[0] = 5;\n  frog_slots[0] = 18;\n  frog_slots[0] = 9;\
         | sed -n '/^  frog_slots\[0\] = 5;$/p; /^  frog_slots\[0\] = 18;$/p; /^  frog_slots\[0\] = 9;$/p')
 printf '%s' $'    frog_slots[0] = 9223372036854775807;\n    frog_slots[1] = 1;\n    frog_slots[0] = frog_slots[0] + frog_slots[1];\n' \
     | cmp - <(sed -n '/^    frog_slots\[0\] = 9223372036854775807;$/,+2p' "$output/optimizer_constant_add.c")
+test "$(grep -F -c '= 42;' "$output/constants.c")" -eq 5
+if grep -Fq 'frog_slots[0] = frog_slots[0] * frog_slots[1];' "$output/constants.c"; then
+    echo 'constant product must not emit runtime multiplication' >&2
+    exit 1
+fi
 for generated in "${generated_sources[@]}"; do
     if grep -Eq 'FrogStack|frog_stack|frog_push|frog_pop' "$generated"; then
         echo "generated runtime stack symbol in $generated" >&2
@@ -131,6 +138,31 @@ for generated in "${generated_sources[@]}"; do
 done
 
 run_error integer_overflow 'integer literal exceeds the signed 64-bit range'
+run_source_error constant_divide_by_zero $'const bad 1 0 / end\nproc main -- do end\n' 'constant division by zero'
+run_source_error constant_overflow $'const bad 9223372036854775807 1 + end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_subtract_overflow $'const bad 0 9223372036854775807 - 1 - 1 - end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_multiply_positive_overflow $'const bad 9223372036854775807 2 * end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_multiply_positive_negative_overflow $'const bad 9223372036854775807 0 2 - * end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_multiply_negative_positive_overflow $'const bad 0 9223372036854775807 - 2 * end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_multiply_negative_overflow $'const bad 0 9223372036854775807 - 0 2 - * end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_multiply_min_overflow $'const bad 0 9223372036854775807 - 1 - 0 1 - * end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_divide_overflow $'const bad 0 9223372036854775807 - 1 - 0 1 - / end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_modulo_overflow $'const bad 0 9223372036854775807 - 1 - 0 1 - % end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_invalid_shift $'const bad 1 63 << end\nproc main -- do end\n' 'invalid shift in constant expression'
+run_source_error constant_negative_shift_value $'const bad 0 1 - 1 << end\nproc main -- do end\n' 'invalid shift in constant expression'
+run_source_error constant_negative_shift_count $'const bad 1 0 1 - << end\nproc main -- do end\n' 'invalid shift in constant expression'
+run_source_error constant_shift_overflow $'const bad 2 62 << end\nproc main -- do end\n' 'constant integer overflow'
+run_source_error constant_stack_underflow $'const bad 1 + end\nproc main -- do end\n' 'constant expression stack underflow'
+run_source_error constant_type_mismatch $'const bad true 1 + end\nproc main -- do end\n' 'constant expression type mismatch'
+run_source_error constant_empty_result $'const bad end\nproc main -- do end\n' 'constant must produce at least one value'
+run_source_error constant_recursion $'const first second end\nconst second first end\nproc main -- do end\n' 'recursive constant'
+run_source_error constant_unsupported_word $'const bad print end\nproc main -- do end\n' 'unsupported constant expression word'
+run_source_error constant_builtin_precedence $'const print 41 end\nconst value print end\nproc main -- do value print end\n' 'unsupported constant expression word'
+run_source_error constant_unsupported_macro $'macro twice dup + end\nconst bad 1 twice end\nproc main -- do end\n' 'unsupported constant expression word'
+run_source_error constant_duplicate $'const value 1 end\nconst value 2 end\nproc main -- do end\n' 'duplicate constant name'
+run_source_error constant_procedure_conflict $'const value 1 end\nproc value -- int do 2 end\nproc main -- do end\n' 'duplicate declaration name: value'
+run_source_error constant_inside_proc $'proc main -- do const bad 1 end end\n' 'declarations are only allowed at top level'
+run_source_error constant_inside_macro $'macro bad const value 1 end end\nproc main -- do end\n' 'declarations are not allowed in macro bodies'
 run_source_error integer_binary_missing_digits \
     $'proc main -- do 0b print end\n' \
     'invalid integer literal'

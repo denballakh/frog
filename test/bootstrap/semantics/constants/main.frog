@@ -1,0 +1,31 @@
+const product 6 7 * end
+const forward later 1 + end
+const later 41 end
+const pair product true end
+const greeting "frog" end
+const negative 3 8 - end
+const logic true false || false ! && end
+const max-int 1 62 << 1 62 << 1 - + end
+const shadowed 41 end
+const many 0 1 2 3 4 5 6 7 8 9 end
+const + 41 end
+const intrinsic-wins 1 2 + end
+
+macro emit-product product end
+macro shadowed 99 end
+
+proc main -- do
+    product print
+    product print
+    emit-product print
+    forward print
+    pair print print
+    greeting String.len print
+    negative print
+    logic print
+    max-int print
+    shadowed print
+    many print print print print print print print print print print
+    intrinsic-wins print
+    9 let product do product print end
+end

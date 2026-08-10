@@ -15,6 +15,7 @@ proc type-nominal-base -- int do 1000 end
 proc type-function-base -- int do 1 32 << end
 
 proc max-int -- int do 1 62 << dup 1 - + end
+proc min-int -- int do 0 max-int - 1 - end
 
 proc token-int -- int do 1 end
 proc token-bool -- int do 2 end
@@ -72,6 +73,28 @@ proc macro-body-start-offset -- int do 16 end
 proc macro-body-end-offset -- int do 24 end
 proc macro-expanding-offset -- int do 32 end
 proc macro-bytes -- int do 40 end
+
+proc constant-name-start-offset -- int do 0 end
+proc constant-name-length-offset -- int do 8 end
+proc constant-body-start-offset -- int do 16 end
+proc constant-body-end-offset -- int do 24 end
+proc constant-state-offset -- int do 32 end
+proc constant-values-offset -- int do 40 end
+proc constant-value-count-offset -- int do 48 end
+proc constant-bytes -- int do 56 end
+
+proc constant-new -- int do 0 end
+proc constant-evaluating -- int do 1 end
+proc constant-evaluated -- int do 2 end
+
+proc constant-value-type-offset -- int do 0 end
+proc constant-value-payload-offset -- int do 8 end
+proc constant-value-bytes -- int do 16 end
+
+proc constant-evaluator-values-offset -- int do 0 end
+proc constant-evaluator-count-offset -- int do 8 end
+proc constant-evaluator-capacity-offset -- int do 16 end
+proc constant-evaluator-bytes -- int do 24 end
 
 proc record-name-start-offset -- int do 0 end
 proc record-name-length-offset -- int do 8 end
@@ -149,7 +172,9 @@ proc ctx-functions-offset -- int do 272 end
 proc ctx-function-count-offset -- int do 280 end
 proc ctx-function-types-offset -- int do 288 end
 proc ctx-function-type-count-offset -- int do 296 end
-proc ctx-bytes -- int do 304 end
+proc ctx-constants-offset -- int do 304 end
+proc ctx-constant-count-offset -- int do 312 end
+proc ctx-bytes -- int do 320 end
 
 proc import-path-token-offset -- int do 0 end
 proc import-name-token-offset -- int do 8 end
@@ -172,6 +197,7 @@ proc scope-macro -- int do 2 end
 proc scope-record -- int do 3 end
 proc scope-union -- int do 4 end
 proc scope-function -- int do 5 end
+proc scope-constant -- int do 6 end
 
 proc load-new -- int do 0 end
 proc load-loading -- int do 1 end
@@ -428,6 +454,8 @@ proc @ctx-functions ptr -- ptr do ctx-functions-offset pointer-field-read end
 proc @ctx-function-count ptr -- int do ctx-function-count-offset field-read end
 proc @ctx-function-types ptr -- ptr do ctx-function-types-offset pointer-field-read end
 proc @ctx-function-type-count ptr -- int do ctx-function-type-count-offset field-read end
+proc @ctx-constants ptr -- ptr do ctx-constants-offset pointer-field-read end
+proc @ctx-constant-count ptr -- int do ctx-constant-count-offset field-read end
 
 proc !ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
 proc !ctx-source-length int ptr -- do ctx-source-length-offset field-write end
@@ -466,6 +494,8 @@ proc !ctx-functions ptr ptr -- do ctx-functions-offset pointer-field-write end
 proc !ctx-function-count int ptr -- do ctx-function-count-offset field-write end
 proc !ctx-function-types ptr ptr -- do ctx-function-types-offset pointer-field-write end
 proc !ctx-function-type-count int ptr -- do ctx-function-type-count-offset field-write end
+proc !ctx-constants ptr ptr -- do ctx-constants-offset pointer-field-write end
+proc !ctx-constant-count int ptr -- do ctx-constant-count-offset field-write end
 proc !ctx-is-root bool ptr -- do
     let value ctx do
         if value do 1 else 0 end
@@ -954,6 +984,59 @@ proc set-macro-expanding bool ptr int -- do
     end
 end
 
+proc constant-address ptr int -- ptr do
+    let ctx index do
+        ctx @ctx-constants index constant-bytes * +
+    end
+end
+
+proc constant-field ptr int int -- int do
+    let ctx index offset do
+        ctx index constant-address offset field-read
+    end
+end
+
+proc set-constant-field int ptr int int -- do
+    let value ctx index offset do
+        value ctx index constant-address offset field-write
+    end
+end
+
+proc constant-name-start-at ptr int -- int do constant-name-start-offset constant-field end
+proc constant-name-length-at ptr int -- int do constant-name-length-offset constant-field end
+proc constant-body-start-at ptr int -- int do constant-body-start-offset constant-field end
+proc constant-body-end-at ptr int -- int do constant-body-end-offset constant-field end
+proc constant-state-at ptr int -- int do constant-state-offset constant-field end
+proc constant-values-at ptr int -- ptr do
+    let ctx index do ctx index constant-address constant-values-offset pointer-field-read end
+end
+proc constant-value-count-at ptr int -- int do constant-value-count-offset constant-field end
+
+proc set-constant-values ptr ptr int -- do
+    let values ctx index do
+        values ctx index constant-address constant-values-offset pointer-field-write
+    end
+end
+
+proc constant-value-address ptr int -- ptr do
+    let values index do values index constant-value-bytes * + end
+end
+
+proc constant-value-type-at ptr int -- int do
+    let values index do values index constant-value-address constant-value-type-offset field-read end
+end
+
+proc constant-value-payload-at ptr int -- int do
+    let values index do values index constant-value-address constant-value-payload-offset field-read end
+end
+
+proc set-constant-value int int ptr int -- do
+    let type payload values index do
+        type values index constant-value-address constant-value-type-offset field-write
+        payload values index constant-value-address constant-value-payload-offset field-write
+    end
+end
+
 proc record-address ptr int -- ptr do
     let ctx index do
         ctx @ctx-records index record-bytes * +
@@ -1136,6 +1219,7 @@ proc reserved-name ptr int -- bool do
     let ctx token-index do
         ctx token-index "proc" token-equals
         ctx token-index "macro" token-equals ||
+        ctx token-index "const" token-equals ||
         ctx token-index "if" token-equals ||
         ctx token-index "elif" token-equals ||
         ctx token-index "else" token-equals ||
@@ -1403,6 +1487,33 @@ proc find-macro ptr int -- int do
     0 find-macro-from
 end
 
+proc constant-name-equals-token ptr int int -- bool do
+    let ctx constant-index token-index do
+        ctx @ctx-source
+        ctx constant-index constant-name-start-at
+        +
+        ctx constant-index constant-name-length-at
+        ctx token-index token-slice
+        bytes-equal
+    end
+end
+
+proc find-constant-from ptr int int -- int do
+    let ctx token-index constant-index do
+        if constant-index ctx @ctx-constant-count >= do
+            0 1 -
+        elif ctx constant-index token-index constant-name-equals-token do
+            constant-index
+        else
+            ctx token-index constant-index 1 + find-constant-from
+        end
+    end
+end
+
+proc find-constant ptr int -- int do
+    0 find-constant-from
+end
+
 proc record-name-equals-token ptr int int -- bool do
     let ctx record-index token-index do
         ctx @ctx-source
@@ -1635,6 +1746,7 @@ proc scan-one-record ptr int -- int do
             if
                 ctx name-token find-proc 0 >=
                 ctx name-token find-macro 0 >= ||
+                ctx name-token find-constant 0 >= ||
                 ctx name-token find-union 0 >= ||
                 ctx name-token find-function 0 >= ||
             do
@@ -1793,6 +1905,7 @@ proc scan-one-union ptr int -- int do
             if
                 ctx name-token find-proc 0 >=
                 ctx name-token find-macro 0 >= ||
+                ctx name-token find-constant 0 >= ||
                 ctx name-token find-record 0 >= ||
                 ctx name-token find-function 0 >= ||
             do
@@ -1864,6 +1977,7 @@ proc scan-one-function ptr int -- int do
             if
                 ctx name-token find-proc 0 >=
                 ctx name-token find-macro 0 >= ||
+                ctx name-token find-constant 0 >= ||
                 ctx name-token find-record 0 >= ||
                 ctx name-token find-union 0 >= ||
             do
@@ -1969,6 +2083,7 @@ proc scan-macro-body ptr int -- int do
                     elif
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
+                        ctx token-index "const" token-equals ||
                         ctx token-index "extern" token-equals ||
                         ctx token-index "record" token-equals ||
                         ctx token-index "union" token-equals ||
@@ -2016,6 +2131,7 @@ proc validate-macro-body ptr int int -- do
                                 elif
                                     ctx token-index "proc" token-equals
                                     ctx token-index "macro" token-equals ||
+                                    ctx token-index "const" token-equals ||
                                     ctx token-index "extern" token-equals ||
                                     ctx token-index "record" token-equals ||
                                     ctx token-index "union" token-equals ||
@@ -2149,6 +2265,103 @@ proc scan-one-macro ptr int -- int do
     end
 end
 
+proc constant-expression-forbidden-word ptr int -- bool do
+    let ctx token-index do
+        ctx token-index "if" token-equals
+        ctx token-index "elif" token-equals ||
+        ctx token-index "else" token-equals ||
+        ctx token-index "while" token-equals ||
+        ctx token-index "do" token-equals ||
+        ctx token-index "let" token-equals ||
+        ctx token-index "proc" token-equals ||
+        ctx token-index "macro" token-equals ||
+        ctx token-index "const" token-equals ||
+        ctx token-index "extern" token-equals ||
+        ctx token-index "record" token-equals ||
+        ctx token-index "union" token-equals ||
+        ctx token-index "fn" token-equals ||
+        ctx token-index "from" token-equals ||
+        ctx token-index "import" token-equals ||
+    end
+end
+
+proc scan-constant-body ptr int -- int do
+    let ctx body-start do
+        body-start true
+        while
+            let token-index active do token-index active active end
+        do
+            let token-index active do
+                if token-index ctx @ctx-token-count >= do
+                    "unterminated constant declaration" fail
+                    token-index false
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "end" token-equals &&
+                do
+                    token-index 1 + false
+                else
+                    if
+                        ctx token-index token-kind-at token-word ==
+                        ctx token-index constant-expression-forbidden-word &&
+                    do
+                        "unsupported constant expression word" fail
+                    end
+                    token-index 1 + true
+                end
+            end
+        end
+        let next-token active do next-token end
+    end
+end
+
+proc scan-one-constant ptr int -- int do
+    let ctx constant-token do
+        constant-token 1 +
+        let name-token do
+            if name-token ctx @ctx-token-count >= do
+                "expected constant name" fail
+            end
+            ctx name-token require-word
+            if
+                ctx name-token reserved-name
+                ctx name-token "int" token-equals ||
+                ctx name-token "bool" token-equals ||
+                ctx name-token "ptr" token-equals ||
+                ctx name-token string-type-name ||
+            do
+                "invalid constant name" fail
+            end
+            if ctx name-token find-constant 0 >= do
+                "duplicate constant name" fail
+            end
+            if
+                ctx name-token find-proc 0 >=
+                ctx name-token find-record 0 >= ||
+                ctx name-token find-union 0 >= ||
+                ctx name-token find-function 0 >= ||
+            do
+                ctx name-token fail-duplicate-declaration
+            end
+            ctx @ctx-constant-count
+            let constant-index do
+                ctx name-token token-start-at ctx constant-index constant-name-start-offset set-constant-field
+                ctx name-token token-length-at ctx constant-index constant-name-length-offset set-constant-field
+                constant-new ctx constant-index constant-state-offset set-constant-field
+                0 ptr cast ctx constant-index set-constant-values
+                0 ctx constant-index constant-value-count-offset set-constant-field
+                ctx name-token 1 + scan-constant-body
+                let next-token do
+                    name-token 1 + ctx constant-index constant-body-start-offset set-constant-field
+                    next-token 1 - ctx constant-index constant-body-end-offset set-constant-field
+                    ctx @ctx-constant-count 1 + ctx !ctx-constant-count
+                    next-token
+                end
+            end
+        end
+    end
+end
+
 proc scan-block-end-with-outer-elif ptr int bool -- int do
     let ctx body-start allow-outer-elif do
         body-start 1
@@ -2170,6 +2383,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
                     elif
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
+                        ctx token-index "const" token-equals ||
                         ctx token-index "extern" token-equals ||
                         ctx token-index "record" token-equals ||
                         ctx token-index "union" token-equals ||
@@ -2241,6 +2455,7 @@ proc allocate-proc ptr int bool -- int do
             ctx name-token find-record 0 >=
             ctx name-token find-union 0 >= ||
             ctx name-token find-function 0 >= ||
+            ctx name-token find-constant 0 >= ||
         do
             ctx name-token fail-duplicate-declaration
         end
@@ -2622,6 +2837,7 @@ proc scan-declarations ptr -- do
         0 ctx !ctx-proc-count
         0 ctx !ctx-type-count
         0 ctx !ctx-macro-count
+        0 ctx !ctx-constant-count
         0 ctx !ctx-import-count
         0 ctx !ctx-record-count
         0 ctx !ctx-record-field-count
@@ -2648,6 +2864,11 @@ proc scan-declarations ptr -- do
                     ctx token-index "macro" token-equals &&
                 do
                     ctx token-index scan-one-macro
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "const" token-equals &&
+                do
+                    ctx token-index scan-one-constant
                 elif
                     ctx token-index token-kind-at token-word ==
                     ctx token-index "proc" token-equals &&
@@ -3677,6 +3898,7 @@ proc initialize-module-source ptr ptr int -- do
 
         ctx @ctx-token-count 1 + proc-bytes * alloc ctx !ctx-procs
         ctx @ctx-token-count 1 + macro-bytes * alloc ctx !ctx-macros
+        ctx @ctx-token-count 1 + constant-bytes * alloc ctx !ctx-constants
         ctx @ctx-token-count 1 + cell-bytes * alloc ctx !ctx-types
         ctx @ctx-token-count 1 + import-bytes * alloc ctx !ctx-imports
         ctx @ctx-token-count 1 + scope-bytes * alloc ctx !ctx-scope
@@ -3881,6 +4103,7 @@ proc resolve-one-import ptr int -- do
                     if
                         ctx visible-token find-proc 0 >=
                         ctx visible-token find-macro 0 >= ||
+                        ctx visible-token find-constant 0 >= ||
                         ctx visible-token find-record 0 >= ||
                         ctx visible-token find-union 0 >= ||
                         ctx visible-token find-function 0 >= ||
@@ -3988,6 +4211,22 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
+            while dup ctx @ctx-constant-count < do
+                dup
+                let constant-index do
+                    ctx
+                    ctx
+                    ctx constant-index constant-name-start-at
+                    ctx constant-index constant-name-length-at
+                    scope-constant
+                    ctx
+                    constant-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            0
             while dup ctx @ctx-proc-count < do
                 dup
                 let proc-index do
@@ -4013,6 +4252,611 @@ proc resolve-all-module-scopes ptr -- do
         program @program-module-head
         while dup int cast 0 != do
             dup resolve-module-scope
+            @ctx-next-module
+        end
+        drop
+    end
+end
+
+proc @constant-evaluator-values ptr -- ptr do
+    constant-evaluator-values-offset pointer-field-read
+end
+
+proc @constant-evaluator-count ptr -- int do
+    constant-evaluator-count-offset field-read
+end
+
+proc @constant-evaluator-capacity ptr -- int do
+    constant-evaluator-capacity-offset field-read
+end
+
+proc !constant-evaluator-values ptr ptr -- do
+    constant-evaluator-values-offset pointer-field-write
+end
+
+proc !constant-evaluator-count int ptr -- do
+    constant-evaluator-count-offset field-write
+end
+
+proc !constant-evaluator-capacity int ptr -- do
+    constant-evaluator-capacity-offset field-write
+end
+
+proc create-constant-evaluator -- ptr do
+    constant-evaluator-bytes alloc
+    let evaluator do
+        8
+        let capacity do
+            capacity constant-value-bytes * alloc evaluator !constant-evaluator-values
+            0 evaluator !constant-evaluator-count
+            capacity evaluator !constant-evaluator-capacity
+            evaluator
+        end
+    end
+end
+
+proc ensure-constant-evaluator-capacity ptr -- do
+    let evaluator do
+        if evaluator @constant-evaluator-count evaluator @constant-evaluator-capacity == do
+            evaluator @constant-evaluator-capacity 2 *
+            let new-capacity do
+                new-capacity constant-value-bytes * alloc
+                let new-values do
+                    evaluator @constant-evaluator-values
+                    new-values
+                    evaluator @constant-evaluator-count constant-value-bytes *
+                    memory-copy
+                    new-values evaluator !constant-evaluator-values
+                    new-capacity evaluator !constant-evaluator-capacity
+                end
+            end
+        end
+    end
+end
+
+proc constant-evaluator-push ptr int int -- do
+    let evaluator type payload do
+        evaluator ensure-constant-evaluator-capacity
+        type
+        payload
+        evaluator @constant-evaluator-values
+        evaluator @constant-evaluator-count
+        set-constant-value
+        evaluator @constant-evaluator-count 1 + evaluator !constant-evaluator-count
+    end
+end
+
+proc constant-evaluator-pop ptr -- int int do
+    let evaluator do
+        if evaluator @constant-evaluator-count 0 <= do
+            "constant expression stack underflow" fail
+        end
+        evaluator @constant-evaluator-count 1 -
+        let index do
+            index evaluator !constant-evaluator-count
+            evaluator @constant-evaluator-values index constant-value-type-at
+            evaluator @constant-evaluator-values index constant-value-payload-at
+        end
+    end
+end
+
+proc constant-evaluator-pop-expected ptr int -- int do
+    let evaluator expected-type do
+        evaluator constant-evaluator-pop
+        let actual-type payload do
+            if actual-type expected-type != do
+                "constant expression type mismatch" fail
+            end
+            payload
+        end
+    end
+end
+
+proc checked-constant-add int int -- int do
+    let left right do
+        if right 0 > do
+            if left max-int right - > do
+                "constant integer overflow" fail
+            end
+        elif right 0 < do
+            if left min-int right - < do
+                "constant integer overflow" fail
+            end
+        end
+        left right +
+    end
+end
+
+proc checked-constant-subtract int int -- int do
+    let left right do
+        if right 0 > do
+            if left min-int right + < do
+                "constant integer overflow" fail
+            end
+        elif right 0 < do
+            if left max-int right + > do
+                "constant integer overflow" fail
+            end
+        end
+        left right -
+    end
+end
+
+proc checked-constant-multiply int int -- int do
+    let left right do
+        if left 0 == right 0 == || do
+            0
+        else
+            if
+                left min-int == right 0 1 - == &&
+                right min-int == left 0 1 - == && ||
+            do
+                "constant integer overflow" fail
+            end
+            if left 0 > do
+                if right 0 > do
+                    if left max-int right / > do
+                        "constant integer overflow" fail
+                    end
+                else
+                    if right min-int left / < do
+                        "constant integer overflow" fail
+                    end
+                end
+            else
+                if right 0 > do
+                    if left min-int right / < do
+                        "constant integer overflow" fail
+                    end
+                else
+                    if right max-int left / < do
+                        "constant integer overflow" fail
+                    end
+                end
+            end
+            left right *
+        end
+    end
+end
+
+proc require-constant-divisor int int -- do
+    let left right do
+        if right 0 == do
+            "constant division by zero" fail
+        end
+        if left min-int == right 0 1 - == && do
+            "constant integer overflow" fail
+        end
+    end
+end
+
+proc checked-constant-divide int int -- int do
+    let left right do
+        left right require-constant-divisor
+        left right /
+    end
+end
+
+proc checked-constant-modulo int int -- int do
+    let left right do
+        left right require-constant-divisor
+        left right %
+    end
+end
+
+proc require-constant-shift int int -- do
+    let value count do
+        if value 0 < count 0 < || count 63 >= || do
+            "invalid shift in constant expression" fail
+        end
+    end
+end
+
+proc checked-constant-shift-left int int -- int do
+    let value count do
+        value count require-constant-shift
+        if value max-int count >> > do
+            "constant integer overflow" fail
+        end
+        value count <<
+    end
+end
+
+proc checked-constant-shift-right int int -- int do
+    let value count do
+        value count require-constant-shift
+        value count >>
+    end
+end
+
+proc constant-int-binary-word ptr int -- bool do
+    let module token-index do
+        module token-index "+" token-equals
+        module token-index "-" token-equals ||
+        module token-index "*" token-equals ||
+        module token-index "/" token-equals ||
+        module token-index "%" token-equals ||
+        module token-index "<<" token-equals ||
+        module token-index ">>" token-equals ||
+        module token-index "|" token-equals ||
+        module token-index "&" token-equals ||
+        module token-index "^" token-equals ||
+    end
+end
+
+proc constant-comparison-word ptr int -- bool do
+    let module token-index do
+        module token-index "==" token-equals
+        module token-index "!=" token-equals ||
+        module token-index "<" token-equals ||
+        module token-index ">" token-equals ||
+        module token-index "<=" token-equals ||
+        module token-index ">=" token-equals ||
+    end
+end
+
+proc constant-bool-binary-word ptr int -- bool do
+    let module token-index do
+        module token-index "&&" token-equals
+        module token-index "||" token-equals ||
+    end
+end
+
+proc evaluate-constant-int-binary ptr ptr int -- do
+    let evaluator module token-index do
+        evaluator type-int constant-evaluator-pop-expected
+        let right do
+            evaluator type-int constant-evaluator-pop-expected
+            let left do
+                if module token-index "+" token-equals do
+                    left right checked-constant-add
+                elif module token-index "-" token-equals do
+                    left right checked-constant-subtract
+                elif module token-index "*" token-equals do
+                    left right checked-constant-multiply
+                elif module token-index "/" token-equals do
+                    left right checked-constant-divide
+                elif module token-index "%" token-equals do
+                    left right checked-constant-modulo
+                elif module token-index "<<" token-equals do
+                    left right checked-constant-shift-left
+                elif module token-index ">>" token-equals do
+                    left right checked-constant-shift-right
+                elif module token-index "|" token-equals do
+                    left right |
+                elif module token-index "&" token-equals do
+                    left right &
+                else
+                    left right ^
+                end
+                let result do
+                    evaluator type-int result constant-evaluator-push
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-comparison ptr ptr int -- do
+    let evaluator module token-index do
+        evaluator type-int constant-evaluator-pop-expected
+        let right do
+            evaluator type-int constant-evaluator-pop-expected
+            let left do
+                if module token-index "==" token-equals do
+                    left right ==
+                elif module token-index "!=" token-equals do
+                    left right !=
+                elif module token-index "<" token-equals do
+                    left right <
+                elif module token-index ">" token-equals do
+                    left right >
+                elif module token-index "<=" token-equals do
+                    left right <=
+                else
+                    left right >=
+                end
+                let result do
+                    evaluator type-bool result int cast constant-evaluator-push
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-bool-binary ptr ptr int -- do
+    let evaluator module token-index do
+        evaluator type-bool constant-evaluator-pop-expected
+        let right do
+            evaluator type-bool constant-evaluator-pop-expected
+            let left do
+                if module token-index "&&" token-equals do
+                    left 0 != right 0 != &&
+                else
+                    left 0 != right 0 != ||
+                end
+                let result do
+                    evaluator type-bool result int cast constant-evaluator-push
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-divmod ptr -- do
+    let evaluator do
+        evaluator type-int constant-evaluator-pop-expected
+        let right do
+            evaluator type-int constant-evaluator-pop-expected
+            let left do
+                left right checked-constant-divide
+                left right checked-constant-modulo
+                let quotient remainder do
+                    evaluator type-int quotient constant-evaluator-push
+                    evaluator type-int remainder constant-evaluator-push
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-unary ptr ptr int -- do
+    let evaluator module token-index do
+        if module token-index "~" token-equals do
+            evaluator type-int constant-evaluator-pop-expected
+            let value do evaluator type-int value ~ constant-evaluator-push end
+        else
+            evaluator type-bool constant-evaluator-pop-expected
+            let value do evaluator type-bool value 0 == int cast constant-evaluator-push end
+        end
+    end
+end
+
+proc evaluate-constant-intrinsic ptr ptr int -- bool do
+    let evaluator module token-index do
+        if module token-index constant-int-binary-word do
+            evaluator module token-index evaluate-constant-int-binary true
+        elif module token-index constant-comparison-word do
+            evaluator module token-index evaluate-constant-comparison true
+        elif module token-index constant-bool-binary-word do
+            evaluator module token-index evaluate-constant-bool-binary true
+        elif module token-index "/%" token-equals do
+            evaluator evaluate-constant-divmod true
+        elif
+            module token-index "~" token-equals
+            module token-index "!" token-equals ||
+        do
+            evaluator module token-index evaluate-constant-unary true
+        else
+            false
+        end
+    end
+end
+
+proc constant-runtime-intrinsic-word ptr int -- bool do
+    let module token-index do
+        module token-index "read-file" token-equals
+        module token-index "cast" token-equals ||
+        module token-index "alloc" token-equals ||
+        module token-index "args" token-equals ||
+        module token-index "@ptr" token-equals ||
+        module token-index "@i8" token-equals ||
+        module token-index "@i16" token-equals ||
+        module token-index "@i32" token-equals ||
+        module token-index "@i64" token-equals ||
+        module token-index "@u8" token-equals ||
+        module token-index "@u16" token-equals ||
+        module token-index "@u32" token-equals ||
+        module token-index "@u64" token-equals ||
+        module token-index "!ptr" token-equals ||
+        module token-index "!i8" token-equals ||
+        module token-index "!i16" token-equals ||
+        module token-index "!i32" token-equals ||
+        module token-index "!i64" token-equals ||
+        module token-index "!u8" token-equals ||
+        module token-index "!u16" token-equals ||
+        module token-index "!u32" token-equals ||
+        module token-index "!u64" token-equals ||
+        module token-index "print" token-equals ||
+        module token-index "putc" token-equals ||
+        module token-index "getc" token-equals ||
+        module token-index "eputc" token-equals ||
+        module token-index "exit" token-equals ||
+        module token-index "?" token-equals ||
+    end
+end
+
+proc scope-prefix-is-nominal ptr ptr int bool -- bool do
+    let scope bytes length allow-function do
+        scope bytes length 0 find-scope-symbol-from
+        let symbol-index do
+            if symbol-index 0 < do
+                false
+            else
+                scope symbol-index scope-kind-at
+                let kind do
+                    kind scope-record ==
+                    kind scope-union == ||
+                    kind scope-function == allow-function && ||
+                end
+            end
+        end
+    end
+end
+
+proc constant-qualified-nominal-word ptr ptr int -- bool do
+    let scope module token-index do
+        module token-index token-slice
+        let bytes length do
+            bytes length 58 first-index-of-byte
+            let colon do
+                if colon 0 > colon 1 + length < && do
+                    scope bytes colon true scope-prefix-is-nominal
+                else
+                    bytes length 46 first-index-of-byte
+                    let dot do
+                        if dot 0 > dot 1 + length < && do
+                            scope bytes dot false scope-prefix-is-nominal
+                        else
+                            false
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc constant-higher-priority-word ptr ptr int -- bool do
+    let scope module token-index do
+        module token-index "int" token-equals
+        module token-index "bool" token-equals ||
+        module token-index "ptr" token-equals ||
+        module token-index "String" token-equals ||
+        module token-index "String.bytes" token-equals ||
+        module token-index "String.len" token-equals ||
+        module token-index constant-runtime-intrinsic-word ||
+        scope module token-index constant-qualified-nominal-word ||
+    end
+end
+
+proc evaluate-constant ptr int -- do
+    let module constant-index do
+        module constant-index constant-state-at
+        let state do
+            if state constant-evaluated == do
+            elif state constant-evaluating == do
+                "recursive constant" fail
+            else
+                constant-evaluating module constant-index constant-state-offset set-constant-field
+                create-constant-evaluator
+                let evaluator do
+                    evaluator
+                    module
+                    module constant-index constant-body-start-at
+                    module constant-index constant-body-end-at
+                    evaluate-constant-range
+                    evaluator @constant-evaluator-count
+                    let value-count do
+                        if value-count 0 == do
+                            "constant must produce at least one value" fail
+                        end
+                        value-count constant-value-bytes * alloc
+                        let values do
+                            evaluator @constant-evaluator-values
+                            values
+                            value-count constant-value-bytes *
+                            memory-copy
+                            values module constant-index set-constant-values
+                            value-count module constant-index constant-value-count-offset set-constant-field
+                            constant-evaluated module constant-index constant-state-offset set-constant-field
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc append-constant-values ptr ptr int -- do
+    let evaluator module constant-index do
+        module constant-index evaluate-constant
+        module constant-index constant-values-at
+        module constant-index constant-value-count-at
+        let values value-count do
+            0
+            while dup value-count < do
+                dup
+                let value-index do
+                    evaluator
+                    values value-index constant-value-type-at
+                    values value-index constant-value-payload-at
+                    constant-evaluator-push
+                end
+                1 +
+            end
+            drop
+        end
+    end
+end
+
+proc scope-symbol-has-kind ptr int int -- bool do
+    let scope symbol-index kind do
+        if symbol-index 0 < do
+            false
+        else
+            scope symbol-index scope-kind-at kind ==
+        end
+    end
+end
+
+proc evaluate-constant-word ptr ptr int -- do
+    let evaluator module token-index do
+        module module token-index find-scope-symbol
+        let symbol-index do
+            if module symbol-index scope-macro scope-symbol-has-kind do
+                "unsupported constant expression word" fail
+            elif evaluator module token-index evaluate-constant-intrinsic do
+            elif module module token-index constant-higher-priority-word do
+                "unsupported constant expression word" fail
+            elif module symbol-index scope-constant scope-symbol-has-kind do
+                evaluator
+                module symbol-index scope-definition-module-at
+                module symbol-index scope-definition-index-at
+                append-constant-values
+            else
+                "unsupported constant expression word" fail
+            end
+        end
+    end
+end
+
+proc evaluate-constant-token ptr ptr int -- do
+    let evaluator module token-index do
+        module token-index token-kind-at
+        let kind do
+            if kind token-int == kind token-char == || do
+                evaluator type-int module token-index token-value-at constant-evaluator-push
+            elif kind token-bool == do
+                evaluator type-bool module token-index token-value-at constant-evaluator-push
+            elif kind token-string == do
+                evaluator type-string module token-index token-value-at constant-evaluator-push
+            elif kind token-word == do
+                evaluator module token-index evaluate-constant-word
+            else
+                "unknown token kind" fail
+            end
+        end
+    end
+end
+
+proc evaluate-constant-range ptr ptr int int -- do
+    let evaluator module token-index body-end do
+        token-index
+        while dup body-end < do
+            dup evaluator module rot evaluate-constant-token
+            1 +
+        end
+        drop
+    end
+end
+
+proc evaluate-module-constants ptr -- do
+    let module do
+        0
+        while dup module @ctx-constant-count < do
+            dup module swap evaluate-constant
+            1 +
+        end
+        drop
+    end
+end
+
+proc evaluate-all-constants ptr -- do
+    let program do
+        program @program-module-head
+        while dup int cast 0 != do
+            dup evaluate-module-constants
             @ctx-next-module
         end
         drop
@@ -5418,17 +6262,20 @@ proc emit-push-integer ptr int -- do
     end
 end
 
+proc emit-push-pooled-string ptr int -- do
+    let cc string-index do
+        if cc @cc-emitting do
+            cc emit-indent
+            cc emit-top-slot " = (Cell)(intptr_t)&" emit
+            cc @cc-program string-index emit-string-symbol
+            ";" emit 10 putc
+        end
+    end
+end
+
 proc emit-push-string ptr int -- do
     let cc token-index do
-        cc @cc-defining-module token-index token-value-at
-        let string-index do
-            if cc @cc-emitting do
-                cc emit-indent
-                cc emit-top-slot " = (Cell)(intptr_t)&" emit
-                cc @cc-program string-index emit-string-symbol
-                ";" emit 10 putc
-            end
-        end
+        cc cc @cc-defining-module token-index token-value-at emit-push-pooled-string
     end
 end
 
@@ -6476,6 +7323,35 @@ proc compile-type-word ptr int -- bool do
     end
 end
 
+proc compile-constant-values-from ptr ptr int int -- do
+    let cc module constant-index value-index do
+        if value-index module constant-index constant-value-count-at < do
+            module constant-index constant-values-at
+            let values do
+                values value-index constant-value-type-at
+                values value-index constant-value-payload-at
+                let value-type payload do
+                    cc value-type type-push
+                    if value-type type-int == value-type type-bool == || do
+                        cc payload emit-push-integer
+                    elif value-type type-string == do
+                        cc payload emit-push-pooled-string
+                    else
+                        "internal unsupported constant value type" fail
+                    end
+                    cc module constant-index value-index 1 + compile-constant-values-from
+                end
+            end
+        end
+    end
+end
+
+proc compile-constant ptr ptr int -- do
+    let cc module constant-index do
+        cc module constant-index 0 compile-constant-values-from
+    end
+end
+
 proc compile-macro ptr ptr int -- do
     let cc module macro-index do
         if module macro-index macro-expanding-at do
@@ -6522,14 +7398,20 @@ proc compile-ordinary-word ptr int -- do
                         cc token-index local-index compile-local-reference
                     else
                         if symbol-index 0 >= do
-                            if cc @cc-scope-module symbol-index scope-kind-at scope-procedure != do
+                            if cc @cc-scope-module symbol-index scope-kind-at scope-constant == do
+                                cc
+                                cc @cc-scope-module symbol-index scope-definition-module-at
+                                cc @cc-scope-module symbol-index scope-definition-index-at
+                                compile-constant
+                            elif cc @cc-scope-module symbol-index scope-kind-at scope-procedure != do
                                 "unknown word" fail
+                            else
+                                cc
+                                token-index
+                                cc @cc-scope-module symbol-index scope-definition-module-at
+                                cc @cc-scope-module symbol-index scope-definition-index-at
+                                compile-procedure-call
                             end
-                            cc
-                            token-index
-                            cc @cc-scope-module symbol-index scope-definition-module-at
-                            cc @cc-scope-module symbol-index scope-definition-index-at
-                            compile-procedure-call
                         else
                             if cc token-index compile-prelude-macro ! do
                                 "unknown word" fail
@@ -6968,6 +7850,7 @@ proc compile-source ptr int -- do
                 program initialize-prelude
                 program initialize-string-pool
                 program resolve-all-module-scopes
+                program evaluate-all-constants
                 program resolve-all-types
                 program validate-external-declarations
 

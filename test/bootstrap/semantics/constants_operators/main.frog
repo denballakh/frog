@@ -1,0 +1,45 @@
+const add_value 9 4 + end
+const subtract_value 9 4 - end
+const multiply_value 9 4 * end
+const divide_value 9 4 / end
+const modulo_value 9 4 % end
+const divmod_value 9 4 /% end
+const shift_left_value 1 3 << end
+const shift_right_value 8 2 >> end
+const or_value 6 3 | end
+const and_value 6 3 & end
+const xor_value 6 3 ^ end
+const complement_value 0 ~ end
+const boolean_and_value true false && end
+const boolean_or_value true false || end
+const boolean_not_value false ! end
+const equal_value 1 2 == end
+const not_equal_value 1 2 != end
+const less_value 1 2 < end
+const greater_value 1 2 > end
+const less_equal_value 1 2 <= end
+const greater_equal_value 1 2 >= end
+
+proc main -- do
+    add_value print
+    subtract_value print
+    multiply_value print
+    divide_value print
+    modulo_value print
+    divmod_value print print
+    shift_left_value print
+    shift_right_value print
+    or_value print
+    and_value print
+    xor_value print
+    complement_value print
+    boolean_and_value print
+    boolean_or_value print
+    boolean_not_value print
+    equal_value print
+    not_equal_value print
+    less_value print
+    greater_value print
+    less_equal_value print
+    greater_equal_value print
+end
