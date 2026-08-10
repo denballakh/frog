@@ -177,21 +177,23 @@ record ModuleContext
     constant_count int
 end
 
-const import-path-token-offset 0 end
-const import-name-token-offset 8 end
-const import-alias-token-offset 16 end
-const import-target-module-offset 24 end
-const import-canonical-path-offset 32 end
-const import-canonical-path-length-offset 40 end
-const import-bytes 48 end
+record ImportEntry
+    path_token int
+    name_token int
+    alias_token int
+    target_module ModuleContext
+    canonical_path ptr
+    canonical_path_length int
+end
 
-const scope-name-module-offset 0 end
-const scope-name-start-offset 8 end
-const scope-name-length-offset 16 end
-const scope-kind-offset 24 end
-const scope-definition-module-offset 32 end
-const scope-definition-index-offset 40 end
-const scope-bytes 48 end
+record ScopeEntry
+    name_module ModuleContext
+    name_start int
+    name_length int
+    kind int
+    definition_module ModuleContext
+    definition_index int
+end
 
 const scope-procedure 1 end
 const scope-macro 2 end
@@ -2476,67 +2478,16 @@ proc scan-one-extern ModuleContext int -- int do
     end
 end
 
-proc import-address ModuleContext int -- ptr do
+proc import-at ModuleContext int -- ImportEntry do
     let ctx index do
-        ctx @ModuleContext.imports index import-bytes * +
+        ctx @ModuleContext.imports index ImportEntry:sizeof * + ImportEntry cast
     end
 end
 
-proc import-field ModuleContext int int -- int do
-    let ctx index offset do
-        ctx index import-address offset field-read
+proc scope-at ModuleContext int -- ScopeEntry do
+    let ctx index do
+        ctx @ModuleContext.scope index ScopeEntry:sizeof * + ScopeEntry cast
     end
-end
-
-proc set-import-field int ModuleContext int int -- do
-    let value ctx index offset do
-        value ctx index import-address offset field-write
-    end
-end
-
-proc import-path-token-at ModuleContext int -- int do import-path-token-offset import-field end
-proc import-name-token-at ModuleContext int -- int do import-name-token-offset import-field end
-proc import-alias-token-at ModuleContext int -- int do import-alias-token-offset import-field end
-proc import-target-module-at ModuleContext int -- ModuleContext do
-    peek ctx index do import-address import-target-module-offset pointer-field-read ModuleContext cast end
-end
-proc import-canonical-path-at ModuleContext int -- ptr do
-    peek ctx index do import-address import-canonical-path-offset pointer-field-read end
-end
-proc import-canonical-path-length-at ModuleContext int -- int do import-canonical-path-length-offset import-field end
-
-proc set-import-target-module ModuleContext ModuleContext int -- do
-    let module ctx index do module ptr cast ctx index import-address import-target-module-offset pointer-field-write end
-end
-
-proc scope-address ModuleContext int -- ptr do
-    let ctx index do ctx @ModuleContext.scope index scope-bytes * + end
-end
-
-proc scope-field ModuleContext int int -- int do
-    let ctx index offset do ctx index scope-address offset field-read end
-end
-
-proc set-scope-field int ModuleContext int int -- do
-    let value ctx index offset do value ctx index scope-address offset field-write end
-end
-
-proc scope-name-module-at ModuleContext int -- ModuleContext do
-    peek ctx index do scope-address scope-name-module-offset pointer-field-read ModuleContext cast end
-end
-proc scope-name-start-at ModuleContext int -- int do scope-name-start-offset scope-field end
-proc scope-name-length-at ModuleContext int -- int do scope-name-length-offset scope-field end
-proc scope-kind-at ModuleContext int -- int do scope-kind-offset scope-field end
-proc scope-definition-module-at ModuleContext int -- ModuleContext do
-    peek ctx index do scope-address scope-definition-module-offset pointer-field-read ModuleContext cast end
-end
-proc scope-definition-index-at ModuleContext int -- int do scope-definition-index-offset scope-field end
-
-proc set-scope-name-module ModuleContext ModuleContext int -- do
-    let module ctx index do module ptr cast ctx index scope-address scope-name-module-offset pointer-field-write end
-end
-proc set-scope-definition-module ModuleContext ModuleContext int -- do
-    let module ctx index do module ptr cast ctx index scope-address scope-definition-module-offset pointer-field-write end
 end
 
 proc token-contains-byte ModuleContext int int -- bool do
@@ -2580,13 +2531,14 @@ end
 
 proc add-import ModuleContext int int int ptr int -- do
     let ctx path-token name-token alias-token canonical canonical-length do
-        ctx @ModuleContext.import_count let import-index do
-            path-token ctx import-index import-path-token-offset set-import-field
-            name-token ctx import-index import-name-token-offset set-import-field
-            alias-token ctx import-index import-alias-token-offset set-import-field
-            0 ptr cast ModuleContext cast ctx import-index set-import-target-module
-            canonical ctx import-index import-address import-canonical-path-offset pointer-field-write
-            canonical-length ctx import-index import-canonical-path-length-offset set-import-field
+        ctx ctx @ModuleContext.import_count import-at
+        let entry do
+            path-token entry !ImportEntry.path_token
+            name-token entry !ImportEntry.name_token
+            alias-token entry !ImportEntry.alias_token
+            0 ptr cast ModuleContext cast entry !ImportEntry.target_module
+            canonical entry !ImportEntry.canonical_path
+            canonical-length entry !ImportEntry.canonical_path_length
             ctx @ModuleContext.import_count 1 + ctx !ModuleContext.import_count
         end
     end
@@ -3727,8 +3679,8 @@ proc initialize-module-source ModuleContext ptr int -- do
         ctx @ModuleContext.token_count 1 + macro-bytes * alloc ctx !ModuleContext.macros
         ctx @ModuleContext.token_count 1 + constant-bytes * alloc ctx !ModuleContext.constants
         ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.types
-        ctx @ModuleContext.token_count 1 + import-bytes * alloc ctx !ModuleContext.imports
-        ctx @ModuleContext.token_count 1 + scope-bytes * alloc ctx !ModuleContext.scope
+        ctx @ModuleContext.token_count 1 + ImportEntry:sizeof * alloc ctx !ModuleContext.imports
+        ctx @ModuleContext.token_count 1 + ScopeEntry:sizeof * alloc ctx !ModuleContext.scope
         ctx @ModuleContext.token_count 1 + record-bytes * alloc ctx !ModuleContext.records
         ctx @ModuleContext.token_count 1 + record-field-bytes * alloc ctx !ModuleContext.record_fields
         ctx @ModuleContext.token_count 1 + union-bytes * alloc ctx !ModuleContext.unions
@@ -3781,40 +3733,43 @@ end
 
 proc load-import-target ptr ModuleContext int -- ModuleContext do
     let program importing-module import-index do
-        importing-module import-index import-canonical-path-at
-        importing-module import-index import-canonical-path-length-at
-        let canonical canonical-length do
-            program canonical canonical-length find-module-by-path
-            let existing do
-                if existing ptr cast int cast 0 != do
-                    if existing @ModuleContext.load_state load-loading == do
-                        "cyclic import" fail
-                    end
-                    existing importing-module import-index set-import-target-module
-                    existing
-                else
-                    canonical canonical-length read-file
-                    let source source-length success do
-                        if success ! do
-                            "import file not found" fail
+        importing-module import-index import-at
+        let entry do
+            entry @ImportEntry.canonical_path
+            entry @ImportEntry.canonical_path_length
+            let canonical canonical-length do
+                program canonical canonical-length find-module-by-path
+                let existing do
+                    if existing ptr cast int cast 0 != do
+                        if existing @ModuleContext.load_state load-loading == do
+                            "cyclic import" fail
                         end
-                        ModuleContext:alloc
-                        let module do
-                            canonical module !ModuleContext.canonical_path
-                            canonical-length module !ModuleContext.canonical_path_length
-                            0 ptr cast module !ModuleContext.imports
-                            0 module !ModuleContext.import_count
-                            0 ptr cast module !ModuleContext.scope
-                            0 module !ModuleContext.scope_count
-                            load-loading module !ModuleContext.load_state
-                            resolve-new module !ModuleContext.resolve_state
-                            false module !ModuleContext.is_root
-                            program module program-add-module
-                            module source source-length initialize-module-source
-                            program module load-module-imports
-                            load-loaded module !ModuleContext.load_state
-                            module importing-module import-index set-import-target-module
-                            module
+                        existing entry !ImportEntry.target_module
+                        existing
+                    else
+                        canonical canonical-length read-file
+                        let source source-length success do
+                            if success ! do
+                                "import file not found" fail
+                            end
+                            ModuleContext:alloc
+                            let module do
+                                canonical module !ModuleContext.canonical_path
+                                canonical-length module !ModuleContext.canonical_path_length
+                                0 ptr cast module !ModuleContext.imports
+                                0 module !ModuleContext.import_count
+                                0 ptr cast module !ModuleContext.scope
+                                0 module !ModuleContext.scope_count
+                                load-loading module !ModuleContext.load_state
+                                resolve-new module !ModuleContext.resolve_state
+                                false module !ModuleContext.is_root
+                                program module program-add-module
+                                module source source-length initialize-module-source
+                                program module load-module-imports
+                                load-loaded module !ModuleContext.load_state
+                                module entry !ImportEntry.target_module
+                                module
+                            end
                         end
                     end
                 end
@@ -3825,11 +3780,14 @@ end
 
 proc scope-name-equals ModuleContext int ptr int -- bool do
     let ctx scope-index bytes length do
-        ctx scope-index scope-name-module-at @ModuleContext.source
-        ctx scope-index scope-name-start-at +
-        ctx scope-index scope-name-length-at
-        bytes length
-        bytes-equal
+        ctx scope-index scope-at
+        let symbol do
+            symbol @ScopeEntry.name_module @ModuleContext.source
+            symbol @ScopeEntry.name_start +
+            symbol @ScopeEntry.name_length
+            bytes length
+            bytes-equal
+        end
     end
 end
 
@@ -3856,23 +3814,27 @@ end
 
 proc scope-symbols-identical ModuleContext int ModuleContext int -- bool do
     let first first-index second second-index do
-        first first-index scope-kind-at second second-index scope-kind-at ==
-        first first-index scope-definition-module-at ptr cast int cast
-        second second-index scope-definition-module-at ptr cast int cast == &&
-        first first-index scope-definition-index-at second second-index scope-definition-index-at == &&
+        first first-index scope-at
+        second second-index scope-at
+        let first-symbol second-symbol do
+            first-symbol @ScopeEntry.kind second-symbol @ScopeEntry.kind ==
+            first-symbol @ScopeEntry.definition_module ptr cast int cast
+            second-symbol @ScopeEntry.definition_module ptr cast int cast == &&
+            first-symbol @ScopeEntry.definition_index second-symbol @ScopeEntry.definition_index == &&
+        end
     end
 end
 
 proc add-scope-symbol ModuleContext ModuleContext int int int ModuleContext int -- do
     let ctx name-module name-start name-length kind definition-module definition-index do
-        ctx @ModuleContext.scope_count
-        let scope-index do
-            name-module ctx scope-index set-scope-name-module
-            name-start ctx scope-index scope-name-start-offset set-scope-field
-            name-length ctx scope-index scope-name-length-offset set-scope-field
-            kind ctx scope-index scope-kind-offset set-scope-field
-            definition-module ctx scope-index set-scope-definition-module
-            definition-index ctx scope-index scope-definition-index-offset set-scope-field
+        ctx ctx @ModuleContext.scope_count scope-at
+        let symbol do
+            name-module symbol !ScopeEntry.name_module
+            name-start symbol !ScopeEntry.name_start
+            name-length symbol !ScopeEntry.name_length
+            kind symbol !ScopeEntry.kind
+            definition-module symbol !ScopeEntry.definition_module
+            definition-index symbol !ScopeEntry.definition_index
             ctx @ModuleContext.scope_count 1 + ctx !ModuleContext.scope_count
         end
     end
@@ -3892,64 +3854,71 @@ proc add-scope-symbol-from-token ModuleContext ModuleContext int int ModuleConte
 end
 
 proc resolve-one-import ModuleContext int -- do
-    peek ctx import-index do import-target-module-at
-        let target do
-            if target ptr cast int cast 0 == do
-                "internal import target is missing" fail
-            end
-            target resolve-module-scope
-            target ctx ctx import-index import-name-token-at find-scope-symbol
-            let target-symbol do
-                if target-symbol 0 < do
-                    "imported name not found" fail
+    let ctx import-index do
+        ctx import-index import-at
+        let entry do
+            entry @ImportEntry.target_module
+            let target do
+                if target ptr cast int cast 0 == do
+                    "internal import target is missing" fail
                 end
-                ctx import-index import-alias-token-at
-                if dup 0 < do
-                    drop ctx import-index import-name-token-at
-                end
-                let visible-token do
-                    if
-                        target target-symbol scope-kind-at scope-record ==
-                        ctx visible-token identifier-token ! &&
-                    do
-                        "record import alias must be an identifier" fail
+                target resolve-module-scope
+                target ctx entry @ImportEntry.name_token find-scope-symbol
+                let target-symbol do
+                    if target-symbol 0 < do
+                        "imported name not found" fail
                     end
-                    if
-                        target target-symbol scope-kind-at scope-union ==
-                        ctx visible-token identifier-token ! &&
-                    do
-                        "union import alias must be an identifier" fail
-                    end
-                    if
-                        target target-symbol scope-kind-at scope-function ==
-                        ctx visible-token identifier-token ! &&
-                    do
-                        "function import alias must be an identifier" fail
-                    end
-                    if
-                        ctx visible-token find-proc 0 >=
-                        ctx visible-token find-macro 0 >= ||
-                        ctx visible-token find-constant 0 >= ||
-                        ctx visible-token find-record 0 >= ||
-                        ctx visible-token find-union 0 >= ||
-                        ctx visible-token find-function 0 >= ||
-                    do
-                        "import alias conflict" fail
-                    end
-                    ctx ctx visible-token find-scope-symbol
-                    let existing do
-                        if existing 0 >= do
-                            if ctx existing target target-symbol scope-symbols-identical ! do
+                    target target-symbol scope-at
+                    let target-entry do
+                        entry @ImportEntry.alias_token
+                        if dup 0 < do
+                            drop entry @ImportEntry.name_token
+                        end
+                        let visible-token do
+                            if
+                                target-entry @ScopeEntry.kind scope-record ==
+                                ctx visible-token identifier-token ! &&
+                            do
+                                "record import alias must be an identifier" fail
+                            end
+                            if
+                                target-entry @ScopeEntry.kind scope-union ==
+                                ctx visible-token identifier-token ! &&
+                            do
+                                "union import alias must be an identifier" fail
+                            end
+                            if
+                                target-entry @ScopeEntry.kind scope-function ==
+                                ctx visible-token identifier-token ! &&
+                            do
+                                "function import alias must be an identifier" fail
+                            end
+                            if
+                                ctx visible-token find-proc 0 >=
+                                ctx visible-token find-macro 0 >= ||
+                                ctx visible-token find-constant 0 >= ||
+                                ctx visible-token find-record 0 >= ||
+                                ctx visible-token find-union 0 >= ||
+                                ctx visible-token find-function 0 >= ||
+                            do
                                 "import alias conflict" fail
                             end
-                        else
-                            ctx
-                            ctx
-                            visible-token
-                            target target-symbol scope-kind-at
-                            target target-symbol scope-definition-module-at
-                            target target-symbol scope-definition-index-at
-                            add-scope-symbol-from-token
+                            ctx ctx visible-token find-scope-symbol
+                            let existing do
+                                if existing 0 >= do
+                                    if ctx existing target target-symbol scope-symbols-identical ! do
+                                        "import alias conflict" fail
+                                    end
+                                else
+                                    ctx
+                                    ctx
+                                    visible-token
+                                    target-entry @ScopeEntry.kind
+                                    target-entry @ScopeEntry.definition_module
+                                    target-entry @ScopeEntry.definition_index
+                                    add-scope-symbol-from-token
+                                end
+                            end
                         end
                     end
                 end
@@ -4485,7 +4454,7 @@ proc scope-prefix-is-nominal ModuleContext ptr int bool -- bool do
             if symbol-index 0 < do
                 false
             else
-                scope symbol-index scope-kind-at
+                scope symbol-index scope-at @ScopeEntry.kind
                 peek kind do scope-record ==
                     kind scope-union == ||
                     kind scope-function == allow-function && ||
@@ -4502,7 +4471,7 @@ proc scope-prefix-has-kind ModuleContext ptr int int -- bool do
             if symbol-index 0 < do
                 false
             else
-                scope symbol-index scope-kind-at expected-kind ==
+                scope symbol-index scope-at @ScopeEntry.kind expected-kind ==
             end
         end
     end
@@ -4617,7 +4586,7 @@ proc scope-symbol-has-kind ModuleContext int int -- bool do
         if symbol-index 0 < do
             false
         else
-            scope symbol-index scope-kind-at kind ==
+            scope symbol-index scope-at @ScopeEntry.kind kind ==
         end
     end
 end
@@ -4633,8 +4602,8 @@ proc evaluate-constant-word ptr ModuleContext int -- do
                 "unsupported constant expression word" fail
             elif module symbol-index scope-constant scope-symbol-has-kind do
                 evaluator
-                module symbol-index scope-definition-module-at
-                module symbol-index scope-definition-index-at
+                module symbol-index scope-at @ScopeEntry.definition_module
+                module symbol-index scope-at @ScopeEntry.definition_index
                 append-constant-values
             else
                 "unsupported constant expression word" fail
@@ -4702,19 +4671,19 @@ proc resolve-nominal-type-token ModuleContext int String -- int do
                 error-message fail
                 0
             else
-                ctx symbol-index scope-kind-at
+                ctx symbol-index scope-at @ScopeEntry.kind
                 let kind do
                     if kind scope-record == do
-                        ctx symbol-index scope-definition-module-at
-                        ctx symbol-index scope-definition-index-at
+                        ctx symbol-index scope-at @ScopeEntry.definition_module
+                        ctx symbol-index scope-at @ScopeEntry.definition_index
                         record-type-at
                     elif kind scope-union == do
-                        ctx symbol-index scope-definition-module-at
-                        ctx symbol-index scope-definition-index-at
+                        ctx symbol-index scope-at @ScopeEntry.definition_module
+                        ctx symbol-index scope-at @ScopeEntry.definition_index
                         union-type-at
                     elif kind scope-function == do
-                        ctx symbol-index scope-definition-module-at
-                        ctx symbol-index scope-definition-index-at
+                        ctx symbol-index scope-at @ScopeEntry.definition_module
+                        ctx symbol-index scope-at @ScopeEntry.definition_index
                         function-type-at
                     else
                         error-message fail
@@ -6529,11 +6498,11 @@ proc visible-record-definition ModuleContext ptr int -- ModuleContext int bool d
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-kind-at scope-record ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind scope-record ==
                 end
             do
-                scope symbol-index scope-definition-module-at
-                scope symbol-index scope-definition-index-at
+                scope symbol-index scope-at @ScopeEntry.definition_module
+                scope symbol-index scope-at @ScopeEntry.definition_index
                 true
             else
                 0 ptr cast ModuleContext cast 0 1 - false
@@ -6548,11 +6517,11 @@ proc visible-union-definition ModuleContext ptr int -- ModuleContext int bool do
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-kind-at scope-union ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind scope-union ==
                 end
             do
-                scope symbol-index scope-definition-module-at
-                scope symbol-index scope-definition-index-at
+                scope symbol-index scope-at @ScopeEntry.definition_module
+                scope symbol-index scope-at @ScopeEntry.definition_index
                 true
             else
                 0 ptr cast ModuleContext cast 0 1 - false
@@ -6567,11 +6536,11 @@ proc visible-function-definition ModuleContext ptr int -- ModuleContext int bool
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-kind-at scope-function ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind scope-function ==
                 end
             do
-                scope symbol-index scope-definition-module-at
-                scope symbol-index scope-definition-index-at
+                scope symbol-index scope-at @ScopeEntry.definition_module
+                scope symbol-index scope-at @ScopeEntry.definition_index
                 true
             else
                 0 ptr cast ModuleContext cast 0 1 - false
@@ -6586,11 +6555,11 @@ proc visible-procedure-definition ModuleContext ptr int -- ModuleContext int boo
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-kind-at scope-procedure ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind scope-procedure ==
                 end
             do
-                scope symbol-index scope-definition-module-at
-                scope symbol-index scope-definition-index-at
+                scope symbol-index scope-at @ScopeEntry.definition_module
+                scope symbol-index scope-at @ScopeEntry.definition_index
                 true
             else
                 0 ptr cast ModuleContext cast 0 1 - false
@@ -7254,8 +7223,8 @@ proc compile-ordinary-word ptr int -- do
             let is-macro do
             if is-macro do
                 cc
-                cc @cc-scope-module symbol-index scope-definition-module-at
-                cc @cc-scope-module symbol-index scope-definition-index-at
+                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
                 compile-macro
             elif cc token-index compile-type-word do
             elif cc token-index compile-string-word do
@@ -7270,18 +7239,18 @@ proc compile-ordinary-word ptr int -- do
                         cc token-index local-index compile-local-reference
                     else
                         if symbol-index 0 >= do
-                            if cc @cc-scope-module symbol-index scope-kind-at scope-constant == do
+                            if cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-constant == do
                                 cc
-                                cc @cc-scope-module symbol-index scope-definition-module-at
-                                cc @cc-scope-module symbol-index scope-definition-index-at
+                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
                                 compile-constant
-                            elif cc @cc-scope-module symbol-index scope-kind-at scope-procedure != do
+                            elif cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
                                 "unknown word" fail
                             else
                                 cc
                                 token-index
-                                cc @cc-scope-module symbol-index scope-definition-module-at
-                                cc @cc-scope-module symbol-index scope-definition-index-at
+                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
                                 compile-procedure-call
                             end
                         else
@@ -7357,7 +7326,7 @@ proc token-resolves-to-macro ptr int -- bool do
         cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
         let symbol-index do
             if symbol-index 0 >= do
-                cc @cc-scope-module symbol-index scope-kind-at scope-macro ==
+                cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-macro ==
             else
                 false
             end
@@ -7771,12 +7740,12 @@ proc compile-prelude-macro ptr int -- bool do
                 if symbol-index 0 < do
                     false
                 else
-                    if prelude symbol-index scope-kind-at scope-macro != do
+                    if prelude symbol-index scope-at @ScopeEntry.kind scope-macro != do
                         "internal prelude symbol is not a macro" fail
                     end
                     cc
-                    prelude symbol-index scope-definition-module-at
-                    prelude symbol-index scope-definition-index-at
+                    prelude symbol-index scope-at @ScopeEntry.definition_module
+                    prelude symbol-index scope-at @ScopeEntry.definition_index
                     compile-macro
                     true
                 end
