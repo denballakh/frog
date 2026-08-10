@@ -2,6 +2,7 @@
 *.c
 *.exe
 !compiler/frogc.c
+!test/cases/**/helper.c
 
 scratch.frog
 

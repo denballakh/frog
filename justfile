@@ -48,23 +48,6 @@ bootstrap-check: frogc-seed
     just _compile-frogc build/frogc.stage3.c build/frogc.stage3
     cmp compiler/frogc.c build/frogc.stage2.c
     cmp build/frogc.stage2.c build/frogc.stage3.c
-    build/frogc < test/bootstrap/read_file.frog > build/frogc.read_file.c
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.read_file.c -o build/frogc.read_file
-    build/frogc.read_file > build/frogc.read_file.out
-    printf '#\ntrue\n0\nfalse\n' | cmp - build/frogc.read_file.out
-    build/frogc < test/bootstrap/macros.frog > build/frogc.macros.c
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 build/frogc.macros.c -o build/frogc.macros
-    build/frogc.macros > build/frogc.macros.out
-    printf '1\n2\n3\n3\n2\n1\n1\n2\n1\n6\n7\n9\n7\n' | cmp - build/frogc.macros.out
-    ! build/frogc < test/bootstrap/macro_recursive.frog > build/frogc.macro_recursive.c 2> build/frogc.macro_recursive.err
-    printf 'frogc: recursive macro expansion\n' | cmp - build/frogc.macro_recursive.err
-    ! build/frogc < test/bootstrap/macro_invalid.frog > build/frogc.macro_invalid.c 2> build/frogc.macro_invalid.err
-    printf 'frogc: else outside macro if block\n' | cmp - build/frogc.macro_invalid.err
-    ! build/frogc < test/bootstrap/macro_reserved_name.frog > build/frogc.macro_reserved_name.c 2> build/frogc.macro_reserved_name.err
-    printf 'frogc: reserved keyword cannot be a macro name\n' | cmp - build/frogc.macro_reserved_name.err
-    bash test/bootstrap/imports.sh "$(pwd)/build/frogc"
-    bash test/bootstrap/semantics.sh "$(pwd)/build/frogc"
-    bash test/bootstrap/strings.sh "$(pwd)/build/frogc"
 
 [group("bootstrap")]
 bootstrap-update: frogc-seed

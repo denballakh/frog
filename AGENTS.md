@@ -35,8 +35,9 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/testing.md`: Test snapshot workflow and review process.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
-- `test/__main__.py`: Snapshot orchestration for example files, CLI cases, inline snippets, and multi-file imports, plus black-box build-artifact assertions. It invokes the Frog-written CLI in subprocesses and contains no language implementation.
-- `test/bootstrap/`: Focused native compiler fixtures and shell harnesses run by `just bootstrap-check`.
+- `test/__main__.py`: Main Python test orchestration for native regressions, example files, CLI cases, inline snippets, multi-file imports, snapshots, and black-box build-artifact assertions. It invokes the Frog-written compiler and CLI in subprocesses and contains no language implementation.
+- `test/regressions.py`: Assertion-only Python runner for exact diagnostics, strict generated-C compilation, executable output/status, helper-C linkage, and generated-C properties.
+- `test/cases/`: Import, language-semantics, string, and standalone regression fixtures used by `test/regressions.py`.
 - `test/snapshots/**/*.out`: Markdown-style snapshot output files produced by `python -m test`. Snapshots embed tested source or CLI arguments with captured output.
 - `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
@@ -95,7 +96,7 @@ Useful direct commands:
 - After behavior changes, inspect the regenerated snapshot `.out` files to confirm the new output is intentional.
 - One focused CLI case exercises `build -r`. Additional Python assertions verify direct-output behavior across a forced GCC failure, deterministic regeneration, successful replacement, and lexical imports through a symlinked root source.
 - CLI `build` test artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
-- `just bootstrap-check` compiles its focused fixtures with strict C11 warnings and compares their output, in addition to checking compiler fixed-point equality.
+- `just bootstrap-check` checks only compiler fixed-point equality. The Python regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `python -m test` / `just test`.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
 
 ## CLI Behavior
