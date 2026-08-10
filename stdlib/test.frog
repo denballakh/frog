@@ -1,0 +1,99 @@
+extern test-free free c-ptr -- end
+extern test-eputc froglang_eputc c-int -- end
+extern test-exit exit c-int -- end
+
+record TestSuite
+    checks int
+    failures int
+end
+
+proc test-emit-error String -- do
+    let value do
+        0
+        while dup value String.len < do
+            let index do
+                value String.bytes index + @u8 test-eputc
+                index 1 +
+            end
+        end
+        drop
+    end
+end
+
+proc test-report-failure String -- do
+    "FAIL: " test-emit-error
+    test-emit-error
+    10 test-eputc
+end
+
+proc test-suite -- TestSuite do
+    TestSuite:alloc
+    peek suite do
+        0 suite !TestSuite.checks
+        0 suite !TestSuite.failures
+    end
+end
+
+proc check bool String TestSuite -- do
+    let condition name suite do
+        suite @TestSuite.checks 1 + suite !TestSuite.checks
+        if condition do
+        else
+            suite @TestSuite.failures 1 + suite !TestSuite.failures
+            name test-report-failure
+        end
+    end
+end
+
+proc check-int-equal int int String TestSuite -- do
+    let actual expected name suite do
+        actual expected == name suite check
+    end
+end
+
+proc test-bytes-equal ptr int ptr int -- bool do
+    let first first-length second second-length do
+        if first-length second-length != do
+            false
+        else
+            0 true
+            while
+                peek index equal do
+                    index first-length < equal &&
+                end
+            do
+                let index equal do
+                    index 1 +
+                    equal
+                    first index + @u8 second index + @u8 == &&
+                end
+            end
+            let index equal do equal end
+        end
+    end
+end
+
+proc check-bytes-equal ptr int ptr int String TestSuite -- do
+    let actual actual-length expected expected-length name suite do
+        actual actual-length expected expected-length test-bytes-equal
+        name suite check
+    end
+end
+
+proc check-string-equal String String String TestSuite -- do
+    let actual expected name suite do
+        actual String.bytes actual String.len
+        expected String.bytes expected String.len
+        name suite check-bytes-equal
+    end
+end
+
+proc test-finish TestSuite -- do
+    let suite do
+        suite @TestSuite.failures
+        let failures do
+            suite ptr cast test-free
+            if failures 0 > do 1 test-exit end
+        end
+    end
+end

@@ -1,0 +1,12 @@
+from "../../../../stdlib/test.frog" import ( TestSuite test-suite check test-finish )
+
+proc main -- do
+    test-suite
+    let suite do
+        false "first failure" suite check
+        suite @TestSuite.checks 1 == "check count" suite check
+        suite @TestSuite.failures 1 == "failure count" suite check
+        false "second failure" suite check
+        suite test-finish
+    end
+end

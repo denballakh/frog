@@ -96,3 +96,40 @@ lengths are stored in `stdout_len` and `stderr_len`; the buffers are not
 NUL-terminated. `returncode` is the child exit status, or `128` plus the signal
 number when the child is terminated by a signal. Commands are executed directly
 without a shell, timeout, or environment rewriting.
+
+## Testing
+
+`stdlib/test.frog` provides an explicit `TestSuite` value and four checks:
+
+```frog
+from "../stdlib/test.frog" import (
+    test-suite
+    check-int-equal
+    check-string-equal
+    test-finish
+)
+
+proc main -- do
+    test-suite
+    let suite do
+        6 7 * 42 "multiplication" suite check-int-equal
+        "frog" "frog" "name" suite check-string-equal
+        suite test-finish
+    end
+end
+```
+
+- `check`: `condition name suite --`
+- `check-int-equal`: `actual expected name suite --`
+- `check-bytes-equal`:
+  `actual actual_len expected expected_len name suite --`
+- `check-string-equal`: `actual expected name suite --`
+- `test-suite`: `-- TestSuite`
+- `test-finish`: `TestSuite --`
+
+Each check increments `TestSuite.checks`. A failed check also increments
+`TestSuite.failures` and writes `FAIL: <name>\n` to standard error. Checks keep
+running after a failure. `test-finish` consumes and releases the suite and exits
+with status 1 when any check failed; otherwise it returns normally without
+output. Calling `test-finish` more than once or using another alias afterward is
+invalid.

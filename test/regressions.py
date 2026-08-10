@@ -23,6 +23,7 @@ class RunCase:
     expected_stdout: bytes | None
     args: tuple[str, ...] = ()
     expected_status: int = 0
+    expected_stderr: bytes = b''
 
 
 @dataclass(frozen=True)
@@ -217,6 +218,15 @@ STDLIB_RUN_CASES = [
     RunCase('stdlib', 'libc', 'stdlib/libc/main.frog', b'A'),
     RunCase('stdlib', 'string', 'stdlib/string/main.frog', b''),
     RunCase('stdlib', 'subprocess', 'stdlib/subprocess/main.frog', b''),
+    RunCase('stdlib', 'test_pass', 'stdlib/test/pass.frog', b''),
+    RunCase(
+        'stdlib',
+        'test_fail',
+        'stdlib/test/fail.frog',
+        b'',
+        expected_status=1,
+        expected_stderr=b'FAIL: first failure\nFAIL: second failure\n',
+    ),
 ]
 
 
@@ -747,7 +757,7 @@ def run_fixture(
 
     result = run_command([executable, *case.args], cwd=root)
     assert result.returncode == case.expected_status, process_details(result)
-    assert result.stderr == b'', process_details(result)
+    assert result.stderr == case.expected_stderr, process_details(result)
     if case.expected_stdout is not None:
         assert result.stdout == case.expected_stdout, process_details(result)
     return generated
