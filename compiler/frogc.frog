@@ -3,212 +3,212 @@
 // The bootstrap compiler deliberately uses only the bootstrap-v1 language
 // profile.  It reads one Frog source file from stdin and writes C to stdout.
 
-proc cell-bytes -- int do 8 end
+const cell-bytes 8 end
 
-proc type-int -- int do 1 end
-proc type-bool -- int do 2 end
-proc type-ptr -- int do 3 end
-proc type-type -- int do 4 end
-proc type-string -- int do 5 end
-proc type-none -- int do 0 end
-proc type-nominal-base -- int do 1000 end
-proc type-function-base -- int do 1 32 << end
+const type-int 1 end
+const type-bool 2 end
+const type-ptr 3 end
+const type-type 4 end
+const type-string 5 end
+const type-none 0 end
+const type-nominal-base 1000 end
+const type-function-base 1 32 << end
 
 const max-int 1 62 << 1 62 << 1 - + end
-proc min-int -- int do 0 max-int - 1 - end
+const min-int 0 max-int - 1 - end
 
-proc token-int -- int do 1 end
-proc token-bool -- int do 2 end
-proc token-char -- int do 3 end
-proc token-string -- int do 4 end
-proc token-word -- int do 5 end
+const token-int 1 end
+const token-bool 2 end
+const token-char 3 end
+const token-string 4 end
+const token-word 5 end
 
-proc token-kind-offset -- int do 0 end
-proc token-start-offset -- int do 8 end
-proc token-length-offset -- int do 16 end
-proc token-value-offset -- int do 24 end
-proc token-line-offset -- int do 32 end
-proc token-column-offset -- int do 40 end
-proc token-bytes -- int do 48 end
+const token-kind-offset 0 end
+const token-start-offset 8 end
+const token-length-offset 16 end
+const token-value-offset 24 end
+const token-line-offset 32 end
+const token-column-offset 40 end
+const token-bytes 48 end
 
-proc proc-name-start-offset -- int do 0 end
-proc proc-name-length-offset -- int do 8 end
-proc proc-body-start-offset -- int do 16 end
-proc proc-body-end-offset -- int do 24 end
-proc proc-input-start-offset -- int do 32 end
-proc proc-input-count-offset -- int do 40 end
-proc proc-output-start-offset -- int do 48 end
-proc proc-output-count-offset -- int do 56 end
-proc proc-index-offset -- int do 64 end
-proc proc-global-id-offset -- int do 72 end
-proc proc-external-offset -- int do 80 end
-proc proc-c-symbol-token-offset -- int do 88 end
-proc proc-bytes -- int do 96 end
+const proc-name-start-offset 0 end
+const proc-name-length-offset 8 end
+const proc-body-start-offset 16 end
+const proc-body-end-offset 24 end
+const proc-input-start-offset 32 end
+const proc-input-count-offset 40 end
+const proc-output-start-offset 48 end
+const proc-output-count-offset 56 end
+const proc-index-offset 64 end
+const proc-global-id-offset 72 end
+const proc-external-offset 80 end
+const proc-c-symbol-token-offset 88 end
+const proc-bytes 96 end
 
-proc program-root-module-offset -- int do 0 end
-proc program-module-head-offset -- int do 8 end
-proc program-module-tail-offset -- int do 16 end
-proc program-module-count-offset -- int do 24 end
-proc program-next-proc-id-offset -- int do 32 end
-proc program-token-count-offset -- int do 40 end
-proc program-strings-offset -- int do 48 end
-proc program-string-count-offset -- int do 56 end
-proc program-next-nominal-type-offset -- int do 72 end
-proc program-next-function-type-offset -- int do 80 end
-proc program-bytes -- int do 88 end
+const program-root-module-offset 0 end
+const program-module-head-offset 8 end
+const program-module-tail-offset 16 end
+const program-module-count-offset 24 end
+const program-next-proc-id-offset 32 end
+const program-token-count-offset 40 end
+const program-strings-offset 48 end
+const program-string-count-offset 56 end
+const program-next-nominal-type-offset 72 end
+const program-next-function-type-offset 80 end
+const program-bytes 88 end
 
-proc string-bytes-offset -- int do 0 end
-proc string-length-offset -- int do 8 end
-proc string-hash-offset -- int do 16 end
-proc string-collision-offset -- int do 24 end
-proc string-bytes -- int do 32 end
+const string-bytes-offset 0 end
+const string-length-offset 8 end
+const string-hash-offset 16 end
+const string-collision-offset 24 end
+const string-bytes 32 end
 
-proc fnv-offset-basis -- int do 0x811c9dc5 end
-proc fnv-prime -- int do 0x01000193 end
-proc fnv-modulus -- int do 0x100000000 end
+const fnv-offset-basis 0x811c9dc5 end
+const fnv-prime 0x01000193 end
+const fnv-modulus 0x100000000 end
 
-proc macro-name-start-offset -- int do 0 end
-proc macro-name-length-offset -- int do 8 end
-proc macro-body-start-offset -- int do 16 end
-proc macro-body-end-offset -- int do 24 end
-proc macro-expanding-offset -- int do 32 end
-proc macro-bytes -- int do 40 end
+const macro-name-start-offset 0 end
+const macro-name-length-offset 8 end
+const macro-body-start-offset 16 end
+const macro-body-end-offset 24 end
+const macro-expanding-offset 32 end
+const macro-bytes 40 end
 
-proc constant-name-start-offset -- int do 0 end
-proc constant-name-length-offset -- int do 8 end
-proc constant-body-start-offset -- int do 16 end
-proc constant-body-end-offset -- int do 24 end
-proc constant-state-offset -- int do 32 end
-proc constant-values-offset -- int do 40 end
-proc constant-value-count-offset -- int do 48 end
-proc constant-bytes -- int do 56 end
+const constant-name-start-offset 0 end
+const constant-name-length-offset 8 end
+const constant-body-start-offset 16 end
+const constant-body-end-offset 24 end
+const constant-state-offset 32 end
+const constant-values-offset 40 end
+const constant-value-count-offset 48 end
+const constant-bytes 56 end
 
-proc constant-new -- int do 0 end
-proc constant-evaluating -- int do 1 end
-proc constant-evaluated -- int do 2 end
+const constant-new 0 end
+const constant-evaluating 1 end
+const constant-evaluated 2 end
 
-proc constant-value-type-offset -- int do 0 end
-proc constant-value-payload-offset -- int do 8 end
-proc constant-value-bytes -- int do 16 end
+const constant-value-type-offset 0 end
+const constant-value-payload-offset 8 end
+const constant-value-bytes 16 end
 
-proc constant-evaluator-values-offset -- int do 0 end
-proc constant-evaluator-count-offset -- int do 8 end
-proc constant-evaluator-capacity-offset -- int do 16 end
-proc constant-evaluator-bytes -- int do 24 end
+const constant-evaluator-values-offset 0 end
+const constant-evaluator-count-offset 8 end
+const constant-evaluator-capacity-offset 16 end
+const constant-evaluator-bytes 24 end
 
-proc record-name-start-offset -- int do 0 end
-proc record-name-length-offset -- int do 8 end
-proc record-field-start-offset -- int do 16 end
-proc record-field-count-offset -- int do 24 end
-proc record-type-offset -- int do 32 end
-proc record-bytes -- int do 40 end
+const record-name-start-offset 0 end
+const record-name-length-offset 8 end
+const record-field-start-offset 16 end
+const record-field-count-offset 24 end
+const record-type-offset 32 end
+const record-bytes 40 end
 
-proc record-field-name-start-offset -- int do 0 end
-proc record-field-name-length-offset -- int do 8 end
-proc record-field-type-offset -- int do 16 end
-proc record-field-byte-offset-offset -- int do 24 end
-proc record-field-bytes -- int do 32 end
+const record-field-name-start-offset 0 end
+const record-field-name-length-offset 8 end
+const record-field-type-offset 16 end
+const record-field-byte-offset-offset 24 end
+const record-field-bytes 32 end
 
-proc union-name-start-offset -- int do 0 end
-proc union-name-length-offset -- int do 8 end
-proc union-case-start-offset -- int do 16 end
-proc union-case-count-offset -- int do 24 end
-proc union-type-offset -- int do 32 end
-proc union-bytes -- int do 40 end
+const union-name-start-offset 0 end
+const union-name-length-offset 8 end
+const union-case-start-offset 16 end
+const union-case-count-offset 24 end
+const union-type-offset 32 end
+const union-bytes 40 end
 
-proc union-case-name-start-offset -- int do 0 end
-proc union-case-name-length-offset -- int do 8 end
-proc union-case-payload-type-offset -- int do 16 end
-proc union-case-tag-offset -- int do 24 end
-proc union-case-bytes -- int do 32 end
+const union-case-name-start-offset 0 end
+const union-case-name-length-offset 8 end
+const union-case-payload-type-offset 16 end
+const union-case-tag-offset 24 end
+const union-case-bytes 32 end
 
-proc union-payload-offset -- int do cell-bytes end
-proc union-storage-bytes -- int do cell-bytes 2 * end
+const union-payload-offset cell-bytes end
+const union-storage-bytes cell-bytes 2 * end
 
-proc function-name-start-offset -- int do 0 end
-proc function-name-length-offset -- int do 8 end
-proc function-input-start-offset -- int do 16 end
-proc function-input-count-offset -- int do 24 end
-proc function-output-start-offset -- int do 32 end
-proc function-output-count-offset -- int do 40 end
-proc function-type-offset -- int do 48 end
-proc function-bytes -- int do 56 end
+const function-name-start-offset 0 end
+const function-name-length-offset 8 end
+const function-input-start-offset 16 end
+const function-input-count-offset 24 end
+const function-output-start-offset 32 end
+const function-output-count-offset 40 end
+const function-type-offset 48 end
+const function-bytes 56 end
 
-proc ctx-source-offset -- int do 0 end
-proc ctx-source-length-offset -- int do 8 end
-proc ctx-tokens-offset -- int do 16 end
-proc ctx-token-count-offset -- int do 24 end
-proc ctx-procs-offset -- int do 32 end
-proc ctx-proc-count-offset -- int do 40 end
-proc ctx-types-offset -- int do 48 end
-proc ctx-type-count-offset -- int do 56 end
-proc ctx-lex-index-offset -- int do 64 end
-proc ctx-lex-line-offset -- int do 72 end
-proc ctx-lex-column-offset -- int do 80 end
-proc ctx-main-proc-offset -- int do 88 end
-proc ctx-macros-offset -- int do 96 end
-proc ctx-macro-count-offset -- int do 104 end
-proc ctx-program-offset -- int do 112 end
-proc ctx-module-id-offset -- int do 120 end
-proc ctx-next-module-offset -- int do 128 end
-proc ctx-canonical-path-offset -- int do 136 end
-proc ctx-canonical-path-length-offset -- int do 144 end
-proc ctx-imports-offset -- int do 152 end
-proc ctx-import-count-offset -- int do 160 end
-proc ctx-scope-offset -- int do 168 end
-proc ctx-scope-count-offset -- int do 176 end
-proc ctx-load-state-offset -- int do 184 end
-proc ctx-resolve-state-offset -- int do 192 end
-proc ctx-is-root-offset -- int do 200 end
-proc ctx-records-offset -- int do 208 end
-proc ctx-record-count-offset -- int do 216 end
-proc ctx-record-fields-offset -- int do 224 end
-proc ctx-record-field-count-offset -- int do 232 end
-proc ctx-unions-offset -- int do 240 end
-proc ctx-union-count-offset -- int do 248 end
-proc ctx-union-cases-offset -- int do 256 end
-proc ctx-union-case-count-offset -- int do 264 end
-proc ctx-functions-offset -- int do 272 end
-proc ctx-function-count-offset -- int do 280 end
-proc ctx-function-types-offset -- int do 288 end
-proc ctx-function-type-count-offset -- int do 296 end
-proc ctx-constants-offset -- int do 304 end
-proc ctx-constant-count-offset -- int do 312 end
-proc ctx-bytes -- int do 320 end
+const ctx-source-offset 0 end
+const ctx-source-length-offset 8 end
+const ctx-tokens-offset 16 end
+const ctx-token-count-offset 24 end
+const ctx-procs-offset 32 end
+const ctx-proc-count-offset 40 end
+const ctx-types-offset 48 end
+const ctx-type-count-offset 56 end
+const ctx-lex-index-offset 64 end
+const ctx-lex-line-offset 72 end
+const ctx-lex-column-offset 80 end
+const ctx-main-proc-offset 88 end
+const ctx-macros-offset 96 end
+const ctx-macro-count-offset 104 end
+const ctx-program-offset 112 end
+const ctx-module-id-offset 120 end
+const ctx-next-module-offset 128 end
+const ctx-canonical-path-offset 136 end
+const ctx-canonical-path-length-offset 144 end
+const ctx-imports-offset 152 end
+const ctx-import-count-offset 160 end
+const ctx-scope-offset 168 end
+const ctx-scope-count-offset 176 end
+const ctx-load-state-offset 184 end
+const ctx-resolve-state-offset 192 end
+const ctx-is-root-offset 200 end
+const ctx-records-offset 208 end
+const ctx-record-count-offset 216 end
+const ctx-record-fields-offset 224 end
+const ctx-record-field-count-offset 232 end
+const ctx-unions-offset 240 end
+const ctx-union-count-offset 248 end
+const ctx-union-cases-offset 256 end
+const ctx-union-case-count-offset 264 end
+const ctx-functions-offset 272 end
+const ctx-function-count-offset 280 end
+const ctx-function-types-offset 288 end
+const ctx-function-type-count-offset 296 end
+const ctx-constants-offset 304 end
+const ctx-constant-count-offset 312 end
+const ctx-bytes 320 end
 
-proc import-path-token-offset -- int do 0 end
-proc import-name-token-offset -- int do 8 end
-proc import-alias-token-offset -- int do 16 end
-proc import-target-module-offset -- int do 24 end
-proc import-canonical-path-offset -- int do 32 end
-proc import-canonical-path-length-offset -- int do 40 end
-proc import-bytes -- int do 48 end
+const import-path-token-offset 0 end
+const import-name-token-offset 8 end
+const import-alias-token-offset 16 end
+const import-target-module-offset 24 end
+const import-canonical-path-offset 32 end
+const import-canonical-path-length-offset 40 end
+const import-bytes 48 end
 
-proc scope-name-module-offset -- int do 0 end
-proc scope-name-start-offset -- int do 8 end
-proc scope-name-length-offset -- int do 16 end
-proc scope-kind-offset -- int do 24 end
-proc scope-definition-module-offset -- int do 32 end
-proc scope-definition-index-offset -- int do 40 end
-proc scope-bytes -- int do 48 end
+const scope-name-module-offset 0 end
+const scope-name-start-offset 8 end
+const scope-name-length-offset 16 end
+const scope-kind-offset 24 end
+const scope-definition-module-offset 32 end
+const scope-definition-index-offset 40 end
+const scope-bytes 48 end
 
-proc scope-procedure -- int do 1 end
-proc scope-macro -- int do 2 end
-proc scope-record -- int do 3 end
-proc scope-union -- int do 4 end
-proc scope-function -- int do 5 end
-proc scope-constant -- int do 6 end
+const scope-procedure 1 end
+const scope-macro 2 end
+const scope-record 3 end
+const scope-union 4 end
+const scope-function 5 end
+const scope-constant 6 end
 
-proc load-new -- int do 0 end
-proc load-loading -- int do 1 end
-proc load-loaded -- int do 2 end
+const load-new 0 end
+const load-loading 1 end
+const load-loaded 2 end
 
-proc resolve-new -- int do 0 end
-proc resolve-resolving -- int do 1 end
-proc resolve-resolved -- int do 2 end
+const resolve-new 0 end
+const resolve-resolving 1 end
+const resolve-resolved 2 end
 
-proc max-source-bytes -- int do 4194304 end
-proc max-import-path-bytes -- int do 1024 end
+const max-source-bytes 4194304 end
+const max-import-path-bytes 1024 end
 
 proc field-read ptr int -- int do + @i64 end
 
@@ -297,11 +297,16 @@ proc emit-unsigned int -- do
 end
 
 proc emit-integer int -- do
-    if dup 0 < do
-        45 putc
-        0 swap -
+    let value do
+        if value min-int == do
+            "INT64_MIN" emit
+        elif value 0 < do
+            45 putc
+            0 value - emit-unsigned
+        else
+            value emit-unsigned
+        end
     end
-    emit-unsigned
 end
 
 proc is-space int -- bool do
@@ -2874,45 +2879,45 @@ proc scan-declarations ptr -- do
     end
 end
 
-proc cc-defining-module-offset -- int do 0 end
-proc cc-proc-offset -- int do 8 end
-proc cc-type-stack-offset -- int do 16 end
-proc cc-type-count-offset -- int do 24 end
-proc cc-blocks-offset -- int do 32 end
-proc cc-block-count-offset -- int do 40 end
-proc cc-locals-offset -- int do 48 end
-proc cc-local-count-offset -- int do 56 end
-proc cc-next-local-offset -- int do 64 end
-proc cc-indent-offset -- int do 72 end
-proc cc-program-offset -- int do 80 end
-proc cc-procedure-module-offset -- int do 88 end
-proc cc-scope-module-offset -- int do 96 end
-proc cc-emitting-offset -- int do 104 end
-proc cc-max-type-count-offset -- int do 112 end
-proc cc-type-capacity-offset -- int do 120 end
-proc cc-bytes -- int do 128 end
+const cc-defining-module-offset 0 end
+const cc-proc-offset 8 end
+const cc-type-stack-offset 16 end
+const cc-type-count-offset 24 end
+const cc-blocks-offset 32 end
+const cc-block-count-offset 40 end
+const cc-locals-offset 48 end
+const cc-local-count-offset 56 end
+const cc-next-local-offset 64 end
+const cc-indent-offset 72 end
+const cc-program-offset 80 end
+const cc-procedure-module-offset 88 end
+const cc-scope-module-offset 96 end
+const cc-emitting-offset 104 end
+const cc-max-type-count-offset 112 end
+const cc-type-capacity-offset 120 end
+const cc-bytes 128 end
 
-proc block-if -- int do 1 end
-proc block-while -- int do 2 end
-proc block-let -- int do 3 end
+const block-if 1 end
+const block-while 2 end
+const block-let 3 end
 
-proc block-kind-offset -- int do 0 end
-proc block-base-types-offset -- int do 8 end
-proc block-base-count-offset -- int do 16 end
-proc block-then-types-offset -- int do 24 end
-proc block-then-count-offset -- int do 32 end
-proc block-local-base-offset -- int do 40 end
-proc block-has-else-offset -- int do 48 end
-proc block-has-do-offset -- int do 56 end
-proc block-elif-parent-offset -- int do 64 end
-proc block-bytes -- int do 72 end
+const block-kind-offset 0 end
+const block-base-types-offset 8 end
+const block-base-count-offset 16 end
+const block-then-types-offset 24 end
+const block-then-count-offset 32 end
+const block-local-base-offset 40 end
+const block-has-else-offset 48 end
+const block-has-do-offset 56 end
+const block-elif-parent-offset 64 end
+const block-bytes 72 end
 
-proc local-name-start-offset -- int do 0 end
-proc local-name-length-offset -- int do 8 end
-proc local-type-offset -- int do 16 end
-proc local-id-offset -- int do 24 end
-proc local-module-offset -- int do 32 end
-proc local-bytes -- int do 40 end
+const local-name-start-offset 0 end
+const local-name-length-offset 8 end
+const local-type-offset 16 end
+const local-id-offset 24 end
+const local-module-offset 32 end
+const local-bytes 40 end
 
 proc @cc-defining-module ptr -- ptr do cc-defining-module-offset pointer-field-read end
 proc @cc-proc ptr -- int do cc-proc-offset field-read end
@@ -5925,7 +5930,7 @@ proc compile-logic-comparison-intrinsic ptr int -- bool do
     end
 end
 
-proc type-literal-base -- int do 100 end
+const type-literal-base 100 end
 proc type-is-nominal int -- bool do
     dup type-nominal-base >= swap type-function-base < &&
 end
@@ -7801,7 +7806,7 @@ proc compile-source ptr int -- do
     end
 end
 
-proc program-prelude-module-offset -- int do 64 end
+const program-prelude-module-offset 64 end
 proc @program-prelude-module ptr -- ptr do program-prelude-module-offset pointer-field-read end
 proc !program-prelude-module ptr ptr -- do program-prelude-module-offset pointer-field-write end
 
