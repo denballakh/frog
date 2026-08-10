@@ -36,8 +36,12 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `examples/11_c_ffi.frog`: Calls C standard-library functions through scalar C FFI.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
+- `docs/stdlib.md`: User-facing standard-library module reference.
 - `docs/testing.md`: Test snapshot workflow and review process.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
+- `stdlib/`: Dependency-free Frog modules. These modules use public Frog
+  declarations and narrow generated-runtime ABI functions where libc cannot be
+  represented by the scalar C FFI directly.
 - `test/__main__.py`: Main Python test orchestration for native regressions, example files, CLI cases, inline snippets, multi-file imports, snapshots, and black-box build-artifact assertions. It invokes the Frog-written compiler and CLI in subprocesses and contains no language implementation.
 - `test/regressions.py`: Assertion-only Python runner for exact diagnostics, strict generated-C compilation, executable output/status, helper-C linkage, and generated-C properties.
 - `test/cases/`: Import, language-semantics, string, and standalone regression fixtures used by `test/regressions.py`.

@@ -4996,6 +4996,14 @@ void* frog_alloc(Cell size) {
   return value;
 }
 
+void* froglang_alloc(int size) {
+  return frog_alloc((Cell)size);
+}
+
+void froglang_eputc(int byte) {
+  (void)fputc((int)(unsigned char)byte, stderr);
+}
+
 " emit
     "Cell frog_read_file(const void* path_bytes, Cell path_length, void** data, Cell* data_length) {
   *data = NULL;

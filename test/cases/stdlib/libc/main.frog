@@ -1,0 +1,19 @@
+from "../../../../stdlib/libc.frog" import ( alloc free putc getc eputc exit )
+
+proc require bool -- do
+    let condition do
+        if condition do else 1 exit end
+    end
+end
+
+proc main -- do
+    8 alloc
+    let bytes do
+        65 bytes !u8
+        bytes @u8 65 == require
+        bytes free
+    end
+
+    getc 0 1 - == require
+    65 putc
+end

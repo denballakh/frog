@@ -33,6 +33,14 @@ void* frog_alloc(Cell size) {
   return value;
 }
 
+void* froglang_alloc(int size) {
+  return frog_alloc((Cell)size);
+}
+
+void froglang_eputc(int byte) {
+  (void)fputc((int)(unsigned char)byte, stderr);
+}
+
 Cell frog_read_file(const void* path_bytes, Cell path_length, void** data, Cell* data_length) {
   *data = NULL;
   *data_length = 0;
@@ -617,8 +625,8 @@ static uint8_t frog_string_1542790042_bytes[] = "unknown token kind";
 static const FrogString frog_string_1542790042 = { frog_string_1542790042_bytes, 18 };
 static uint8_t frog_string_3720022913_bytes[] = "incompatible declarations for C symbol";
 static const FrogString frog_string_3720022913 = { frog_string_3720022913_bytes, 38 };
-static uint8_t frog_string_2898461706_bytes[] = "#define _POSIX_C_SOURCE 200809L\n\n#include <errno.h>\n#include <fcntl.h>\n#include <signal.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <sys/stat.h>\n#include <sys/types.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  uint8_t *bytes;\n  Cell len;\n} FrogString;\n\nstatic int frog_argc;\nstatic char **frog_argv;\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\n";
-static const FrogString frog_string_2898461706 = { frog_string_2898461706_bytes, 663 };
+static uint8_t frog_string_3193619608_bytes[] = "#define _POSIX_C_SOURCE 200809L\n\n#include <errno.h>\n#include <fcntl.h>\n#include <signal.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <sys/stat.h>\n#include <sys/types.h>\n#include <sys/wait.h>\n#include <unistd.h>\n\ntypedef int64_t Cell;\ntypedef struct {\n  uint8_t *bytes;\n  Cell len;\n} FrogString;\n\nstatic int frog_argc;\nstatic char **frog_argv;\n\nvoid frog_runtime_fail(void) {\n  exit(1);\n}\n\nvoid* frog_alloc(Cell size) {\n  if (size < 0 || (uint64_t)size > SIZE_MAX) frog_runtime_fail();\n  void* value = malloc((size_t)size);\n  if (value == NULL && size != 0) frog_runtime_fail();\n  return value;\n}\n\nvoid* froglang_alloc(int size) {\n  return frog_alloc((Cell)size);\n}\n\nvoid froglang_eputc(int byte) {\n  (void)fputc((int)(unsigned char)byte, stderr);\n}\n\n";
+static const FrogString frog_string_3193619608 = { frog_string_3193619608_bytes, 816 };
 static uint8_t frog_string_2569117768_bytes[] = "Cell frog_read_file(const void* path_bytes, Cell path_length, void** data, Cell* data_length) {\n  *data = NULL;\n  *data_length = 0;\n  if (path_length < 0 || (uint64_t)path_length >= SIZE_MAX) return 0;\n  if (path_length > 0 && path_bytes == NULL) return 0;\n  if (path_length > 0 && memchr(path_bytes, 0, (size_t)path_length) != NULL) return 0;\n  char* path = malloc((size_t)path_length + 1);\n  if (path == NULL) return 0;\n  if (path_length > 0) memcpy(path, path_bytes, (size_t)path_length);\n  path[(size_t)path_length] = '\\0';\n  FILE* file = fopen(path, \"rb\");\n  free(path);\n  if (file == NULL) return 0;\n  if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }\n  long end = ftell(file);\n  if (end < 0 || (uint64_t)end > INT64_MAX) { fclose(file); return 0; }\n  if (fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }\n  size_t size = (size_t)end;\n  unsigned char* bytes = malloc(size == 0 \? 1 : size);\n  if (bytes == NULL) { fclose(file); return 0; }\n  if (fread(bytes, 1, size, file) != size) { free(bytes); fclose(file); return 0; }\n  if (fclose(file) != 0) { free(bytes); return 0; }\n  *data = bytes;\n  *data_length = (Cell)size;\n  return 1;\n}\n\n";
 static const FrogString frog_string_2569117768 = { frog_string_2569117768_bytes, 1164 };
 static uint8_t frog_string_2133239333_bytes[] = "Cell frog_read_i8(const void* ptr) { int8_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i16(const void* ptr) { int16_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i32(const void* ptr) { int32_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_i64(const void* ptr) { int64_t value; memcpy(&value, ptr, sizeof(value)); return value; }\nCell frog_read_u8(const void* ptr) { uint8_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u16(const void* ptr) { uint16_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u32(const void* ptr) { uint32_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nCell frog_read_u64(const void* ptr) { uint64_t value; memcpy(&value, ptr, sizeof(value)); return (Cell)value; }\nvoid* frog_read_ptr(const void* ptr) { void* value; memcpy(&value, ptr, sizeof(value)); return value; }\nvoid frog_write_ptr(void* ptr, void* value) { memcpy(ptr, &value, sizeof(value)); }\n\nCell frog_union_tag(const void* value, Cell case_count) {\n  if (value == NULL) frog_runtime_fail();\n  Cell tag = frog_read_i64(value);\n  if (tag < 0 || tag >= case_count) frog_runtime_fail();\n  return tag;\n}\n\n";
@@ -22832,7 +22840,7 @@ void frog_proc_388_validate_2Dexternal_2Ddeclarations(Cell frog_arg_0) {
 void frog_proc_389_emit_2Dc_2Dpreamble(void) {
   Cell frog_value_0;
   (void)&frog_value_0;
-  frog_value_0 = (Cell)(intptr_t)&frog_string_2898461706;
+  frog_value_0 = (Cell)(intptr_t)&frog_string_3193619608;
   {
     frog_proc_8_emit(frog_value_0);
   }
@@ -36614,7 +36622,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_3943761759;
   (void)&frog_string_1542790042;
   (void)&frog_string_3720022913;
-  (void)&frog_string_2898461706;
+  (void)&frog_string_3193619608;
   (void)&frog_string_2569117768;
   (void)&frog_string_2133239333;
   (void)&frog_string_3742174043;

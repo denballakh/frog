@@ -1,0 +1,13 @@
+extern libc-allocate froglang_alloc c-int -- c-ptr end
+extern libc-free free c-ptr -- end
+extern libc-putchar putchar c-int -- c-int end
+extern libc-getchar getchar -- c-int end
+extern libc-eputchar froglang_eputc c-int -- end
+extern libc-exit exit c-int -- end
+
+macro alloc libc-allocate end
+macro free libc-free end
+macro putc libc-putchar drop end
+macro getc libc-getchar end
+macro eputc libc-eputchar end
+macro exit libc-exit end

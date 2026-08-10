@@ -213,6 +213,11 @@ STANDALONE_RUN_CASES = [
 ]
 
 
+STDLIB_RUN_CASES = [
+    RunCase('stdlib', 'libc', 'stdlib/libc/main.frog', b'A'),
+]
+
+
 SOURCE_ERROR_CASES = [
     SourceErrorCase(
         'constant_divide_by_zero',
@@ -878,7 +883,8 @@ def assert_string_c(strings: str) -> None:
     assert strings.count('= "same";') == 1
     same = string_symbol(strings, 'same')
     assert strings.count(f'= (Cell)(intptr_t)&{same};') == 3
-    assert sum('frog_alloc(' in line for line in lines) == 1
+    assert strings.count('void* frog_alloc(Cell size) {') == 1
+    assert 'frog_alloc(' not in extract_function(strings, 'void frog_proc_0_main(void)')
 
 
 def assert_stable_string_symbol(frogc: Path, cases_root: Path, output_root: Path) -> None:
@@ -911,7 +917,14 @@ def assert_large_import_path_error(frogc: Path, cases_root: Path) -> None:
 def run_regressions(root: Path, frogc: Path, cases_root: Path, output_root: Path) -> None:
     output_root.mkdir(parents=True, exist_ok=True)
     generated: dict[str, str] = {}
-    run_cases = [*IMPORT_RUN_CASES, *SEMANTIC_RUN_CASES, *STATUS_CASES, *STRING_RUN_CASES, *STANDALONE_RUN_CASES]
+    run_cases = [
+        *IMPORT_RUN_CASES,
+        *SEMANTIC_RUN_CASES,
+        *STATUS_CASES,
+        *STRING_RUN_CASES,
+        *STANDALONE_RUN_CASES,
+        *STDLIB_RUN_CASES,
+    ]
     for run_case in run_cases:
         generated[f'{run_case.group}/{run_case.name}'] = run_fixture(
             root,
