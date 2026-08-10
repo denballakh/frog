@@ -20,7 +20,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 
 ## Repository Layout
 
-- `compiler/frogc.frog`: The Frog-written compiler, typechecker, deterministic C emitter, and CLI. Filter mode reads the root source from stdin; file commands preserve lexical source-relative import resolution.
+- `compiler/frogc.frog`: The Frog-written compiler, typechecker, deterministic C emitter, and CLI. It imports the libc words it uses from `stdlib/libc.frog`. Filter mode reads the root source from stdin; file commands preserve lexical source-relative import resolution.
 - `compiler/frogc.c`: Checked-in fixed-point C bootstrap seed generated from `compiler/frogc.frog`; this is an authoritative bootstrap artifact, not a disposable build output.
 - `examples/*.frog`: Example Frog programs. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
 - `examples/01_simple.frog`: Basic stack arithmetic, debug, and print demo.
@@ -150,6 +150,8 @@ Commands:
 - Generated C procedure names use `frog_proc_<global-id>_<encoded-source-name>`. ASCII letters and digits remain readable; every other UTF-8 byte, including `_`, is encoded as uppercase `_HH`. Numeric global IDs remain the function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
+- Bootstrap filter invocations run from `compiler/` so the compiler source's
+  `../stdlib/libc.frog` import resolves the same way as a normal file build.
 
 ## Language Semantics
 

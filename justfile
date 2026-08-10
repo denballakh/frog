@@ -42,20 +42,20 @@ frogc-seed:
 
 [group("bootstrap")]
 bootstrap-check: frogc-seed
-    build/frogc < compiler/frogc.frog > build/frogc.stage2.c
+    cd compiler && ../build/frogc < frogc.frog > ../build/frogc.stage2.c
     just _compile-frogc build/frogc.stage2.c build/frogc.stage2
-    build/frogc.stage2 < compiler/frogc.frog > build/frogc.stage3.c
+    cd compiler && ../build/frogc.stage2 < frogc.frog > ../build/frogc.stage3.c
     just _compile-frogc build/frogc.stage3.c build/frogc.stage3
     cmp compiler/frogc.c build/frogc.stage2.c
     cmp build/frogc.stage2.c build/frogc.stage3.c
 
 [group("bootstrap")]
 bootstrap-update: frogc-seed
-    build/frogc < compiler/frogc.frog > build/frogc.candidate1.c
+    cd compiler && ../build/frogc < frogc.frog > ../build/frogc.candidate1.c
     just _compile-frogc-filter build/frogc.candidate1.c build/frogc.candidate1
-    build/frogc.candidate1 < compiler/frogc.frog > build/frogc.candidate2.c
+    cd compiler && ../build/frogc.candidate1 < frogc.frog > ../build/frogc.candidate2.c
     just _compile-frogc-filter build/frogc.candidate2.c build/frogc.candidate2
-    build/frogc.candidate2 < compiler/frogc.frog > build/frogc.candidate3.c
+    cd compiler && ../build/frogc.candidate2 < frogc.frog > ../build/frogc.candidate3.c
     cmp build/frogc.candidate2.c build/frogc.candidate3.c
     cp build/frogc.candidate2.c compiler/frogc.c
 

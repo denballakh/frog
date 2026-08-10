@@ -153,6 +153,8 @@ void froglang_reset_child_signals(void) {
   (void)sigaction(SIGHUP, &action, NULL);
 }
 
+static uint8_t frog_string_617966169_bytes[] = "../stdlib/libc.frog";
+static const FrogString frog_string_617966169 = { frog_string_617966169_bytes, 19 };
 static uint8_t frog_string_1029627206_bytes[] = "frogc: ";
 static const FrogString frog_string_1029627206 = { frog_string_1029627206_bytes, 7 };
 static uint8_t frog_string_1375463515_bytes[] = "INT64_MIN";
@@ -1746,6 +1748,18 @@ void frog_proc_583_run_2Dcommand(Cell frog_arg_0, Cell frog_arg_1);
 frog_results_3 frog_proc_584_parse_2Dbuild_2Doptions(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
 void frog_proc_585_build_2Dcommand(Cell frog_arg_0, Cell frog_arg_1);
 void frog_proc_586_main(void);
+extern void * froglang_alloc(int);
+Cell frog_proc_587_libc_2Dallocate(Cell frog_arg_0);
+extern void free(void *);
+void frog_proc_588_libc_2Dfree(Cell frog_arg_0);
+extern int putchar(int);
+Cell frog_proc_589_libc_2Dputchar(Cell frog_arg_0);
+extern int getchar(void);
+Cell frog_proc_590_libc_2Dgetchar(void);
+extern void froglang_eputc(int);
+void frog_proc_591_libc_2Deputchar(Cell frog_arg_0);
+extern void exit(int);
+void frog_proc_592_libc_2Dexit(Cell frog_arg_0);
 Cell frog_proc_0_field_2Dread(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_value_0;
   (void)&frog_value_0;
@@ -1934,13 +1948,19 @@ void frog_proc_7_emit_2Dbytes(Cell frog_arg_0, Cell frog_arg_1) {
       }
       frog_value_1 = frog_value_1 + frog_value_2;
       frog_value_1 = frog_read_u8((const void *)(intptr_t)frog_value_1);
-      putchar((int)(unsigned char)frog_value_1);
+      {
+        frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+      }
+      {
+        Cell l6 = frog_value_1;
+        (void)l6;
+      }
       frog_value_1 = 1;
       frog_value_0 = frog_value_0 + frog_value_1;
     }
     {
-      Cell l6 = frog_value_0;
-      (void)l6;
+      Cell l7 = frog_value_0;
+      (void)l7;
     }
   }
 }
@@ -2004,7 +2024,9 @@ void frog_proc_9_emit_2Derror_2Dbytes(Cell frog_arg_0, Cell frog_arg_1) {
       }
       frog_value_1 = frog_value_1 + frog_value_2;
       frog_value_1 = frog_read_u8((const void *)(intptr_t)frog_value_1);
-      fputc((int)(unsigned char)frog_value_1, stderr);
+      {
+        frog_proc_591_libc_2Deputchar(frog_value_1);
+      }
       frog_value_1 = 1;
       frog_value_0 = frog_value_0 + frog_value_1;
     }
@@ -2046,9 +2068,13 @@ void frog_proc_11_fail(Cell frog_arg_0) {
     frog_proc_10_emit_2Derror(frog_value_0);
   }
   frog_value_0 = 10;
-  fputc((int)(unsigned char)frog_value_0, stderr);
+  {
+    frog_proc_591_libc_2Deputchar(frog_value_0);
+  }
   frog_value_0 = 1;
-  exit((int)frog_value_0);
+  {
+    frog_proc_592_libc_2Dexit(frog_value_0);
+  }
 }
 void frog_proc_12_emit_2Dunsigned(Cell frog_arg_0) {
   Cell frog_value_0;
@@ -2077,7 +2103,13 @@ void frog_proc_12_emit_2Dunsigned(Cell frog_arg_0) {
     frog_value_0 = frog_value_0 % frog_value_1;
     frog_value_1 = 48;
     frog_value_0 = frog_value_0 + frog_value_1;
-    putchar((int)(unsigned char)frog_value_0);
+    {
+      frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+    }
+    {
+      Cell l1 = frog_value_0;
+      (void)l1;
+    }
   }
 }
 void frog_proc_13_emit_2Dinteger(Cell frog_arg_0) {
@@ -2103,7 +2135,13 @@ void frog_proc_13_emit_2Dinteger(Cell frog_arg_0) {
       frog_value_0 = frog_value_0 < frog_value_1;
       if (frog_value_0 != 0) {
         frog_value_0 = 45;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l1 = frog_value_0;
+          (void)l1;
+        }
         frog_value_0 = 0;
         frog_value_1 = l0;
         frog_value_0 = frog_value_0 - frog_value_1;
@@ -2462,12 +2500,16 @@ frog_results_2 frog_proc_24_read_2Dsource(void) {
   Cell frog_value_3;
   (void)&frog_value_3;
   frog_value_0 = 4194304;
-  frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+  {
+    frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+  }
   {
     Cell l0 = frog_value_0;
     (void)l0;
     frog_value_0 = 0;
-    frog_value_1 = (Cell)getchar();
+    {
+      frog_value_1 = frog_proc_590_libc_2Dgetchar();
+    }
     while (1) {
       {
         Cell l1 = frog_value_1;
@@ -2501,7 +2543,9 @@ frog_results_2 frog_proc_24_read_2Dsource(void) {
         frog_value_0 = l3;
         frog_value_1 = 1;
         frog_value_0 = frog_value_0 + frog_value_1;
-        frog_value_1 = (Cell)getchar();
+        {
+          frog_value_1 = frog_proc_590_libc_2Dgetchar();
+        }
       }
     }
     {
@@ -8274,9 +8318,13 @@ void frog_proc_203_fail_2Dduplicate_2Ddeclaration(Cell frog_arg_0, Cell frog_arg
       frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
     }
     frog_value_0 = 10;
-    fputc((int)(unsigned char)frog_value_0, stderr);
+    {
+      frog_proc_591_libc_2Deputchar(frog_value_0);
+    }
     frog_value_0 = 1;
-    exit((int)frog_value_0);
+    {
+      frog_proc_592_libc_2Dexit(frog_value_0);
+    }
   }
 }
 Cell frog_proc_204_scan_2Drecord_2Dfields(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
@@ -8388,9 +8436,13 @@ Cell frog_proc_204_scan_2Drecord_2Dfields(Cell frog_arg_0, Cell frog_arg_1, Cell
               frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
             }
             frog_value_0 = 10;
-            fputc((int)(unsigned char)frog_value_0, stderr);
+            {
+              frog_proc_591_libc_2Deputchar(frog_value_0);
+            }
             frog_value_0 = 1;
-            exit((int)frog_value_0);
+            {
+              frog_proc_592_libc_2Dexit(frog_value_0);
+            }
           }
         }
         frog_value_0 = l0;
@@ -8637,9 +8689,13 @@ Cell frog_proc_205_scan_2Done_2Drecord(Cell frog_arg_0, Cell frog_arg_1) {
           frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
         }
         frog_value_0 = 10;
-        fputc((int)(unsigned char)frog_value_0, stderr);
+        {
+          frog_proc_591_libc_2Deputchar(frog_value_0);
+        }
         frog_value_0 = 1;
-        exit((int)frog_value_0);
+        {
+          frog_proc_592_libc_2Dexit(frog_value_0);
+        }
       }
       frog_value_0 = l1;
       frog_value_1 = l2;
@@ -8934,9 +8990,13 @@ Cell frog_proc_206_scan_2Dunion_2Dcases(Cell frog_arg_0, Cell frog_arg_1, Cell f
                   frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
                 }
                 frog_value_0 = 10;
-                fputc((int)(unsigned char)frog_value_0, stderr);
+                {
+                  frog_proc_591_libc_2Deputchar(frog_value_0);
+                }
                 frog_value_0 = 1;
-                exit((int)frog_value_0);
+                {
+                  frog_proc_592_libc_2Dexit(frog_value_0);
+                }
               }
             }
             frog_value_0 = l2;
@@ -9254,9 +9314,13 @@ Cell frog_proc_207_scan_2Done_2Dunion(Cell frog_arg_0, Cell frog_arg_1) {
           frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
         }
         frog_value_0 = 10;
-        fputc((int)(unsigned char)frog_value_0, stderr);
+        {
+          frog_proc_591_libc_2Deputchar(frog_value_0);
+        }
         frog_value_0 = 1;
-        exit((int)frog_value_0);
+        {
+          frog_proc_592_libc_2Dexit(frog_value_0);
+        }
       }
       frog_value_0 = l1;
       frog_value_1 = l2;
@@ -9555,9 +9619,13 @@ Cell frog_proc_209_scan_2Done_2Dfunction(Cell frog_arg_0, Cell frog_arg_1) {
           frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
         }
         frog_value_0 = 10;
-        fputc((int)(unsigned char)frog_value_0, stderr);
+        {
+          frog_proc_591_libc_2Deputchar(frog_value_0);
+        }
         frog_value_0 = 1;
-        exit((int)frog_value_0);
+        {
+          frog_proc_592_libc_2Dexit(frog_value_0);
+        }
       }
       frog_value_0 = l1;
       frog_value_1 = l2;
@@ -10134,7 +10202,9 @@ void frog_proc_211_validate_2Dmacro_2Dbody(Cell frog_arg_0, Cell frog_arg_1, Cel
     frog_value_0 = frog_value_0 - frog_value_1;
     frog_value_1 = 8;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     {
       Cell l3 = frog_value_0;
       (void)l3;
@@ -10143,7 +10213,9 @@ void frog_proc_211_validate_2Dmacro_2Dbody(Cell frog_arg_0, Cell frog_arg_1, Cel
       frog_value_0 = frog_value_0 - frog_value_1;
       frog_value_1 = 8;
       frog_value_0 = frog_value_0 * frog_value_1;
-      frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+      {
+        frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+      }
       {
         Cell l4 = frog_value_0;
         (void)l4;
@@ -10152,7 +10224,9 @@ void frog_proc_211_validate_2Dmacro_2Dbody(Cell frog_arg_0, Cell frog_arg_1, Cel
         frog_value_0 = frog_value_0 - frog_value_1;
         frog_value_1 = 8;
         frog_value_0 = frog_value_0 * frog_value_1;
-        frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+        {
+          frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+        }
         {
           Cell l5 = frog_value_0;
           (void)l5;
@@ -11625,9 +11699,13 @@ Cell frog_proc_219_allocate_2Dproc(Cell frog_arg_0, Cell frog_arg_1, Cell frog_a
           frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
         }
         frog_value_0 = 10;
-        fputc((int)(unsigned char)frog_value_0, stderr);
+        {
+          frog_proc_591_libc_2Deputchar(frog_value_0);
+        }
         frog_value_0 = 1;
-        exit((int)frog_value_0);
+        {
+          frog_proc_592_libc_2Dexit(frog_value_0);
+        }
       }
     }
     frog_value_0 = l2;
@@ -13944,7 +14022,9 @@ void frog_proc_265_ensure_2Dtype_2Dcapacity(Cell frog_arg_0) {
         frog_value_0 = l1;
         frog_value_1 = 8;
         frog_value_0 = frog_value_0 * frog_value_1;
-        frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+        {
+          frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+        }
         {
           Cell l2 = frog_value_0;
           (void)l2;
@@ -14186,7 +14266,9 @@ frog_results_2 frog_proc_270_type_2Dsnapshot(Cell frog_arg_0) {
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 8;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     {
       Cell l1 = frog_value_0;
       (void)l1;
@@ -14835,7 +14917,13 @@ void frog_proc_284_emit_2Dline(Cell frog_arg_0, Cell frog_arg_1) {
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -15778,7 +15866,9 @@ void frog_proc_299_intern_2Dstring_2Dtoken(Cell frog_arg_0, Cell frog_arg_1, Cel
       Cell l3 = frog_value_0;
       (void)l3;
       frog_value_0 = l3;
-      frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+      {
+        frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+      }
       {
         Cell l4 = frog_value_0;
         (void)l4;
@@ -15920,7 +16010,9 @@ void frog_proc_301_initialize_2Dstring_2Dpool(Cell frog_arg_0) {
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 32;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l0;
     {
       frog_proc_41__21program_2Dstrings(frog_value_0, frog_value_1);
@@ -17359,7 +17451,9 @@ frog_results_2 frog_proc_319_normalize_2Dimport_2Dpath(Cell frog_arg_0, Cell fro
         }
       }
       frog_value_0 = l2;
-      frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+      {
+        frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+      }
       {
         Cell l3 = frog_value_0;
         (void)l3;
@@ -17400,7 +17494,9 @@ frog_results_2 frog_proc_319_normalize_2Dimport_2Dpath(Cell frog_arg_0, Cell fro
         frog_value_0 = frog_value_0 + frog_value_1;
         frog_value_1 = 8;
         frog_value_0 = frog_value_0 * frog_value_1;
-        frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+        {
+          frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+        }
         {
           Cell l4 = frog_value_0;
           (void)l4;
@@ -17409,7 +17505,9 @@ frog_results_2 frog_proc_319_normalize_2Dimport_2Dpath(Cell frog_arg_0, Cell fro
           frog_value_0 = frog_value_0 + frog_value_1;
           frog_value_1 = 8;
           frog_value_0 = frog_value_0 * frog_value_1;
-          frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+          {
+            frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+          }
           {
             Cell l5 = frog_value_0;
             (void)l5;
@@ -17446,7 +17544,9 @@ frog_results_2 frog_proc_319_normalize_2Dimport_2Dpath(Cell frog_arg_0, Cell fro
                 frog_value_0 = l2;
                 frog_value_1 = 2;
                 frog_value_0 = frog_value_0 + frog_value_1;
-                frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+                {
+                  frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+                }
                 {
                   Cell l8 = frog_value_0;
                   (void)l8;
@@ -17551,7 +17651,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 48;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 16, frog_value_0);
     frog_value_0 = 0;
@@ -17585,7 +17687,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 96;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 32, frog_value_0);
     frog_value_0 = l2;
@@ -17594,7 +17698,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 40;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 96, frog_value_0);
     frog_value_0 = l2;
@@ -17603,7 +17709,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 56;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 304, frog_value_0);
     frog_value_0 = l2;
@@ -17612,7 +17720,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 8;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 48, frog_value_0);
     frog_value_0 = l2;
@@ -17621,7 +17731,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 48;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 152, frog_value_0);
     frog_value_0 = l2;
@@ -17630,7 +17742,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 48;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 168, frog_value_0);
     frog_value_0 = l2;
@@ -17639,7 +17753,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 40;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 208, frog_value_0);
     frog_value_0 = l2;
@@ -17648,7 +17764,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 32;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 224, frog_value_0);
     frog_value_0 = l2;
@@ -17657,7 +17775,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 40;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 240, frog_value_0);
     frog_value_0 = l2;
@@ -17666,7 +17786,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 32;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 256, frog_value_0);
     frog_value_0 = l2;
@@ -17675,7 +17797,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 56;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 272, frog_value_0);
     frog_value_0 = l2;
@@ -17684,7 +17808,9 @@ void frog_proc_320_initialize_2Dmodule_2Dsource(Cell frog_arg_0, Cell frog_arg_1
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 8;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     frog_value_1 = l2;
     frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 288, frog_value_0);
     frog_value_0 = 0;
@@ -19006,7 +19132,9 @@ Cell frog_proc_334_create_2Dconstant_2Devaluator(void) {
       frog_value_0 = l1;
       frog_value_1 = 16;
       frog_value_0 = frog_value_0 * frog_value_1;
-      frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+      {
+        frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+      }
       frog_value_1 = l0;
       frog_write_i64((unsigned char *)(intptr_t)frog_value_1 + 0, frog_value_0);
       frog_value_0 = 0;
@@ -19049,7 +19177,9 @@ void frog_proc_335_ensure_2Dconstant_2Devaluator_2Dcapacity(Cell frog_arg_0) {
         frog_value_0 = l1;
         frog_value_1 = 16;
         frog_value_0 = frog_value_0 * frog_value_1;
-        frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+        {
+          frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+        }
         {
           Cell l2 = frog_value_0;
           (void)l2;
@@ -21003,7 +21133,9 @@ void frog_proc_362_evaluate_2Dconstant(Cell frog_arg_0, Cell frog_arg_1) {
               frog_value_0 = l4;
               frog_value_1 = 16;
               frog_value_0 = frog_value_0 * frog_value_1;
-              frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+              {
+                frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+              }
               {
                 Cell l5 = frog_value_0;
                 (void)l5;
@@ -22949,17 +23081,35 @@ void frog_proc_390_emit_2Dc_2Dstring_2Dbyte(Cell frog_arg_0) {
                 frog_value_0 = frog_value_0 && frog_value_1;
                 if (frog_value_0 != 0) {
                   frog_value_0 = l0;
-                  putchar((int)(unsigned char)frog_value_0);
+                  {
+                    frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                  }
+                  {
+                    Cell l1 = frog_value_0;
+                    (void)l1;
+                  }
                 } else {
                   frog_value_0 = 92;
-                  putchar((int)(unsigned char)frog_value_0);
+                  {
+                    frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                  }
+                  {
+                    Cell l2 = frog_value_0;
+                    (void)l2;
+                  }
                   frog_value_0 = l0;
                   frog_value_1 = 64;
                   if (frog_value_1 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
                   frog_value_0 = frog_value_0 / frog_value_1;
                   frog_value_1 = 48;
                   frog_value_0 = frog_value_0 + frog_value_1;
-                  putchar((int)(unsigned char)frog_value_0);
+                  {
+                    frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                  }
+                  {
+                    Cell l3 = frog_value_0;
+                    (void)l3;
+                  }
                   frog_value_0 = l0;
                   frog_value_1 = 8;
                   if (frog_value_1 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
@@ -22969,14 +23119,26 @@ void frog_proc_390_emit_2Dc_2Dstring_2Dbyte(Cell frog_arg_0) {
                   frog_value_0 = frog_value_0 % frog_value_1;
                   frog_value_1 = 48;
                   frog_value_0 = frog_value_0 + frog_value_1;
-                  putchar((int)(unsigned char)frog_value_0);
+                  {
+                    frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                  }
+                  {
+                    Cell l4 = frog_value_0;
+                    (void)l4;
+                  }
                   frog_value_0 = l0;
                   frog_value_1 = 8;
                   if (frog_value_1 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
                   frog_value_0 = frog_value_0 % frog_value_1;
                   frog_value_1 = 48;
                   frog_value_0 = frog_value_0 + frog_value_1;
-                  putchar((int)(unsigned char)frog_value_0);
+                  {
+                    frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                  }
+                  {
+                    Cell l5 = frog_value_0;
+                    (void)l5;
+                  }
                 }
               }
             }
@@ -24472,7 +24634,13 @@ void frog_proc_425_emit_2Duppercase_2Dhex_2Ddigit(Cell frog_arg_0) {
       frog_value_1 = 65;
       frog_value_0 = frog_value_0 + frog_value_1;
     }
-    putchar((int)(unsigned char)frog_value_0);
+    {
+      frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+    }
+    {
+      Cell l1 = frog_value_0;
+      (void)l1;
+    }
   }
 }
 void frog_proc_426_emit_2Dproc_2Dname_2Dbyte(Cell frog_arg_0) {
@@ -24495,10 +24663,22 @@ void frog_proc_426_emit_2Dproc_2Dname_2Dbyte(Cell frog_arg_0) {
     frog_value_0 = frog_value_0 || frog_value_1;
     if (frog_value_0 != 0) {
       frog_value_0 = l0;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l1 = frog_value_0;
+        (void)l1;
+      }
     } else {
       frog_value_0 = 95;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
       frog_value_0 = l0;
       frog_value_1 = 16;
       if (frog_value_1 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
@@ -24595,7 +24775,13 @@ void frog_proc_428_emit_2Dproc_2Dname(Cell frog_arg_0, Cell frog_arg_1) {
       frog_proc_12_emit_2Dunsigned(frog_value_0);
     }
     frog_value_0 = 95;
-    putchar((int)(unsigned char)frog_value_0);
+    {
+      frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+    }
+    {
+      Cell l2 = frog_value_0;
+      (void)l2;
+    }
     frog_value_0 = l1;
     frog_value_0 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_0 + 0);
     frog_value_1 = l1;
@@ -24621,7 +24807,13 @@ void frog_proc_429_emit_2Dlocal_2Dname(Cell frog_arg_0) {
   (void)&frog_value_1;
   frog_value_0 = frog_arg_0;
   frog_value_1 = 108;
-  putchar((int)(unsigned char)frog_value_1);
+  {
+    frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+  }
+  {
+    Cell l0 = frog_value_1;
+    (void)l0;
+  }
   {
     frog_proc_12_emit_2Dunsigned(frog_value_0);
   }
@@ -25066,7 +25258,13 @@ void frog_proc_438_emit_2Dbinary_2Doperation(Cell frog_arg_0, Cell frog_arg_1) {
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l4 = frog_value_0;
+            (void)l4;
+          }
         }
       }
     }
@@ -25114,7 +25312,13 @@ void frog_proc_439_emit_2Dunary_2Doperation(Cell frog_arg_0, Cell frog_arg_1) {
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -25169,7 +25373,13 @@ void frog_proc_440_emit_2Dchecked_2Dbinary_2Doperation(Cell frog_arg_0, Cell fro
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l4 = frog_value_0;
+            (void)l4;
+          }
           frog_value_0 = l1;
           {
             frog_proc_283_emit_2Dindent(frog_value_0);
@@ -25202,7 +25412,13 @@ void frog_proc_440_emit_2Dchecked_2Dbinary_2Doperation(Cell frog_arg_0, Cell fro
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l5 = frog_value_0;
+            (void)l5;
+          }
         }
       }
     }
@@ -25285,7 +25501,13 @@ void frog_proc_441_emit_2Ddivmod(Cell frog_arg_0) {
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l3 = frog_value_0;
+            (void)l3;
+          }
         }
       }
     }
@@ -26166,7 +26388,13 @@ void frog_proc_450_compile_2Dcast_2Dintrinsic(Cell frog_arg_0) {
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l4 = frog_value_0;
+              (void)l4;
+            }
           }
         }
       }
@@ -26229,7 +26457,13 @@ void frog_proc_451_compile_2Dread_2Dmemory(Cell frog_arg_0, Cell frog_arg_1) {
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -26304,7 +26538,13 @@ void frog_proc_452_compile_2Dwrite_2Dmemory(Cell frog_arg_0, Cell frog_arg_1) {
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l4 = frog_value_0;
+            (void)l4;
+          }
         }
       }
     }
@@ -26395,7 +26635,13 @@ void frog_proc_453_emit_2Dread_2Dfile(Cell frog_arg_0) {
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l2 = frog_value_0;
+          (void)l2;
+        }
       }
     }
   }
@@ -26433,7 +26679,13 @@ void frog_proc_454_emit_2Dread_2Dpointer(Cell frog_arg_0) {
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l1 = frog_value_0;
+        (void)l1;
+      }
     }
   }
 }
@@ -26491,7 +26743,13 @@ void frog_proc_455_emit_2Dwrite_2Dpointer(Cell frog_arg_0) {
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l3 = frog_value_0;
+            (void)l3;
+          }
         }
       }
     }
@@ -26614,7 +26872,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l2 = frog_value_0;
+              (void)l2;
+            }
           }
           frog_value_0 = 1;
         } else {
@@ -26650,14 +26914,14 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
               frog_value_1 = 2;
               frog_value_0 = frog_value_0 - frog_value_1;
               {
-                Cell l2 = frog_value_0;
-                (void)l2;
+                Cell l3 = frog_value_0;
+                (void)l3;
                 frog_value_0 = l1;
                 {
                   frog_proc_283_emit_2Dindent(frog_value_0);
                 }
                 frog_value_0 = l1;
-                frog_value_1 = l2;
+                frog_value_1 = l3;
                 {
                   frog_proc_430_emit_2Dslot(frog_value_0, frog_value_1);
                 }
@@ -26666,13 +26930,19 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                   frog_proc_8_emit(frog_value_0);
                 }
                 frog_value_0 = 10;
-                putchar((int)(unsigned char)frog_value_0);
+                {
+                  frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                }
+                {
+                  Cell l4 = frog_value_0;
+                  (void)l4;
+                }
                 frog_value_0 = l1;
                 {
                   frog_proc_283_emit_2Dindent(frog_value_0);
                 }
                 frog_value_0 = l1;
-                frog_value_1 = l2;
+                frog_value_1 = l3;
                 frog_value_2 = 1;
                 frog_value_1 = frog_value_1 + frog_value_2;
                 {
@@ -26683,7 +26953,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                   frog_proc_8_emit(frog_value_0);
                 }
                 frog_value_0 = 10;
-                putchar((int)(unsigned char)frog_value_0);
+                {
+                  frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                }
+                {
+                  Cell l5 = frog_value_0;
+                  (void)l5;
+                }
               }
             }
             frog_value_0 = 1;
@@ -27027,9 +27303,9 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                     frog_value_0 = frog_proc_267_type_2Dpop(frog_value_0);
                                                   }
                                                   {
-                                                    Cell l3 = frog_value_0;
-                                                    (void)l3;
-                                                    frog_value_0 = l3;
+                                                    Cell l6 = frog_value_0;
+                                                    (void)l6;
+                                                    frog_value_0 = l6;
                                                     frog_value_1 = 1;
                                                     frog_value_0 = frog_value_0 == frog_value_1;
                                                     if (frog_value_0 != 0) {
@@ -27059,10 +27335,16 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                           frog_proc_8_emit(frog_value_0);
                                                         }
                                                         frog_value_0 = 10;
-                                                        putchar((int)(unsigned char)frog_value_0);
+                                                        {
+                                                          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                                                        }
+                                                        {
+                                                          Cell l7 = frog_value_0;
+                                                          (void)l7;
+                                                        }
                                                       }
                                                     } else {
-                                                      frog_value_0 = l3;
+                                                      frog_value_0 = l6;
                                                       frog_value_1 = 2;
                                                       frog_value_0 = frog_value_0 == frog_value_1;
                                                       if (frog_value_0 != 0) {
@@ -27092,7 +27374,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                             frog_proc_8_emit(frog_value_0);
                                                           }
                                                           frog_value_0 = 10;
-                                                          putchar((int)(unsigned char)frog_value_0);
+                                                          {
+                                                            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                                                          }
+                                                          {
+                                                            Cell l8 = frog_value_0;
+                                                            (void)l8;
+                                                          }
                                                         }
                                                       } else {
                                                         frog_value_0 = (Cell)(intptr_t)&frog_string_152415155;
@@ -27145,7 +27433,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                         frog_proc_8_emit(frog_value_0);
                                                       }
                                                       frog_value_0 = 10;
-                                                      putchar((int)(unsigned char)frog_value_0);
+                                                      {
+                                                        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                                                      }
+                                                      {
+                                                        Cell l9 = frog_value_0;
+                                                        (void)l9;
+                                                      }
                                                     }
                                                     frog_value_0 = 1;
                                                   } else {
@@ -27182,7 +27476,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                           frog_proc_8_emit(frog_value_0);
                                                         }
                                                         frog_value_0 = 10;
-                                                        putchar((int)(unsigned char)frog_value_0);
+                                                        {
+                                                          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                                                        }
+                                                        {
+                                                          Cell l10 = frog_value_0;
+                                                          (void)l10;
+                                                        }
                                                       }
                                                       frog_value_0 = 1;
                                                     } else {
@@ -27227,7 +27527,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                             frog_proc_8_emit(frog_value_0);
                                                           }
                                                           frog_value_0 = 10;
-                                                          putchar((int)(unsigned char)frog_value_0);
+                                                          {
+                                                            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                                                          }
+                                                          {
+                                                            Cell l11 = frog_value_0;
+                                                            (void)l11;
+                                                          }
                                                         }
                                                         frog_value_0 = 1;
                                                       } else {
@@ -27272,7 +27578,13 @@ Cell frog_proc_456_compile_2Dmemory_2Dio_2Dintrinsic(Cell frog_arg_0, Cell frog_
                                                               frog_proc_8_emit(frog_value_0);
                                                             }
                                                             frog_value_0 = 10;
-                                                            putchar((int)(unsigned char)frog_value_0);
+                                                            {
+                                                              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                                                            }
+                                                            {
+                                                              Cell l12 = frog_value_0;
+                                                              (void)l12;
+                                                            }
                                                           }
                                                           frog_value_0 = 1;
                                                         } else {
@@ -27396,7 +27708,13 @@ void frog_proc_458_emit_2Dpush_2Dinteger(Cell frog_arg_0, Cell frog_arg_1) {
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -27442,7 +27760,13 @@ void frog_proc_459_emit_2Dpush_2Dpooled_2Dstring(Cell frog_arg_0, Cell frog_arg_
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -27637,14 +27961,20 @@ void frog_proc_463_emit_2Dcall_2Dresult_2Dslots(Cell frog_arg_0, Cell frog_arg_1
           frog_proc_8_emit(frog_value_1);
         }
         frog_value_1 = 10;
-        putchar((int)(unsigned char)frog_value_1);
+        {
+          frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+        }
+        {
+          Cell l6 = frog_value_1;
+          (void)l6;
+        }
       }
       frog_value_1 = 1;
       frog_value_0 = frog_value_0 + frog_value_1;
     }
     {
-      Cell l6 = frog_value_0;
-      (void)l6;
+      Cell l7 = frog_value_0;
+      (void)l7;
     }
   }
 }
@@ -27707,7 +28037,13 @@ void frog_proc_464_emit_2Dprocedure_2Dinvocation(Cell frog_arg_0, Cell frog_arg_
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l5 = frog_value_0;
+          (void)l5;
+        }
       } else {
         frog_value_0 = l4;
         frog_value_1 = 1;
@@ -27747,7 +28083,13 @@ void frog_proc_464_emit_2Dprocedure_2Dinvocation(Cell frog_arg_0, Cell frog_arg_
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l6 = frog_value_0;
+            (void)l6;
+          }
         } else {
           frog_value_0 = l3;
           {
@@ -27782,7 +28124,13 @@ void frog_proc_464_emit_2Dprocedure_2Dinvocation(Cell frog_arg_0, Cell frog_arg_
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l7 = frog_value_0;
+            (void)l7;
+          }
           frog_value_0 = l3;
           frog_value_1 = l0;
           frog_value_2 = l4;
@@ -27844,7 +28192,13 @@ void frog_proc_465_emit_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l5 = frog_value_0;
+            (void)l5;
+          }
           frog_value_0 = l2;
           {
             frog_proc_285_indent_2Dmore(frog_value_0);
@@ -27869,7 +28223,13 @@ void frog_proc_465_emit_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l6 = frog_value_0;
+            (void)l6;
+          }
         }
       }
     }
@@ -27913,7 +28273,13 @@ void frog_proc_466_emit_2Dlocal_2Dload(Cell frog_arg_0, Cell frog_arg_1) {
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -28114,7 +28480,13 @@ void frog_proc_470_compile_2Ddo(Cell frog_arg_0) {
                 frog_proc_8_emit(frog_value_0);
               }
               frog_value_0 = 10;
-              putchar((int)(unsigned char)frog_value_0);
+              {
+                frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+              }
+              {
+                Cell l4 = frog_value_0;
+                (void)l4;
+              }
             }
           }
           frog_value_0 = l0;
@@ -28131,8 +28503,8 @@ void frog_proc_470_compile_2Ddo(Cell frog_arg_0) {
               frog_value_0 = frog_proc_235__40cc_2Dtype_2Dcount(frog_value_0);
             }
             {
-              Cell l4 = frog_value_0;
-              (void)l4;
+              Cell l5 = frog_value_0;
+              (void)l5;
               frog_value_0 = l0;
               {
                 frog_value_0 = frog_proc_245__40cc_2Demitting(frog_value_0);
@@ -28147,7 +28519,7 @@ void frog_proc_470_compile_2Ddo(Cell frog_arg_0) {
                   frog_proc_8_emit(frog_value_0);
                 }
                 frog_value_0 = l0;
-                frog_value_1 = l4;
+                frog_value_1 = l5;
                 {
                   frog_proc_430_emit_2Dslot(frog_value_0, frog_value_1);
                 }
@@ -28156,7 +28528,13 @@ void frog_proc_470_compile_2Ddo(Cell frog_arg_0) {
                   frog_proc_8_emit(frog_value_0);
                 }
                 frog_value_0 = 10;
-                putchar((int)(unsigned char)frog_value_0);
+                {
+                  frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+                }
+                {
+                  Cell l6 = frog_value_0;
+                  (void)l6;
+                }
               }
             }
           } else {
@@ -28722,7 +29100,13 @@ void frog_proc_479_bind_2Dlet_2Dnames(Cell frog_arg_0, Cell frog_arg_1, Cell fro
                 frog_proc_8_emit(frog_value_0);
               }
               frog_value_0 = 10;
-              putchar((int)(unsigned char)frog_value_0);
+              {
+                frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+              }
+              {
+                Cell l6 = frog_value_0;
+                (void)l6;
+              }
               frog_value_0 = l2;
               {
                 frog_proc_283_emit_2Dindent(frog_value_0);
@@ -28740,7 +29124,13 @@ void frog_proc_479_bind_2Dlet_2Dnames(Cell frog_arg_0, Cell frog_arg_1, Cell fro
                 frog_proc_8_emit(frog_value_0);
               }
               frog_value_0 = 10;
-              putchar((int)(unsigned char)frog_value_0);
+              {
+                frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+              }
+              {
+                Cell l7 = frog_value_0;
+                (void)l7;
+              }
             }
           }
         }
@@ -29742,7 +30132,13 @@ void frog_proc_495_emit_2Drecord_2Dallocation(Cell frog_arg_0, Cell frog_arg_1) 
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -29941,7 +30337,13 @@ void frog_proc_497_emit_2Drecord_2Dfield_2Dread(Cell frog_arg_0, Cell frog_arg_1
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l2 = frog_value_0;
+        (void)l2;
+      }
     }
   }
 }
@@ -30010,7 +30412,13 @@ void frog_proc_498_emit_2Drecord_2Dfield_2Dwrite(Cell frog_arg_0, Cell frog_arg_
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l4 = frog_value_0;
+            (void)l4;
+          }
         }
       }
     }
@@ -30421,7 +30829,13 @@ void frog_proc_501_emit_2Dunion_2Dconstructor(Cell frog_arg_0, Cell frog_arg_1, 
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l4 = frog_value_0;
+          (void)l4;
+        }
       }
     }
   }
@@ -30506,7 +30920,13 @@ void frog_proc_502_emit_2Dunion_2Dpredicate(Cell frog_arg_0, Cell frog_arg_1, Ce
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l5 = frog_value_0;
+            (void)l5;
+          }
         }
       }
     }
@@ -30618,7 +31038,13 @@ void frog_proc_503_emit_2Dunion_2Dprojection(Cell frog_arg_0, Cell frog_arg_1, C
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l5 = frog_value_0;
+          (void)l5;
+        }
       }
     }
   }
@@ -31135,7 +31561,13 @@ void frog_proc_507_emit_2Dfunction_2Ddispatch_2Dmodule(Cell frog_arg_0, Cell fro
             frog_proc_8_emit(frog_value_1);
           }
           frog_value_1 = 10;
-          putchar((int)(unsigned char)frog_value_1);
+          {
+            frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+          }
+          {
+            Cell l8 = frog_value_1;
+            (void)l8;
+          }
           frog_value_1 = l4;
           {
             frog_proc_285_indent_2Dmore(frog_value_1);
@@ -31156,7 +31588,13 @@ void frog_proc_507_emit_2Dfunction_2Ddispatch_2Dmodule(Cell frog_arg_0, Cell fro
             frog_proc_8_emit(frog_value_1);
           }
           frog_value_1 = 10;
-          putchar((int)(unsigned char)frog_value_1);
+          {
+            frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+          }
+          {
+            Cell l9 = frog_value_1;
+            (void)l9;
+          }
           frog_value_1 = l4;
           {
             frog_proc_286_indent_2Dless(frog_value_1);
@@ -31170,15 +31608,21 @@ void frog_proc_507_emit_2Dfunction_2Ddispatch_2Dmodule(Cell frog_arg_0, Cell fro
             frog_proc_8_emit(frog_value_1);
           }
           frog_value_1 = 10;
-          putchar((int)(unsigned char)frog_value_1);
+          {
+            frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+          }
+          {
+            Cell l10 = frog_value_1;
+            (void)l10;
+          }
         }
       }
       frog_value_1 = 1;
       frog_value_0 = frog_value_0 + frog_value_1;
     }
     {
-      Cell l8 = frog_value_0;
-      (void)l8;
+      Cell l11 = frog_value_0;
+      (void)l11;
     }
   }
 }
@@ -31317,7 +31761,13 @@ void frog_proc_509_emit_2Dfunction_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l6 = frog_value_0;
+              (void)l6;
+            }
             frog_value_0 = l2;
             {
               frog_proc_285_indent_2Dmore(frog_value_0);
@@ -31331,7 +31781,13 @@ void frog_proc_509_emit_2Dfunction_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l7 = frog_value_0;
+              (void)l7;
+            }
             frog_value_0 = l2;
             {
               frog_proc_285_indent_2Dmore(frog_value_0);
@@ -31356,7 +31812,13 @@ void frog_proc_509_emit_2Dfunction_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l8 = frog_value_0;
+              (void)l8;
+            }
             frog_value_0 = l2;
             {
               frog_proc_286_indent_2Dless(frog_value_0);
@@ -31370,7 +31832,13 @@ void frog_proc_509_emit_2Dfunction_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l9 = frog_value_0;
+              (void)l9;
+            }
             frog_value_0 = l2;
             {
               frog_proc_286_indent_2Dless(frog_value_0);
@@ -31384,7 +31852,13 @@ void frog_proc_509_emit_2Dfunction_2Dcall(Cell frog_arg_0, Cell frog_arg_1, Cell
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l10 = frog_value_0;
+              (void)l10;
+            }
           }
         }
       }
@@ -31742,7 +32216,13 @@ Cell frog_proc_512_compile_2Dstring_2Dword(Cell frog_arg_0, Cell frog_arg_1) {
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l2 = frog_value_0;
+          (void)l2;
+        }
       }
       frog_value_0 = 1;
     } else {
@@ -31796,7 +32276,13 @@ Cell frog_proc_512_compile_2Dstring_2Dword(Cell frog_arg_0, Cell frog_arg_1) {
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l3 = frog_value_0;
+            (void)l3;
+          }
         }
         frog_value_0 = 1;
       } else {
@@ -33203,7 +33689,9 @@ Cell frog_proc_526_create_2Dcompile_2Dcontext(Cell frog_arg_0, Cell frog_arg_1, 
     Cell l2 = frog_value_0;
     (void)l2;
     frog_value_0 = 128;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     {
       Cell l3 = frog_value_0;
       (void)l3;
@@ -33244,7 +33732,9 @@ Cell frog_proc_526_create_2Dcompile_2Dcontext(Cell frog_arg_0, Cell frog_arg_1, 
         frog_value_0 = l4;
         frog_value_1 = 8;
         frog_value_0 = frog_value_0 * frog_value_1;
-        frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+        {
+          frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+        }
         frog_value_1 = l3;
         {
           frog_proc_250__21cc_2Dtype_2Dstack(frog_value_0, frog_value_1);
@@ -33268,7 +33758,9 @@ Cell frog_proc_526_create_2Dcompile_2Dcontext(Cell frog_arg_0, Cell frog_arg_1, 
       frog_value_0 = frog_value_0 + frog_value_1;
       frog_value_1 = 72;
       frog_value_0 = frog_value_0 * frog_value_1;
-      frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+      {
+        frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+      }
       frog_value_1 = l3;
       {
         frog_proc_252__21cc_2Dblocks(frog_value_0, frog_value_1);
@@ -33286,7 +33778,9 @@ Cell frog_proc_526_create_2Dcompile_2Dcontext(Cell frog_arg_0, Cell frog_arg_1, 
       frog_value_0 = frog_value_0 + frog_value_1;
       frog_value_1 = 40;
       frog_value_0 = frog_value_0 * frog_value_1;
-      frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+      {
+        frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+      }
       frog_value_1 = l3;
       {
         frog_proc_254__21cc_2Dlocals(frog_value_0, frog_value_1);
@@ -33790,7 +34284,13 @@ void frog_proc_535_emit_2Dproc_2Dinput_2Dslots(Cell frog_arg_0, Cell frog_arg_1,
         frog_proc_8_emit(frog_value_0);
       }
       frog_value_0 = 10;
-      putchar((int)(unsigned char)frog_value_0);
+      {
+        frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+      }
+      {
+        Cell l4 = frog_value_0;
+        (void)l4;
+      }
       frog_value_0 = l3;
       frog_value_1 = l2;
       frog_value_2 = l1;
@@ -33855,7 +34355,13 @@ void frog_proc_536_emit_2Dproc_2Dslot_2Dframe(Cell frog_arg_0) {
           frog_proc_8_emit(frog_value_1);
         }
         frog_value_1 = 10;
-        putchar((int)(unsigned char)frog_value_1);
+        {
+          frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+        }
+        {
+          Cell l4 = frog_value_1;
+          (void)l4;
+        }
         frog_value_1 = l0;
         {
           frog_proc_283_emit_2Dindent(frog_value_1);
@@ -33874,14 +34380,20 @@ void frog_proc_536_emit_2Dproc_2Dslot_2Dframe(Cell frog_arg_0) {
           frog_proc_8_emit(frog_value_1);
         }
         frog_value_1 = 10;
-        putchar((int)(unsigned char)frog_value_1);
+        {
+          frog_value_1 = frog_proc_589_libc_2Dputchar(frog_value_1);
+        }
+        {
+          Cell l5 = frog_value_1;
+          (void)l5;
+        }
       }
       frog_value_1 = 1;
       frog_value_0 = frog_value_0 + frog_value_1;
     }
     {
-      Cell l4 = frog_value_0;
-      (void)l4;
+      Cell l6 = frog_value_0;
+      (void)l6;
     }
   }
 }
@@ -33933,7 +34445,13 @@ void frog_proc_537_emit_2Dproc_2Dreturn_2Dvalues(Cell frog_arg_0, Cell frog_arg_
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l3 = frog_value_0;
+          (void)l3;
+        }
         frog_value_0 = l1;
         frog_value_1 = l2;
         {
@@ -33990,7 +34508,13 @@ void frog_proc_538_emit_2Dproc_2Dreturn(Cell frog_arg_0, Cell frog_arg_1, Cell f
           frog_proc_8_emit(frog_value_0);
         }
         frog_value_0 = 10;
-        putchar((int)(unsigned char)frog_value_0);
+        {
+          frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+        }
+        {
+          Cell l4 = frog_value_0;
+          (void)l4;
+        }
       } else {
         frog_value_0 = l3;
         frog_value_1 = 1;
@@ -34009,7 +34533,13 @@ void frog_proc_538_emit_2Dproc_2Dreturn(Cell frog_arg_0, Cell frog_arg_1, Cell f
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l5 = frog_value_0;
+            (void)l5;
+          }
           frog_value_0 = l2;
           frog_value_1 = l3;
           {
@@ -34024,7 +34554,13 @@ void frog_proc_538_emit_2Dproc_2Dreturn(Cell frog_arg_0, Cell frog_arg_1, Cell f
             frog_proc_8_emit(frog_value_0);
           }
           frog_value_0 = 10;
-          putchar((int)(unsigned char)frog_value_0);
+          {
+            frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+          }
+          {
+            Cell l6 = frog_value_0;
+            (void)l6;
+          }
         }
       }
     }
@@ -34112,7 +34648,13 @@ void frog_proc_539_compile_2Dprocedure(Cell frog_arg_0, Cell frog_arg_1, Cell fr
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l6 = frog_value_0;
+              (void)l6;
+            }
             frog_value_0 = 1;
             frog_value_1 = l5;
             {
@@ -34146,7 +34688,13 @@ void frog_proc_539_compile_2Dprocedure(Cell frog_arg_0, Cell frog_arg_1, Cell fr
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 10;
-            putchar((int)(unsigned char)frog_value_0);
+            {
+              frog_value_0 = frog_proc_589_libc_2Dputchar(frog_value_0);
+            }
+            {
+              Cell l7 = frog_value_0;
+              (void)l7;
+            }
           }
         }
       }
@@ -34321,7 +34869,9 @@ void frog_proc_543_compile_2Dsource(Cell frog_arg_0, Cell frog_arg_1) {
     Cell l1 = frog_value_0;
     (void)l1;
     frog_value_0 = 88;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     {
       Cell l2 = frog_value_0;
       (void)l2;
@@ -34830,7 +35380,9 @@ Cell frog_proc_564_copy_2Dcstring(Cell frog_arg_0, Cell frog_arg_1) {
     frog_value_0 = l0;
     frog_value_1 = 1;
     frog_value_0 = frog_value_0 + frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     {
       Cell l2 = frog_value_0;
       (void)l2;
@@ -35035,7 +35587,9 @@ Cell frog_proc_567_replace_2Dpath_2Dsuffix(Cell frog_arg_0, Cell frog_arg_1) {
             frog_value_0 = frog_value_0 + frog_value_1;
             frog_value_1 = 1;
             frog_value_0 = frog_value_0 + frog_value_1;
-            frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+            {
+              frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+            }
             {
               Cell l7 = frog_value_0;
               (void)l7;
@@ -35115,7 +35669,9 @@ Cell frog_proc_569_allocate_2Dpointer_2Darray(Cell frog_arg_0) {
     frog_value_0 = frog_value_0 + frog_value_1;
     frog_value_1 = 8;
     frog_value_0 = frog_value_0 * frog_value_1;
-    frog_value_0 = (Cell)(intptr_t)frog_alloc(frog_value_0);
+    {
+      frog_value_0 = frog_proc_587_libc_2Dallocate(frog_value_0);
+    }
     {
       Cell l1 = frog_value_0;
       (void)l1;
@@ -35148,7 +35704,9 @@ void frog_proc_570_cli_2Derror(Cell frog_arg_0) {
       frog_proc_10_emit_2Derror(frog_value_0);
     }
     frog_value_0 = 10;
-    fputc((int)(unsigned char)frog_value_0, stderr);
+    {
+      frog_proc_591_libc_2Deputchar(frog_value_0);
+    }
   }
 }
 void frog_proc_571_cli_2Derror_2Dpath(Cell frog_arg_0, Cell frog_arg_1) {
@@ -35184,7 +35742,9 @@ void frog_proc_571_cli_2Derror_2Dpath(Cell frog_arg_0, Cell frog_arg_1) {
       frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
     }
     frog_value_0 = 10;
-    fputc((int)(unsigned char)frog_value_0, stderr);
+    {
+      frog_proc_591_libc_2Deputchar(frog_value_0);
+    }
   }
 }
 void frog_proc_572_cli_2Dusage_2Derror(Cell frog_arg_0) {
@@ -35199,7 +35759,9 @@ void frog_proc_572_cli_2Dusage_2Derror(Cell frog_arg_0) {
     frog_proc_10_emit_2Derror(frog_value_0);
   }
   frog_value_0 = 2;
-  exit((int)frog_value_0);
+  {
+    frog_proc_592_libc_2Dexit(frog_value_0);
+  }
 }
 void frog_proc_573_cli_2Dusage_2Derror_2Dvalue(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_value_0;
@@ -35230,13 +35792,17 @@ void frog_proc_573_cli_2Dusage_2Derror_2Dvalue(Cell frog_arg_0, Cell frog_arg_1)
       frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
     }
     frog_value_0 = 10;
-    fputc((int)(unsigned char)frog_value_0, stderr);
+    {
+      frog_proc_591_libc_2Deputchar(frog_value_0);
+    }
     frog_value_0 = (Cell)(intptr_t)&frog_string_308796962;
     {
       frog_proc_10_emit_2Derror(frog_value_0);
     }
     frog_value_0 = 2;
-    exit((int)frog_value_0);
+    {
+      frog_proc_592_libc_2Dexit(frog_value_0);
+    }
   }
 }
 void frog_proc_574_cli_2Dusage(void) {
@@ -35294,7 +35860,9 @@ frog_results_2 frog_proc_575_read_2Dsource_2Dpath(Cell frog_arg_0) {
           }
         }
         frog_value_0 = 1;
-        exit((int)frog_value_0);
+        {
+          frog_proc_592_libc_2Dexit(frog_value_0);
+        }
         {
           frog_value_0 = frog_proc_560_null_2Dpointer();
         }
@@ -35707,7 +36275,9 @@ Cell frog_proc_579_run_2Dexecutable(Cell frog_arg_0) {
               frog_proc_9_emit_2Derror_2Dbytes(frog_value_0, frog_value_1);
             }
             frog_value_0 = 10;
-            fputc((int)(unsigned char)frog_value_0, stderr);
+            {
+              frog_proc_591_libc_2Deputchar(frog_value_0);
+            }
             frog_value_0 = 127;
             {
               frog_proc_558_cli_2Dfinish_2Dchild(frog_value_0);
@@ -36042,7 +36612,9 @@ void frog_proc_583_run_2Dcommand(Cell frog_arg_0, Cell frog_arg_1) {
             {
               frog_value_0 = frog_proc_580_run_2Dsource(frog_value_0, frog_value_1, frog_value_2);
             }
-            exit((int)frog_value_0);
+            {
+              frog_proc_592_libc_2Dexit(frog_value_0);
+            }
           }
         } else {
           frog_value_0 = l2;
@@ -36069,7 +36641,9 @@ void frog_proc_583_run_2Dcommand(Cell frog_arg_0, Cell frog_arg_1) {
               {
                 frog_value_0 = frog_proc_581_run_2Dfile(frog_value_0);
               }
-              exit((int)frog_value_0);
+              {
+                frog_proc_592_libc_2Dexit(frog_value_0);
+              }
             }
           }
         }
@@ -36152,7 +36726,9 @@ frog_results_3 frog_proc_584_parse_2Dbuild_2Doptions(Cell frog_arg_0, Cell frog_
               frog_proc_8_emit(frog_value_0);
             }
             frog_value_0 = 0;
-            exit((int)frog_value_0);
+            {
+              frog_proc_592_libc_2Dexit(frog_value_0);
+            }
             {
               frog_value_0 = frog_proc_560_null_2Dpointer();
             }
@@ -36302,7 +36878,9 @@ void frog_proc_585_build_2Dcommand(Cell frog_arg_0, Cell frog_arg_1) {
       {
         frog_value_0 = frog_proc_582_build_2Dfile(frog_value_0, frog_value_1, frog_value_2);
       }
-      exit((int)frog_value_0);
+      {
+        frog_proc_592_libc_2Dexit(frog_value_0);
+      }
     }
   }
 }
@@ -36393,9 +36971,28 @@ void frog_proc_586_main(void) {
     }
   }
 }
+Cell frog_proc_587_libc_2Dallocate(Cell frog_arg_0) {
+  return (Cell)(intptr_t)froglang_alloc((int)frog_arg_0);
+}
+void frog_proc_588_libc_2Dfree(Cell frog_arg_0) {
+  free((void *)(intptr_t)frog_arg_0);
+}
+Cell frog_proc_589_libc_2Dputchar(Cell frog_arg_0) {
+  return (Cell)putchar((int)frog_arg_0);
+}
+Cell frog_proc_590_libc_2Dgetchar(void) {
+  return (Cell)getchar();
+}
+void frog_proc_591_libc_2Deputchar(Cell frog_arg_0) {
+  froglang_eputc((int)frog_arg_0);
+}
+void frog_proc_592_libc_2Dexit(Cell frog_arg_0) {
+  exit((int)frog_arg_0);
+}
 int main(int argc, char **argv) {
   frog_argc = argc;
   frog_argv = argv;
+  (void)&frog_string_617966169;
   (void)&frog_string_1029627206;
   (void)&frog_string_1375463515;
   (void)&frog_string_1024559338;

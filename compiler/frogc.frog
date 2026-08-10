@@ -3,6 +3,8 @@
 // The bootstrap compiler deliberately uses only the bootstrap-v1 language
 // profile.  It reads one Frog source file from stdin and writes C to stdout.
 
+from "../stdlib/libc.frog" import ( alloc putc getc eputc exit )
+
 const cell-bytes 8 end
 
 const type-int 1 end
