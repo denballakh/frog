@@ -2794,12 +2794,13 @@ const block-has-do-offset 56 end
 const block-elif-parent-offset 64 end
 const block-bytes 72 end
 
-const local-name-start-offset 0 end
-const local-name-length-offset 8 end
-const local-type-offset 16 end
-const local-id-offset 24 end
-const local-module-offset 32 end
-const local-bytes 40 end
+record LocalEntry
+    name_start int
+    name_length int
+    value_type int
+    id int
+    module ModuleContext
+end
 
 proc @cc-defining-module ptr -- ModuleContext do cc-defining-module-offset pointer-field-read ModuleContext cast end
 proc @cc-proc ptr -- int do cc-proc-offset field-read end
@@ -2995,27 +2996,21 @@ proc pop-block ptr -- ptr do
     end
 end
 
-proc local-address ptr int -- ptr do
+proc local-address ptr int -- LocalEntry do
     let cc index do
-        cc @cc-locals index local-bytes * +
+        cc @cc-locals index LocalEntry:sizeof * + LocalEntry cast
     end
 end
-
-proc local-field ptr int -- int do field-read end
-proc set-local-field int ptr int -- do field-write end
-
-proc @local-module ptr -- ModuleContext do local-module-offset pointer-field-read ModuleContext cast end
-proc !local-module ModuleContext ptr -- do let value local do value ptr cast local local-module-offset pointer-field-write end end
 
 proc add-local ptr int int -- int do
     let cc name-token value-type do
         cc cc @cc-local-count local-address
         let local do
-            cc @cc-defining-module name-token token-start-at local local-name-start-offset set-local-field
-            cc @cc-defining-module name-token token-length-at local local-name-length-offset set-local-field
-            value-type local local-type-offset set-local-field
-            cc @cc-next-local local local-id-offset set-local-field
-            cc @cc-defining-module local !local-module
+            cc @cc-defining-module name-token token-start-at local !LocalEntry.name_start
+            cc @cc-defining-module name-token token-length-at local !LocalEntry.name_length
+            value-type local !LocalEntry.value_type
+            cc @cc-next-local local !LocalEntry.id
+            cc @cc-defining-module local !LocalEntry.module
             cc @cc-local-count 1 + cc !cc-local-count
             cc @cc-next-local
             cc @cc-next-local 1 + cc !cc-next-local
@@ -3023,11 +3018,11 @@ proc add-local ptr int int -- int do
     end
 end
 
-proc local-name-equals ptr ptr int -- bool do
+proc local-name-equals ptr LocalEntry int -- bool do
     let cc local token-index do
-        local @local-module @ModuleContext.source
-        local local-name-start-offset local-field +
-        local local-name-length-offset local-field
+        local @LocalEntry.module @ModuleContext.source
+        local @LocalEntry.name_start +
+        local @LocalEntry.name_length
         cc @cc-defining-module token-index token-slice
         bytes-equal
     end
@@ -6501,8 +6496,8 @@ end
 proc compile-local-reference ptr int int -- do
     let cc token-index local-index do
         cc local-index local-address
-        peek local do local-type-offset local-field cc swap type-push
-            cc local local-id-offset local-field emit-local-load
+        peek local do @LocalEntry.value_type cc swap type-push
+            cc local @LocalEntry.id emit-local-load
         end
     end
 end
@@ -7476,7 +7471,7 @@ proc create-compile-context ptr ModuleContext int -- ptr do
             0 cc !cc-type-count
             program @program-token-count 1 + block-bytes * alloc cc !cc-blocks
             0 cc !cc-block-count
-            program @program-token-count 1 + local-bytes * alloc cc !cc-locals
+            program @program-token-count 1 + LocalEntry:sizeof * alloc cc !cc-locals
             0 cc !cc-local-count
             0 cc !cc-next-local
             0 cc !cc-indent
