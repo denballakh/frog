@@ -390,83 +390,83 @@ proc read-source -- ptr int do
     end
 end
 
-proc ctx-source ptr -- ptr do ctx-source-offset pointer-field-read end
-proc ctx-source-length ptr -- int do ctx-source-length-offset field-read end
-proc ctx-tokens ptr -- ptr do ctx-tokens-offset pointer-field-read end
-proc ctx-token-count ptr -- int do ctx-token-count-offset field-read end
-proc ctx-procs ptr -- ptr do ctx-procs-offset pointer-field-read end
-proc ctx-proc-count ptr -- int do ctx-proc-count-offset field-read end
-proc ctx-types ptr -- ptr do ctx-types-offset pointer-field-read end
-proc ctx-type-count ptr -- int do ctx-type-count-offset field-read end
-proc ctx-lex-index ptr -- int do ctx-lex-index-offset field-read end
-proc ctx-lex-line ptr -- int do ctx-lex-line-offset field-read end
-proc ctx-lex-column ptr -- int do ctx-lex-column-offset field-read end
-proc ctx-main-proc ptr -- int do ctx-main-proc-offset field-read end
-proc ctx-macros ptr -- ptr do ctx-macros-offset pointer-field-read end
-proc ctx-macro-count ptr -- int do ctx-macro-count-offset field-read end
-proc ctx-program ptr -- ptr do ctx-program-offset pointer-field-read end
-proc ctx-module-id ptr -- int do ctx-module-id-offset field-read end
-proc ctx-next-module ptr -- ptr do ctx-next-module-offset pointer-field-read end
-proc ctx-canonical-path ptr -- ptr do ctx-canonical-path-offset pointer-field-read end
-proc ctx-canonical-path-length ptr -- int do ctx-canonical-path-length-offset field-read end
-proc ctx-imports ptr -- ptr do ctx-imports-offset pointer-field-read end
-proc ctx-import-count ptr -- int do ctx-import-count-offset field-read end
-proc ctx-scope ptr -- ptr do ctx-scope-offset pointer-field-read end
-proc ctx-scope-count ptr -- int do ctx-scope-count-offset field-read end
-proc ctx-load-state ptr -- int do ctx-load-state-offset field-read end
-proc ctx-resolve-state ptr -- int do ctx-resolve-state-offset field-read end
-proc ctx-is-root ptr -- bool do ctx-is-root-offset field-read 0 != end
-proc ctx-records ptr -- ptr do ctx-records-offset pointer-field-read end
-proc ctx-record-count ptr -- int do ctx-record-count-offset field-read end
-proc ctx-record-fields ptr -- ptr do ctx-record-fields-offset pointer-field-read end
-proc ctx-record-field-count ptr -- int do ctx-record-field-count-offset field-read end
-proc ctx-unions ptr -- ptr do ctx-unions-offset pointer-field-read end
-proc ctx-union-count ptr -- int do ctx-union-count-offset field-read end
-proc ctx-union-cases ptr -- ptr do ctx-union-cases-offset pointer-field-read end
-proc ctx-union-case-count ptr -- int do ctx-union-case-count-offset field-read end
-proc ctx-functions ptr -- ptr do ctx-functions-offset pointer-field-read end
-proc ctx-function-count ptr -- int do ctx-function-count-offset field-read end
-proc ctx-function-types ptr -- ptr do ctx-function-types-offset pointer-field-read end
-proc ctx-function-type-count ptr -- int do ctx-function-type-count-offset field-read end
+proc @ctx-source ptr -- ptr do ctx-source-offset pointer-field-read end
+proc @ctx-source-length ptr -- int do ctx-source-length-offset field-read end
+proc @ctx-tokens ptr -- ptr do ctx-tokens-offset pointer-field-read end
+proc @ctx-token-count ptr -- int do ctx-token-count-offset field-read end
+proc @ctx-procs ptr -- ptr do ctx-procs-offset pointer-field-read end
+proc @ctx-proc-count ptr -- int do ctx-proc-count-offset field-read end
+proc @ctx-types ptr -- ptr do ctx-types-offset pointer-field-read end
+proc @ctx-type-count ptr -- int do ctx-type-count-offset field-read end
+proc @ctx-lex-index ptr -- int do ctx-lex-index-offset field-read end
+proc @ctx-lex-line ptr -- int do ctx-lex-line-offset field-read end
+proc @ctx-lex-column ptr -- int do ctx-lex-column-offset field-read end
+proc @ctx-main-proc ptr -- int do ctx-main-proc-offset field-read end
+proc @ctx-macros ptr -- ptr do ctx-macros-offset pointer-field-read end
+proc @ctx-macro-count ptr -- int do ctx-macro-count-offset field-read end
+proc @ctx-program ptr -- ptr do ctx-program-offset pointer-field-read end
+proc @ctx-module-id ptr -- int do ctx-module-id-offset field-read end
+proc @ctx-next-module ptr -- ptr do ctx-next-module-offset pointer-field-read end
+proc @ctx-canonical-path ptr -- ptr do ctx-canonical-path-offset pointer-field-read end
+proc @ctx-canonical-path-length ptr -- int do ctx-canonical-path-length-offset field-read end
+proc @ctx-imports ptr -- ptr do ctx-imports-offset pointer-field-read end
+proc @ctx-import-count ptr -- int do ctx-import-count-offset field-read end
+proc @ctx-scope ptr -- ptr do ctx-scope-offset pointer-field-read end
+proc @ctx-scope-count ptr -- int do ctx-scope-count-offset field-read end
+proc @ctx-load-state ptr -- int do ctx-load-state-offset field-read end
+proc @ctx-resolve-state ptr -- int do ctx-resolve-state-offset field-read end
+proc @ctx-is-root ptr -- bool do ctx-is-root-offset field-read 0 != end
+proc @ctx-records ptr -- ptr do ctx-records-offset pointer-field-read end
+proc @ctx-record-count ptr -- int do ctx-record-count-offset field-read end
+proc @ctx-record-fields ptr -- ptr do ctx-record-fields-offset pointer-field-read end
+proc @ctx-record-field-count ptr -- int do ctx-record-field-count-offset field-read end
+proc @ctx-unions ptr -- ptr do ctx-unions-offset pointer-field-read end
+proc @ctx-union-count ptr -- int do ctx-union-count-offset field-read end
+proc @ctx-union-cases ptr -- ptr do ctx-union-cases-offset pointer-field-read end
+proc @ctx-union-case-count ptr -- int do ctx-union-case-count-offset field-read end
+proc @ctx-functions ptr -- ptr do ctx-functions-offset pointer-field-read end
+proc @ctx-function-count ptr -- int do ctx-function-count-offset field-read end
+proc @ctx-function-types ptr -- ptr do ctx-function-types-offset pointer-field-read end
+proc @ctx-function-type-count ptr -- int do ctx-function-type-count-offset field-read end
 
-proc set-ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
-proc set-ctx-source-length int ptr -- do ctx-source-length-offset field-write end
-proc set-ctx-tokens ptr ptr -- do ctx-tokens-offset pointer-field-write end
-proc set-ctx-token-count int ptr -- do ctx-token-count-offset field-write end
-proc set-ctx-procs ptr ptr -- do ctx-procs-offset pointer-field-write end
-proc set-ctx-proc-count int ptr -- do ctx-proc-count-offset field-write end
-proc set-ctx-types ptr ptr -- do ctx-types-offset pointer-field-write end
-proc set-ctx-type-count int ptr -- do ctx-type-count-offset field-write end
-proc set-ctx-lex-index int ptr -- do ctx-lex-index-offset field-write end
-proc set-ctx-lex-line int ptr -- do ctx-lex-line-offset field-write end
-proc set-ctx-lex-column int ptr -- do ctx-lex-column-offset field-write end
-proc set-ctx-main-proc int ptr -- do ctx-main-proc-offset field-write end
-proc set-ctx-macros ptr ptr -- do ctx-macros-offset pointer-field-write end
-proc set-ctx-macro-count int ptr -- do ctx-macro-count-offset field-write end
-proc set-ctx-program ptr ptr -- do ctx-program-offset pointer-field-write end
-proc set-ctx-module-id int ptr -- do ctx-module-id-offset field-write end
-proc set-ctx-next-module ptr ptr -- do ctx-next-module-offset pointer-field-write end
-proc set-ctx-canonical-path ptr ptr -- do ctx-canonical-path-offset pointer-field-write end
-proc set-ctx-canonical-path-length int ptr -- do ctx-canonical-path-length-offset field-write end
-proc set-ctx-imports ptr ptr -- do ctx-imports-offset pointer-field-write end
-proc set-ctx-import-count int ptr -- do ctx-import-count-offset field-write end
-proc set-ctx-scope ptr ptr -- do ctx-scope-offset pointer-field-write end
-proc set-ctx-scope-count int ptr -- do ctx-scope-count-offset field-write end
-proc set-ctx-load-state int ptr -- do ctx-load-state-offset field-write end
-proc set-ctx-resolve-state int ptr -- do ctx-resolve-state-offset field-write end
-proc set-ctx-records ptr ptr -- do ctx-records-offset pointer-field-write end
-proc set-ctx-record-count int ptr -- do ctx-record-count-offset field-write end
-proc set-ctx-record-fields ptr ptr -- do ctx-record-fields-offset pointer-field-write end
-proc set-ctx-record-field-count int ptr -- do ctx-record-field-count-offset field-write end
-proc set-ctx-unions ptr ptr -- do ctx-unions-offset pointer-field-write end
-proc set-ctx-union-count int ptr -- do ctx-union-count-offset field-write end
-proc set-ctx-union-cases ptr ptr -- do ctx-union-cases-offset pointer-field-write end
-proc set-ctx-union-case-count int ptr -- do ctx-union-case-count-offset field-write end
-proc set-ctx-functions ptr ptr -- do ctx-functions-offset pointer-field-write end
-proc set-ctx-function-count int ptr -- do ctx-function-count-offset field-write end
-proc set-ctx-function-types ptr ptr -- do ctx-function-types-offset pointer-field-write end
-proc set-ctx-function-type-count int ptr -- do ctx-function-type-count-offset field-write end
-proc set-ctx-is-root bool ptr -- do
+proc !ctx-source ptr ptr -- do ctx-source-offset pointer-field-write end
+proc !ctx-source-length int ptr -- do ctx-source-length-offset field-write end
+proc !ctx-tokens ptr ptr -- do ctx-tokens-offset pointer-field-write end
+proc !ctx-token-count int ptr -- do ctx-token-count-offset field-write end
+proc !ctx-procs ptr ptr -- do ctx-procs-offset pointer-field-write end
+proc !ctx-proc-count int ptr -- do ctx-proc-count-offset field-write end
+proc !ctx-types ptr ptr -- do ctx-types-offset pointer-field-write end
+proc !ctx-type-count int ptr -- do ctx-type-count-offset field-write end
+proc !ctx-lex-index int ptr -- do ctx-lex-index-offset field-write end
+proc !ctx-lex-line int ptr -- do ctx-lex-line-offset field-write end
+proc !ctx-lex-column int ptr -- do ctx-lex-column-offset field-write end
+proc !ctx-main-proc int ptr -- do ctx-main-proc-offset field-write end
+proc !ctx-macros ptr ptr -- do ctx-macros-offset pointer-field-write end
+proc !ctx-macro-count int ptr -- do ctx-macro-count-offset field-write end
+proc !ctx-program ptr ptr -- do ctx-program-offset pointer-field-write end
+proc !ctx-module-id int ptr -- do ctx-module-id-offset field-write end
+proc !ctx-next-module ptr ptr -- do ctx-next-module-offset pointer-field-write end
+proc !ctx-canonical-path ptr ptr -- do ctx-canonical-path-offset pointer-field-write end
+proc !ctx-canonical-path-length int ptr -- do ctx-canonical-path-length-offset field-write end
+proc !ctx-imports ptr ptr -- do ctx-imports-offset pointer-field-write end
+proc !ctx-import-count int ptr -- do ctx-import-count-offset field-write end
+proc !ctx-scope ptr ptr -- do ctx-scope-offset pointer-field-write end
+proc !ctx-scope-count int ptr -- do ctx-scope-count-offset field-write end
+proc !ctx-load-state int ptr -- do ctx-load-state-offset field-write end
+proc !ctx-resolve-state int ptr -- do ctx-resolve-state-offset field-write end
+proc !ctx-records ptr ptr -- do ctx-records-offset pointer-field-write end
+proc !ctx-record-count int ptr -- do ctx-record-count-offset field-write end
+proc !ctx-record-fields ptr ptr -- do ctx-record-fields-offset pointer-field-write end
+proc !ctx-record-field-count int ptr -- do ctx-record-field-count-offset field-write end
+proc !ctx-unions ptr ptr -- do ctx-unions-offset pointer-field-write end
+proc !ctx-union-count int ptr -- do ctx-union-count-offset field-write end
+proc !ctx-union-cases ptr ptr -- do ctx-union-cases-offset pointer-field-write end
+proc !ctx-union-case-count int ptr -- do ctx-union-case-count-offset field-write end
+proc !ctx-functions ptr ptr -- do ctx-functions-offset pointer-field-write end
+proc !ctx-function-count int ptr -- do ctx-function-count-offset field-write end
+proc !ctx-function-types ptr ptr -- do ctx-function-types-offset pointer-field-write end
+proc !ctx-function-type-count int ptr -- do ctx-function-type-count-offset field-write end
+proc !ctx-is-root bool ptr -- do
     let value ctx do
         if value do 1 else 0 end
         ctx ctx-is-root-offset field-write
@@ -549,13 +549,13 @@ end
 
 proc program-add-module ptr ptr -- do
     let program module do
-        program module set-ctx-program
-        program @program-module-count module set-ctx-module-id
-        0 ptr cast module set-ctx-next-module
+        program module !ctx-program
+        program @program-module-count module !ctx-module-id
+        0 ptr cast module !ctx-next-module
         if program @program-module-count 0 == do
             module program !program-module-head
         else
-            module program @program-module-tail set-ctx-next-module
+            module program @program-module-tail !ctx-next-module
         end
         module program !program-module-tail
         program @program-module-count 1 + program !program-module-count
@@ -564,7 +564,7 @@ end
 
 proc token-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-tokens index token-bytes * +
+        ctx @ctx-tokens index token-bytes * +
     end
 end
 
@@ -589,7 +589,7 @@ proc token-column-at ptr int -- int do token-column-offset token-field end
 
 proc token-slice ptr int -- ptr int do
     let ctx index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx index token-start-at +
         ctx index token-length-at
     end
@@ -609,7 +609,7 @@ end
 
 proc add-token ptr int int int int int int -- do
     let ctx kind start length value line column do
-        ctx ctx-token-count
+        ctx @ctx-token-count
         let index do
             kind ctx index token-kind-offset set-token-field
             start ctx index token-start-offset set-token-field
@@ -617,29 +617,29 @@ proc add-token ptr int int int int int int -- do
             value ctx index token-value-offset set-token-field
             line ctx index token-line-offset set-token-field
             column ctx index token-column-offset set-token-field
-            index 1 + ctx set-ctx-token-count
+            index 1 + ctx !ctx-token-count
         end
     end
 end
 
 proc source-byte ptr int -- int do
     let ctx index do
-        ctx ctx-source index byte-read
+        ctx @ctx-source index byte-read
     end
 end
 
 proc lex-advance ptr -- do
     let ctx do
-        ctx ctx-lex-index
+        ctx @ctx-lex-index
         let index do
             ctx index source-byte
             let byte do
-                index 1 + ctx set-ctx-lex-index
+                index 1 + ctx !ctx-lex-index
                 if byte 10 == do
-                    ctx ctx-lex-line 1 + ctx set-ctx-lex-line
-                    1 ctx set-ctx-lex-column
+                    ctx @ctx-lex-line 1 + ctx !ctx-lex-line
+                    1 ctx !ctx-lex-column
                 else
-                    ctx ctx-lex-column 1 + ctx set-ctx-lex-column
+                    ctx @ctx-lex-column 1 + ctx !ctx-lex-column
                 end
             end
         end
@@ -744,9 +744,9 @@ end
 proc skip-comment ptr -- do
     let ctx do
         while
-            ctx ctx-lex-index ctx ctx-source-length <
+            ctx @ctx-lex-index ctx @ctx-source-length <
             if dup do
-                drop ctx ctx ctx-lex-index source-byte 10 !=
+                drop ctx ctx @ctx-lex-index source-byte 10 !=
             end
         do
             ctx lex-advance
@@ -757,24 +757,24 @@ end
 proc lex-string ptr int int int -- do
     let ctx start line column do
         ctx lex-advance
-        ctx ctx-lex-index
+        ctx @ctx-lex-index
         let content-start do
             false
             while
                 let done do
                     done done !
-                    ctx ctx-lex-index ctx ctx-source-length < &&
+                    ctx @ctx-lex-index ctx @ctx-source-length < &&
                 end
             do
                 let done do
-                    ctx ctx ctx-lex-index source-byte
+                    ctx ctx @ctx-lex-index source-byte
                     let byte do
                         if byte 34 == do
                             true
                         else
                             if byte 92 == do
                                 ctx lex-advance
-                                if ctx ctx-lex-index ctx ctx-source-length >= do
+                                if ctx @ctx-lex-index ctx @ctx-source-length >= do
                                     "unterminated string escape" fail
                                 end
                             end
@@ -785,10 +785,10 @@ proc lex-string ptr int int int -- do
                 end
             end
             drop
-            if ctx ctx-lex-index ctx ctx-source-length >= do
+            if ctx @ctx-lex-index ctx @ctx-source-length >= do
                 "unterminated string literal" fail
             end
-            ctx ctx-lex-index content-start -
+            ctx @ctx-lex-index content-start -
             let content-length do
                 ctx token-string content-start content-length 0 line column add-token
             end
@@ -800,23 +800,23 @@ end
 proc lex-character ptr int int int -- do
     let ctx start line column do
         ctx lex-advance
-        if ctx ctx-lex-index ctx ctx-source-length >= do
+        if ctx @ctx-lex-index ctx @ctx-source-length >= do
             "unterminated character literal" fail
         end
-        if ctx ctx ctx-lex-index source-byte 10 == do
+        if ctx ctx @ctx-lex-index source-byte 10 == do
             "unterminated character literal" fail
         end
-        if ctx ctx ctx-lex-index source-byte 39 == do
+        if ctx ctx @ctx-lex-index source-byte 39 == do
             "invalid character literal" fail
         end
-        ctx ctx-source ctx ctx-source-length ctx ctx-lex-index utf8-codepoint-at
+        ctx @ctx-source ctx @ctx-source-length ctx @ctx-lex-index utf8-codepoint-at
         let value width do
             ctx width lex-advance-count
-            if ctx ctx-lex-index ctx ctx-source-length >= do
+            if ctx @ctx-lex-index ctx @ctx-source-length >= do
                 "unterminated character literal" fail
             end
-            if ctx ctx ctx-lex-index source-byte 39 != do
-                if ctx ctx ctx-lex-index source-byte 10 == do
+            if ctx ctx @ctx-lex-index source-byte 39 != do
+                if ctx ctx @ctx-lex-index source-byte 10 == do
                     "unterminated character literal" fail
                 else
                     "invalid character literal" fail
@@ -831,19 +831,19 @@ end
 proc lex-word ptr int int int -- do
     let ctx start line column do
         while
-            ctx ctx-lex-index ctx ctx-source-length <
+            ctx @ctx-lex-index ctx @ctx-source-length <
             if dup do
-                drop ctx ctx ctx-lex-index source-byte is-space !
+                drop ctx ctx @ctx-lex-index source-byte is-space !
             end
         do
             ctx lex-advance
         end
-        ctx ctx-lex-index start -
+        ctx @ctx-lex-index start -
         let length do
-            if ctx ctx-source start + length "//" bytes-equal-string do
+            if ctx @ctx-source start + length "//" bytes-equal-string do
                 ctx skip-comment
             else
-                ctx ctx-source start length classify-word
+                ctx @ctx-source start length classify-word
                 let kind value do
                     ctx kind start length value line column add-token
                 end
@@ -854,20 +854,20 @@ end
 
 proc lex ptr -- do
     let ctx do
-        0 ctx set-ctx-token-count
-        0 ctx set-ctx-lex-index
-        1 ctx set-ctx-lex-line
-        1 ctx set-ctx-lex-column
+        0 ctx !ctx-token-count
+        0 ctx !ctx-lex-index
+        1 ctx !ctx-lex-line
+        1 ctx !ctx-lex-column
 
-        while ctx ctx-lex-index ctx ctx-source-length < do
-            ctx ctx ctx-lex-index source-byte
+        while ctx @ctx-lex-index ctx @ctx-source-length < do
+            ctx ctx @ctx-lex-index source-byte
             let byte do
                 if byte is-space do
                     ctx lex-advance
                 else
-                    ctx ctx-lex-index
-                    ctx ctx-lex-line
-                    ctx ctx-lex-column
+                    ctx @ctx-lex-index
+                    ctx @ctx-lex-line
+                    ctx @ctx-lex-column
                     let start line column do
                         if byte 34 == do
                             ctx start line column lex-string
@@ -887,7 +887,7 @@ end
 
 proc proc-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-procs index proc-bytes * +
+        ctx @ctx-procs index proc-bytes * +
     end
 end
 
@@ -925,7 +925,7 @@ end
 
 proc macro-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-macros index macro-bytes * +
+        ctx @ctx-macros index macro-bytes * +
     end
 end
 
@@ -956,7 +956,7 @@ end
 
 proc record-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-records index record-bytes * +
+        ctx @ctx-records index record-bytes * +
     end
 end
 
@@ -980,7 +980,7 @@ proc record-type-at ptr int -- int do record-type-offset record-entry-field end
 
 proc record-field-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-record-fields index record-field-bytes * +
+        ctx @ctx-record-fields index record-field-bytes * +
     end
 end
 
@@ -1012,7 +1012,7 @@ end
 
 proc union-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-unions index union-bytes * +
+        ctx @ctx-unions index union-bytes * +
     end
 end
 
@@ -1036,7 +1036,7 @@ proc union-type-at ptr int -- int do union-type-offset union-entry-field end
 
 proc union-case-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-union-cases index union-case-bytes * +
+        ctx @ctx-union-cases index union-case-bytes * +
     end
 end
 
@@ -1068,7 +1068,7 @@ end
 
 proc function-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-functions index function-bytes * +
+        ctx @ctx-functions index function-bytes * +
     end
 end
 
@@ -1094,33 +1094,33 @@ proc function-type-at ptr int -- int do function-type-offset function-entry-fiel
 
 proc function-signature-type-at ptr int -- int do
     let ctx index do
-        ctx ctx-function-types index cell-bytes * field-read
+        ctx @ctx-function-types index cell-bytes * field-read
     end
 end
 
 proc set-function-signature-type int ptr int -- do
     let value ctx index do
-        value ctx ctx-function-types index cell-bytes * field-write
+        value ctx @ctx-function-types index cell-bytes * field-write
     end
 end
 
 proc add-function-signature-type ptr int -- do
     let ctx value do
-        value ctx ctx ctx-function-type-count set-function-signature-type
-        ctx ctx-function-type-count 1 + ctx set-ctx-function-type-count
+        value ctx ctx @ctx-function-type-count set-function-signature-type
+        ctx @ctx-function-type-count 1 + ctx !ctx-function-type-count
     end
 end
 
 proc type-at ptr int -- int do
     let ctx index do
-        ctx ctx-types index cell-bytes * field-read
+        ctx @ctx-types index cell-bytes * field-read
     end
 end
 
 proc add-type ptr int -- do
     let ctx value do
-        value ctx ctx-types ctx ctx-type-count cell-bytes * field-write
-        ctx ctx-type-count 1 + ctx set-ctx-type-count
+        value ctx @ctx-types ctx @ctx-type-count cell-bytes * field-write
+        ctx @ctx-type-count 1 + ctx !ctx-type-count
     end
 end
 
@@ -1352,7 +1352,7 @@ proc unresolved-type-token-index int -- int do 0 swap - 1 - end
 
 proc proc-name-equals-token ptr int int -- bool do
     let ctx proc-index token-index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx proc-index proc-name-start-at
         +
         ctx proc-index proc-name-length-at
@@ -1363,7 +1363,7 @@ end
 
 proc find-proc-from ptr int int -- int do
     let ctx token-index proc-index do
-        if proc-index ctx ctx-proc-count >= do
+        if proc-index ctx @ctx-proc-count >= do
             0 1 -
         elif ctx proc-index token-index proc-name-equals-token do
             proc-index
@@ -1379,7 +1379,7 @@ end
 
 proc macro-name-equals-token ptr int int -- bool do
     let ctx macro-index token-index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx macro-index macro-name-start-at
         +
         ctx macro-index macro-name-length-at
@@ -1390,7 +1390,7 @@ end
 
 proc find-macro-from ptr int int -- int do
     let ctx token-index macro-index do
-        if macro-index ctx ctx-macro-count >= do
+        if macro-index ctx @ctx-macro-count >= do
             0 1 -
         elif ctx macro-index token-index macro-name-equals-token do
             macro-index
@@ -1406,7 +1406,7 @@ end
 
 proc record-name-equals-token ptr int int -- bool do
     let ctx record-index token-index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx record-index record-name-start-at
         +
         ctx record-index record-name-length-at
@@ -1417,7 +1417,7 @@ end
 
 proc find-record-from ptr int int -- int do
     let ctx token-index record-index do
-        if record-index ctx ctx-record-count >= do
+        if record-index ctx @ctx-record-count >= do
             0 1 -
         elif ctx record-index token-index record-name-equals-token do
             record-index
@@ -1431,7 +1431,7 @@ proc find-record ptr int -- int do 0 find-record-from end
 
 proc record-field-name-equals-bytes ptr int ptr int -- bool do
     let ctx field-index bytes length do
-        ctx ctx-source
+        ctx @ctx-source
         ctx field-index record-field-name-start-at
         +
         ctx field-index record-field-name-length-at
@@ -1461,7 +1461,7 @@ proc find-record-field ptr int ptr int -- int do 0 find-record-field-from end
 
 proc union-name-equals-token ptr int int -- bool do
     let ctx union-index token-index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx union-index union-name-start-at
         +
         ctx union-index union-name-length-at
@@ -1472,7 +1472,7 @@ end
 
 proc find-union-from ptr int int -- int do
     let ctx token-index union-index do
-        if union-index ctx ctx-union-count >= do
+        if union-index ctx @ctx-union-count >= do
             0 1 -
         elif ctx union-index token-index union-name-equals-token do
             union-index
@@ -1486,7 +1486,7 @@ proc find-union ptr int -- int do 0 find-union-from end
 
 proc union-case-name-equals-bytes ptr int ptr int -- bool do
     let ctx case-index bytes length do
-        ctx ctx-source
+        ctx @ctx-source
         ctx case-index union-case-name-start-at
         +
         ctx case-index union-case-name-length-at
@@ -1516,7 +1516,7 @@ proc find-union-case ptr int ptr int -- int do 0 find-union-case-from end
 
 proc function-name-equals-token ptr int int -- bool do
     let ctx function-index token-index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx function-index function-name-start-at
         +
         ctx function-index function-name-length-at
@@ -1527,7 +1527,7 @@ end
 
 proc find-function-from ptr int int -- int do
     let ctx token-index function-index do
-        if function-index ctx ctx-function-count >= do
+        if function-index ctx @ctx-function-count >= do
             0 1 -
         elif ctx function-index token-index function-name-equals-token do
             function-index
@@ -1551,7 +1551,7 @@ end
 
 proc scan-record-fields ptr int int -- int do
     let ctx record-index token-index do
-        if token-index ctx ctx-token-count >= do
+        if token-index ctx @ctx-token-count >= do
             "unterminated record declaration" fail
             token-index
         elif ctx token-index "end" token-equals do
@@ -1577,7 +1577,7 @@ proc scan-record-fields ptr int int -- int do
             token-index 1 +
             let type-token do
                 if
-                    type-token ctx ctx-token-count >=
+                    type-token ctx @ctx-token-count >=
                     if dup ! do
                         drop ctx type-token "end" token-equals
                     end
@@ -1588,7 +1588,7 @@ proc scan-record-fields ptr int int -- int do
                 if ctx type-token reserved-name do
                     "unknown type in record field" fail
                 end
-                ctx ctx-record-field-count
+                ctx @ctx-record-field-count
                 let field-index do
                     ctx token-index token-start-at
                     ctx field-index record-field-name-start-offset set-record-field-entry-field
@@ -1598,7 +1598,7 @@ proc scan-record-fields ptr int int -- int do
                     ctx field-index record-field-type-offset set-record-field-entry-field
                     ctx record-index record-field-count-at cell-bytes *
                     ctx field-index record-field-byte-offset-offset set-record-field-entry-field
-                    field-index 1 + ctx set-ctx-record-field-count
+                    field-index 1 + ctx !ctx-record-field-count
                     ctx record-index record-field-count-at 1 +
                     ctx record-index record-field-count-offset set-record-entry-field
                     ctx record-index type-token 1 + scan-record-fields
@@ -1612,7 +1612,7 @@ proc scan-one-record ptr int -- int do
     let ctx record-token do
         record-token 1 +
         let name-token do
-            if name-token ctx ctx-token-count >= do
+            if name-token ctx @ctx-token-count >= do
                 "expected record name" fail
             end
             ctx name-token require-word
@@ -1641,20 +1641,20 @@ proc scan-one-record ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx ctx-record-count
+            ctx @ctx-record-count
             let record-index do
                 ctx name-token token-start-at
                 ctx record-index record-name-start-offset set-record-entry-field
                 ctx name-token token-length-at
                 ctx record-index record-name-length-offset set-record-entry-field
-                ctx ctx-record-field-count
+                ctx @ctx-record-field-count
                 ctx record-index record-field-start-offset set-record-entry-field
                 0 ctx record-index record-field-count-offset set-record-entry-field
-                ctx ctx-program program-allocate-nominal-type
+                ctx @ctx-program program-allocate-nominal-type
                 ctx record-index record-type-offset set-record-entry-field
                 ctx record-index name-token 1 + scan-record-fields
                 let next-token do
-                    record-index 1 + ctx set-ctx-record-count
+                    record-index 1 + ctx !ctx-record-count
                     next-token
                 end
             end
@@ -1664,7 +1664,7 @@ end
 
 proc scan-union-cases ptr int int -- int do
     let ctx union-index token-index do
-        if token-index ctx ctx-token-count >= do
+        if token-index ctx @ctx-token-count >= do
             "unterminated union declaration" fail
             token-index
         elif ctx token-index "end" token-equals do
@@ -1679,7 +1679,7 @@ proc scan-union-cases ptr int int -- int do
             token-index 1 +
             let name-token do
                 if
-                    name-token ctx ctx-token-count >=
+                    name-token ctx @ctx-token-count >=
                     if dup ! do
                         drop
                         ctx name-token "case" token-equals
@@ -1705,7 +1705,7 @@ proc scan-union-cases ptr int int -- int do
                         1 exit
                     end
                 end
-                ctx ctx-union-case-count
+                ctx @ctx-union-case-count
                 let case-index do
                     ctx name-token token-start-at
                     ctx case-index union-case-name-start-offset set-union-case-entry-field
@@ -1716,7 +1716,7 @@ proc scan-union-cases ptr int int -- int do
                     ctx case-index union-case-tag-offset set-union-case-entry-field
                     name-token 1 +
                     let after-name do
-                        if after-name ctx ctx-token-count >= do
+                        if after-name ctx @ctx-token-count >= do
                             "unterminated union declaration" fail
                         end
                         if
@@ -1733,7 +1733,7 @@ proc scan-union-cases ptr int int -- int do
                             ctx case-index union-case-payload-type-offset set-union-case-entry-field
                             after-name 1 +
                             let after-payload do
-                                if after-payload ctx ctx-token-count >= do
+                                if after-payload ctx @ctx-token-count >= do
                                     "unterminated union declaration" fail
                                 end
                                 if
@@ -1747,7 +1747,7 @@ proc scan-union-cases ptr int int -- int do
                             end
                         end
                         let next-token do
-                            case-index 1 + ctx set-ctx-union-case-count
+                            case-index 1 + ctx !ctx-union-case-count
                             ctx union-index union-case-count-at 1 +
                             ctx union-index union-case-count-offset set-union-entry-field
                             ctx union-index next-token scan-union-cases
@@ -1764,7 +1764,7 @@ proc scan-one-union ptr int -- int do
         union-token 1 +
         let name-token do
             if
-                name-token ctx ctx-token-count >=
+                name-token ctx @ctx-token-count >=
                 if dup ! do
                     drop
                     ctx name-token "case" token-equals
@@ -1799,20 +1799,20 @@ proc scan-one-union ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx ctx-union-count
+            ctx @ctx-union-count
             let union-index do
                 ctx name-token token-start-at
                 ctx union-index union-name-start-offset set-union-entry-field
                 ctx name-token token-length-at
                 ctx union-index union-name-length-offset set-union-entry-field
-                ctx ctx-union-case-count
+                ctx @ctx-union-case-count
                 ctx union-index union-case-start-offset set-union-entry-field
                 0 ctx union-index union-case-count-offset set-union-entry-field
-                ctx ctx-program program-allocate-nominal-type
+                ctx @ctx-program program-allocate-nominal-type
                 ctx union-index union-type-offset set-union-entry-field
                 ctx union-index name-token 1 + scan-union-cases
                 let next-token do
-                    union-index 1 + ctx set-ctx-union-count
+                    union-index 1 + ctx !ctx-union-count
                     next-token
                 end
             end
@@ -1835,7 +1835,7 @@ proc scan-one-function ptr int -- int do
         function-token 1 +
         let name-token do
             if
-                name-token ctx ctx-token-count >=
+                name-token ctx @ctx-token-count >=
                 if dup ! do
                     drop
                     ctx name-token "--" token-equals
@@ -1870,21 +1870,21 @@ proc scan-one-function ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx ctx-function-count
+            ctx @ctx-function-count
             let function-index do
                 ctx name-token token-start-at
                 ctx function-index function-name-start-offset set-function-entry-field
                 ctx name-token token-length-at
                 ctx function-index function-name-length-offset set-function-entry-field
-                ctx ctx-program program-allocate-function-type
+                ctx @ctx-program program-allocate-function-type
                 ctx function-index function-type-offset set-function-entry-field
-                ctx ctx-function-type-count
+                ctx @ctx-function-type-count
                 ctx function-index function-input-start-offset set-function-entry-field
                 name-token 1 + 0
                 while
                     let token-index count do
                         token-index count
-                        token-index ctx ctx-token-count <
+                        token-index ctx @ctx-token-count <
                         if dup do
                             drop
                             ctx token-index "--" token-equals !
@@ -1898,20 +1898,20 @@ proc scan-one-function ptr int -- int do
                     end
                 end
                 let token-index input-count do
-                    if token-index ctx ctx-token-count >= do
+                    if token-index ctx @ctx-token-count >= do
                         "expected -- in function signature" fail
                     end
                     if ctx token-index "--" token-equals ! do
                         "expected -- in function signature" fail
                     end
                     input-count ctx function-index function-input-count-offset set-function-entry-field
-                    ctx ctx-function-type-count
+                    ctx @ctx-function-type-count
                     ctx function-index function-output-start-offset set-function-entry-field
                     token-index 1 + 0
                     while
                         let output-token output-count do
                             output-token output-count
-                            output-token ctx ctx-token-count <
+                            output-token ctx @ctx-token-count <
                             if dup do
                                 drop ctx output-token "end" token-equals !
                             end
@@ -1923,11 +1923,11 @@ proc scan-one-function ptr int -- int do
                         end
                     end
                     let output-token output-count do
-                        if output-token ctx ctx-token-count >= do
+                        if output-token ctx @ctx-token-count >= do
                             "expected end after function signature" fail
                         end
                         output-count ctx function-index function-output-count-offset set-function-entry-field
-                        function-index 1 + ctx set-ctx-function-count
+                        function-index 1 + ctx !ctx-function-count
                         output-token 1 +
                     end
                 end
@@ -1945,7 +1945,7 @@ proc scan-macro-body ptr int -- int do
             end
         do
             let token-index depth active do
-                if token-index ctx ctx-token-count >= do
+                if token-index ctx @ctx-token-count >= do
                     "unterminated macro body" fail
                     token-index depth false
                 elif ctx token-index token-kind-at token-word == do
@@ -2109,7 +2109,7 @@ proc scan-one-macro ptr int -- int do
     let ctx macro-token do
         macro-token 1 +
         let name-token do
-            if name-token ctx ctx-token-count >= do
+            if name-token ctx @ctx-token-count >= do
                 "expected macro name" fail
             end
             ctx name-token require-word
@@ -2132,7 +2132,7 @@ proc scan-one-macro ptr int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
-            ctx ctx-macro-count
+            ctx @ctx-macro-count
             let macro-index do
                 ctx name-token token-start-at ctx macro-index macro-name-start-offset set-macro-field
                 ctx name-token token-length-at ctx macro-index macro-name-length-offset set-macro-field
@@ -2142,7 +2142,7 @@ proc scan-one-macro ptr int -- int do
                     ctx name-token 1 + next-token 1 - validate-macro-body
                     name-token 1 + ctx macro-index macro-body-start-offset set-macro-field
                     next-token 1 - ctx macro-index macro-body-end-offset set-macro-field
-                    ctx ctx-macro-count 1 + ctx set-ctx-macro-count
+                    ctx @ctx-macro-count 1 + ctx !ctx-macro-count
                     next-token
                 end
             end
@@ -2157,7 +2157,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
             let token-index depth do
                 token-index depth
                 depth 0 >
-                token-index ctx ctx-token-count < &&
+                token-index ctx @ctx-token-count < &&
             end
         do
             let token-index depth do
@@ -2219,7 +2219,7 @@ proc scan-ignored-block-end ptr int -- int do true scan-block-end-with-outer-eli
 
 proc allocate-proc ptr int bool -- int do
     let ctx name-token external do
-        if name-token ctx ctx-token-count >= do
+        if name-token ctx @ctx-token-count >= do
             "expected procedure name" fail
         end
         ctx name-token require-word
@@ -2246,12 +2246,12 @@ proc allocate-proc ptr int bool -- int do
             ctx name-token fail-duplicate-declaration
         end
 
-        ctx ctx-proc-count
+        ctx @ctx-proc-count
         let proc-index do
             ctx name-token token-start-at ctx proc-index proc-name-start-offset set-proc-field
             ctx name-token token-length-at ctx proc-index proc-name-length-offset set-proc-field
             proc-index ctx proc-index proc-index-offset set-proc-field
-            ctx ctx-program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
+            ctx @ctx-program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
             external ctx proc-index set-proc-external
             proc-index
         end
@@ -2264,12 +2264,12 @@ proc scan-one-proc ptr int -- int do
         let name-token do
             ctx name-token false allocate-proc
             let proc-index do
-                ctx ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
+                ctx @ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
                 name-token 1 + 0
                 while
                     let token-index count do
                         token-index count
-                        token-index ctx ctx-token-count <
+                        token-index ctx @ctx-token-count <
                         if dup do
                             drop ctx token-index "--" token-equals !
                         end
@@ -2281,19 +2281,19 @@ proc scan-one-proc ptr int -- int do
                     end
                 end
                 let token-index input-count do
-                    if token-index ctx ctx-token-count >= do
+                    if token-index ctx @ctx-token-count >= do
                         "expected -- in procedure signature" fail
                     end
                     input-count ctx proc-index proc-input-count-offset set-proc-field
                     token-index 1 +
                 end
 
-                ctx ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
+                ctx @ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
                 0
                 while
                     let token-index count do
                         token-index count
-                        token-index ctx ctx-token-count <
+                        token-index ctx @ctx-token-count <
                         if dup do
                             drop ctx token-index "do" token-equals !
                         end
@@ -2305,7 +2305,7 @@ proc scan-one-proc ptr int -- int do
                     end
                 end
                 let token-index output-count do
-                    if token-index ctx ctx-token-count >= do
+                    if token-index ctx @ctx-token-count >= do
                         "expected do after procedure signature" fail
                     end
                     output-count ctx proc-index proc-output-count-offset set-proc-field
@@ -2316,10 +2316,10 @@ proc scan-one-proc ptr int -- int do
                     ctx body-start scan-block-end
                     let next-token do
                         next-token 1 - ctx proc-index proc-body-end-offset set-proc-field
-                        proc-index 1 + ctx set-ctx-proc-count
+                        proc-index 1 + ctx !ctx-proc-count
 
                         if ctx name-token "main" token-equals do
-                            if ctx ctx-main-proc 0 >= do
+                            if ctx @ctx-main-proc 0 >= do
                                 "duplicate main procedure" fail
                             end
                             if
@@ -2328,7 +2328,7 @@ proc scan-one-proc ptr int -- int do
                             do
                                 "main must have an empty stack contract" fail
                             end
-                            proc-index ctx set-ctx-main-proc
+                            proc-index ctx !ctx-main-proc
                         end
                         next-token
                     end
@@ -2349,7 +2349,7 @@ proc scan-one-extern ptr int -- int do
                 end
                 name-token 1 +
                 let symbol-token do
-                    if symbol-token ctx ctx-token-count >= do
+                    if symbol-token ctx @ctx-token-count >= do
                         "expected C symbol" fail
                     end
                     ctx symbol-token require-word
@@ -2358,12 +2358,12 @@ proc scan-one-extern ptr int -- int do
                     end
                     symbol-token ctx proc-index proc-c-symbol-token-offset set-proc-field
 
-                    ctx ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
+                    ctx @ctx-type-count ctx proc-index proc-input-start-offset set-proc-field
                     symbol-token 1 + 0
                     while
                         let token-index count do
                             token-index count
-                            token-index ctx ctx-token-count <
+                            token-index ctx @ctx-token-count <
                             if dup do
                                 drop ctx token-index "--" token-equals !
                             end
@@ -2375,19 +2375,19 @@ proc scan-one-extern ptr int -- int do
                         end
                     end
                     let token-index input-count do
-                        if token-index ctx ctx-token-count >= do
+                        if token-index ctx @ctx-token-count >= do
                             "expected -- in external signature" fail
                         end
                         input-count ctx proc-index proc-input-count-offset set-proc-field
                         token-index 1 +
                     end
 
-                    ctx ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
+                    ctx @ctx-type-count ctx proc-index proc-output-start-offset set-proc-field
                     0
                     while
                         let token-index count do
                             token-index count
-                            token-index ctx ctx-token-count <
+                            token-index ctx @ctx-token-count <
                             if dup do
                                 drop ctx token-index "end" token-equals !
                             end
@@ -2399,14 +2399,14 @@ proc scan-one-extern ptr int -- int do
                         end
                     end
                     let token-index output-count do
-                        if token-index ctx ctx-token-count >= do
+                        if token-index ctx @ctx-token-count >= do
                             "expected end after external signature" fail
                         end
                         if output-count 1 > do
                             "external procedure may return at most one value" fail
                         end
                         output-count ctx proc-index proc-output-count-offset set-proc-field
-                        proc-index 1 + ctx set-ctx-proc-count
+                        proc-index 1 + ctx !ctx-proc-count
                         token-index 1 +
                     end
                 end
@@ -2417,7 +2417,7 @@ end
 
 proc import-address ptr int -- ptr do
     let ctx index do
-        ctx ctx-imports index import-bytes * +
+        ctx @ctx-imports index import-bytes * +
     end
 end
 
@@ -2449,7 +2449,7 @@ proc set-import-target-module ptr ptr int -- do
 end
 
 proc scope-address ptr int -- ptr do
-    let ctx index do ctx ctx-scope index scope-bytes * + end
+    let ctx index do ctx @ctx-scope index scope-bytes * + end
 end
 
 proc scope-field ptr int int -- int do
@@ -2521,30 +2521,30 @@ end
 
 proc add-import ptr int int int ptr int -- do
     let ctx path-token name-token alias-token canonical canonical-length do
-        ctx ctx-import-count let import-index do
+        ctx @ctx-import-count let import-index do
             path-token ctx import-index import-path-token-offset set-import-field
             name-token ctx import-index import-name-token-offset set-import-field
             alias-token ctx import-index import-alias-token-offset set-import-field
             0 ptr cast ctx import-index import-address import-target-module-offset pointer-field-write
             canonical ctx import-index import-address import-canonical-path-offset pointer-field-write
             canonical-length ctx import-index import-canonical-path-length-offset set-import-field
-            ctx ctx-import-count 1 + ctx set-ctx-import-count
+            ctx @ctx-import-count 1 + ctx !ctx-import-count
         end
     end
 end
 
 proc scan-import-item ptr int ptr int int -- int do
     let ctx path-token canonical canonical-length token do
-        if token ctx ctx-token-count >= do "expected imported name" fail end
+        if token ctx @ctx-token-count >= do "expected imported name" fail end
         ctx token require-import-name
         token let name-token do
             token 1 + let next-token do
-                if next-token ctx ctx-token-count >= do
+                if next-token ctx @ctx-token-count >= do
                     ctx path-token name-token 0 1 - canonical canonical-length add-import
                     next-token
                 elif ctx next-token "as" token-equals do
                     next-token 1 + let alias-token do
-                        if alias-token ctx ctx-token-count >= do "expected import alias" fail end
+                        if alias-token ctx @ctx-token-count >= do "expected import alias" fail end
                         ctx alias-token require-import-name
                         ctx path-token name-token alias-token canonical canonical-length add-import
                         alias-token 1 +
@@ -2560,7 +2560,7 @@ end
 
 proc import-list-continues ptr int -- bool do
     let ctx token do
-        if token ctx ctx-token-count >= do
+        if token ctx @ctx-token-count >= do
             false
         else
             ctx token ")" token-equals !
@@ -2571,24 +2571,24 @@ end
 proc scan-one-import ptr int -- int do
     let ctx token do
         token 1 + let path-token do
-            if path-token ctx ctx-token-count >= do "expected import path string" fail end
+            if path-token ctx @ctx-token-count >= do "expected import path string" fail end
             if ctx path-token token-kind-at token-string != do "expected import path string" fail end
             path-token 1 + let import-token do
-                if import-token ctx ctx-token-count >= do "expected import after import path" fail end
+                if import-token ctx @ctx-token-count >= do "expected import after import path" fail end
                 if ctx import-token "import" token-equals ! do "expected import after import path" fail end
                 ctx path-token normalize-import-path let canonical canonical-length do
                     import-token 1 + let item-token do
-                        if item-token ctx ctx-token-count >= do "expected imported name" fail end
+                        if item-token ctx @ctx-token-count >= do "expected imported name" fail end
                         if ctx item-token "(" token-equals do
                             item-token 1 + let next-token do
-                                if next-token ctx ctx-token-count >= do "expected ) after import list" fail end
+                                if next-token ctx @ctx-token-count >= do "expected ) after import list" fail end
                                 if ctx next-token ")" token-equals do "expected imported name" fail end
                                 next-token
                                 while dup ctx swap import-list-continues do
                                     let list-token do ctx path-token canonical canonical-length list-token scan-import-item end
                                 end
                                 let list-token do
-                                    if list-token ctx ctx-token-count >= do "expected ) after import list" fail end
+                                    if list-token ctx @ctx-token-count >= do "expected ) after import list" fail end
                                     if ctx list-token ")" token-equals ! do
                                         if ctx list-token 44 token-contains-byte do "commas are not valid in import lists" fail end
                                         "expected ) after import list" fail
@@ -2620,18 +2620,18 @@ end
 
 proc scan-declarations ptr -- do
     let ctx do
-        0 ctx set-ctx-proc-count
-        0 ctx set-ctx-type-count
-        0 ctx set-ctx-macro-count
-        0 ctx set-ctx-import-count
-        0 ctx set-ctx-record-count
-        0 ctx set-ctx-record-field-count
-        0 ctx set-ctx-union-count
-        0 ctx set-ctx-union-case-count
-        0 ctx set-ctx-function-count
-        0 ctx set-ctx-function-type-count
+        0 ctx !ctx-proc-count
+        0 ctx !ctx-type-count
+        0 ctx !ctx-macro-count
+        0 ctx !ctx-import-count
+        0 ctx !ctx-record-count
+        0 ctx !ctx-record-field-count
+        0 ctx !ctx-union-count
+        0 ctx !ctx-union-case-count
+        0 ctx !ctx-function-count
+        0 ctx !ctx-function-type-count
         0
-        while dup ctx ctx-token-count < do
+        while dup ctx @ctx-token-count < do
             let token-index do
                 if
                     ctx token-index token-kind-at token-word ==
@@ -2675,7 +2675,7 @@ proc scan-declarations ptr -- do
                 do
                     ctx token-index scan-one-function
                 else
-                    if ctx ctx-is-root do
+                    if ctx @ctx-is-root do
                         "only declarations and imports are allowed at top level" fail
                         token-index 1 +
                     elif ctx token-index token-starts-block do
@@ -2687,8 +2687,8 @@ proc scan-declarations ptr -- do
             end
         end
         drop
-        if ctx ctx-is-root do
-            if ctx ctx-main-proc 0 < do
+        if ctx @ctx-is-root do
+            if ctx @ctx-main-proc 0 < do
                 "missing main procedure" fail
             end
         end
@@ -2917,7 +2917,7 @@ end
 
 proc local-name-equals ptr ptr int -- bool do
     let cc local token-index do
-        local local-module-offset pointer-field-read ctx-source
+        local local-module-offset pointer-field-read @ctx-source
         local local-name-start-offset local-field +
         local local-name-length-offset local-field
         cc cc-defining-module token-index token-slice
@@ -2983,7 +2983,7 @@ end
 // BEGIN C EMITTER SUPPORT
 proc raw-string-byte ptr int int -- int do
     let ctx token raw-index do
-        ctx ctx-source
+        ctx @ctx-source
         ctx token token-start-at
         raw-index +
         byte-read
@@ -3205,7 +3205,7 @@ end
 proc intern-module-strings ptr ptr -- do
     let program ctx do
         0
-        while dup ctx ctx-token-count < do
+        while dup ctx @ctx-token-count < do
             dup
             let token do
                 if ctx token token-kind-at token-string == do
@@ -3225,7 +3225,7 @@ proc initialize-string-pool ptr -- do
         program @program-module-head
         while dup int cast 0 != do
             dup program swap intern-module-strings
-            ctx-next-module
+            @ctx-next-module
         end
         drop
     end
@@ -3622,27 +3622,27 @@ proc initialize-module-source ptr ptr int -- do
         if source-length max-source-bytes > do
             "source exceeds max-source-bytes" fail
         end
-        source ctx set-ctx-source
-        source-length ctx set-ctx-source-length
-        source-length 1 + token-bytes * alloc ctx set-ctx-tokens
-        0 ctx set-ctx-token-count
-        0 1 - ctx set-ctx-main-proc
+        source ctx !ctx-source
+        source-length ctx !ctx-source-length
+        source-length 1 + token-bytes * alloc ctx !ctx-tokens
+        0 ctx !ctx-token-count
+        0 1 - ctx !ctx-main-proc
         ctx lex
-        ctx ctx-program @program-token-count ctx ctx-token-count + ctx ctx-program !program-token-count
+        ctx @ctx-program @program-token-count ctx @ctx-token-count + ctx @ctx-program !program-token-count
 
-        ctx ctx-token-count 1 + proc-bytes * alloc ctx set-ctx-procs
-        ctx ctx-token-count 1 + macro-bytes * alloc ctx set-ctx-macros
-        ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-types
-        ctx ctx-token-count 1 + import-bytes * alloc ctx set-ctx-imports
-        ctx ctx-token-count 1 + scope-bytes * alloc ctx set-ctx-scope
-        ctx ctx-token-count 1 + record-bytes * alloc ctx set-ctx-records
-        ctx ctx-token-count 1 + record-field-bytes * alloc ctx set-ctx-record-fields
-        ctx ctx-token-count 1 + union-bytes * alloc ctx set-ctx-unions
-        ctx ctx-token-count 1 + union-case-bytes * alloc ctx set-ctx-union-cases
-        ctx ctx-token-count 1 + function-bytes * alloc ctx set-ctx-functions
-        ctx ctx-token-count 1 + cell-bytes * alloc ctx set-ctx-function-types
-        0 ctx set-ctx-scope-count
-        resolve-new ctx set-ctx-resolve-state
+        ctx @ctx-token-count 1 + proc-bytes * alloc ctx !ctx-procs
+        ctx @ctx-token-count 1 + macro-bytes * alloc ctx !ctx-macros
+        ctx @ctx-token-count 1 + cell-bytes * alloc ctx !ctx-types
+        ctx @ctx-token-count 1 + import-bytes * alloc ctx !ctx-imports
+        ctx @ctx-token-count 1 + scope-bytes * alloc ctx !ctx-scope
+        ctx @ctx-token-count 1 + record-bytes * alloc ctx !ctx-records
+        ctx @ctx-token-count 1 + record-field-bytes * alloc ctx !ctx-record-fields
+        ctx @ctx-token-count 1 + union-bytes * alloc ctx !ctx-unions
+        ctx @ctx-token-count 1 + union-case-bytes * alloc ctx !ctx-union-cases
+        ctx @ctx-token-count 1 + function-bytes * alloc ctx !ctx-functions
+        ctx @ctx-token-count 1 + cell-bytes * alloc ctx !ctx-function-types
+        0 ctx !ctx-scope-count
+        resolve-new ctx !ctx-resolve-state
         ctx scan-declarations
     end
 end
@@ -3651,17 +3651,17 @@ proc find-module-by-path-from ptr ptr int -- ptr do
     let module path path-length do
         if module int cast 0 == do
             0 ptr cast
-        elif module ctx-is-root do
-            module ctx-next-module path path-length find-module-by-path-from
+        elif module @ctx-is-root do
+            module @ctx-next-module path path-length find-module-by-path-from
         elif
-            module ctx-canonical-path
-            module ctx-canonical-path-length
+            module @ctx-canonical-path
+            module @ctx-canonical-path-length
             path path-length
             bytes-equal
         do
             module
         else
-            module ctx-next-module path path-length find-module-by-path-from
+            module @ctx-next-module path path-length find-module-by-path-from
         end
     end
 end
@@ -3675,7 +3675,7 @@ end
 proc load-module-imports ptr ptr -- do
     let program module do
         0
-        while dup module ctx-import-count < do
+        while dup module @ctx-import-count < do
             dup let import-index do
                 program module import-index load-import-target drop
             end
@@ -3693,7 +3693,7 @@ proc load-import-target ptr ptr int -- ptr do
             program canonical canonical-length find-module-by-path
             let existing do
                 if existing int cast 0 != do
-                    if existing ctx-load-state load-loading == do
+                    if existing @ctx-load-state load-loading == do
                         "cyclic import" fail
                     end
                     existing importing-module import-index set-import-target-module
@@ -3706,19 +3706,19 @@ proc load-import-target ptr ptr int -- ptr do
                         end
                         ctx-bytes alloc
                         let module do
-                            canonical module set-ctx-canonical-path
-                            canonical-length module set-ctx-canonical-path-length
-                            0 ptr cast module set-ctx-imports
-                            0 module set-ctx-import-count
-                            0 ptr cast module set-ctx-scope
-                            0 module set-ctx-scope-count
-                            load-loading module set-ctx-load-state
-                            resolve-new module set-ctx-resolve-state
-                            false module set-ctx-is-root
+                            canonical module !ctx-canonical-path
+                            canonical-length module !ctx-canonical-path-length
+                            0 ptr cast module !ctx-imports
+                            0 module !ctx-import-count
+                            0 ptr cast module !ctx-scope
+                            0 module !ctx-scope-count
+                            load-loading module !ctx-load-state
+                            resolve-new module !ctx-resolve-state
+                            false module !ctx-is-root
                             program module program-add-module
                             module source source-length initialize-module-source
                             program module load-module-imports
-                            load-loaded module set-ctx-load-state
+                            load-loaded module !ctx-load-state
                             module importing-module import-index set-import-target-module
                             module
                         end
@@ -3731,7 +3731,7 @@ end
 
 proc scope-name-equals ptr int ptr int -- bool do
     let ctx scope-index bytes length do
-        ctx scope-index scope-name-module-at ctx-source
+        ctx scope-index scope-name-module-at @ctx-source
         ctx scope-index scope-name-start-at +
         ctx scope-index scope-name-length-at
         bytes length
@@ -3741,7 +3741,7 @@ end
 
 proc find-scope-symbol-from ptr ptr int int -- int do
     let ctx bytes length scope-index do
-        if scope-index ctx ctx-scope-count >= do
+        if scope-index ctx @ctx-scope-count >= do
             0 1 -
         elif ctx scope-index bytes length scope-name-equals do
             scope-index
@@ -3771,7 +3771,7 @@ end
 
 proc add-scope-symbol ptr ptr int int int ptr int -- do
     let ctx name-module name-start name-length kind definition-module definition-index do
-        ctx ctx-scope-count
+        ctx @ctx-scope-count
         let scope-index do
             name-module ctx scope-index set-scope-name-module
             name-start ctx scope-index scope-name-start-offset set-scope-field
@@ -3779,7 +3779,7 @@ proc add-scope-symbol ptr ptr int int int ptr int -- do
             kind ctx scope-index scope-kind-offset set-scope-field
             definition-module ctx scope-index set-scope-definition-module
             definition-index ctx scope-index scope-definition-index-offset set-scope-field
-            ctx ctx-scope-count 1 + ctx set-ctx-scope-count
+            ctx @ctx-scope-count 1 + ctx !ctx-scope-count
         end
     end
 end
@@ -3866,20 +3866,20 @@ end
 
 proc resolve-module-scope ptr -- do
     let ctx do
-        if ctx ctx-resolve-state resolve-resolved == do
+        if ctx @ctx-resolve-state resolve-resolved == do
         else
-            if ctx ctx-resolve-state resolve-resolving == do
+            if ctx @ctx-resolve-state resolve-resolving == do
                 "cyclic import" fail
             end
-            resolve-resolving ctx set-ctx-resolve-state
+            resolve-resolving ctx !ctx-resolve-state
             0
-            while dup ctx ctx-import-count < do
+            while dup ctx @ctx-import-count < do
                 dup ctx swap resolve-one-import
                 1 +
             end
             drop
             0
-            while dup ctx ctx-record-count < do
+            while dup ctx @ctx-record-count < do
                 dup
                 let record-index do
                     ctx
@@ -3895,7 +3895,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx ctx-union-count < do
+            while dup ctx @ctx-union-count < do
                 dup
                 let union-index do
                     ctx
@@ -3911,7 +3911,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx ctx-function-count < do
+            while dup ctx @ctx-function-count < do
                 dup
                 let function-index do
                     ctx
@@ -3927,7 +3927,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx ctx-macro-count < do
+            while dup ctx @ctx-macro-count < do
                 dup
                 let macro-index do
                     ctx
@@ -3943,7 +3943,7 @@ proc resolve-module-scope ptr -- do
             end
             drop
             0
-            while dup ctx ctx-proc-count < do
+            while dup ctx @ctx-proc-count < do
                 dup
                 let proc-index do
                     ctx
@@ -3958,7 +3958,7 @@ proc resolve-module-scope ptr -- do
                 1 +
             end
             drop
-            resolve-resolved ctx set-ctx-resolve-state
+            resolve-resolved ctx !ctx-resolve-state
         end
     end
 end
@@ -3968,7 +3968,7 @@ proc resolve-all-module-scopes ptr -- do
         program @program-module-head
         while dup int cast 0 != do
             dup resolve-module-scope
-            ctx-next-module
+            @ctx-next-module
         end
         drop
     end
@@ -4009,7 +4009,7 @@ end
 proc resolve-module-signature-types ptr -- do
     let ctx do
         0
-        while dup ctx ctx-type-count < do
+        while dup ctx @ctx-type-count < do
             dup
             let type-index do
                 ctx type-index type-at
@@ -4019,7 +4019,7 @@ proc resolve-module-signature-types ptr -- do
                         value-type unresolved-type-token-index
                         "unknown type in procedure signature"
                         resolve-nominal-type-token
-                        ctx ctx-types type-index cell-bytes * field-write
+                        ctx @ctx-types type-index cell-bytes * field-write
                     end
                 end
             end
@@ -4032,7 +4032,7 @@ end
 proc resolve-module-record-field-types ptr -- do
     let ctx do
         0
-        while dup ctx ctx-record-field-count < do
+        while dup ctx @ctx-record-field-count < do
             dup
             let field-index do
                 ctx field-index record-field-type-at
@@ -4055,7 +4055,7 @@ end
 proc resolve-module-union-case-types ptr -- do
     let ctx do
         0
-        while dup ctx ctx-union-case-count < do
+        while dup ctx @ctx-union-case-count < do
             dup
             let case-index do
                 ctx case-index union-case-payload-type-at
@@ -4078,7 +4078,7 @@ end
 proc resolve-module-function-signature-types ptr -- do
     let ctx do
         0
-        while dup ctx ctx-function-type-count < do
+        while dup ctx @ctx-function-type-count < do
             dup
             let type-index do
                 ctx type-index function-signature-type-at
@@ -4106,7 +4106,7 @@ proc resolve-all-types ptr -- do
             dup resolve-module-union-case-types
             dup resolve-module-function-signature-types
             dup resolve-module-signature-types
-            ctx-next-module
+            @ctx-next-module
         end
         drop
     end
@@ -4269,9 +4269,9 @@ proc require-external-compatible-with-earlier ptr ptr int -- do
         while dup int cast ctx int cast != do
             dup
             let other do
-                ctx proc-index other other ctx-proc-count require-external-compatible-with-module
+                ctx proc-index other other @ctx-proc-count require-external-compatible-with-module
             end
-            ctx-next-module
+            @ctx-next-module
         end
         drop
         ctx proc-index ctx proc-index require-external-compatible-with-module
@@ -4281,7 +4281,7 @@ end
 proc validate-module-external-declarations ptr ptr -- do
     let program ctx do
         0
-        while dup ctx ctx-proc-count < do
+        while dup ctx @ctx-proc-count < do
             dup
             let proc-index do
                 if ctx proc-index proc-external-at do
@@ -4299,7 +4299,7 @@ proc validate-external-declarations ptr -- do
         program @program-module-head
         while dup int cast 0 != do
             dup program swap validate-module-external-declarations
-            ctx-next-module
+            @ctx-next-module
         end
         drop
     end
@@ -4645,7 +4645,7 @@ end
 proc emit-prototypes ptr -- do
     let ctx do
         0
-        while dup ctx ctx-proc-count < do
+        while dup ctx @ctx-proc-count < do
             dup
             let proc-index do
                 ctx proc-index emit-c-prototype
@@ -4663,7 +4663,7 @@ proc emit-c-emitter-support ptr -- do
         program @program-module-head
         while dup int cast 0 != do
             dup emit-prototypes
-            ctx-next-module
+            @ctx-next-module
         end
         drop
     end
@@ -5239,7 +5239,7 @@ end
 
 proc find-let-do ptr int -- int do
     let cc token-index do
-        if token-index cc cc-defining-module ctx-token-count >= do
+        if token-index cc cc-defining-module @ctx-token-count >= do
             "unterminated let binding" fail
             token-index
         elif cc cc-defining-module token-index "do" token-equals do
@@ -5785,7 +5785,7 @@ end
 proc emit-function-dispatch-module ptr int ptr -- do
     let function-module function-index proc-module do
         0
-        while dup proc-module ctx-proc-count < do
+        while dup proc-module @ctx-proc-count < do
             dup
             let proc-index do
                 if
@@ -5811,7 +5811,7 @@ proc emit-function-dispatch-cases ptr ptr int -- do
         while dup int cast 0 != do
             let proc-module do
                 function-module function-index proc-module emit-function-dispatch-module
-                proc-module ctx-next-module
+                proc-module @ctx-next-module
             end
         end
         drop
@@ -6318,7 +6318,7 @@ end
 proc compile-module-procedures ptr ptr -- do
     let program ctx do
         0
-        while dup ctx ctx-proc-count < do
+        while dup ctx @ctx-proc-count < do
             dup program ctx rot compile-procedure
             1 +
         end
@@ -6331,7 +6331,7 @@ proc compile-all-procedures ptr -- do
         program @program-module-head
         while dup int cast 0 != do
             dup program swap compile-module-procedures
-            ctx-next-module
+            @ctx-next-module
         end
         drop
     end
@@ -6343,7 +6343,7 @@ proc emit-main-wrapper ptr -- do
         let ctx do
             "int main(int argc, char **argv) {\n  frog_argc = argc;\n  frog_argv = argv;\n" emit
             program emit-string-references
-            "  " emit ctx ctx ctx-main-proc proc-global-id-at emit-proc-name
+            "  " emit ctx ctx @ctx-main-proc proc-global-id-at emit-proc-name
             "();\n  if (frog_stack.count != 0) frog_runtime_fail();\n  free(frog_stack.values);\n  return 0;\n}\n" emit
         end
     end
@@ -6368,20 +6368,20 @@ proc compile-source ptr int -- do
             0 ptr cast program !program-prelude-module
             ctx-bytes alloc
             let ctx do
-                0 ptr cast ctx set-ctx-canonical-path
-                0 ctx set-ctx-canonical-path-length
-                0 ptr cast ctx set-ctx-imports
-                0 ctx set-ctx-import-count
-                0 ptr cast ctx set-ctx-scope
-                0 ctx set-ctx-scope-count
-                load-loading ctx set-ctx-load-state
-                resolve-new ctx set-ctx-resolve-state
-                true ctx set-ctx-is-root
+                0 ptr cast ctx !ctx-canonical-path
+                0 ctx !ctx-canonical-path-length
+                0 ptr cast ctx !ctx-imports
+                0 ctx !ctx-import-count
+                0 ptr cast ctx !ctx-scope
+                0 ctx !ctx-scope-count
+                load-loading ctx !ctx-load-state
+                resolve-new ctx !ctx-resolve-state
+                true ctx !ctx-is-root
                 program ctx program-add-module
                 ctx program !program-root-module
                 ctx source source-length initialize-module-source
                 program ctx load-module-imports
-                load-loaded ctx set-ctx-load-state
+                load-loaded ctx !ctx-load-state
                 program initialize-prelude
                 program initialize-string-pool
                 program resolve-all-module-scopes
@@ -6404,15 +6404,15 @@ proc initialize-prelude ptr -- do
     let program do
         ctx-bytes alloc
         let prelude do
-            0 ptr cast prelude set-ctx-canonical-path
-            0 prelude set-ctx-canonical-path-length
-            0 ptr cast prelude set-ctx-imports
-            0 prelude set-ctx-import-count
-            0 ptr cast prelude set-ctx-scope
-            0 prelude set-ctx-scope-count
-            load-loading prelude set-ctx-load-state
-            resolve-new prelude set-ctx-resolve-state
-            false prelude set-ctx-is-root
+            0 ptr cast prelude !ctx-canonical-path
+            0 prelude !ctx-canonical-path-length
+            0 ptr cast prelude !ctx-imports
+            0 prelude !ctx-import-count
+            0 ptr cast prelude !ctx-scope
+            0 prelude !ctx-scope-count
+            load-loading prelude !ctx-load-state
+            resolve-new prelude !ctx-resolve-state
+            false prelude !ctx-is-root
             program prelude program-add-module
             "macro dup let a do a a end end
 macro dup2 let a b do a b a b end end
@@ -6424,7 +6424,7 @@ macro rot let a b c do b c a end end
             let source do
                 prelude source String.bytes source String.len initialize-module-source
             end
-            load-loaded prelude set-ctx-load-state
+            load-loaded prelude !ctx-load-state
             prelude program !program-prelude-module
         end
     end
