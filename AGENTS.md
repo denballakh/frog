@@ -136,6 +136,7 @@ Commands:
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
+- Generated procedures use normal C parameters and return values. A measurement pass determines maximum operand depth, then emission uses scalar `Cell frog_value_N` locals for those positions; generated code has no runtime operand-stack object or per-procedure operand-stack array.
 - Generated C procedure names use `frog_proc_<global-id>_<encoded-source-name>`. ASCII letters and digits remain readable; every other UTF-8 byte, including `_`, is encoded as uppercase `_HH`. Numeric global IDs remain the function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
@@ -167,6 +168,7 @@ Commands:
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
 - Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
 - The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
+- Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.

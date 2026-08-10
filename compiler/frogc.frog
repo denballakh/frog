@@ -5548,7 +5548,7 @@ end
 
 proc emit-slot ptr int -- do
     let cc index do
-        "frog_slots[" emit index emit-unsigned "]" emit
+        "frog_value_" emit index emit-unsigned
     end
 end
 
@@ -7529,10 +7529,16 @@ end
 
 proc emit-proc-slot-frame ptr -- do
     let cc do
-        if cc @cc-max-type-count 0 > do
-            cc emit-indent "Cell frog_slots[" emit cc @cc-max-type-count emit-unsigned "];" emit 10 putc
-            cc emit-indent "(void)frog_slots;" emit 10 putc
+        0
+        while dup cc @cc-max-type-count < do
+            dup
+            let index do
+                cc emit-indent "Cell " emit cc index emit-slot ";" emit 10 putc
+                cc emit-indent "(void)&" emit cc index emit-slot ";" emit 10 putc
+            end
+            1 +
         end
+        drop
     end
 end
 

@@ -797,34 +797,42 @@ def assert_semantic_c(generated: dict[str, str]) -> None:
         'Cell frog_proc_3_add(Cell frog_arg_0, Cell frog_arg_1);',
         'frog_results_2 frog_proc_4_duplicate(Cell frog_arg_0);',
         'typedef struct { Cell value_0; Cell value_1; } frog_results_2;',
-        'frog_results_2 frog_call_result = frog_proc_4_duplicate(frog_slots[0]);',
-        'frog_slots[1] = frog_call_result.value_1;',
-        'frog_slots[0] = frog_proc_13_countdown(frog_slots[0]);',
+        '  Cell frog_value_0;',
+        '  (void)&frog_value_0;',
+        'frog_results_2 frog_call_result = frog_proc_4_duplicate(frog_value_0);',
+        'frog_value_1 = frog_call_result.value_1;',
+        'frog_value_0 = frog_proc_13_countdown(frog_value_0);',
         'switch (function_id) {',
     ):
         assert expected in functions
+    assert 'frog_value_' not in extract_function(functions, 'void frog_proc_2_unit(void)')
+
+    type_stack_growth = generated['semantics/type_stack_growth']
+    assert 'Cell frog_value_255;' in type_stack_growth
+    assert '(void)&frog_value_255;' in type_stack_growth
+    assert 'frog_value_256' not in type_stack_growth
 
     optimizer = generated['semantics/optimizer_constant_add']
     main_block = extract_function(optimizer, 'void frog_proc_0_main(void)')
     folded_assignments = [
         line
         for line in main_block.splitlines(keepends=True)
-        if line in {'  frog_slots[0] = 5;\n', '  frog_slots[0] = 18;\n', '  frog_slots[0] = 9;\n'}
+        if line in {'  frog_value_0 = 5;\n', '  frog_value_0 = 18;\n', '  frog_value_0 = 9;\n'}
     ]
     assert folded_assignments == [
-        '  frog_slots[0] = 5;\n',
-        '  frog_slots[0] = 18;\n',
-        '  frog_slots[0] = 9;\n',
+        '  frog_value_0 = 5;\n',
+        '  frog_value_0 = 18;\n',
+        '  frog_value_0 = 9;\n',
     ]
     assert (
-        '    frog_slots[0] = 9223372036854775807;\n'
-        '    frog_slots[1] = 1;\n'
-        '    frog_slots[0] = frog_slots[0] + frog_slots[1];\n'
+        '    frog_value_0 = 9223372036854775807;\n'
+        '    frog_value_1 = 1;\n'
+        '    frog_value_0 = frog_value_0 + frog_value_1;\n'
     ) in main_block
 
     constants = generated['semantics/constants']
     assert constants.count('= 42;') == 5
-    assert 'frog_slots[0] = frog_slots[0] * frog_slots[1];' not in constants
+    assert 'frog_value_0 = frog_value_0 * frog_value_1;' not in constants
 
     procedure_symbols = generated['semantics/procedure_symbols']
     for expected in (
@@ -925,4 +933,4 @@ def run_regressions(root: Path, frogc: Path, cases_root: Path, output_root: Path
     assert_stable_string_symbol(frogc, cases_root, output_root / 'strings')
 
     for name, source in generated.items():
-        assert not re.search(r'FrogStack|frog_stack|frog_push|frog_pop', source), name
+        assert not re.search(r'FrogStack|frog_stack|frog_slots|frog_push|frog_pop', source), name
