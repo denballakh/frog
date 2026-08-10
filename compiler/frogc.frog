@@ -4677,14 +4677,215 @@ proc emit-external-c-prototype ptr int -- do
     end
 end
 
+proc emit-result-type-name int -- do
+    "frog_results_" emit emit-unsigned
+end
+
+proc emit-result-fields int int -- do
+    let count index do
+        if index count < do
+            " Cell value_" emit index emit-unsigned ";" emit
+            count index 1 + emit-result-fields
+        end
+    end
+end
+
+proc emit-result-typedef int -- do
+    let output-count do
+        "typedef struct {" emit
+        output-count 0 emit-result-fields
+        " } " emit output-count emit-result-type-name ";\n" emit
+    end
+end
+
+proc ctx-proc-uses-result-arity-from ptr int int -- bool do
+    let ctx output-count proc-index do
+        if proc-index ctx @ctx-proc-count >= do
+            false
+        elif ctx proc-index proc-output-count-at output-count == do
+            true
+        else
+            ctx output-count proc-index 1 + ctx-proc-uses-result-arity-from
+        end
+    end
+end
+
+proc ctx-function-uses-result-arity-from ptr int int -- bool do
+    let ctx output-count function-index do
+        if function-index ctx @ctx-function-count >= do
+            false
+        elif ctx function-index function-output-count-at output-count == do
+            true
+        else
+            ctx output-count function-index 1 + ctx-function-uses-result-arity-from
+        end
+    end
+end
+
+proc ctx-uses-result-arity ptr int -- bool do
+    let ctx output-count do
+        if ctx output-count 0 ctx-proc-uses-result-arity-from do
+            true
+        else
+            ctx output-count 0 ctx-function-uses-result-arity-from
+        end
+    end
+end
+
+proc modules-use-result-arity ptr int ptr -- bool do
+    let program output-count ctx do
+        if ctx int cast 0 == do
+            false
+        elif ctx output-count ctx-uses-result-arity do
+            true
+        else
+            program output-count ctx @ctx-next-module modules-use-result-arity
+        end
+    end
+end
+
+proc result-arity-max int int -- int do
+    let left right do
+        if left right > do left else right end
+    end
+end
+
+proc ctx-max-proc-output-arity-from ptr int int -- int do
+    let ctx proc-index maximum do
+        if proc-index ctx @ctx-proc-count >= do
+            maximum
+        else
+            ctx proc-index proc-output-count-at
+            let output-count do
+                output-count maximum result-arity-max
+                let next-maximum do
+                    ctx proc-index 1 + next-maximum ctx-max-proc-output-arity-from
+                end
+            end
+        end
+    end
+end
+
+proc ctx-max-proc-output-arity ptr -- int do 0 0 ctx-max-proc-output-arity-from end
+
+proc ctx-max-function-output-arity-from ptr int int -- int do
+    let ctx function-index maximum do
+        if function-index ctx @ctx-function-count >= do
+            maximum
+        else
+            ctx function-index function-output-count-at
+            let output-count do
+                output-count maximum result-arity-max
+                let next-maximum do
+                    ctx function-index 1 + next-maximum ctx-max-function-output-arity-from
+                end
+            end
+        end
+    end
+end
+
+proc ctx-max-function-output-arity ptr -- int do 0 0 ctx-max-function-output-arity-from end
+
+proc program-max-output-arity-from ptr ptr int -- int do
+    let program ctx maximum do
+        if ctx int cast 0 == do
+            maximum
+        else
+            ctx ctx-max-proc-output-arity
+            ctx ctx-max-function-output-arity
+            let proc-maximum function-maximum do
+                proc-maximum function-maximum result-arity-max
+                let ctx-maximum do
+                    ctx-maximum maximum result-arity-max
+                    let next-maximum do
+                        program ctx @ctx-next-module next-maximum program-max-output-arity-from
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc program-max-output-arity ptr -- int do
+    let program do program program @program-module-head 0 program-max-output-arity-from end
+end
+
+proc emit-result-typedefs-from ptr int int -- do
+    let program maximum output-count do
+        if output-count maximum <= do
+            program output-count program @program-module-head modules-use-result-arity
+            if dup do
+                drop output-count emit-result-typedef
+            else
+                drop
+            end
+            program maximum output-count 1 + emit-result-typedefs-from
+        end
+    end
+end
+
+proc emit-result-typedefs ptr -- do
+    let program do
+        program program-max-output-arity
+        let maximum do
+            program maximum 2 emit-result-typedefs-from
+        end
+    end
+end
+
+proc emit-proc-return-type ptr int -- do
+    let ctx proc-index do
+        ctx proc-index proc-output-count-at
+        let output-count do
+            if output-count 0 == do
+                "void" emit
+            elif output-count 1 == do
+                "Cell" emit
+            else
+                output-count emit-result-type-name
+            end
+        end
+    end
+end
+
+proc emit-proc-argument-name int -- do
+    "frog_arg_" emit emit-unsigned
+end
+
+proc emit-proc-parameters-from ptr int int -- do
+    let ctx proc-index input-index do
+        if input-index ctx proc-index proc-input-count-at < do
+            if input-index 0 != do ", " emit end
+            "Cell " emit input-index emit-proc-argument-name
+            ctx proc-index input-index 1 + emit-proc-parameters-from
+        end
+    end
+end
+
+proc emit-proc-parameters ptr int -- do
+    let ctx proc-index do
+        if ctx proc-index proc-input-count-at 0 == do
+            "void" emit
+        else
+            ctx proc-index 0 emit-proc-parameters-from
+        end
+    end
+end
+
+proc emit-proc-signature ptr int -- do
+    let ctx proc-index do
+        ctx proc-index emit-proc-return-type
+        " p" emit ctx proc-index proc-global-id-at emit-unsigned
+        "(" emit ctx proc-index emit-proc-parameters ")" emit
+    end
+end
+
 proc emit-c-prototype ptr int -- do
     let ctx proc-index do
         if ctx proc-index proc-external-at do
             ctx proc-index emit-external-c-prototype
         end
-        "void p" emit
-        ctx proc-index proc-global-id-at emit-unsigned
-        "(void);\n" emit
+        ctx proc-index emit-proc-signature ";\n" emit
     end
 end
 
@@ -4706,6 +4907,7 @@ proc emit-c-emitter-support ptr -- do
     let program do
         program @program-root-module emit-c-preamble
         program emit-string-globals
+        program emit-result-typedefs
         program @program-module-head
         while dup int cast 0 != do
             dup emit-prototypes
@@ -5088,12 +5290,94 @@ proc emit-push-string ptr int -- do
     end
 end
 
+proc emit-call-argument-locals ptr int -- do
+    let cc remaining do
+        if remaining 0 > do
+            remaining 1 -
+            let input-index do
+                cc emit-indent
+                "Cell frog_call_arg_" emit input-index emit-unsigned
+                " = frog_pop();" emit 10 putc
+                cc input-index emit-call-argument-locals
+            end
+        end
+    end
+end
+
+proc emit-call-argument-voids-from ptr int int -- do
+    let cc count input-index do
+        if input-index count < do
+            cc emit-indent "(void)frog_call_arg_" emit input-index emit-unsigned ";" emit 10 putc
+            cc count input-index 1 + emit-call-argument-voids-from
+        end
+    end
+end
+
+proc emit-call-argument-voids ptr int -- do
+    let cc count do cc count 0 emit-call-argument-voids-from end
+end
+
+proc emit-call-arguments-from ptr int int -- do
+    let ctx proc-index input-index do
+        if input-index ctx proc-index proc-input-count-at < do
+            if input-index 0 != do ", " emit end
+            "frog_call_arg_" emit input-index emit-unsigned
+            ctx proc-index input-index 1 + emit-call-arguments-from
+        end
+    end
+end
+
+proc emit-call-arguments ptr int -- do
+    let ctx proc-index do ctx proc-index 0 emit-call-arguments-from end
+end
+
+proc emit-call-result-pushes ptr int -- do
+    let cc output-count do
+        0
+        while dup output-count < do
+            dup
+            let output-index do
+                cc emit-indent
+                "frog_push(frog_call_result.value_" emit output-index emit-unsigned ");" emit 10 putc
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-procedure-invocation ptr ptr int -- do
+    let cc module proc-index do
+        module proc-index proc-output-count-at
+        let output-count do
+            if output-count 0 == do
+                cc emit-indent
+                module proc-index proc-global-id-at emit-proc-name
+                "(" emit module proc-index emit-call-arguments ");" emit 10 putc
+            elif output-count 1 == do
+                cc emit-indent "frog_push(" emit
+                module proc-index proc-global-id-at emit-proc-name
+                "(" emit module proc-index emit-call-arguments "));" emit 10 putc
+            else
+                cc emit-indent
+                output-count emit-result-type-name " frog_call_result = " emit
+                module proc-index proc-global-id-at emit-proc-name
+                "(" emit module proc-index emit-call-arguments ");" emit 10 putc
+                cc output-count emit-call-result-pushes
+            end
+        end
+    end
+end
+
 proc emit-call ptr ptr int -- do
     let cc module proc-index do
         if cc @cc-emitting do
-            cc emit-indent
-            module proc-index proc-global-id-at emit-proc-name
-            "();" emit 10 putc
+            cc emit-indent "{" emit 10 putc
+            cc indent-more
+            cc module proc-index proc-input-count-at emit-call-argument-locals
+            cc module proc-index emit-procedure-invocation
+            cc indent-less
+            cc emit-indent "}" emit 10 putc
         end
     end
 end
@@ -5850,8 +6134,8 @@ proc compile-union-word ptr int -- bool do
     end
 end
 
-proc emit-function-dispatch-module ptr int ptr -- do
-    let function-module function-index proc-module do
+proc emit-function-dispatch-module ptr ptr int ptr -- do
+    let cc function-module function-index proc-module do
         0
         while dup proc-module @ctx-proc-count < do
             dup
@@ -5860,11 +6144,14 @@ proc emit-function-dispatch-module ptr int ptr -- do
                     function-module function-index proc-module proc-index
                     function-proc-contracts-equal
                 do
-                    " case " emit
+                    cc emit-indent "case " emit
                     proc-module proc-index proc-global-id-at emit-unsigned
-                    ": " emit
-                    proc-module proc-index proc-global-id-at emit-proc-name
-                    "(); break;" emit
+                    ": {" emit 10 putc
+                    cc indent-more
+                    cc proc-module proc-index emit-procedure-invocation
+                    cc emit-indent "break;" emit 10 putc
+                    cc indent-less
+                    cc emit-indent "}" emit 10 putc
                 end
             end
             1 +
@@ -5873,12 +6160,12 @@ proc emit-function-dispatch-module ptr int ptr -- do
     end
 end
 
-proc emit-function-dispatch-cases ptr ptr int -- do
-    let program function-module function-index do
+proc emit-function-dispatch-cases ptr ptr ptr int -- do
+    let cc program function-module function-index do
         program @program-module-head
         while dup int cast 0 != do
             let proc-module do
-                function-module function-index proc-module emit-function-dispatch-module
+                cc function-module function-index proc-module emit-function-dispatch-module
                 proc-module @ctx-next-module
             end
         end
@@ -5890,10 +6177,18 @@ proc emit-function-call ptr ptr int -- do
     let cc function-module function-index do
         if cc @cc-emitting do
             cc emit-indent
-            "{ Cell function_id = frog_pop(); switch (function_id) {" emit
-            cc @cc-program function-module function-index emit-function-dispatch-cases
-            " default: frog_runtime_fail(); } }" emit
-            10 putc
+            "{ Cell function_id = frog_pop();" emit 10 putc
+            cc indent-more
+            cc function-module function-index function-input-count-at emit-call-argument-locals
+            cc function-module function-index function-input-count-at emit-call-argument-voids
+            cc emit-indent "switch (function_id) {" emit 10 putc
+            cc indent-more
+            cc cc @cc-program function-module function-index emit-function-dispatch-cases
+            cc emit-indent "default: frog_runtime_fail();" emit 10 putc
+            cc indent-less
+            cc emit-indent "}" emit 10 putc
+            cc indent-less
+            cc emit-indent "}" emit 10 putc
         end
     end
 end
@@ -6282,19 +6577,7 @@ proc proc-input-type-at ptr int int -- int do
 end
 
 proc emit-ffi-argument-name int -- do
-    "frog_ffi_arg_" emit emit-unsigned
-end
-
-proc emit-external-input-locals ptr int int -- do
-    let ctx proc-index remaining do
-        if remaining 0 > do
-            remaining 1 -
-            let input-index do
-                "  Cell " emit input-index emit-ffi-argument-name " = frog_pop();\n" emit
-                ctx proc-index input-index emit-external-input-locals
-            end
-        end
-    end
+    emit-proc-argument-name
 end
 
 proc emit-external-argument ptr int int -- do
@@ -6334,25 +6617,24 @@ end
 
 proc compile-external-procedure ptr int -- do
     let ctx proc-index do
-        "void " emit ctx proc-index proc-global-id-at emit-proc-name "(void) {\n" emit
-        ctx proc-index ctx proc-index proc-input-count-at emit-external-input-locals
+        ctx proc-index emit-proc-signature " {\n" emit
         if ctx proc-index proc-output-count-at 0 == do
             "  " emit ctx proc-index emit-external-call-expression ";\n" emit
         else
             ctx ctx proc-index proc-output-start-at type-at
             let output-type do
                 if output-type type-int == do
-                    "  frog_push((Cell)" emit
+                    "  return (Cell)" emit
                     ctx proc-index emit-external-call-expression
-                    ");\n" emit
+                    ";\n" emit
                 elif output-type type-bool == do
-                    "  frog_push((Cell)(" emit
+                    "  return (Cell)(" emit
                     ctx proc-index emit-external-call-expression
-                    " != 0));\n" emit
+                    " != 0);\n" emit
                 elif output-type type-ptr == do
-                    "  frog_push((Cell)(intptr_t)" emit
+                    "  return (Cell)(intptr_t)" emit
                     ctx proc-index emit-external-call-expression
-                    ");\n" emit
+                    ";\n" emit
                 else
                     "internal unknown C ABI return type" fail
                 end
@@ -6385,6 +6667,42 @@ proc compile-procedure-body ptr ptr int -- do
     end
 end
 
+proc emit-proc-input-pushes ptr ptr int int -- do
+    let cc ctx proc-index input-index do
+        if input-index ctx proc-index proc-input-count-at < do
+            cc emit-indent "frog_push(frog_arg_" emit input-index emit-unsigned ");" emit 10 putc
+            cc ctx proc-index input-index 1 + emit-proc-input-pushes
+        end
+    end
+end
+
+proc emit-proc-return-values ptr int -- do
+    let cc remaining do
+        if remaining 0 > do
+            remaining 1 -
+            let output-index do
+                cc emit-indent "frog_result.value_" emit output-index emit-unsigned " = frog_pop();" emit 10 putc
+                cc output-index emit-proc-return-values
+            end
+        end
+    end
+end
+
+proc emit-proc-return ptr ptr int -- do
+    let cc ctx proc-index do
+        ctx proc-index proc-output-count-at
+        let output-count do
+            if output-count 1 == do
+                cc emit-indent "return frog_pop();" emit 10 putc
+            elif output-count 1 > do
+                cc emit-indent output-count emit-result-type-name " frog_result;" emit 10 putc
+                cc output-count emit-proc-return-values
+                cc emit-indent "return frog_result;" emit 10 putc
+            end
+        end
+    end
+end
+
 proc compile-procedure ptr ptr int -- do
     let program ctx proc-index do
         if ctx proc-index proc-external-at do
@@ -6399,11 +6717,11 @@ proc compile-procedure ptr ptr int -- do
                     let cc do
                         true cc !cc-emitting
                         max-type-count cc !cc-max-type-count
-                        "void " emit
-                        ctx proc-index proc-global-id-at emit-proc-name
-                        "(void) {" emit 10 putc
+                        ctx proc-index emit-proc-signature " {" emit 10 putc
                         1 cc !cc-indent
+                        cc ctx proc-index 0 emit-proc-input-pushes
                         cc ctx proc-index compile-procedure-body
+                        cc ctx proc-index emit-proc-return
                         "}" emit 10 putc
                     end
                 end

@@ -11,6 +11,7 @@ fn BoolUnary bool -- bool end
 fn PtrUnary ptr -- ptr end
 fn Self Self -- Self end
 fn Countdown int -- int end
+fn Pair -- int int end
 
 proc before-inc -- int do 41 Mapper:ref:inc Mapper:call end
 
@@ -51,6 +52,8 @@ proc self-id Self -- Self do end
 proc countdown int -- int do
     if dup 0 == do else 1 - countdown end
 end
+proc pair -- int int do 11 22 end
+proc subtract int int -- int do - end
 
 proc main -- do
     Unit:ref:unit Unit:call
@@ -93,4 +96,17 @@ proc main -- do
     0 ptr cast PtrUnary:ref:ptr-id PtrUnary:call int cast 0 == print
     Self:ref:self-id dup Self:call drop
     3 Countdown:ref:countdown Countdown:call print
+    99 pair
+    let prefix first second do
+        first print
+        second print
+        prefix print
+    end
+    77 Pair:ref:pair Pair:call
+    let prefix first second do
+        first print
+        second print
+        prefix print
+    end
+    20 3 subtract print
 end

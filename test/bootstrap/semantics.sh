@@ -93,7 +93,7 @@ run_ok pointer_store $'65\n'
 run_ok c_ffi $'42\n42\n711\ntrue\nfalse\n'
 run_ok records_layout $'41\ntrue\ntrue\n32\n7\n'
 run_ok unions_layout $'true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n'
-run_ok functions_layout $'42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n'
+run_ok functions_layout $'42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n11\n22\n99\n11\n22\n77\n17\n'
 run_ok functions_macro_shadow $'99\n'
 run_ok optimizer_constant_add $'5\n18\n3\n9\n'
 run_ok optimizer_macro_shadow $'41\n'
@@ -104,8 +104,18 @@ run_status unions_negative_tag 1
 run_status unions_null 1
 run_status functions_unknown_proc 1
 run_status functions_incompatible_proc 1
-printf '%s' $'void p1(void) {\n  Cell frog_ffi_arg_2 = frog_pop();\n  Cell frog_ffi_arg_1 = frog_pop();\n  Cell frog_ffi_arg_0 = frog_pop();\n  frog_push((Cell)ffi_test_mix((int)frog_ffi_arg_0, (int)(frog_ffi_arg_1 != 0), (void *)(intptr_t)frog_ffi_arg_2));\n}\n' \
-    | cmp - <(sed -n '/^void p1(void) {$/,/^}$/p' "$output/c_ffi.c")
+printf '%s' $'Cell p1(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n  return (Cell)ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(intptr_t)frog_arg_2);\n}\n' \
+    | cmp - <(sed -n '/^Cell p1(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {$/,/^}$/p' "$output/c_ffi.c")
+grep -Fq 'Cell p0(void);' "$output/functions_layout.c"
+grep -Fq 'void p2(void);' "$output/functions_layout.c"
+grep -Fq 'Cell p3(Cell frog_arg_0, Cell frog_arg_1);' "$output/functions_layout.c"
+grep -Fq 'frog_results_2 p4(Cell frog_arg_0);' "$output/functions_layout.c"
+grep -Fq 'typedef struct { Cell value_0; Cell value_1; } frog_results_2;' "$output/functions_layout.c"
+grep -Fq 'Cell frog_call_arg_1 = frog_pop();' "$output/functions_layout.c"
+grep -Fq 'frog_results_2 frog_call_result = p4(frog_call_arg_0);' "$output/functions_layout.c"
+grep -Fq 'frog_push(frog_call_result.value_1);' "$output/functions_layout.c"
+grep -Fq 'frog_push(p13(frog_call_arg_0));' "$output/functions_layout.c"
+grep -Fq 'switch (function_id) {' "$output/functions_layout.c"
 printf '%s' $'  frog_push(5);\n  frog_push(18);\n  frog_push(9);\n' \
     | cmp - <(sed -n '/^void p0(void) {$/,/^}$/p' "$output/optimizer_constant_add.c" \
         | sed -n '/^  frog_push(5);$/p; /^  frog_push(18);$/p; /^  frog_push(9);$/p')
