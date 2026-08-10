@@ -5,6 +5,8 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 extern magnitude abs c-int -- c-int end
 extern release free c-ptr -- end
 

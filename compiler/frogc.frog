@@ -4393,7 +4393,6 @@ end
 proc constant-runtime-intrinsic-word ModuleContext int -- bool do
     peek module token-index do "read-file" token-equals
         module token-index "cast" token-equals ||
-        module token-index "alloc" token-equals ||
         module token-index "args" token-equals ||
         module token-index "@ptr" token-equals ||
         module token-index "@i8" token-equals ||
@@ -4414,10 +4413,6 @@ proc constant-runtime-intrinsic-word ModuleContext int -- bool do
         module token-index "!u32" token-equals ||
         module token-index "!u64" token-equals ||
         module token-index "print" token-equals ||
-        module token-index "putc" token-equals ||
-        module token-index "getc" token-equals ||
-        module token-index "eputc" token-equals ||
-        module token-index "exit" token-equals ||
         module token-index "?" token-equals ||
     end
 end
@@ -5943,13 +5938,6 @@ proc compile-memory-io-intrinsic ptr int -- bool do
             true
         elif cc @cc-defining-module token-index "cast" token-equals do
             cc compile-cast-intrinsic true
-        elif cc @cc-defining-module token-index "alloc" token-equals do
-            cc type-int type-expect cc type-ptr type-push
-            if cc @cc-emitting do
-                cc emit-indent cc emit-top-slot " = (Cell)(intptr_t)frog_alloc(" emit
-                cc emit-top-slot ");" emit 10 putc
-            end
-            true
         elif cc @cc-defining-module token-index "args" token-equals do
             cc type-ptr type-push
             cc type-int type-push
@@ -6018,31 +6006,6 @@ proc compile-memory-io-intrinsic ptr int -- bool do
                 else
                     "printing this type is not supported" fail
                 end
-            end
-            true
-        elif cc @cc-defining-module token-index "putc" token-equals do
-            cc type-int type-expect
-            if cc @cc-emitting do
-                cc emit-indent "putchar((int)(unsigned char)" emit cc cc @cc-type-count emit-slot ");" emit 10 putc
-            end
-            true
-        elif cc @cc-defining-module token-index "getc" token-equals do
-            cc type-int type-push
-            if cc @cc-emitting do
-                cc emit-indent cc emit-top-slot " = (Cell)getchar();" emit 10 putc
-            end
-            true
-        elif cc @cc-defining-module token-index "eputc" token-equals do
-            cc type-int type-expect
-            if cc @cc-emitting do
-                cc emit-indent "fputc((int)(unsigned char)" emit cc cc @cc-type-count emit-slot
-                ", stderr);" emit 10 putc
-            end
-            true
-        elif cc @cc-defining-module token-index "exit" token-equals do
-            cc type-int type-expect
-            if cc @cc-emitting do
-                cc emit-indent "exit((int)" emit cc cc @cc-type-count emit-slot ");" emit 10 putc
             end
             true
         elif cc @cc-defining-module token-index "?" token-equals do

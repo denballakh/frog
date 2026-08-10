@@ -78,6 +78,8 @@ def main() -> None:
     assert special_regex.fullmatch('String.bytes')
     assert special_regex.fullmatch('String.len')
     assert special_regex.fullmatch('?')
+    for library_word in ('alloc', 'putc', 'getc', 'eputc', 'exit'):
+        assert special_regex.fullmatch(library_word) is None
     assert special_regex.fullmatch('Node.bytes') is None
     assert special_regex.fullmatch('Node.bytes!') is None
     assert special_regex.fullmatch('Maybe.some') is None

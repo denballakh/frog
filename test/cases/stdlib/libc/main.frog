@@ -16,4 +16,6 @@ proc main -- do
 
     getc 0 1 - == require
     65 putc
+    69 eputc
+    0 exit
 end

@@ -1,3 +1,5 @@
+from "../../../../stdlib/libc.frog" import alloc
+
 proc main -- do
     8 alloc
     let slot do

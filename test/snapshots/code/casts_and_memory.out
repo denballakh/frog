@@ -197,6 +197,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 proc main -- do
     9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end
 end
@@ -302,6 +304,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 proc main -- do
     4 alloc let p do 42 p !i8 p @i8 print end
 end
@@ -326,6 +330,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 proc main -- do
     4 alloc let p do 255 p !u8 p @u8 print p @i8 print end
 end
@@ -351,6 +357,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 proc main -- do
     4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end
 end
@@ -376,6 +384,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 proc main -- do
     4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end
 end
@@ -401,6 +411,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import alloc
+
 proc cell ptr int -- int do + @u8 end
 
 proc main -- do
@@ -427,6 +439,8 @@ Output:
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import putc
+
 proc main -- do
     "README.md" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end
 end

@@ -1,3 +1,5 @@
+from "../stdlib/libc.frog" import ( alloc putc )
+
 proc setcell int ptr int -- do
     + !u8
 end

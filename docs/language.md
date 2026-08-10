@@ -130,6 +130,8 @@ There are no anonymous functions, captured environments, closures, implicit cont
 External C functions use an explicit Frog name, C linker symbol, and scalar ABI contract:
 
 ```frog
+from "stdlib/libc.frog" import alloc
+
 extern magnitude abs c-int -- c-int end
 extern release free c-ptr -- end
 
@@ -342,7 +344,6 @@ end
 
 ### Memory
 
-- `alloc`: `size_bytes -- ptr` allocates a byte buffer.
 - `read-file`: `path_ptr path_length -- data_ptr data_length success` reads a UTF-8 path into an allocated byte buffer. On failure it returns length `0` and `false`; the data pointer must not be dereferenced.
 - Pointer arithmetic supports `ptr int + -- ptr` and `ptr int - -- ptr`; offsets are in bytes.
 - `int ptr +` is not supported.
@@ -364,11 +365,9 @@ end
 ### Output And Debugging
 
 - `print`: `int --` or `bool --`, prints one value with a newline.
-- `putc`: `int --`, writes a single byte without an added newline.
-- `getc`: `-- int`, reads one byte from standard input, or pushes `-1` at EOF.
-- `eputc`: `int --`, writes one byte to standard error.
-- `exit`: `int --`, terminates execution with the supplied exit status.
 - `?`: `--`, a no-op debugging marker.
+
+Byte allocation, byte-oriented standard I/O, memory release, and process termination are provided by [`stdlib/libc.frog`](stdlib.md#libc), not by the language.
 
 ## Runtime Limits
 

@@ -5,6 +5,8 @@
 ### Source: `test/tmp_fs/code.frog`
 
 ```frog
+from "../../stdlib/libc.frog" import putc
+
 proc main -- do
     args let argv argc do argc print argv @ptr @u8 putc 10 putc end
 end

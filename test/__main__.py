@@ -235,6 +235,8 @@ code_examples: list[SourceInput] = [
     #
     SourceSpec(
         before_main='''
+        from "../../stdlib/libc.frog" import alloc
+
         extern magnitude abs c-int -- c-int end
         extern release free c-ptr -- end
         ''',
@@ -252,7 +254,10 @@ code_examples: list[SourceInput] = [
     'false bool cast print',
     '1 ptr cast int cast print',
     '9223372036854775807 print',
-    '9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end',
+    SourceSpec(
+        before_main='from "../../stdlib/libc.frog" import alloc',
+        body='9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end',
+    ),
     SourceSpec(
         before_main='proc forward -- int do later end\nproc later -- int do 42 end',
         body='forward print',
@@ -266,17 +271,39 @@ code_examples: list[SourceInput] = [
         ''',
         body='3 countdown print',
     ),
-    '4 alloc let p do 42 p !i8 p @i8 print end',
-    '4 alloc let p do 255 p !u8 p @u8 print p @i8 print end',
-    '4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end',
-    '4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end',
     SourceSpec(
-        before_main='proc cell ptr int -- int do + @u8 end',
+        before_main='from "../../stdlib/libc.frog" import alloc',
+        body='4 alloc let p do 42 p !i8 p @i8 print end',
+    ),
+    SourceSpec(
+        before_main='from "../../stdlib/libc.frog" import alloc',
+        body='4 alloc let p do 255 p !u8 p @u8 print p @i8 print end',
+    ),
+    SourceSpec(
+        before_main='from "../../stdlib/libc.frog" import alloc',
+        body='4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end',
+    ),
+    SourceSpec(
+        before_main='from "../../stdlib/libc.frog" import alloc',
+        body='4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end',
+    ),
+    SourceSpec(
+        before_main='''
+        from "../../stdlib/libc.frog" import alloc
+
+        proc cell ptr int -- int do + @u8 end
+        ''',
         body='4 alloc let p do 42 p !u8 p 0 cell print end',
     ),
-    '"README.md" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end',
+    SourceSpec(
+        before_main='from "../../stdlib/libc.frog" import putc',
+        body='"README.md" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end',
+    ),
     '"frog-read-file-missing" dup String.bytes swap String.len read-file let data length success do data drop length print success print end',
-    'args let argv argc do argc print argv @ptr @u8 putc 10 putc end',
+    SourceSpec(
+        before_main='from "../../stdlib/libc.frog" import putc',
+        body='args let argv argc do argc print argv @ptr @u8 putc 10 putc end',
+    ),
     SourceSpec(raw_source=''),
     SourceSpec(raw_source='1 print\n'),
 ]

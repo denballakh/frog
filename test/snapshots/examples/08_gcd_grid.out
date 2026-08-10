@@ -3,6 +3,8 @@
 ### Source: `examples/08_gcd_grid.frog`
 
 ```frog
+from "../stdlib/libc.frog" import putc
+
 proc gcd int int -- int do
     while dup 0 != do
         let a b do

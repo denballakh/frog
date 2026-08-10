@@ -1,3 +1,5 @@
+from "../stdlib/libc.frog" import putc
+
 union Division
     case value int
     case divide_by_zero
