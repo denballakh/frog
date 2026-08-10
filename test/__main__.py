@@ -9,8 +9,6 @@ import subprocess
 import textwrap
 from typing import assert_never
 
-from test.regressions import run_regressions
-
 
 @dataclass(frozen=True)
 class SourceSpec:
@@ -842,7 +840,6 @@ FROGC = ROOT / 'build' / 'frogc'
 
 dir_examples = ROOT / 'examples'
 dir_tests = ROOT / 'test'
-dir_cases = dir_tests / 'cases'
 dir_snapshots = dir_tests / 'snapshots'
 tmp_fs = dir_tests / 'tmp_fs'
 COMMAND_TIMEOUT_SECONDS = 30
@@ -958,8 +955,6 @@ for file_code_example in file_code_examples:
 try:
     shutil.rmtree(tmp_fs, ignore_errors=True)
     tmp_fs.mkdir(parents=True)
-
-    run_regressions(ROOT, FROGC, dir_cases, tmp_fs / 'regressions')
 
     shutil.rmtree(dir_snapshots, ignore_errors=True)
     dir_snapshots.mkdir(parents=True)

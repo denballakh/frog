@@ -6,13 +6,13 @@ The snapshot suite is orchestrated by `test/__main__.py` through:
 just test
 ```
 
-`just test` runs formatting, Python typechecking, compiler fixed-point checks, native regression cases, and snapshot generation. It fails if `test/snapshots/` has tracked or untracked changes afterward.
+`just test` runs formatting, Python typechecking, compiler fixed-point checks, the Frog-owned regression corpus, and snapshot generation. It fails if `test/snapshots/` has tracked or untracked changes afterward.
 
-`compiler/frogc.frog` implements the compiler, typechecker, C emitter, and process/file CLI orchestration. `test/__main__.py` invokes the Python regression runner, materializes snapshot cases, invokes the Frog-written CLI in subprocesses, and renders snapshots. Python is test-only; there is no Python language implementation or interpreter.
+`compiler/frogc.frog` implements the compiler, typechecker, C emitter, and process/file CLI orchestration. `test/runner.frog` owns language and runtime regressions. `test/__main__.py` materializes the remaining snapshot cases, invokes the Frog-written CLI in subprocesses, and renders snapshots. Python is test-only; there is no Python language implementation or interpreter.
 
 `just bootstrap-check` verifies that `compiler/frogc.c`, stage 2, and stage 3 are byte-identical. Language and runtime regressions are normal test cases rather than a separate bootstrap suite.
 
-`test/regressions.py` runs the fixtures under `test/cases/`. It uses the compiler's stdin-to-stdout mode, compiles successful output with strict C11 warnings, links fixture-local helper C where required, and checks exact output, exit status, diagnostics, and selected generated-C properties.
+`test/runner.frog`, `test/framework.frog`, and `test/regression_cases.frog` run the fixtures under `test/cases/`. They use the compiler's stdin-to-stdout mode, compile successful output with strict C11 warnings, link fixture-local helper C where required, and check exact output, exit status, diagnostics, and selected generated-C properties. Run this corpus directly with `just frog-regressions`.
 
 Snapshots are Markdown-style `.out` files. They embed the Frog source or CLI command being tested, followed by captured output, so a snapshot diff can usually be reviewed without opening the fixture source separately.
 

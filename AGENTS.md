@@ -48,9 +48,9 @@ The language and implementation are inspired by Porth. Frog programs use postfix
   optional child cwd, captured stdout/stderr, and explicit result ownership.
 - `stdlib/test.frog`: Explicit-suite checks for booleans, integers, byte ranges,
   and strings, with failure aggregation and status-based completion.
-- `test/__main__.py`: Main Python test orchestration for native regressions, example files, CLI cases, inline snippets, multi-file imports, snapshots, and black-box build-artifact assertions. It invokes the Frog-written compiler and CLI in subprocesses and contains no language implementation.
-- `test/regressions.py`: Assertion-only Python runner for exact diagnostics, strict generated-C compilation, executable output/status, helper-C linkage, and generated-C properties.
-- `test/cases/`: Import, language-semantics, string, and standalone regression fixtures used by `test/regressions.py`.
+- `test/runner.frog`, `test/framework.frog`, and `test/regression_cases.frog`: Frog-owned regression runner, assertions, and case manifest. They compile successful output with strict C11 warnings, link fixture-local helper C where required, run executables, check exact diagnostics/output/status, and enforce selected generated-C properties.
+- `test/__main__.py`: Python host orchestration for example, CLI, inline, multi-file snapshot, and build-artifact policy cases that have not yet moved to Frog. It invokes the Frog-written compiler and CLI in subprocesses and contains no language implementation.
+- `test/cases/`: Import, language-semantics, string, standalone, and standard-library fixtures used by the Frog regression runner.
 - `test/snapshots/**/*.out`: Markdown-style snapshot output files produced by `python -m test`. Snapshots embed tested source or CLI arguments with captured output.
 - `test/tmp_fs/`: Temporary filesystem tree created by tests for inline code and multi-file cases; generated `.c`/`.exe` files under it are build artifacts.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
@@ -99,7 +99,7 @@ Useful direct commands:
 
 - `just test` is the expected and recommended full verification command
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
-- `just test` regenerates `test/snapshots/**/*.out` by capturing stdout from many scenarios, then fails if the snapshot directory differs from git, including untracked files.
+- `just test` first runs the Frog-owned regression corpus, then regenerates `test/snapshots/**/*.out` through the remaining Python host runner and fails if the snapshot directory differs from git, including untracked files.
 - Snapshots are self-contained Markdown-style `.out` files. They embed the Frog source or CLI command under test before the captured output.
 - Each example, inline, and multi-file corpus case runs once through the `build/frogc run` path.
 - Inline cases use immutable `SourceSpec` values to materialize an explicit `proc main -- do ... end`; declaration-order and malformed-structure cases use the appropriate structural fields or verbatim raw source.
@@ -109,7 +109,7 @@ Useful direct commands:
 - After behavior changes, inspect the regenerated snapshot `.out` files to confirm the new output is intentional.
 - One focused CLI case exercises `build -r`. Additional Python assertions verify direct-output behavior across a forced GCC failure, deterministic regeneration, successful replacement, and lexical imports through a symlinked root source.
 - CLI `build` test artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
-- `just bootstrap-check` checks only compiler fixed-point equality. The Python regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `python -m test` / `just test`.
+- `just bootstrap-check` checks only compiler fixed-point equality. The Frog regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `just frog-regressions` / `just test`.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
 
 ## CLI Behavior
