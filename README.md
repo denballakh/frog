@@ -37,7 +37,7 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The compiler supports pooled struct-backed strings, nominal pointer-backed records and tagged unions, nominal first-class function references, eagerly evaluated compile-time constants, module-aware macros, an embedded standard macro prelude, scalar C foreign-function declarations, a deterministic checked literal-add peephole optimization, and root-relative imports of procedures, external functions, constants, nominal types, and macros, including aliases, grouped imports, and reexports.
+The language supports strings, nominal records and tagged unions, first-class function references, compile-time constants and macros, scalar C foreign-function declarations, and root-relative imports with aliases, groups, and reexports. See the [language reference](./docs/language.md) for syntax and semantics.
 
 To bootstrap manually without Python:
 
@@ -53,3 +53,9 @@ VS Code extension features, installation, updates, and removal are documented in
 
 # Examples
 -> [/examples/](./examples/)
+
+Feature-focused examples:
+
+- [records](./examples/09_records.frog)
+- [tagged unions](./examples/10_tagged_unions.frog)
+- [C FFI](./examples/11_c_ffi.frog)

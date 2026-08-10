@@ -25,6 +25,8 @@ Snapshot groups:
 
 Each example, inline snippet, and multi-file case runs once through the native `build/frogc run` path. That path compiles Frog to C, compiles the C program, and executes the resulting binary.
 
+Top-level `examples/*.frog` files are discovered automatically. Adding an example therefore requires reviewing and committing its generated snapshot, but no test-runner registration.
+
 Inline cases use immutable `SourceSpec` values. `body` is mechanically indented inside an explicit `proc main -- do ... end`; `before_main` and `after_main` hold declarations whose placement matters; `raw_source` is reserved for malformed or top-level structural probes. Snapshots embed the fully materialized source, not the concise fields. Multi-file roots use the same representation, while imported module files remain verbatim source.
 
 One focused CLI snapshot exercises `build -r` under `test/tmp_fs/`. Additional assertions force GCC to fail after Frog has directly regenerated the C output, verify that a subsequent successful build is deterministic, and verify lexical import resolution through a symlinked root source. `run` reuses ignored scratch artifacts under `build/`, so it does not publish artifacts beside examples.

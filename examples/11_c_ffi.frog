@@ -1,0 +1,7 @@
+extern magnitude abs c-int -- c-int end
+extern release free c-ptr -- end
+
+proc main -- do
+    0 42 - magnitude print
+    32 alloc release
+end

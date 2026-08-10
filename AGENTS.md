@@ -31,6 +31,9 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `examples/06_let.frog`: Local binding demo with `let`.
 - `examples/07_rule30.frog`: Rule 30 ASCII cellular automaton using byte buffers, pointer arithmetic, memory reads/writes, and `putc`.
 - `examples/08_gcd_grid.frog`: Euclidean GCD rendered as a 40x40 coprimality grid using `#` for coprime coordinates and space otherwise.
+- `examples/09_records.frog`: Record allocation, field access, and a typed procedure.
+- `examples/10_tagged_unions.frog`: A tagged result with checked testing and projection.
+- `examples/11_c_ffi.frog`: Calls C standard-library functions through scalar C FFI.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/testing.md`: Test snapshot workflow and review process.
@@ -145,7 +148,7 @@ Commands:
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 - `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
-- `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `Name.field`/`Name.field!` provide statically typed access.
+- `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `@Name.field`/`!Name.field` provide statically typed access.
 - Record fields occupy one eight-byte Cell in declaration order. Record-valued fields store handles, and only explicit `ptr`/record casts cross the nominal boundary.
 - `union Name case Variant [PayloadType] ... end` defines a nominal pointer-backed tagged union with zero or one payload Cell per variant. `Name:variant` constructs, `Name.variant?` preserves and tests a validated handle, and `Name.variant` performs a checked projection.
 - Union constructors allocate internal tag-and-payload storage. Union lifetime is manual, payload handles are borrowed, explicit `ptr`/union casts form an unsafe boundary, and matching through `if`/`elif` is not exhaustiveness-checked.
@@ -157,6 +160,7 @@ Commands:
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
 - When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and snapshot coverage, user-facing docs, and optionally the VS Code grammar.
 - Name direct compiler-internal pointer-field accessors `@object-field` and `!object-field`, used as `object @object-field` and `value object !object-field`. Keep indexed table operations and computed helpers under descriptive names instead of treating them as direct accessors.
+- Compiler module state is the nominal `ModuleContext` record. Use generated `@ModuleContext.field` / `!ModuleContext.field` operations, keep semantic module values nominal, and confine raw casts to storage boundaries and null/identity checks; do not recreate manual `ctx-*` offset/accessor families.
 - String literals lower to one `String` handle backed by a static byte-pointer/length descriptor. `String.bytes` and `String.len` expose its fields; byte storage is writable and shared by equal pooled literals, and generated globals and macro expansion must retain the defining module's pooled literal identity.
 - Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.

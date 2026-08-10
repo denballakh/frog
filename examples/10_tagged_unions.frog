@@ -1,0 +1,29 @@
+union Division
+    case value int
+    case divide_by_zero
+end
+
+proc safe-divide int int -- Division do
+    let numerator denominator do
+        if denominator 0 == do
+            Division:divide_by_zero
+        else
+            numerator denominator / Division:value
+        end
+    end
+end
+
+proc show-result Division -- do
+    if Division.value? do
+        Division.value print
+    else
+        Division.divide_by_zero
+        'E' putc
+        10 putc
+    end
+end
+
+proc main -- do
+    20 4 safe-divide show-result
+    20 0 safe-divide show-result
+end

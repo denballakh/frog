@@ -2,18 +2,16 @@
 
 FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
-`compiler/frogc.frog` is the sole Frog compiler and typechecker. It emits C, which is compiled to the executable program; there is no separate interpreter or Python language implementation.
-
 ## Values And Literals
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, `String`, nominal record and union handles, nominal function references, and `type`.
 - Procedure signatures can name `int`, `bool`, `ptr`, `String`, and visible record, union, or function-reference types.
-- `int` is a signed 64-bit integer in generated C. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
+- `int` is a signed 64-bit integer. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.
-- String literals push one `String` value. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`; there are no descriptor-field setters or per-use allocations. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
-- Generated C stores each pooled literal as a static `{ byte pointer, Cell length }` descriptor plus a writable C string-literal byte array. Equal decoded strings share one descriptor and byte array across all modules and macro expansions, so writes through `String.bytes` are visible through every equal literal in the program. Symbols use a deterministic content hash and a collision suffix when unequal strings have the same hash. The byte array has a trailing NUL, but `String.len` excludes it and preserves embedded NUL bytes.
+- String literals push one `String` value. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
+- Equal decoded string literals share writable byte storage, so writes through `String.bytes` are visible through every equal literal in the program. The storage has a trailing NUL byte, while `String.len` excludes that terminator and includes embedded NUL bytes.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 
@@ -33,11 +31,11 @@ proc inc int -- int do
 end
 ```
 
-Procedure calls are statically checked against declared stack contracts. Generated C passes inputs as ordinary arguments and returns outputs directly or in a result struct; each procedure uses a fixed-size local cell array for intermediate values.
+Procedure calls are statically checked against declared stack contracts.
 
 ## Records
 
-Records define nominal, pointer-backed collections of typed fields:
+Records define nominal reference values with typed fields:
 
 ```frog
 record Node
@@ -58,13 +56,15 @@ proc main -- do
 end
 ```
 
-`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be `int`, `bool`, `ptr`, `String`, or any visible nominal type; handle-valued fields store one Cell rather than inline data.
+`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be `int`, `bool`, `ptr`, `String`, or any visible nominal type. Record, union, and function-reference fields store handles rather than inline copies.
 
 Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
 
 `@Name.field` reads a field with stack effect `Name -- FieldType`; `!Name.field` writes it with stack effect `FieldType Name --`. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
 
 Record types are nominal. Two declarations with identical fields are different types, and field access requires the declared owner type. Explicit `ptr` to record and record to `ptr` casts are available for raw allocation and C FFI boundaries; direct casts between different record types are rejected.
+
+See the runnable [records example](../examples/09_records.frog).
 
 ## Tagged Unions
 
@@ -79,8 +79,7 @@ end
 
 proc main -- do
     42 Result:ok
-    Result.ok?
-    if do
+    if Result.ok? do
         Result.ok print
     else
         Result.error drop
@@ -92,11 +91,13 @@ end
 
 `Name:variant` constructs a value, consuming the declared payload when present. `Name.variant?` validates the stored tag and has stack effect `Name -- Name bool`, preserving the handle so an immediately following `if` can project it. `Name.variant` validates that the value has exactly that variant, consumes the handle, and produces its payload; for a payloadless variant it only validates and consumes the handle. Invalid tags and wrong-variant projections terminate the program with status 1.
 
-Union values are pointer-backed handles to an internal tag-and-payload allocation. Constructors allocate; predicates and projections do not free. Payload handles are borrowed values, and unions do not own or recursively free them. The representation is not a C ABI or layout promise, and there is no uninitialized allocation or size operation for unions. Explicit `ptr`/union casts are available for manual lifetime and FFI boundaries; a pointer cast to a union must refer to a live value created by the matching union constructor.
+Union constructors allocate values; predicates and projections do not free them. Payload handles are borrowed, and unions do not own or recursively free their payloads. There is no uninitialized allocation or size operation for unions. Explicit `ptr`/union casts are available for manual lifetime and FFI boundaries; a pointer cast to a union must refer to a live value created by the matching union constructor.
 
-Union types are nominal. Structurally identical declarations remain distinct, including through casts. Imported aliases and reexports retain the defining union's identity. Branching uses the existing `if`/`elif` constructs; the compiler does not currently provide exhaustive matching.
+Union types are nominal. Structurally identical declarations remain distinct, including through casts. Imported aliases and reexports retain the defining union's identity. Branching uses the existing `if`/`elif` constructs; matching is not exhaustiveness-checked.
 
-An exact user-defined or imported macro may shadow a generated record or union operation. Without such a macro, qualified nominal operations resolve before locals and procedures with the same spelling.
+An exact user-defined or imported macro may shadow a qualified record or union operation. Without such a macro, qualified nominal operations resolve before locals and procedures with the same spelling.
+
+See the runnable [tagged-unions example](../examples/10_tagged_unions.frog).
 
 ## Function References
 
@@ -116,13 +117,13 @@ proc main -- do
 end
 ```
 
-`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and external Frog procedures are supported because external declarations also have generated procedure wrappers with the same call ABI.
+`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and external Frog procedures are supported.
 
 `Name:call` has stack effect `<inputs> Name -- <outputs>`: the function reference is on top of its inputs. Function-reference types are nominal, so independently declared types with identical contracts are not interchangeable. They may appear in procedure signatures, record fields, union payloads, and other function-reference contracts.
 
-A function reference is an opaque one-Cell generated procedure ID. Indirect calls dispatch only to generated procedures whose complete resolved contract matches the declared function-reference type; unknown or incompatible IDs terminate the program with status 1. Function references cannot be cast to or from `int` or `ptr`, have no allocation or lifetime operations, and do not expose their IDs.
+A function reference is opaque and can call only a procedure whose complete resolved contract matches the declared function-reference type. Function references cannot be cast to or from `int` or `ptr`, have no allocation or lifetime operations, and do not expose an underlying identity value.
 
-There are no anonymous functions, captured environments, closures, implicit contract coercions, or C callback conversions. Exact macros may shadow `Name:ref:procedure` or `Name:call`; otherwise generated function operations have the same precedence over locals and procedures as other nominal operations.
+There are no anonymous functions, captured environments, closures, implicit contract coercions, or C callback conversions. Exact macros may shadow `Name:ref:procedure` or `Name:call`; otherwise qualified function operations have the same precedence over locals and procedures as other nominal operations.
 
 ## C Foreign Functions
 
@@ -140,9 +141,16 @@ end
 
 The supported ABI types are `c-int` (Frog `int`, C `int`), `c-bool` (Frog `bool`, C `int` normalized to zero or one), and `c-ptr` (Frog `ptr`, C `void *`). An external function may consume any number of values and return zero or one value. It cannot be variadic.
 
-The C symbol must be an ASCII C identifier that is not a C11 keyword or a generated-C name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. Generated code declares and calls the symbol directly, so it must be provided by the C implementation or supplied when the generated C is linked. Frog does not load libraries dynamically or process C headers.
+The C symbol must be an ASCII C identifier that is not a C11 keyword or a Frog-reserved name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. The symbol must be available when the program is linked. Frog does not load libraries dynamically or process C headers.
 
 External functions use normal Frog name resolution and static stack-contract checking. They can be imported, aliased, and reexported like Frog procedures. Multiple Frog names may bind the same C symbol only when every declaration has the same ABI contract.
+
+The [C FFI example](../examples/11_c_ffi.frog) uses symbols from the C standard library. To provide symbols from another C source file, generate C and link both sources:
+
+```sh
+build/frogc < program.frog > program.c
+gcc -std=c11 program.c helper.c -o program
+```
 
 ## Macros
 
@@ -175,7 +183,7 @@ proc main -- do
 end
 ```
 
-`const name <expression> end` starts evaluation with an empty stack, infers the result arity and types, and requires at least one result. Results may be `int`, `bool`, or `String`; character literals produce `int`. Multiple results retain their bottom-to-top order. A use emits integer or bool assignments and pooled String references directly, so the defining arithmetic is not emitted or reevaluated at runtime.
+`const name <expression> end` starts evaluation with an empty stack, infers the result arity and types, and requires at least one result. Results may be `int`, `bool`, or `String`; character literals produce `int`. Multiple results retain their bottom-to-top order. Evaluation happens once during compilation; each use pushes the stored results without reevaluating the expression at runtime.
 
 Constant expressions accept literals, visible constant references, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. They do not execute macros, procedures, control flow, local bindings, allocation, memory or I/O operations, casts, or nominal-type operations. Integer overflow, division by zero, and invalid shifts are compile errors. Constant shifts require a non-negative value and a count from 0 through 62.
 
@@ -183,7 +191,7 @@ Constants have whole-module scope, may refer forward to later constants, and are
 
 ## Standard Prelude
 
-The compiler embeds a small Frog source module containing `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot`. These words are ordinary macros implemented with `let`; they do not have compiler intrinsic implementations and do not require a standard-library file at runtime.
+The standard prelude provides `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot` in every module. They behave like ordinary macros and may be shadowed.
 
 Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a prelude macro. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
 
@@ -276,12 +284,12 @@ end
 
 - `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
 - `extern frog-name c-symbol <c-inputs> -- [c-output] end` declares a non-variadic C function with zero or one output.
-- `record Name field Type ... end` defines a nominal pointer-backed record.
-- `union Name case Variant [PayloadType] ... end` defines a nominal pointer-backed tagged union.
+- `record Name field Type ... end` defines a nominal record.
+- `union Name case Variant [PayloadType] ... end` defines a nominal tagged union.
 - `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract.
 - `const name <expression> end` eagerly evaluates a restricted expression and defines one or more typed literal values.
 - A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
-- Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid rather than being wrapped in a generated `main`.
+- Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid; there is no implicit `main`.
 - Only procedure, external-function, constant, record, union, function-reference, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
@@ -344,8 +352,7 @@ end
 - Pointer writes: `!ptr`, with stack effect `ptr ptr --`; it copies the first pointer value into the address on top of the stack.
 - Signed pointer writes: `!i8`, `!i16`, `!i32`, `!i64`, each `int ptr --`.
 - Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
-- Generated C uses `malloc`, `void*`, byte pointer arithmetic, and fixed-width integer loads/stores from `<stdint.h>`.
-- Generated C memory reads and writes use `memcpy`, so unaligned accesses do not violate C alignment or strict-aliasing rules.
+- Memory reads and writes support unaligned addresses.
 
 ### Casts
 
@@ -356,19 +363,13 @@ end
 
 ### Output And Debugging
 
-- `print`: `a --`, prints one value with a newline.
-- `putc`: `int --`, writes a single byte without an added newline. Generated C implements it using `putchar`.
+- `print`: `int --` or `bool --`, prints one value with a newline.
+- `putc`: `int --`, writes a single byte without an added newline.
 - `getc`: `-- int`, reads one byte from standard input, or pushes `-1` at EOF.
 - `eputc`: `int --`, writes one byte to standard error.
 - `exit`: `int --`, terminates execution with the supplied exit status.
-- `?`: `--`, a no-op debugging marker that is omitted from generated C.
+- `?`: `--`, a no-op debugging marker.
 
-## Optimization
+## Runtime Limits
 
-The compiler performs one deterministic typed peephole rewrite: adjacent non-negative integer literals followed by the intrinsic `+` emit a single constant push when their sum fits Frog's signed 64-bit range. Literal spellings in any supported base are folded. A visible macro named `+` keeps normal macro precedence, and a sum that would overflow is emitted unchanged rather than becoming a compile-time error.
-
-Broader optimization is left to the C compiler. The peephole rewrite may reduce transient Frog stack capacity requirements, so the exact point of process memory exhaustion is not part of its semantic equivalence guarantee.
-
-## Generated C Limits
-
-Frog uses signed 64-bit arithmetic in generated C. Signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count are not defined. Right shift of negative values is implementation-defined in C. Compile-time constant arithmetic is checked separately and rejects those cases before C emission. Pointer/integer casts use `intptr_t` and `uintptr_t`; they require a platform where object pointers fit in those types. An unsigned 64-bit read whose value exceeds the signed 64-bit range is implementation-defined when returned as Frog `int`. Passing a Frog `int` outside the C implementation's `int` range through `c-int` is also implementation-defined.
+Runtime signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count have unspecified results. Right shift of a negative value is platform-dependent. Compile-time constant arithmetic rejects these cases instead. Pointer/integer casts require a target where object pointers fit in an integer. An unsigned 64-bit read above `9223372036854775807`, or passing a Frog `int` outside the target C `int` range through `c-int`, is platform-dependent.
