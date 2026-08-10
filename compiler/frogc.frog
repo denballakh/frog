@@ -2732,55 +2732,55 @@ proc local-id-offset -- int do 24 end
 proc local-module-offset -- int do 32 end
 proc local-bytes -- int do 40 end
 
-proc cc-defining-module ptr -- ptr do cc-defining-module-offset pointer-field-read end
-proc cc-proc ptr -- int do cc-proc-offset field-read end
-proc cc-type-stack ptr -- ptr do cc-type-stack-offset pointer-field-read end
-proc cc-type-count ptr -- int do cc-type-count-offset field-read end
-proc cc-blocks ptr -- ptr do cc-blocks-offset pointer-field-read end
-proc cc-block-count ptr -- int do cc-block-count-offset field-read end
-proc cc-locals ptr -- ptr do cc-locals-offset pointer-field-read end
-proc cc-local-count ptr -- int do cc-local-count-offset field-read end
-proc cc-next-local ptr -- int do cc-next-local-offset field-read end
-proc cc-indent ptr -- int do cc-indent-offset field-read end
-proc cc-program ptr -- ptr do cc-program-offset pointer-field-read end
-proc cc-procedure-module ptr -- ptr do cc-procedure-module-offset pointer-field-read end
-proc cc-scope-module ptr -- ptr do cc-scope-module-offset pointer-field-read end
+proc @cc-defining-module ptr -- ptr do cc-defining-module-offset pointer-field-read end
+proc @cc-proc ptr -- int do cc-proc-offset field-read end
+proc @cc-type-stack ptr -- ptr do cc-type-stack-offset pointer-field-read end
+proc @cc-type-count ptr -- int do cc-type-count-offset field-read end
+proc @cc-blocks ptr -- ptr do cc-blocks-offset pointer-field-read end
+proc @cc-block-count ptr -- int do cc-block-count-offset field-read end
+proc @cc-locals ptr -- ptr do cc-locals-offset pointer-field-read end
+proc @cc-local-count ptr -- int do cc-local-count-offset field-read end
+proc @cc-next-local ptr -- int do cc-next-local-offset field-read end
+proc @cc-indent ptr -- int do cc-indent-offset field-read end
+proc @cc-program ptr -- ptr do cc-program-offset pointer-field-read end
+proc @cc-procedure-module ptr -- ptr do cc-procedure-module-offset pointer-field-read end
+proc @cc-scope-module ptr -- ptr do cc-scope-module-offset pointer-field-read end
 
-proc set-cc-defining-module ptr ptr -- do cc-defining-module-offset pointer-field-write end
-proc set-cc-proc int ptr -- do cc-proc-offset field-write end
-proc set-cc-type-stack ptr ptr -- do cc-type-stack-offset pointer-field-write end
-proc set-cc-type-count int ptr -- do cc-type-count-offset field-write end
-proc set-cc-blocks ptr ptr -- do cc-blocks-offset pointer-field-write end
-proc set-cc-block-count int ptr -- do cc-block-count-offset field-write end
-proc set-cc-locals ptr ptr -- do cc-locals-offset pointer-field-write end
-proc set-cc-local-count int ptr -- do cc-local-count-offset field-write end
-proc set-cc-next-local int ptr -- do cc-next-local-offset field-write end
-proc set-cc-indent int ptr -- do cc-indent-offset field-write end
-proc set-cc-program ptr ptr -- do cc-program-offset pointer-field-write end
-proc set-cc-procedure-module ptr ptr -- do cc-procedure-module-offset pointer-field-write end
-proc set-cc-scope-module ptr ptr -- do cc-scope-module-offset pointer-field-write end
+proc !cc-defining-module ptr ptr -- do cc-defining-module-offset pointer-field-write end
+proc !cc-proc int ptr -- do cc-proc-offset field-write end
+proc !cc-type-stack ptr ptr -- do cc-type-stack-offset pointer-field-write end
+proc !cc-type-count int ptr -- do cc-type-count-offset field-write end
+proc !cc-blocks ptr ptr -- do cc-blocks-offset pointer-field-write end
+proc !cc-block-count int ptr -- do cc-block-count-offset field-write end
+proc !cc-locals ptr ptr -- do cc-locals-offset pointer-field-write end
+proc !cc-local-count int ptr -- do cc-local-count-offset field-write end
+proc !cc-next-local int ptr -- do cc-next-local-offset field-write end
+proc !cc-indent int ptr -- do cc-indent-offset field-write end
+proc !cc-program ptr ptr -- do cc-program-offset pointer-field-write end
+proc !cc-procedure-module ptr ptr -- do cc-procedure-module-offset pointer-field-write end
+proc !cc-scope-module ptr ptr -- do cc-scope-module-offset pointer-field-write end
 
 proc cc-type-address ptr int -- ptr do
     let cc index do
-        cc cc-type-stack index cell-bytes * +
+        cc @cc-type-stack index cell-bytes * +
     end
 end
 
 proc type-push ptr int -- do
     let cc value do
-        value cc cc cc-type-count cc-type-address 0 field-write
-        cc cc-type-count 1 + cc set-cc-type-count
+        value cc cc @cc-type-count cc-type-address 0 field-write
+        cc @cc-type-count 1 + cc !cc-type-count
     end
 end
 
 proc type-pop ptr -- int do
     let cc do
-        if cc cc-type-count 0 <= do
+        if cc @cc-type-count 0 <= do
             "compile-time stack underflow" fail
         end
-        cc cc-type-count 1 -
+        cc @cc-type-count 1 -
         let index do
-            index cc set-cc-type-count
+            index cc !cc-type-count
             cc index cc-type-address 0 field-read
         end
     end
@@ -2802,18 +2802,18 @@ end
 
 proc type-snapshot ptr -- ptr int do
     let cc do
-        cc cc-type-count 1 + cell-bytes * alloc
+        cc @cc-type-count 1 + cell-bytes * alloc
         let snapshot do
-            cc cc-type-stack snapshot cc cc-type-count cell-bytes * memory-copy
-            snapshot cc cc-type-count
+            cc @cc-type-stack snapshot cc @cc-type-count cell-bytes * memory-copy
+            snapshot cc @cc-type-count
         end
     end
 end
 
 proc restore-type-snapshot ptr ptr int -- do
     let cc snapshot count do
-        snapshot cc cc-type-stack count cell-bytes * memory-copy
-        count cc set-cc-type-count
+        snapshot cc @cc-type-stack count cell-bytes * memory-copy
+        count cc !cc-type-count
     end
 end
 
@@ -2833,7 +2833,7 @@ end
 
 proc types-match ptr ptr int -- bool do
     let cc snapshot count do
-        if cc cc-type-count count != do
+        if cc @cc-type-count count != do
             false
         else
             cc snapshot count 0 types-match-from
@@ -2843,7 +2843,7 @@ end
 
 proc block-address ptr int -- ptr do
     let cc index do
-        cc cc-blocks index block-bytes * +
+        cc @cc-blocks index block-bytes * +
     end
 end
 
@@ -2854,7 +2854,7 @@ proc set-block-pointer-field ptr ptr int -- do pointer-field-write end
 
 proc push-block ptr int -- ptr do
     let cc kind do
-        cc cc cc-block-count block-address
+        cc cc @cc-block-count block-address
         let block do
             kind block block-kind-offset set-block-field
             cc type-snapshot
@@ -2864,11 +2864,11 @@ proc push-block ptr int -- ptr do
             end
             0 block block-then-types-offset set-block-field
             0 block block-then-count-offset set-block-field
-            cc cc-local-count block block-local-base-offset set-block-field
+            cc @cc-local-count block block-local-base-offset set-block-field
             0 block block-has-else-offset set-block-field
             0 block block-has-do-offset set-block-field
             0 block block-elif-parent-offset set-block-field
-            cc cc-block-count 1 + cc set-cc-block-count
+            cc @cc-block-count 1 + cc !cc-block-count
             block
         end
     end
@@ -2876,23 +2876,23 @@ end
 
 proc top-block ptr -- ptr do
     let cc do
-        if cc cc-block-count 0 <= do
+        if cc @cc-block-count 0 <= do
             "control-flow block stack underflow" fail
         end
-        cc cc cc-block-count 1 - block-address
+        cc cc @cc-block-count 1 - block-address
     end
 end
 
 proc pop-block ptr -- ptr do
     let cc do
         cc top-block
-        cc cc-block-count 1 - cc set-cc-block-count
+        cc @cc-block-count 1 - cc !cc-block-count
     end
 end
 
 proc local-address ptr int -- ptr do
     let cc index do
-        cc cc-locals index local-bytes * +
+        cc @cc-locals index local-bytes * +
     end
 end
 
@@ -2901,16 +2901,16 @@ proc set-local-field int ptr int -- do field-write end
 
 proc add-local ptr int int -- int do
     let cc name-token value-type do
-        cc cc cc-local-count local-address
+        cc cc @cc-local-count local-address
         let local do
-            cc cc-defining-module name-token token-start-at local local-name-start-offset set-local-field
-            cc cc-defining-module name-token token-length-at local local-name-length-offset set-local-field
+            cc @cc-defining-module name-token token-start-at local local-name-start-offset set-local-field
+            cc @cc-defining-module name-token token-length-at local local-name-length-offset set-local-field
             value-type local local-type-offset set-local-field
-            cc cc-next-local local local-id-offset set-local-field
-            cc cc-defining-module local local-module-offset pointer-field-write
-            cc cc-local-count 1 + cc set-cc-local-count
-            cc cc-next-local
-            cc cc-next-local 1 + cc set-cc-next-local
+            cc @cc-next-local local local-id-offset set-local-field
+            cc @cc-defining-module local local-module-offset pointer-field-write
+            cc @cc-local-count 1 + cc !cc-local-count
+            cc @cc-next-local
+            cc @cc-next-local 1 + cc !cc-next-local
         end
     end
 end
@@ -2920,7 +2920,7 @@ proc local-name-equals ptr ptr int -- bool do
         local local-module-offset pointer-field-read @ctx-source
         local local-name-start-offset local-field +
         local local-name-length-offset local-field
-        cc cc-defining-module token-index token-slice
+        cc @cc-defining-module token-index token-slice
         bytes-equal
     end
 end
@@ -2944,14 +2944,14 @@ end
 
 proc find-local ptr int -- int do
     let cc token-index do
-        cc token-index cc cc-local-count 1 - find-local-from
+        cc token-index cc @cc-local-count 1 - find-local-from
     end
 end
 
 proc emit-indent ptr -- do
     let cc do
         0
-        while dup cc cc-indent < do
+        while dup cc @cc-indent < do
             "  " emit
             1 +
         end
@@ -2968,15 +2968,15 @@ proc emit-line ptr String -- do
 end
 
 proc indent-more ptr -- do
-    let cc do cc cc-indent 1 + cc set-cc-indent end
+    let cc do cc @cc-indent 1 + cc !cc-indent end
 end
 
 proc indent-less ptr -- do
     let cc do
-        if cc cc-indent 0 <= do
+        if cc @cc-indent 0 <= do
             "C emitter indentation underflow" fail
         end
-        cc cc-indent 1 - cc set-cc-indent
+        cc @cc-indent 1 - cc !cc-indent
     end
 end
 
@@ -4791,34 +4791,34 @@ end
 
 proc compile-arithmetic-intrinsic ptr int -- bool do
     let cc token-index do
-        if cc cc-defining-module token-index "+" token-equals do
+        if cc @cc-defining-module token-index "+" token-equals do
             cc false compile-add-sub true
-        elif cc cc-defining-module token-index "-" token-equals do
+        elif cc @cc-defining-module token-index "-" token-equals do
             cc true compile-add-sub true
-        elif cc cc-defining-module token-index "*" token-equals do
+        elif cc @cc-defining-module token-index "*" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a * b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "/" token-equals do
+        elif cc @cc-defining-module token-index "/" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "%" token-equals do
+        elif cc @cc-defining-module token-index "%" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a % b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "/%" token-equals do
+        elif cc @cc-defining-module token-index "/%" token-equals do
             cc type-int type-expect
             cc type-int type-expect
             cc type-int type-push
             cc type-int type-push
             cc "{ Cell b = frog_pop(); Cell a = frog_pop(); if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } frog_push(a / b); frog_push(a % b); }" emit-line
             true
-        elif cc cc-defining-module token-index "<<" token-equals do
+        elif cc @cc-defining-module token-index "<<" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a << b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index ">>" token-equals do
+        elif cc @cc-defining-module token-index ">>" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >> b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "|" token-equals do
+        elif cc @cc-defining-module token-index "|" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a | b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "&" token-equals do
+        elif cc @cc-defining-module token-index "&" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a & b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "^" token-equals do
+        elif cc @cc-defining-module token-index "^" token-equals do
             cc type-int type-int "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a ^ b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "~" token-equals do
+        elif cc @cc-defining-module token-index "~" token-equals do
             cc type-int type-int "frog_push(~frog_pop());" compile-fixed-unary true
         else
             false
@@ -4828,23 +4828,23 @@ end
 
 proc compile-logic-comparison-intrinsic ptr int -- bool do
     let cc token-index do
-        if cc cc-defining-module token-index "&&" token-equals do
+        if cc @cc-defining-module token-index "&&" token-equals do
             cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a && b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "||" token-equals do
+        elif cc @cc-defining-module token-index "||" token-equals do
             cc type-bool type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a || b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "!" token-equals do
+        elif cc @cc-defining-module token-index "!" token-equals do
             cc type-bool type-bool "frog_push(!frog_pop());" compile-fixed-unary true
-        elif cc cc-defining-module token-index "==" token-equals do
+        elif cc @cc-defining-module token-index "==" token-equals do
             cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a == b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "!=" token-equals do
+        elif cc @cc-defining-module token-index "!=" token-equals do
             cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a != b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "<" token-equals do
+        elif cc @cc-defining-module token-index "<" token-equals do
             cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a < b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index ">" token-equals do
+        elif cc @cc-defining-module token-index ">" token-equals do
             cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a > b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index "<=" token-equals do
+        elif cc @cc-defining-module token-index "<=" token-equals do
             cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a <= b); }" compile-fixed-binary true
-        elif cc cc-defining-module token-index ">=" token-equals do
+        elif cc @cc-defining-module token-index ">=" token-equals do
             cc type-int type-bool "{ Cell b = frog_pop(); Cell a = frog_pop(); frog_push(a >= b); }" compile-fixed-binary true
         else
             false
@@ -4921,7 +4921,7 @@ end
 
 proc compile-memory-io-intrinsic ptr int -- bool do
     let cc token-index do
-        if cc cc-defining-module token-index "read-file" token-equals do
+        if cc @cc-defining-module token-index "read-file" token-equals do
             cc type-int type-expect
             cc type-ptr type-expect
             cc type-ptr type-push
@@ -4929,57 +4929,57 @@ proc compile-memory-io-intrinsic ptr int -- bool do
             cc type-bool type-push
             cc "{ Cell path_length = frog_pop(); const void* path = (const void*)(intptr_t)frog_pop(); void* data; Cell data_length; Cell success = frog_read_file(path, path_length, &data, &data_length); frog_push((Cell)(intptr_t)data); frog_push(data_length); frog_push(success); }" emit-line
             true
-        elif cc cc-defining-module token-index "cast" token-equals do
+        elif cc @cc-defining-module token-index "cast" token-equals do
             cc compile-cast-intrinsic true
-        elif cc cc-defining-module token-index "alloc" token-equals do
+        elif cc @cc-defining-module token-index "alloc" token-equals do
             cc type-int type-expect cc type-ptr type-push
             cc "frog_push((Cell)(intptr_t)frog_alloc(frog_pop()));" emit-line true
-        elif cc cc-defining-module token-index "args" token-equals do
+        elif cc @cc-defining-module token-index "args" token-equals do
             cc type-ptr type-push
             cc type-int type-push
             cc "frog_push((Cell)(intptr_t)frog_argv); frog_push((Cell)frog_argc);" emit-line true
-        elif cc cc-defining-module token-index "@ptr" token-equals do
+        elif cc @cc-defining-module token-index "@ptr" token-equals do
             cc type-ptr type-expect
             cc type-ptr type-push
             cc "frog_push((Cell)(intptr_t)frog_read_ptr((const void *)(intptr_t)frog_pop()));" emit-line true
-        elif cc cc-defining-module token-index "@i8" token-equals do
+        elif cc @cc-defining-module token-index "@i8" token-equals do
             cc token-index "frog_push(frog_read_i8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@i16" token-equals do
+        elif cc @cc-defining-module token-index "@i16" token-equals do
             cc token-index "frog_push(frog_read_i16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@i32" token-equals do
+        elif cc @cc-defining-module token-index "@i32" token-equals do
             cc token-index "frog_push(frog_read_i32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@i64" token-equals do
+        elif cc @cc-defining-module token-index "@i64" token-equals do
             cc token-index "frog_push(frog_read_i64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@u8" token-equals do
+        elif cc @cc-defining-module token-index "@u8" token-equals do
             cc token-index "frog_push(frog_read_u8((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@u16" token-equals do
+        elif cc @cc-defining-module token-index "@u16" token-equals do
             cc token-index "frog_push(frog_read_u16((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@u32" token-equals do
+        elif cc @cc-defining-module token-index "@u32" token-equals do
             cc token-index "frog_push(frog_read_u32((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "@u64" token-equals do
+        elif cc @cc-defining-module token-index "@u64" token-equals do
             cc token-index "frog_push(frog_read_u64((const void *)(intptr_t)frog_pop()));" compile-read-memory true
-        elif cc cc-defining-module token-index "!ptr" token-equals do
+        elif cc @cc-defining-module token-index "!ptr" token-equals do
             cc type-ptr type-expect
             cc type-ptr type-expect
             cc "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_ptr((void *)(intptr_t)p, (void *)(intptr_t)v); }" emit-line
             true
-        elif cc cc-defining-module token-index "!i8" token-equals do
+        elif cc @cc-defining-module token-index "!i8" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i8((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!i16" token-equals do
+        elif cc @cc-defining-module token-index "!i16" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i16((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!i32" token-equals do
+        elif cc @cc-defining-module token-index "!i32" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i32((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!i64" token-equals do
+        elif cc @cc-defining-module token-index "!i64" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_i64((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!u8" token-equals do
+        elif cc @cc-defining-module token-index "!u8" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u8((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!u16" token-equals do
+        elif cc @cc-defining-module token-index "!u16" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u16((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!u32" token-equals do
+        elif cc @cc-defining-module token-index "!u32" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u32((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "!u64" token-equals do
+        elif cc @cc-defining-module token-index "!u64" token-equals do
             cc token-index "{ Cell p = frog_pop(); Cell v = frog_pop(); frog_write_u64((void *)(intptr_t)p, v); }" compile-write-memory true
-        elif cc cc-defining-module token-index "print" token-equals do
+        elif cc @cc-defining-module token-index "print" token-equals do
             cc type-pop
             let value-type do
                 if value-type type-int == do
@@ -4991,15 +4991,15 @@ proc compile-memory-io-intrinsic ptr int -- bool do
                 end
             end
             true
-        elif cc cc-defining-module token-index "putc" token-equals do
+        elif cc @cc-defining-module token-index "putc" token-equals do
             cc type-int type-expect cc "putchar((int)(unsigned char)frog_pop());" emit-line true
-        elif cc cc-defining-module token-index "getc" token-equals do
+        elif cc @cc-defining-module token-index "getc" token-equals do
             cc type-int type-push cc "frog_push((Cell)getchar());" emit-line true
-        elif cc cc-defining-module token-index "eputc" token-equals do
+        elif cc @cc-defining-module token-index "eputc" token-equals do
             cc type-int type-expect cc "fputc((int)(unsigned char)frog_pop(), stderr);" emit-line true
-        elif cc cc-defining-module token-index "exit" token-equals do
+        elif cc @cc-defining-module token-index "exit" token-equals do
             cc type-int type-expect cc "exit((int)frog_pop());" emit-line true
-        elif cc cc-defining-module token-index "?" token-equals do
+        elif cc @cc-defining-module token-index "?" token-equals do
             true
         else
             false
@@ -5028,11 +5028,11 @@ end
 
 proc emit-push-string ptr int -- do
     let cc token-index do
-        cc cc-defining-module token-index token-value-at
+        cc @cc-defining-module token-index token-value-at
         let string-index do
             cc emit-indent
             "frog_push((Cell)(intptr_t)&" emit
-            cc cc-program string-index emit-string-symbol
+            cc @cc-program string-index emit-string-symbol
             ");" emit 10 putc
         end
     end
@@ -5085,7 +5085,7 @@ proc compile-do ptr -- do
             if block block-has-do-offset block-field 0 != do
                 "duplicate do in control-flow block" fail
             end
-            if cc cc-type-count block block-base-count-offset block-field <= do
+            if cc @cc-type-count block block-base-count-offset block-field <= do
                 if block block-elif-parent-offset block-field 0 != do
                     "elif requires a condition before do" fail
                 else
@@ -5199,7 +5199,7 @@ end
 
 proc close-let-block ptr ptr -- do
     let cc block do
-        block block-local-base-offset block-field cc set-cc-local-count
+        block block-local-base-offset block-field cc !cc-local-count
         cc indent-less
         cc "}" emit-line
     end
@@ -5239,13 +5239,13 @@ end
 
 proc find-let-do ptr int -- int do
     let cc token-index do
-        if token-index cc cc-defining-module @ctx-token-count >= do
+        if token-index cc @cc-defining-module @ctx-token-count >= do
             "unterminated let binding" fail
             token-index
-        elif cc cc-defining-module token-index "do" token-equals do
+        elif cc @cc-defining-module token-index "do" token-equals do
             token-index
         else
-            cc cc-defining-module token-index require-word
+            cc @cc-defining-module token-index require-word
             cc token-index 1 + find-let-do
         end
     end
@@ -5256,7 +5256,7 @@ proc bind-let-names ptr int int -- do
         if count 0 > do
             first-token count 1 - +
             let name-token do
-                if cc cc-defining-module name-token string-type-name do
+                if cc @cc-defining-module name-token string-type-name do
                     "String cannot be a local name" fail
                 end
                 cc type-pop
@@ -5408,8 +5408,8 @@ end
 
 proc compile-record-type-word ptr int -- bool do
     let cc token-index do
-        cc cc-scope-module
-        cc cc-defining-module token-index token-slice
+        cc @cc-scope-module
+        cc @cc-defining-module token-index token-slice
         visible-record-definition
         let module record-index found do
             if found do
@@ -5431,8 +5431,8 @@ end
 
 proc compile-union-type-word ptr int -- bool do
     let cc token-index do
-        cc cc-scope-module
-        cc cc-defining-module token-index token-slice
+        cc @cc-scope-module
+        cc @cc-defining-module token-index token-slice
         visible-union-definition
         let module union-index found do
             if found do
@@ -5454,8 +5454,8 @@ end
 
 proc compile-function-type-word ptr int -- bool do
     let cc token-index do
-        cc cc-scope-module
-        cc cc-defining-module token-index token-slice
+        cc @cc-scope-module
+        cc @cc-defining-module token-index token-slice
         visible-function-definition
         let module function-index found do
             if found do
@@ -5490,7 +5490,7 @@ proc compile-record-special ptr ptr int int -- bool do
         if separator 0 <= separator 1 + length >= || do
             false
         else
-            cc cc-scope-module bytes separator visible-record-definition
+            cc @cc-scope-module bytes separator visible-record-definition
             let module record-index found do
                 if found ! do
                     false
@@ -5542,7 +5542,7 @@ proc compile-record-field ptr ptr int int -- bool do
         if separator 0 <= separator 1 + length >= || do
             false
         else
-            cc cc-scope-module bytes separator visible-record-definition
+            cc @cc-scope-module bytes separator visible-record-definition
             let module record-index found do
                 if found ! do
                     false
@@ -5587,7 +5587,7 @@ end
 
 proc compile-record-word ptr int -- bool do
     let cc token-index do
-        cc cc-defining-module token-index token-slice
+        cc @cc-defining-module token-index token-slice
         let bytes length do
             bytes length 58 first-index-of-byte
             let colon do
@@ -5667,7 +5667,7 @@ proc compile-union-constructor ptr ptr int int -- bool do
         if separator 0 <= separator 1 + length >= || do
             false
         else
-            cc cc-scope-module bytes separator visible-union-definition
+            cc @cc-scope-module bytes separator visible-union-definition
             let module union-index found do
                 if found ! do
                     false
@@ -5704,7 +5704,7 @@ proc compile-union-instance ptr ptr int int -- bool do
         if separator 0 <= separator 1 + length >= || do
             false
         else
-            cc cc-scope-module bytes separator visible-union-definition
+            cc @cc-scope-module bytes separator visible-union-definition
             let module union-index found do
                 if found ! do
                     false
@@ -5761,7 +5761,7 @@ end
 
 proc compile-union-word ptr int -- bool do
     let cc token-index do
-        cc cc-defining-module token-index token-slice
+        cc @cc-defining-module token-index token-slice
         let bytes length do
             bytes length 58 first-index-of-byte
             let colon do
@@ -5822,7 +5822,7 @@ proc emit-function-call ptr ptr int -- do
     let cc function-module function-index do
         cc emit-indent
         "{ Cell function_id = frog_pop(); switch (function_id) {" emit
-        cc cc-program function-module function-index emit-function-dispatch-cases
+        cc @cc-program function-module function-index emit-function-dispatch-cases
         " default: frog_runtime_fail(); } }" emit
         10 putc
     end
@@ -5833,7 +5833,7 @@ proc compile-function-operation ptr ptr int int -- bool do
         if separator 0 <= separator 1 + length >= || do
             false
         else
-            cc cc-scope-module bytes separator visible-function-definition
+            cc @cc-scope-module bytes separator visible-function-definition
             let function-module function-index found do
                 if found ! do
                     false
@@ -5858,7 +5858,7 @@ proc compile-function-operation ptr ptr int int -- bool do
                             if operation-length 4 == do
                                 "expected function reference target" fail
                             end
-                            cc cc-scope-module
+                            cc @cc-scope-module
                             operation 4 +
                             operation-length 4 -
                             visible-procedure-definition
@@ -5890,7 +5890,7 @@ end
 
 proc compile-function-word ptr int -- bool do
     let cc token-index do
-        cc cc-defining-module token-index token-slice
+        cc @cc-defining-module token-index token-slice
         let bytes length do
             bytes length 58 first-index-of-byte
             let colon do
@@ -5906,12 +5906,12 @@ end
 
 proc compile-string-word ptr int -- bool do
     let cc token-index do
-        if cc cc-defining-module token-index "String.bytes" token-equals do
+        if cc @cc-defining-module token-index "String.bytes" token-equals do
             cc type-string type-expect
             cc type-ptr type-push
             cc "{ const FrogString *value = (const FrogString *)(intptr_t)frog_pop(); frog_push((Cell)(intptr_t)value->bytes); }" emit-line
             true
-        elif cc cc-defining-module token-index "String.len" token-equals do
+        elif cc @cc-defining-module token-index "String.len" token-equals do
             cc type-string type-expect
             cc type-int type-push
             cc "{ const FrogString *value = (const FrogString *)(intptr_t)frog_pop(); frog_push(value->len); }" emit-line
@@ -5924,19 +5924,19 @@ end
 
 proc compile-type-word ptr int -- bool do
     let cc token-index do
-        if cc cc-defining-module token-index "int" token-equals do
+        if cc @cc-defining-module token-index "int" token-equals do
             cc type-literal-base type-int + type-push
             cc type-literal-base type-int + emit-push-integer
             true
-        elif cc cc-defining-module token-index "bool" token-equals do
+        elif cc @cc-defining-module token-index "bool" token-equals do
             cc type-literal-base type-bool + type-push
             cc type-literal-base type-bool + emit-push-integer
             true
-        elif cc cc-defining-module token-index "ptr" token-equals do
+        elif cc @cc-defining-module token-index "ptr" token-equals do
             cc type-literal-base type-ptr + type-push
             cc type-literal-base type-ptr + emit-push-integer
             true
-        elif cc cc-defining-module token-index "String" token-equals do
+        elif cc @cc-defining-module token-index "String" token-equals do
             cc type-literal-base type-string + type-push
             cc type-literal-base type-string + emit-push-integer
             true
@@ -5960,17 +5960,17 @@ proc compile-macro ptr ptr int -- do
             "recursive macro expansion" fail
         end
         true module macro-index set-macro-expanding
-        cc cc-defining-module
-        cc cc-scope-module
+        cc @cc-defining-module
+        cc @cc-scope-module
         let previous-defining-module previous-scope-module do
-            module cc set-cc-defining-module
-            module cc set-cc-scope-module
+            module cc !cc-defining-module
+            module cc !cc-scope-module
             cc
             module macro-index macro-body-start-at
             module macro-index macro-body-end-at
             compile-body-range
-            previous-defining-module cc set-cc-defining-module
-            previous-scope-module cc set-cc-scope-module
+            previous-defining-module cc !cc-defining-module
+            previous-scope-module cc !cc-scope-module
         end
         false module macro-index set-macro-expanding
     end
@@ -5978,14 +5978,14 @@ end
 
 proc compile-ordinary-word ptr int -- do
     let cc token-index do
-        cc cc-scope-module cc cc-defining-module token-index find-scope-symbol
+        cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
         let symbol-index do
             cc token-index token-resolves-to-macro
             let is-macro do
             if is-macro do
                 cc
-                cc cc-scope-module symbol-index scope-definition-module-at
-                cc cc-scope-module symbol-index scope-definition-index-at
+                cc @cc-scope-module symbol-index scope-definition-module-at
+                cc @cc-scope-module symbol-index scope-definition-index-at
                 compile-macro
             elif cc token-index compile-type-word do
             elif cc token-index compile-string-word do
@@ -6000,13 +6000,13 @@ proc compile-ordinary-word ptr int -- do
                         cc token-index local-index compile-local-reference
                     else
                         if symbol-index 0 >= do
-                            if cc cc-scope-module symbol-index scope-kind-at scope-procedure != do
+                            if cc @cc-scope-module symbol-index scope-kind-at scope-procedure != do
                                 "unknown word" fail
                             end
                             cc
                             token-index
-                            cc cc-scope-module symbol-index scope-definition-module-at
-                            cc cc-scope-module symbol-index scope-definition-index-at
+                            cc @cc-scope-module symbol-index scope-definition-module-at
+                            cc @cc-scope-module symbol-index scope-definition-index-at
                             compile-procedure-call
                         else
                             if cc token-index compile-prelude-macro ! do
@@ -6023,19 +6023,19 @@ end
 
 proc compile-word-token ptr int -- int do
     let cc token-index do
-        if cc cc-defining-module token-index "if" token-equals do
+        if cc @cc-defining-module token-index "if" token-equals do
             cc compile-if token-index 1 +
-        elif cc cc-defining-module token-index "while" token-equals do
+        elif cc @cc-defining-module token-index "while" token-equals do
             cc compile-while token-index 1 +
-        elif cc cc-defining-module token-index "do" token-equals do
+        elif cc @cc-defining-module token-index "do" token-equals do
             cc compile-do token-index 1 +
-        elif cc cc-defining-module token-index "else" token-equals do
+        elif cc @cc-defining-module token-index "else" token-equals do
             cc compile-else token-index 1 +
-        elif cc cc-defining-module token-index "elif" token-equals do
+        elif cc @cc-defining-module token-index "elif" token-equals do
             cc compile-elif token-index 1 +
-        elif cc cc-defining-module token-index "end" token-equals do
+        elif cc @cc-defining-module token-index "end" token-equals do
             cc compile-end token-index 1 +
-        elif cc cc-defining-module token-index "let" token-equals do
+        elif cc @cc-defining-module token-index "let" token-equals do
             cc token-index compile-let
         else
             cc token-index compile-ordinary-word
@@ -6046,19 +6046,19 @@ end
 
 proc compile-token ptr int -- int do
     let cc token-index do
-        cc cc-defining-module token-index token-kind-at
+        cc @cc-defining-module token-index token-kind-at
         let kind do
             if kind token-int == do
                 cc type-int type-push
-                cc cc-defining-module token-index token-value-at cc swap emit-push-integer
+                cc @cc-defining-module token-index token-value-at cc swap emit-push-integer
                 token-index 1 +
             elif kind token-bool == do
                 cc type-bool type-push
-                cc cc-defining-module token-index token-value-at cc swap emit-push-integer
+                cc @cc-defining-module token-index token-value-at cc swap emit-push-integer
                 token-index 1 +
             elif kind token-char == do
                 cc type-int type-push
-                cc cc-defining-module token-index token-value-at cc swap emit-push-integer
+                cc @cc-defining-module token-index token-value-at cc swap emit-push-integer
                 token-index 1 +
             elif kind token-string == do
                 cc type-string type-push
@@ -6076,10 +6076,10 @@ end
 
 proc token-resolves-to-macro ptr int -- bool do
     let cc token-index do
-        cc cc-scope-module cc cc-defining-module token-index find-scope-symbol
+        cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
         let symbol-index do
             if symbol-index 0 >= do
-                cc cc-scope-module symbol-index scope-kind-at scope-macro ==
+                cc @cc-scope-module symbol-index scope-kind-at scope-macro ==
             else
                 false
             end
@@ -6092,14 +6092,14 @@ proc try-compile-constant-add ptr int int -- bool do
         if token-index 2 + body-end >= do
             false
         elif
-            cc cc-defining-module token-index token-kind-at token-int ==
-            cc cc-defining-module token-index 1 + token-kind-at token-int == &&
-            cc cc-defining-module token-index 2 + token-kind-at token-word == &&
-            cc cc-defining-module token-index 2 + "+" token-equals &&
+            cc @cc-defining-module token-index token-kind-at token-int ==
+            cc @cc-defining-module token-index 1 + token-kind-at token-int == &&
+            cc @cc-defining-module token-index 2 + token-kind-at token-word == &&
+            cc @cc-defining-module token-index 2 + "+" token-equals &&
             cc token-index 2 + token-resolves-to-macro ! &&
         do
-            cc cc-defining-module token-index token-value-at
-            cc cc-defining-module token-index 1 + token-value-at
+            cc @cc-defining-module token-index token-value-at
+            cc @cc-defining-module token-index 1 + token-value-at
             let left right do
                 if left max-int right - <= do
                     cc type-int type-push
@@ -6117,9 +6117,9 @@ end
 
 proc initialize-proc-inputs ptr int -- do
     let cc input-index do
-        if input-index cc cc-procedure-module cc cc-proc proc-input-count-at < do
-            cc cc-procedure-module
-            cc cc-procedure-module cc cc-proc proc-input-start-at
+        if input-index cc @cc-procedure-module cc @cc-proc proc-input-count-at < do
+            cc @cc-procedure-module
+            cc @cc-procedure-module cc @cc-proc proc-input-start-at
             input-index +
             type-at
             cc swap type-push
@@ -6130,12 +6130,12 @@ end
 
 proc outputs-match-from ptr int -- bool do
     let cc output-index do
-        if output-index cc cc-type-count >= do
+        if output-index cc @cc-type-count >= do
             true
         else
             cc output-index type-at-depth
-            cc cc-procedure-module
-            cc cc-procedure-module cc cc-proc proc-output-start-at
+            cc @cc-procedure-module
+            cc @cc-procedure-module cc @cc-proc proc-output-start-at
             output-index +
             type-at
             ==
@@ -6152,7 +6152,7 @@ end
 
 proc require-proc-outputs ptr -- do
     let cc do
-        if cc cc-type-count cc cc-procedure-module cc cc-proc proc-output-count-at != do
+        if cc @cc-type-count cc @cc-procedure-module cc @cc-proc proc-output-count-at != do
             "procedure output stack depth mismatch" fail
         end
         if cc 0 outputs-match-from ! do
@@ -6181,19 +6181,19 @@ proc create-compile-context ptr ptr int -- ptr do
     let program ctx proc-index do
         cc-bytes alloc
         let cc do
-            program cc set-cc-program
-            ctx cc set-cc-procedure-module
-            ctx cc set-cc-defining-module
-            ctx cc set-cc-scope-module
-            proc-index cc set-cc-proc
-            program @program-token-count 1 + cell-bytes * alloc cc set-cc-type-stack
-            0 cc set-cc-type-count
-            program @program-token-count 1 + block-bytes * alloc cc set-cc-blocks
-            0 cc set-cc-block-count
-            program @program-token-count 1 + local-bytes * alloc cc set-cc-locals
-            0 cc set-cc-local-count
-            0 cc set-cc-next-local
-            0 cc set-cc-indent
+            program cc !cc-program
+            ctx cc !cc-procedure-module
+            ctx cc !cc-defining-module
+            ctx cc !cc-scope-module
+            proc-index cc !cc-proc
+            program @program-token-count 1 + cell-bytes * alloc cc !cc-type-stack
+            0 cc !cc-type-count
+            program @program-token-count 1 + block-bytes * alloc cc !cc-blocks
+            0 cc !cc-block-count
+            program @program-token-count 1 + local-bytes * alloc cc !cc-locals
+            0 cc !cc-local-count
+            0 cc !cc-next-local
+            0 cc !cc-indent
             cc
         end
     end
@@ -6297,15 +6297,15 @@ proc compile-procedure ptr ptr int -- do
                 "void " emit
                 ctx proc-index proc-global-id-at emit-proc-name
                 "(void) {" emit 10 putc
-                1 cc set-cc-indent
+                1 cc !cc-indent
                 cc
                 ctx proc-index proc-body-start-at
                 ctx proc-index proc-body-end-at
                 compile-body-range
-                if cc cc-block-count 0 != do
+                if cc @cc-block-count 0 != do
                     "unclosed control-flow block" fail
                 end
-                if cc cc-local-count 0 != do
+                if cc @cc-local-count 0 != do
                     "unclosed local scope" fail
                 end
                 cc require-proc-outputs
@@ -6432,9 +6432,9 @@ end
 
 proc compile-prelude-macro ptr int -- bool do
     let cc token-index do
-        cc cc-program @program-prelude-module
+        cc @cc-program @program-prelude-module
         let prelude do
-            prelude cc cc-defining-module token-index find-scope-symbol
+            prelude cc @cc-defining-module token-index find-scope-symbol
             let symbol-index do
                 if symbol-index 0 < do
                     false
