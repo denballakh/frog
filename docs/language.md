@@ -1,6 +1,6 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
 `compiler/frogc.frog` is the sole Frog compiler and typechecker. It emits C, which is compiled to the executable program; there is no separate interpreter or Python language implementation.
 
@@ -242,7 +242,7 @@ Import cycles are rejected. Importing the same canonical file more than once is 
 
 `let a b c do ... end` binds stack values to names in source order. If the stack is `1 2 3`, then `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`.
 
-Inside the implementation, bindings are emitted in reverse word order so the top of the stack is popped first, but the language-level behavior is source-order binding from the visible stack.
+`peek a b c do ... end` is equivalent to `let a b c do a b c ... end`. With distinct names, the captured values are restored in source order, so code in the block can inspect them without consuming the originals.
 
 Example:
 
@@ -254,6 +254,16 @@ proc main -- do
         b print // 2
         c print // 3
     end
+end
+```
+
+```frog
+proc main -- do
+    1 2
+    peek a b do
+        a b + print // 3
+    end
+    + print         // 3
 end
 ```
 
@@ -279,6 +289,7 @@ end
 - `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
+- `peek name... do ... end` binds visible stack values and evaluates those names before the block body.
 - `//` starts a line comment only when it appears as its own whitespace-delimited token.
 
 ## Intrinsics

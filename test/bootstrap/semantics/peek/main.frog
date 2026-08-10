@@ -1,0 +1,27 @@
+macro preserve-sum
+    peek left right do
+        left right +
+    end
+end
+
+proc main -- do
+    1 2
+    peek first second do
+        first second + print
+    end
+    + print
+
+    true
+    peek value do value print end
+    print
+
+    3 4 preserve-sum print print print
+
+    1
+    peek value do
+        2
+        peek value do value print end
+        value print
+    end
+    print print
+end

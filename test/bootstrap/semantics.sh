@@ -103,6 +103,7 @@ run_ok optimizer_macro_shadow $'41\n'
 run_ok type_stack_growth $'42\n'
 run_ok constants $'42\n42\n42\n42\ntrue\n42\n4\n-5\ntrue\n9223372036854775807\n99\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0\n3\n9\n'
 run_ok constants_operators $'13\n5\n36\n2\n1\n1\n2\n8\n2\n7\n2\n5\n-1\nfalse\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse\ntrue\nfalse\n'
+run_ok peek $'3\n3\ntrue\ntrue\n7\n4\n3\n2\n1\n2\n1\n'
 run_status unions_wrong_variant 1
 run_status unions_invalid_tag 1
 run_status unions_negative_tag 1
@@ -164,6 +165,11 @@ run_source_error constant_duplicate $'const value 1 end\nconst value 2 end\nproc
 run_source_error constant_procedure_conflict $'const value 1 end\nproc value -- int do 2 end\nproc main -- do end\n' 'duplicate declaration name: value'
 run_source_error constant_inside_proc $'proc main -- do const bad 1 end end\n' 'declarations are only allowed at top level'
 run_source_error constant_inside_macro $'macro bad const value 1 end end\nproc main -- do end\n' 'declarations are not allowed in macro bodies'
+run_source_error peek_empty $'proc main -- do peek do end end\n' 'peek requires at least one name'
+run_source_error peek_underflow $'proc main -- do 1 peek first second do end end\n' 'compile-time stack underflow'
+run_source_error peek_unterminated $'proc main -- do 1 peek value end end\n' 'unterminated peek binding'
+run_source_error peek_scope $'proc main -- do 1 peek value do end value drop end\n' 'unknown word'
+run_source_error peek_in_constant $'const bad 1 peek value do end end\nproc main -- do end\n' 'unsupported constant expression word'
 run_source_error integer_binary_missing_digits \
     $'proc main -- do 0b print end\n' \
     'invalid integer literal'

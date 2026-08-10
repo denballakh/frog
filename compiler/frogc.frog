@@ -1227,6 +1227,7 @@ proc reserved-name ptr int -- bool do
         ctx token-index "do" token-equals ||
         ctx token-index "end" token-equals ||
         ctx token-index "let" token-equals ||
+        ctx token-index "peek" token-equals ||
         ctx token-index "from" token-equals ||
         ctx token-index "import" token-equals ||
         ctx token-index "as" token-equals ||
@@ -2072,6 +2073,7 @@ proc scan-macro-body ptr int -- int do
                         ctx token-index "if" token-equals
                         ctx token-index "while" token-equals ||
                         ctx token-index "let" token-equals ||
+                        ctx token-index "peek" token-equals ||
                     do
                         token-index 1 + depth 1 + true
                     elif
@@ -2143,6 +2145,7 @@ proc validate-macro-body ptr int int -- do
                                     ctx token-index "if" token-equals
                                     ctx token-index "while" token-equals ||
                                     ctx token-index "let" token-equals ||
+                                    ctx token-index "peek" token-equals ||
                                 do
                                     if ctx token-index "if" token-equals do
                                         block-if kinds depth cell-bytes * field-write
@@ -2273,6 +2276,7 @@ proc constant-expression-forbidden-word ptr int -- bool do
         ctx token-index "while" token-equals ||
         ctx token-index "do" token-equals ||
         ctx token-index "let" token-equals ||
+        ctx token-index "peek" token-equals ||
         ctx token-index "proc" token-equals ||
         ctx token-index "macro" token-equals ||
         ctx token-index "const" token-equals ||
@@ -2401,6 +2405,7 @@ proc scan-block-end-with-outer-elif ptr int bool -- int do
                             ctx token-index "if" token-equals
                             ctx token-index "while" token-equals ||
                             ctx token-index "let" token-equals ||
+                            ctx token-index "peek" token-equals ||
                         do
                             depth 1 +
                         else
@@ -2828,6 +2833,7 @@ proc token-starts-block ptr int -- bool do
             ctx token "if" token-equals
             ctx token "while" token-equals ||
             ctx token "let" token-equals ||
+            ctx token "peek" token-equals ||
         end
     end
 end
@@ -6577,16 +6583,16 @@ proc compile-end ptr -- do
     end
 end
 
-proc find-let-do ptr int -- int do
-    let cc token-index do
+proc find-binding-do ptr int String -- int do
+    let cc token-index error-message do
         if token-index cc @cc-defining-module @ctx-token-count >= do
-            "unterminated let binding" fail
+            error-message fail
             token-index
         elif cc @cc-defining-module token-index "do" token-equals do
             token-index
         else
             cc @cc-defining-module token-index require-word
-            cc token-index 1 + find-let-do
+            cc token-index 1 + error-message find-binding-do
         end
     end
 end
@@ -6618,19 +6624,57 @@ proc bind-let-names ptr int int -- do
     end
 end
 
+proc begin-binding-block ptr int int -- do
+    let cc first-token name-count do
+        cc block-let push-block drop
+        cc "{" emit-line
+        cc indent-more
+        cc first-token name-count bind-let-names
+    end
+end
+
+proc restore-peek-names ptr int int -- do
+    let cc first-token name-count do
+        if name-count 0 > do
+            cc first-token find-local
+            let local-index do
+                if local-index 0 < do
+                    "internal peek binding not found" fail
+                end
+                cc first-token local-index compile-local-reference
+                cc first-token 1 + name-count 1 - restore-peek-names
+            end
+        end
+    end
+end
+
 proc compile-let ptr int -- int do
     let cc let-token do
-        cc let-token 1 + find-let-do
+        cc let-token 1 + "unterminated let binding" find-binding-do
         let do-token do
             do-token let-token 1 + -
             let name-count do
                 if name-count 0 <= do
                     "let requires at least one name" fail
                 end
-                cc block-let push-block drop
-                cc "{" emit-line
-                cc indent-more
-                cc let-token 1 + name-count bind-let-names
+                cc let-token 1 + name-count begin-binding-block
+                do-token 1 +
+            end
+        end
+    end
+end
+
+proc compile-peek ptr int -- int do
+    let cc peek-token do
+        cc peek-token 1 + "unterminated peek binding" find-binding-do
+        let do-token do
+            do-token peek-token 1 + -
+            let name-count do
+                if name-count 0 <= do
+                    "peek requires at least one name" fail
+                end
+                cc peek-token 1 + name-count begin-binding-block
+                cc peek-token 1 + name-count restore-peek-names
                 do-token 1 +
             end
         end
@@ -7469,6 +7513,8 @@ proc compile-word-token ptr int -- int do
             cc compile-end token-index 1 +
         elif cc @cc-defining-module token-index "let" token-equals do
             cc token-index compile-let
+        elif cc @cc-defining-module token-index "peek" token-equals do
+            cc token-index compile-peek
         else
             cc token-index compile-ordinary-word
             token-index 1 +

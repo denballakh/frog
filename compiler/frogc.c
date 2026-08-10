@@ -185,6 +185,8 @@ static uint8_t frog_string_1787721130_bytes[] = "end";
 static const FrogString frog_string_1787721130 = { frog_string_1787721130_bytes, 3 };
 static uint8_t frog_string_1349190650_bytes[] = "let";
 static const FrogString frog_string_1349190650 = { frog_string_1349190650_bytes, 3 };
+static uint8_t frog_string_2937389342_bytes[] = "peek";
+static const FrogString frog_string_2937389342 = { frog_string_2937389342_bytes, 4 };
 static uint8_t frog_string_2513272949_bytes[] = "from";
 static const FrogString frog_string_2513272949 = { frog_string_2513272949_bytes, 4 };
 static uint8_t frog_string_288002260_bytes[] = "import";
@@ -877,14 +879,20 @@ static uint8_t frog_string_1930379979_bytes[] = "while requires do before end";
 static const FrogString frog_string_1930379979 = { frog_string_1930379979_bytes, 28 };
 static uint8_t frog_string_958305534_bytes[] = "unknown block kind";
 static const FrogString frog_string_958305534 = { frog_string_958305534_bytes, 18 };
-static uint8_t frog_string_2273140127_bytes[] = "unterminated let binding";
-static const FrogString frog_string_2273140127 = { frog_string_2273140127_bytes, 24 };
 static uint8_t frog_string_2858035471_bytes[] = "String cannot be a local name";
 static const FrogString frog_string_2858035471 = { frog_string_2858035471_bytes, 29 };
 static uint8_t frog_string_1233200336_bytes[] = "(void)";
 static const FrogString frog_string_1233200336 = { frog_string_1233200336_bytes, 6 };
+static uint8_t frog_string_1574210379_bytes[] = "internal peek binding not found";
+static const FrogString frog_string_1574210379 = { frog_string_1574210379_bytes, 31 };
+static uint8_t frog_string_2273140127_bytes[] = "unterminated let binding";
+static const FrogString frog_string_2273140127 = { frog_string_2273140127_bytes, 24 };
 static uint8_t frog_string_518638965_bytes[] = "let requires at least one name";
 static const FrogString frog_string_518638965 = { frog_string_518638965_bytes, 30 };
+static uint8_t frog_string_3252313891_bytes[] = "unterminated peek binding";
+static const FrogString frog_string_3252313891 = { frog_string_3252313891_bytes, 25 };
+static uint8_t frog_string_3974263001_bytes[] = "peek requires at least one name";
+static const FrogString frog_string_3974263001 = { frog_string_3974263001_bytes, 31 };
 static uint8_t frog_string_2970973987_bytes[] = "unknown record operation";
 static const FrogString frog_string_2970973987 = { frog_string_2970973987_bytes, 24 };
 static uint8_t frog_string_886870361_bytes[] = " = frog_read_i64((const unsigned char *)(intptr_t)";
@@ -1929,125 +1937,128 @@ void p800(Cell frog_arg_0, Cell frog_arg_1);
 void p801(Cell frog_arg_0, Cell frog_arg_1);
 void p802(Cell frog_arg_0, Cell frog_arg_1);
 void p803(Cell frog_arg_0);
-Cell p804(Cell frog_arg_0, Cell frog_arg_1);
+Cell p804(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 void p805(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p806(Cell frog_arg_0, Cell frog_arg_1);
+void p806(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 void p807(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p808(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p809(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p810(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-frog_results_3 p811(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-frog_results_3 p812(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-frog_results_3 p813(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p808(Cell frog_arg_0, Cell frog_arg_1);
+Cell p809(Cell frog_arg_0, Cell frog_arg_1);
+void p810(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p811(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p812(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p813(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 frog_results_3 p814(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p815(Cell frog_arg_0, Cell frog_arg_1);
-Cell p816(Cell frog_arg_0, Cell frog_arg_1);
-Cell p817(Cell frog_arg_0, Cell frog_arg_1);
-void p818(Cell frog_arg_0, Cell frog_arg_1);
-Cell p819(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-void p820(Cell frog_arg_0, Cell frog_arg_1);
+frog_results_3 p815(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+frog_results_3 p816(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+frog_results_3 p817(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p818(Cell frog_arg_0, Cell frog_arg_1);
+Cell p819(Cell frog_arg_0, Cell frog_arg_1);
+Cell p820(Cell frog_arg_0, Cell frog_arg_1);
 void p821(Cell frog_arg_0, Cell frog_arg_1);
-Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
-Cell p823(Cell frog_arg_0, Cell frog_arg_1);
-void p824(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p825(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p826(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p829(Cell frog_arg_0, Cell frog_arg_1);
-void p830(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
-void p831(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
-void p832(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p834(Cell frog_arg_0, Cell frog_arg_1);
-Cell p835(Cell frog_arg_0, Cell frog_arg_1);
-Cell p836(Cell frog_arg_0, Cell frog_arg_1);
-void p837(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-void p838(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p839(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p840(Cell frog_arg_0, Cell frog_arg_1);
-Cell p841(Cell frog_arg_0, Cell frog_arg_1);
-Cell p842(Cell frog_arg_0, Cell frog_arg_1);
-Cell p843(Cell frog_arg_0, Cell frog_arg_1);
-Cell p844(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p845(Cell frog_arg_0, Cell frog_arg_1);
+Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+void p823(Cell frog_arg_0, Cell frog_arg_1);
+void p824(Cell frog_arg_0, Cell frog_arg_1);
+Cell p825(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
+Cell p826(Cell frog_arg_0, Cell frog_arg_1);
+void p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p829(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p830(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p831(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p832(Cell frog_arg_0, Cell frog_arg_1);
+void p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
+void p834(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
+void p835(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p836(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p837(Cell frog_arg_0, Cell frog_arg_1);
+Cell p838(Cell frog_arg_0, Cell frog_arg_1);
+Cell p839(Cell frog_arg_0, Cell frog_arg_1);
+void p840(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+void p841(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p842(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p843(Cell frog_arg_0, Cell frog_arg_1);
+Cell p844(Cell frog_arg_0, Cell frog_arg_1);
+Cell p845(Cell frog_arg_0, Cell frog_arg_1);
 Cell p846(Cell frog_arg_0, Cell frog_arg_1);
-void p847(Cell frog_arg_0);
-void p848(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p849(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p850(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p851(Cell frog_arg_0);
-void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p853(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p854(Cell frog_arg_0, Cell frog_arg_1);
-void p855(Cell frog_arg_0, Cell frog_arg_1);
-void p856(Cell frog_arg_0);
-void p857(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p858(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p847(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p848(Cell frog_arg_0, Cell frog_arg_1);
+Cell p849(Cell frog_arg_0, Cell frog_arg_1);
+void p850(Cell frog_arg_0);
+void p851(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p853(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p854(Cell frog_arg_0);
+void p855(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p856(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p857(Cell frog_arg_0, Cell frog_arg_1);
+void p858(Cell frog_arg_0, Cell frog_arg_1);
 void p859(Cell frog_arg_0);
-void p860(Cell frog_arg_0, Cell frog_arg_1);
-void p861(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p860(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p861(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+void p862(Cell frog_arg_0);
 void p863(Cell frog_arg_0, Cell frog_arg_1);
-void p864(Cell frog_arg_0);
-void p865(Cell frog_arg_0);
+void p864(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p865(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 void p866(Cell frog_arg_0, Cell frog_arg_1);
-Cell p867(void);
-Cell p868(Cell frog_arg_0);
+void p867(Cell frog_arg_0);
+void p868(Cell frog_arg_0);
 void p869(Cell frog_arg_0, Cell frog_arg_1);
-void p870(Cell frog_arg_0);
-Cell p871(Cell frog_arg_0, Cell frog_arg_1);
-extern int froglang_fork(void);
-Cell p872(void);
-extern int froglang_create_file(void *);
-Cell p873(Cell frog_arg_0);
-extern int froglang_dup2(int, int);
+Cell p870(void);
+Cell p871(Cell frog_arg_0);
+void p872(Cell frog_arg_0, Cell frog_arg_1);
+void p873(Cell frog_arg_0);
 Cell p874(Cell frog_arg_0, Cell frog_arg_1);
-extern int froglang_close(int);
-Cell p875(Cell frog_arg_0);
-extern int froglang_chdir(void *);
+extern int froglang_fork(void);
+Cell p875(void);
+extern int froglang_create_file(void *);
 Cell p876(Cell frog_arg_0);
-extern int froglang_execv(void *, void *);
+extern int froglang_dup2(int, int);
 Cell p877(Cell frog_arg_0, Cell frog_arg_1);
-extern int froglang_execvp(void *, void *);
-Cell p878(Cell frog_arg_0, Cell frog_arg_1);
-extern int froglang_ensure_directory(void *);
+extern int froglang_close(int);
+Cell p878(Cell frog_arg_0);
+extern int froglang_chdir(void *);
 Cell p879(Cell frog_arg_0);
+extern int froglang_execv(void *, void *);
+Cell p880(Cell frog_arg_0, Cell frog_arg_1);
+extern int froglang_execvp(void *, void *);
+Cell p881(Cell frog_arg_0, Cell frog_arg_1);
+extern int froglang_ensure_directory(void *);
+Cell p882(Cell frog_arg_0);
 extern int froglang_path_exists(void *);
-Cell p880(Cell frog_arg_0);
+Cell p883(Cell frog_arg_0);
 extern int froglang_wait_child(int);
-Cell p881(Cell frog_arg_0);
+Cell p884(Cell frog_arg_0);
 extern void froglang_finish_child(int);
-void p882(Cell frog_arg_0);
+void p885(Cell frog_arg_0);
 extern void froglang_reset_child_signals(void);
-void p883(void);
-Cell p884(void);
-Cell p885(Cell frog_arg_0);
-Cell p886(Cell frog_arg_0, Cell frog_arg_1);
-Cell p887(Cell frog_arg_0, Cell frog_arg_1);
-Cell p888(Cell frog_arg_0, Cell frog_arg_1);
-Cell p889(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p890(Cell frog_arg_0);
+void p886(void);
+Cell p887(void);
+Cell p888(Cell frog_arg_0);
+Cell p889(Cell frog_arg_0, Cell frog_arg_1);
+Cell p890(Cell frog_arg_0, Cell frog_arg_1);
 Cell p891(Cell frog_arg_0, Cell frog_arg_1);
-void p892(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p892(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 Cell p893(Cell frog_arg_0);
-void p894(Cell frog_arg_0);
-void p895(Cell frog_arg_0, Cell frog_arg_1);
-void p896(Cell frog_arg_0);
-void p897(Cell frog_arg_0, Cell frog_arg_1);
-void p898(void);
-frog_results_2 p899(Cell frog_arg_0);
-Cell p900(Cell frog_arg_0);
-Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
-Cell p902(Cell frog_arg_0, Cell frog_arg_1);
+Cell p894(Cell frog_arg_0, Cell frog_arg_1);
+void p895(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p896(Cell frog_arg_0);
+void p897(Cell frog_arg_0);
+void p898(Cell frog_arg_0, Cell frog_arg_1);
+void p899(Cell frog_arg_0);
+void p900(Cell frog_arg_0, Cell frog_arg_1);
+void p901(void);
+frog_results_2 p902(Cell frog_arg_0);
 Cell p903(Cell frog_arg_0);
-Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell p905(Cell frog_arg_0);
-Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-void p907(Cell frog_arg_0, Cell frog_arg_1);
-frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
-void p909(Cell frog_arg_0, Cell frog_arg_1);
-void p910(void);
+Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell p905(Cell frog_arg_0, Cell frog_arg_1);
+Cell p906(Cell frog_arg_0);
+Cell p907(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+Cell p908(Cell frog_arg_0);
+Cell p909(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
+void p910(Cell frog_arg_0, Cell frog_arg_1);
+frog_results_3 p911(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
+void p912(Cell frog_arg_0, Cell frog_arg_1);
+void p913(void);
 Cell p0(void) {
   Cell frog_slots[1];
   (void)frog_slots;
@@ -8453,6 +8464,13 @@ Cell p428(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[0] = frog_slots[0] || frog_slots[1];
     frog_slots[1] = l1;
     frog_slots[2] = l0;
+    frog_slots[3] = (Cell)(intptr_t)&frog_string_2937389342;
+    {
+      frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
+    }
+    frog_slots[0] = frog_slots[0] || frog_slots[1];
+    frog_slots[1] = l1;
+    frog_slots[2] = l0;
     frog_slots[3] = (Cell)(intptr_t)&frog_string_2513272949;
     {
       frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
@@ -12030,6 +12048,13 @@ Cell p471(Cell frog_arg_0, Cell frog_arg_1) {
                 frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
               }
               frog_slots[0] = frog_slots[0] || frog_slots[1];
+              frog_slots[1] = l1;
+              frog_slots[2] = l7;
+              frog_slots[3] = (Cell)(intptr_t)&frog_string_2937389342;
+              {
+                frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
+              }
+              frog_slots[0] = frog_slots[0] || frog_slots[1];
               if (frog_slots[0] != 0) {
                 frog_slots[0] = l7;
                 frog_slots[1] = 1;
@@ -12326,6 +12351,13 @@ void p472(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
                     frog_slots[1] = l2;
                     frog_slots[2] = l9;
                     frog_slots[3] = (Cell)(intptr_t)&frog_string_1349190650;
+                    {
+                      frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
+                    }
+                    frog_slots[0] = frog_slots[0] || frog_slots[1];
+                    frog_slots[1] = l2;
+                    frog_slots[2] = l9;
+                    frog_slots[3] = (Cell)(intptr_t)&frog_string_2937389342;
                     {
                       frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
                     }
@@ -12978,6 +13010,13 @@ Cell p474(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[0] = frog_slots[0] || frog_slots[1];
     frog_slots[1] = l1;
     frog_slots[2] = l0;
+    frog_slots[3] = (Cell)(intptr_t)&frog_string_2937389342;
+    {
+      frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
+    }
+    frog_slots[0] = frog_slots[0] || frog_slots[1];
+    frog_slots[1] = l1;
+    frog_slots[2] = l0;
     frog_slots[3] = (Cell)(intptr_t)&frog_string_3963498465;
     {
       frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
@@ -13538,6 +13577,13 @@ Cell p477(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
                 frog_slots[1] = l2;
                 frog_slots[2] = l6;
                 frog_slots[3] = (Cell)(intptr_t)&frog_string_1349190650;
+                {
+                  frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
+                }
+                frog_slots[0] = frog_slots[0] || frog_slots[1];
+                frog_slots[1] = l2;
+                frog_slots[2] = l6;
+                frog_slots[3] = (Cell)(intptr_t)&frog_string_2937389342;
                 {
                   frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
                 }
@@ -15600,6 +15646,13 @@ Cell p510(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = l1;
       frog_slots[2] = l0;
       frog_slots[3] = (Cell)(intptr_t)&frog_string_1349190650;
+      {
+        frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
+      }
+      frog_slots[0] = frog_slots[0] || frog_slots[1];
+      frog_slots[1] = l1;
+      frog_slots[2] = l0;
+      frog_slots[3] = (Cell)(intptr_t)&frog_string_2937389342;
       {
         frog_slots[1] = p326(frog_slots[1], frog_slots[2], frog_slots[3]);
       }
@@ -23519,7 +23572,7 @@ Cell p688(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[1] = l3;
       frog_slots[2] = 58;
       {
-        frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
         Cell l5 = frog_slots[0];
@@ -23546,7 +23599,7 @@ Cell p688(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           frog_slots[1] = l3;
           frog_slots[2] = 46;
           {
-            frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+            frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
           }
           {
             Cell l6 = frog_slots[0];
@@ -31131,18 +31184,21 @@ void p803(Cell frog_arg_0) {
     }
   }
 }
-Cell p804(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p804(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
   frog_slots[1] = frog_arg_1;
+  frog_slots[2] = frog_arg_2;
   {
-    Cell l0 = frog_slots[1];
+    Cell l0 = frog_slots[2];
     (void)l0;
-    Cell l1 = frog_slots[0];
+    Cell l1 = frog_slots[1];
     (void)l1;
-    frog_slots[0] = l0;
-    frog_slots[1] = l1;
+    Cell l2 = frog_slots[0];
+    (void)l2;
+    frog_slots[0] = l1;
+    frog_slots[1] = l2;
     {
       frog_slots[1] = p548(frog_slots[1]);
     }
@@ -31151,38 +31207,39 @@ Cell p804(Cell frog_arg_0, Cell frog_arg_1) {
     }
     frog_slots[0] = frog_slots[0] >= frog_slots[1];
     if (frog_slots[0] != 0) {
-      frog_slots[0] = (Cell)(intptr_t)&frog_string_2273140127;
+      frog_slots[0] = l0;
       {
         p190(frog_slots[0]);
       }
-      frog_slots[0] = l0;
-    } else {
       frog_slots[0] = l1;
+    } else {
+      frog_slots[0] = l2;
       {
         frog_slots[0] = p548(frog_slots[0]);
       }
-      frog_slots[1] = l0;
+      frog_slots[1] = l1;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_1646057492;
       {
         frog_slots[0] = p326(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       if (frog_slots[0] != 0) {
-        frog_slots[0] = l0;
-      } else {
         frog_slots[0] = l1;
+      } else {
+        frog_slots[0] = l2;
         {
           frog_slots[0] = p548(frog_slots[0]);
         }
-        frog_slots[1] = l0;
+        frog_slots[1] = l1;
         {
           p427(frog_slots[0], frog_slots[1]);
         }
-        frog_slots[0] = l1;
-        frog_slots[1] = l0;
+        frog_slots[0] = l2;
+        frog_slots[1] = l1;
         frog_slots[2] = 1;
         frog_slots[1] = frog_slots[1] + frog_slots[2];
+        frog_slots[2] = l0;
         {
-          frog_slots[0] = p804(frog_slots[0], frog_slots[1]);
+          frog_slots[0] = p804(frog_slots[0], frog_slots[1], frog_slots[2]);
         }
       }
     }
@@ -31312,7 +31369,102 @@ void p805(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-Cell p806(Cell frog_arg_0, Cell frog_arg_1) {
+void p806(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+  Cell frog_slots[3];
+  (void)frog_slots;
+  frog_slots[0] = frog_arg_0;
+  frog_slots[1] = frog_arg_1;
+  frog_slots[2] = frog_arg_2;
+  {
+    Cell l0 = frog_slots[2];
+    (void)l0;
+    Cell l1 = frog_slots[1];
+    (void)l1;
+    Cell l2 = frog_slots[0];
+    (void)l2;
+    frog_slots[0] = l2;
+    {
+      frog_slots[1] = p531();
+    }
+    {
+      frog_slots[0] = p595(frog_slots[0], frog_slots[1]);
+    }
+    {
+      Cell l3 = frog_slots[0];
+      (void)l3;
+    }
+    frog_slots[0] = l2;
+    frog_slots[1] = (Cell)(intptr_t)&frog_string_4262220314;
+    {
+      p606(frog_slots[0], frog_slots[1]);
+    }
+    frog_slots[0] = l2;
+    {
+      p607(frog_slots[0]);
+    }
+    frog_slots[0] = l2;
+    frog_slots[1] = l1;
+    frog_slots[2] = l0;
+    {
+      p805(frog_slots[0], frog_slots[1], frog_slots[2]);
+    }
+  }
+}
+void p807(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+  Cell frog_slots[4];
+  (void)frog_slots;
+  frog_slots[0] = frog_arg_0;
+  frog_slots[1] = frog_arg_1;
+  frog_slots[2] = frog_arg_2;
+  {
+    Cell l0 = frog_slots[2];
+    (void)l0;
+    Cell l1 = frog_slots[1];
+    (void)l1;
+    Cell l2 = frog_slots[0];
+    (void)l2;
+    frog_slots[0] = l0;
+    frog_slots[1] = 0;
+    frog_slots[0] = frog_slots[0] > frog_slots[1];
+    if (frog_slots[0] != 0) {
+      frog_slots[0] = l2;
+      frog_slots[1] = l1;
+      {
+        frog_slots[0] = p604(frog_slots[0], frog_slots[1]);
+      }
+      {
+        Cell l3 = frog_slots[0];
+        (void)l3;
+        frog_slots[0] = l3;
+        frog_slots[1] = 0;
+        frog_slots[0] = frog_slots[0] < frog_slots[1];
+        if (frog_slots[0] != 0) {
+          frog_slots[0] = (Cell)(intptr_t)&frog_string_1574210379;
+          {
+            p190(frog_slots[0]);
+          }
+        }
+        frog_slots[0] = l2;
+        frog_slots[1] = l1;
+        frog_slots[2] = l3;
+        {
+          p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+        }
+        frog_slots[0] = l2;
+        frog_slots[1] = l1;
+        frog_slots[2] = 1;
+        frog_slots[1] = frog_slots[1] + frog_slots[2];
+        frog_slots[2] = l0;
+        frog_slots[3] = 1;
+        frog_slots[2] = frog_slots[2] - frog_slots[3];
+        {
+          p807(frog_slots[0], frog_slots[1], frog_slots[2]);
+        }
+      }
+    }
+  }
+}
+Cell p808(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31326,8 +31478,9 @@ Cell p806(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[1] = l0;
     frog_slots[2] = 1;
     frog_slots[1] = frog_slots[1] + frog_slots[2];
+    frog_slots[2] = (Cell)(intptr_t)&frog_string_2273140127;
     {
-      frog_slots[0] = p804(frog_slots[0], frog_slots[1]);
+      frog_slots[0] = p804(frog_slots[0], frog_slots[1], frog_slots[2]);
     }
     {
       Cell l2 = frog_slots[0];
@@ -31350,32 +31503,12 @@ Cell p806(Cell frog_arg_0, Cell frog_arg_1) {
           }
         }
         frog_slots[0] = l1;
-        {
-          frog_slots[1] = p531();
-        }
-        {
-          frog_slots[0] = p595(frog_slots[0], frog_slots[1]);
-        }
-        {
-          Cell l4 = frog_slots[0];
-          (void)l4;
-        }
-        frog_slots[0] = l1;
-        frog_slots[1] = (Cell)(intptr_t)&frog_string_4262220314;
-        {
-          p606(frog_slots[0], frog_slots[1]);
-        }
-        frog_slots[0] = l1;
-        {
-          p607(frog_slots[0]);
-        }
-        frog_slots[0] = l1;
         frog_slots[1] = l0;
         frog_slots[2] = 1;
         frog_slots[1] = frog_slots[1] + frog_slots[2];
         frog_slots[2] = l3;
         {
-          p805(frog_slots[0], frog_slots[1], frog_slots[2]);
+          p806(frog_slots[0], frog_slots[1], frog_slots[2]);
         }
         frog_slots[0] = l2;
         frog_slots[1] = 1;
@@ -31385,7 +31518,69 @@ Cell p806(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p807(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p809(Cell frog_arg_0, Cell frog_arg_1) {
+  Cell frog_slots[3];
+  (void)frog_slots;
+  frog_slots[0] = frog_arg_0;
+  frog_slots[1] = frog_arg_1;
+  {
+    Cell l0 = frog_slots[1];
+    (void)l0;
+    Cell l1 = frog_slots[0];
+    (void)l1;
+    frog_slots[0] = l1;
+    frog_slots[1] = l0;
+    frog_slots[2] = 1;
+    frog_slots[1] = frog_slots[1] + frog_slots[2];
+    frog_slots[2] = (Cell)(intptr_t)&frog_string_3252313891;
+    {
+      frog_slots[0] = p804(frog_slots[0], frog_slots[1], frog_slots[2]);
+    }
+    {
+      Cell l2 = frog_slots[0];
+      (void)l2;
+      frog_slots[0] = l2;
+      frog_slots[1] = l0;
+      frog_slots[2] = 1;
+      frog_slots[1] = frog_slots[1] + frog_slots[2];
+      frog_slots[0] = frog_slots[0] - frog_slots[1];
+      {
+        Cell l3 = frog_slots[0];
+        (void)l3;
+        frog_slots[0] = l3;
+        frog_slots[1] = 0;
+        frog_slots[0] = frog_slots[0] <= frog_slots[1];
+        if (frog_slots[0] != 0) {
+          frog_slots[0] = (Cell)(intptr_t)&frog_string_3974263001;
+          {
+            p190(frog_slots[0]);
+          }
+        }
+        frog_slots[0] = l1;
+        frog_slots[1] = l0;
+        frog_slots[2] = 1;
+        frog_slots[1] = frog_slots[1] + frog_slots[2];
+        frog_slots[2] = l3;
+        {
+          p806(frog_slots[0], frog_slots[1], frog_slots[2]);
+        }
+        frog_slots[0] = l1;
+        frog_slots[1] = l0;
+        frog_slots[2] = 1;
+        frog_slots[1] = frog_slots[1] + frog_slots[2];
+        frog_slots[2] = l3;
+        {
+          p807(frog_slots[0], frog_slots[1], frog_slots[2]);
+        }
+        frog_slots[0] = l2;
+        frog_slots[1] = 1;
+        frog_slots[0] = frog_slots[0] + frog_slots[1];
+      }
+    }
+  }
+  return frog_slots[0];
+}
+void p810(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31439,7 +31634,7 @@ void p807(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p808(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+void p811(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31469,7 +31664,7 @@ void p808(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
     }
   }
 }
-Cell p809(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell p812(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31510,14 +31705,14 @@ Cell p809(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
         frog_slots[4] = 1;
         frog_slots[3] = frog_slots[3] + frog_slots[4];
         {
-          frog_slots[0] = p809(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+          frog_slots[0] = p812(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
         }
       }
     }
   }
   return frog_slots[0];
 }
-Cell p810(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p813(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31525,11 +31720,11 @@ Cell p810(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   frog_slots[2] = frog_arg_2;
   frog_slots[3] = 0;
   {
-    frog_slots[0] = p809(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+    frog_slots[0] = p812(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
   }
   return frog_slots[0];
 }
-frog_results_3 p811(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+frog_results_3 p814(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31604,7 +31799,7 @@ frog_results_3 p811(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   frog_result.value_0 = frog_slots[0];
   return frog_result;
 }
-frog_results_3 p812(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+frog_results_3 p815(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31679,7 +31874,7 @@ frog_results_3 p812(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   frog_result.value_0 = frog_slots[0];
   return frog_result;
 }
-frog_results_3 p813(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+frog_results_3 p816(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31754,7 +31949,7 @@ frog_results_3 p813(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   frog_result.value_0 = frog_slots[0];
   return frog_result;
 }
-frog_results_3 p814(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+frog_results_3 p817(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31829,7 +32024,7 @@ frog_results_3 p814(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   frog_result.value_0 = frog_slots[0];
   return frog_result;
 }
-Cell p815(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p818(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31854,7 +32049,7 @@ Cell p815(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[2] = frog_call_result.value_1;
     }
     {
-      frog_results_3 frog_call_result = p811(frog_slots[0], frog_slots[1], frog_slots[2]);
+      frog_results_3 frog_call_result = p814(frog_slots[0], frog_slots[1], frog_slots[2]);
       frog_slots[0] = frog_call_result.value_0;
       frog_slots[1] = frog_call_result.value_1;
       frog_slots[2] = frog_call_result.value_2;
@@ -31902,7 +32097,7 @@ Cell p815(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p816(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p819(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -31927,7 +32122,7 @@ Cell p816(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[2] = frog_call_result.value_1;
     }
     {
-      frog_results_3 frog_call_result = p812(frog_slots[0], frog_slots[1], frog_slots[2]);
+      frog_results_3 frog_call_result = p815(frog_slots[0], frog_slots[1], frog_slots[2]);
       frog_slots[0] = frog_call_result.value_0;
       frog_slots[1] = frog_call_result.value_1;
       frog_slots[2] = frog_call_result.value_2;
@@ -31975,7 +32170,7 @@ Cell p816(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p817(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p820(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32000,7 +32195,7 @@ Cell p817(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[2] = frog_call_result.value_1;
     }
     {
-      frog_results_3 frog_call_result = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
+      frog_results_3 frog_call_result = p816(frog_slots[0], frog_slots[1], frog_slots[2]);
       frog_slots[0] = frog_call_result.value_0;
       frog_slots[1] = frog_call_result.value_1;
       frog_slots[2] = frog_call_result.value_2;
@@ -32048,7 +32243,7 @@ Cell p817(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p818(Cell frog_arg_0, Cell frog_arg_1) {
+void p821(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32088,7 +32283,7 @@ void p818(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-Cell p819(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32123,7 +32318,7 @@ Cell p819(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
       frog_slots[1] = l2;
       frog_slots[2] = l0;
       {
-        frog_results_3 frog_call_result = p811(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_results_3 frog_call_result = p814(frog_slots[0], frog_slots[1], frog_slots[2]);
         frog_slots[0] = frog_call_result.value_0;
         frog_slots[1] = frog_call_result.value_1;
         frog_slots[2] = frog_call_result.value_2;
@@ -32190,7 +32385,7 @@ Cell p819(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
               }
               frog_slots[1] = frog_slots[1] * frog_slots[2];
               {
-                p818(frog_slots[0], frog_slots[1]);
+                p821(frog_slots[0], frog_slots[1]);
               }
               frog_slots[0] = 1;
             } else {
@@ -32237,7 +32432,7 @@ Cell p819(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   }
   return frog_slots[0];
 }
-void p820(Cell frog_arg_0, Cell frog_arg_1) {
+void p823(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32285,7 +32480,7 @@ void p820(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-void p821(Cell frog_arg_0, Cell frog_arg_1) {
+void p824(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32354,7 +32549,7 @@ void p821(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
+Cell p825(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32396,7 +32591,7 @@ Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
       frog_slots[3] = 1;
       frog_slots[2] = frog_slots[2] - frog_slots[3];
       {
-        frog_results_3 frog_call_result = p811(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_results_3 frog_call_result = p814(frog_slots[0], frog_slots[1], frog_slots[2]);
         frog_slots[0] = frog_call_result.value_0;
         frog_slots[1] = frog_call_result.value_1;
         frog_slots[2] = frog_call_result.value_2;
@@ -32477,7 +32672,7 @@ Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
                       frog_slots[1] = p394(frog_slots[1], frog_slots[2]);
                     }
                     {
-                      p821(frog_slots[0], frog_slots[1]);
+                      p824(frog_slots[0], frog_slots[1]);
                     }
                   } else {
                     frog_slots[0] = l4;
@@ -32501,7 +32696,7 @@ Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
                       frog_slots[1] = p394(frog_slots[1], frog_slots[2]);
                     }
                     {
-                      p820(frog_slots[0], frog_slots[1]);
+                      p823(frog_slots[0], frog_slots[1]);
                     }
                   }
                   frog_slots[0] = 1;
@@ -32515,7 +32710,7 @@ Cell p822(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
   }
   return frog_slots[0];
 }
-Cell p823(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p826(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[6];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32544,7 +32739,7 @@ Cell p823(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = l2;
       frog_slots[2] = 58;
       {
-        frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
         Cell l4 = frog_slots[0];
@@ -32558,7 +32753,7 @@ Cell p823(Cell frog_arg_0, Cell frog_arg_1) {
           frog_slots[2] = l2;
           frog_slots[3] = l4;
           {
-            frog_slots[0] = p819(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+            frog_slots[0] = p822(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
           }
         } else {
           frog_slots[0] = l2;
@@ -32596,7 +32791,7 @@ Cell p823(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[1] = l2;
             frog_slots[2] = 46;
             {
-              frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+              frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
             }
             {
               Cell l7 = frog_slots[0];
@@ -32617,7 +32812,7 @@ Cell p823(Cell frog_arg_0, Cell frog_arg_1) {
                 frog_slots[5] = 33;
                 frog_slots[4] = frog_slots[4] == frog_slots[5];
                 {
-                  frog_slots[0] = p822(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
+                  frog_slots[0] = p825(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
                 }
               } else {
                 frog_slots[0] = 0;
@@ -32632,7 +32827,7 @@ Cell p823(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p824(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32746,7 +32941,7 @@ void p824(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p825(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32828,7 +33023,7 @@ void p825(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p826(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+void p829(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32935,7 +33130,7 @@ void p826(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
     }
   }
 }
-Cell p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell p830(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[6];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -32970,7 +33165,7 @@ Cell p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
       frog_slots[1] = l2;
       frog_slots[2] = l0;
       {
-        frog_results_3 frog_call_result = p812(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_results_3 frog_call_result = p815(frog_slots[0], frog_slots[1], frog_slots[2]);
         frog_slots[0] = frog_call_result.value_0;
         frog_slots[1] = frog_call_result.value_1;
         frog_slots[2] = frog_call_result.value_2;
@@ -33063,7 +33258,7 @@ Cell p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
               }
               frog_slots[2] = frog_slots[2] != frog_slots[3];
               {
-                p824(frog_slots[0], frog_slots[1], frog_slots[2]);
+                p827(frog_slots[0], frog_slots[1], frog_slots[2]);
               }
               frog_slots[0] = 1;
             }
@@ -33074,7 +33269,7 @@ Cell p827(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   }
   return frog_slots[0];
 }
-Cell p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell p831(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33109,7 +33304,7 @@ Cell p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
       frog_slots[1] = l2;
       frog_slots[2] = l0;
       {
-        frog_results_3 frog_call_result = p812(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_results_3 frog_call_result = p815(frog_slots[0], frog_slots[1], frog_slots[2]);
         frog_slots[0] = frog_call_result.value_0;
         frog_slots[1] = frog_call_result.value_1;
         frog_slots[2] = frog_call_result.value_2;
@@ -33224,7 +33419,7 @@ Cell p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
                         frog_slots[2] = p402(frog_slots[2], frog_slots[3]);
                       }
                       {
-                        p825(frog_slots[0], frog_slots[1], frog_slots[2]);
+                        p828(frog_slots[0], frog_slots[1], frog_slots[2]);
                       }
                     } else {
                       frog_slots[0] = l6;
@@ -33264,7 +33459,7 @@ Cell p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
                         }
                         frog_slots[3] = frog_slots[3] != frog_slots[4];
                         {
-                          p826(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+                          p829(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
                         }
                       }
                     }
@@ -33280,7 +33475,7 @@ Cell p828(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   }
   return frog_slots[0];
 }
-Cell p829(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p832(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33309,7 +33504,7 @@ Cell p829(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = l2;
       frog_slots[2] = 58;
       {
-        frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
         Cell l4 = frog_slots[0];
@@ -33323,14 +33518,14 @@ Cell p829(Cell frog_arg_0, Cell frog_arg_1) {
           frog_slots[2] = l2;
           frog_slots[3] = l4;
           {
-            frog_slots[0] = p827(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+            frog_slots[0] = p830(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
           }
         } else {
           frog_slots[0] = l3;
           frog_slots[1] = l2;
           frog_slots[2] = 46;
           {
-            frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+            frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
           }
           {
             Cell l5 = frog_slots[0];
@@ -33344,7 +33539,7 @@ Cell p829(Cell frog_arg_0, Cell frog_arg_1) {
               frog_slots[2] = l2;
               frog_slots[3] = l5;
               {
-                frog_slots[0] = p828(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+                frog_slots[0] = p831(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
               }
             } else {
               frog_slots[0] = 0;
@@ -33356,7 +33551,7 @@ Cell p829(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p830(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
+void p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33474,7 +33669,7 @@ void p830(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
     }
   }
 }
-void p831(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
+void p834(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33517,7 +33712,7 @@ void p831(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
         frog_slots[3] = l6;
         frog_slots[4] = l0;
         {
-          p830(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
+          p833(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
         }
         frog_slots[0] = l6;
         {
@@ -33531,7 +33726,7 @@ void p831(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Ce
     }
   }
 }
-void p832(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p835(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33622,7 +33817,7 @@ void p832(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
             frog_slots[3] = l0;
             frog_slots[4] = l4;
             {
-              p831(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
+              p834(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
             }
             frog_slots[0] = l2;
             {
@@ -33668,7 +33863,7 @@ void p832(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-Cell p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell p836(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33703,7 +33898,7 @@ Cell p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
       frog_slots[1] = l2;
       frog_slots[2] = l0;
       {
-        frog_results_3 frog_call_result = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_results_3 frog_call_result = p816(frog_slots[0], frog_slots[1], frog_slots[2]);
         frog_slots[0] = frog_call_result.value_0;
         frog_slots[1] = frog_call_result.value_1;
         frog_slots[2] = frog_call_result.value_2;
@@ -33761,7 +33956,7 @@ Cell p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
               frog_slots[1] = l6;
               frog_slots[2] = l5;
               {
-                p832(frog_slots[0], frog_slots[1], frog_slots[2]);
+                p835(frog_slots[0], frog_slots[1], frog_slots[2]);
               }
               frog_slots[0] = 1;
             } else {
@@ -33820,7 +34015,7 @@ Cell p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
                   frog_slots[3] = 4;
                   frog_slots[2] = frog_slots[2] - frog_slots[3];
                   {
-                    frog_results_3 frog_call_result = p814(frog_slots[0], frog_slots[1], frog_slots[2]);
+                    frog_results_3 frog_call_result = p817(frog_slots[0], frog_slots[1], frog_slots[2]);
                     frog_slots[0] = frog_call_result.value_0;
                     frog_slots[1] = frog_call_result.value_1;
                     frog_slots[2] = frog_call_result.value_2;
@@ -33890,7 +34085,7 @@ Cell p833(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   }
   return frog_slots[0];
 }
-Cell p834(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p837(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -33919,7 +34114,7 @@ Cell p834(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = l2;
       frog_slots[2] = 58;
       {
-        frog_slots[0] = p810(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p813(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
         Cell l4 = frog_slots[0];
@@ -33933,7 +34128,7 @@ Cell p834(Cell frog_arg_0, Cell frog_arg_1) {
           frog_slots[2] = l2;
           frog_slots[3] = l4;
           {
-            frog_slots[0] = p833(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+            frog_slots[0] = p836(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
           }
         } else {
           frog_slots[0] = 0;
@@ -33943,7 +34138,7 @@ Cell p834(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p835(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p838(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34075,7 +34270,7 @@ Cell p835(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p836(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p839(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34224,7 +34419,7 @@ Cell p836(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[0] = l1;
             frog_slots[1] = l0;
             {
-              frog_slots[0] = p815(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p818(frog_slots[0], frog_slots[1]);
             }
             if (frog_slots[0] != 0) {
               frog_slots[0] = 1;
@@ -34232,7 +34427,7 @@ Cell p836(Cell frog_arg_0, Cell frog_arg_1) {
               frog_slots[0] = l1;
               frog_slots[1] = l0;
               {
-                frog_slots[0] = p816(frog_slots[0], frog_slots[1]);
+                frog_slots[0] = p819(frog_slots[0], frog_slots[1]);
               }
               if (frog_slots[0] != 0) {
                 frog_slots[0] = 1;
@@ -34240,7 +34435,7 @@ Cell p836(Cell frog_arg_0, Cell frog_arg_1) {
                 frog_slots[0] = l1;
                 frog_slots[1] = l0;
                 {
-                  frog_slots[0] = p817(frog_slots[0], frog_slots[1]);
+                  frog_slots[0] = p820(frog_slots[0], frog_slots[1]);
                 }
               }
             }
@@ -34251,7 +34446,7 @@ Cell p836(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p837(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+void p840(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34346,14 +34541,14 @@ void p837(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
           frog_slots[4] = 1;
           frog_slots[3] = frog_slots[3] + frog_slots[4];
           {
-            p837(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+            p840(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
           }
         }
       }
     }
   }
 }
-void p838(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p841(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34371,11 +34566,11 @@ void p838(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     frog_slots[2] = l0;
     frog_slots[3] = 0;
     {
-      p837(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+      p840(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
     }
   }
 }
-void p839(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p842(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34440,7 +34635,7 @@ void p839(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
         frog_slots[2] = p362(frog_slots[2], frog_slots[3]);
       }
       {
-        p848(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p851(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l4;
       frog_slots[1] = l2;
@@ -34461,7 +34656,7 @@ void p839(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p840(Cell frog_arg_0, Cell frog_arg_1) {
+void p843(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34489,7 +34684,7 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[0] = l1;
       frog_slots[1] = l0;
       {
-        frog_slots[0] = p843(frog_slots[0], frog_slots[1]);
+        frog_slots[0] = p846(frog_slots[0], frog_slots[1]);
       }
       {
         Cell l3 = frog_slots[0];
@@ -34514,41 +34709,41 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[2] = p501(frog_slots[2], frog_slots[3]);
           }
           {
-            p839(frog_slots[0], frog_slots[1], frog_slots[2]);
+            p842(frog_slots[0], frog_slots[1], frog_slots[2]);
           }
         } else {
           frog_slots[0] = l1;
           frog_slots[1] = l0;
           {
-            frog_slots[0] = p836(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p839(frog_slots[0], frog_slots[1]);
           }
           if (frog_slots[0] != 0) {
           } else {
             frog_slots[0] = l1;
             frog_slots[1] = l0;
             {
-              frog_slots[0] = p835(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p838(frog_slots[0], frog_slots[1]);
             }
             if (frog_slots[0] != 0) {
             } else {
               frog_slots[0] = l1;
               frog_slots[1] = l0;
               {
-                frog_slots[0] = p823(frog_slots[0], frog_slots[1]);
+                frog_slots[0] = p826(frog_slots[0], frog_slots[1]);
               }
               if (frog_slots[0] != 0) {
               } else {
                 frog_slots[0] = l1;
                 frog_slots[1] = l0;
                 {
-                  frog_slots[0] = p829(frog_slots[0], frog_slots[1]);
+                  frog_slots[0] = p832(frog_slots[0], frog_slots[1]);
                 }
                 if (frog_slots[0] != 0) {
                 } else {
                   frog_slots[0] = l1;
                   frog_slots[1] = l0;
                   {
-                    frog_slots[0] = p834(frog_slots[0], frog_slots[1]);
+                    frog_slots[0] = p837(frog_slots[0], frog_slots[1]);
                   }
                   if (frog_slots[0] != 0) {
                   } else {
@@ -34575,7 +34770,7 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
                           frog_slots[1] = l0;
                           frog_slots[2] = l4;
                           {
-                            p807(frog_slots[0], frog_slots[1], frog_slots[2]);
+                            p810(frog_slots[0], frog_slots[1], frog_slots[2]);
                           }
                         } else {
                           frog_slots[0] = l2;
@@ -34613,7 +34808,7 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
                                 frog_slots[2] = p501(frog_slots[2], frog_slots[3]);
                               }
                               {
-                                p838(frog_slots[0], frog_slots[1], frog_slots[2]);
+                                p841(frog_slots[0], frog_slots[1], frog_slots[2]);
                               }
                             } else {
                               frog_slots[0] = l1;
@@ -34653,7 +34848,7 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
                                   frog_slots[3] = p501(frog_slots[3], frog_slots[4]);
                                 }
                                 {
-                                  p808(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+                                  p811(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
                                 }
                               }
                             }
@@ -34661,7 +34856,7 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
                             frog_slots[0] = l1;
                             frog_slots[1] = l0;
                             {
-                              frog_slots[0] = p871(frog_slots[0], frog_slots[1]);
+                              frog_slots[0] = p874(frog_slots[0], frog_slots[1]);
                             }
                             frog_slots[0] = !frog_slots[0];
                             if (frog_slots[0] != 0) {
@@ -34684,7 +34879,7 @@ void p840(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-Cell p841(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p844(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34815,17 +35010,34 @@ Cell p841(Cell frog_arg_0, Cell frog_arg_1) {
                   frog_slots[0] = l1;
                   frog_slots[1] = l0;
                   {
-                    frog_slots[0] = p806(frog_slots[0], frog_slots[1]);
+                    frog_slots[0] = p808(frog_slots[0], frog_slots[1]);
                   }
                 } else {
                   frog_slots[0] = l1;
-                  frog_slots[1] = l0;
                   {
-                    p840(frog_slots[0], frog_slots[1]);
+                    frog_slots[0] = p548(frog_slots[0]);
                   }
-                  frog_slots[0] = l0;
-                  frog_slots[1] = 1;
-                  frog_slots[0] = frog_slots[0] + frog_slots[1];
+                  frog_slots[1] = l0;
+                  frog_slots[2] = (Cell)(intptr_t)&frog_string_2937389342;
+                  {
+                    frog_slots[0] = p326(frog_slots[0], frog_slots[1], frog_slots[2]);
+                  }
+                  if (frog_slots[0] != 0) {
+                    frog_slots[0] = l1;
+                    frog_slots[1] = l0;
+                    {
+                      frog_slots[0] = p809(frog_slots[0], frog_slots[1]);
+                    }
+                  } else {
+                    frog_slots[0] = l1;
+                    frog_slots[1] = l0;
+                    {
+                      p843(frog_slots[0], frog_slots[1]);
+                    }
+                    frog_slots[0] = l0;
+                    frog_slots[1] = 1;
+                    frog_slots[0] = frog_slots[0] + frog_slots[1];
+                  }
                 }
               }
             }
@@ -34836,7 +35048,7 @@ Cell p841(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p842(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p845(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -34999,7 +35211,7 @@ Cell p842(Cell frog_arg_0, Cell frog_arg_1) {
                 frog_slots[0] = l1;
                 frog_slots[1] = l0;
                 {
-                  frog_slots[0] = p841(frog_slots[0], frog_slots[1]);
+                  frog_slots[0] = p844(frog_slots[0], frog_slots[1]);
                 }
               } else {
                 frog_slots[0] = (Cell)(intptr_t)&frog_string_1542790042;
@@ -35018,7 +35230,7 @@ Cell p842(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p843(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p846(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35066,7 +35278,7 @@ Cell p843(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p844(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p847(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35146,7 +35358,7 @@ Cell p844(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[3] = 2;
       frog_slots[2] = frog_slots[2] + frog_slots[3];
       {
-        frog_slots[1] = p843(frog_slots[1], frog_slots[2]);
+        frog_slots[1] = p846(frog_slots[1], frog_slots[2]);
       }
       frog_slots[1] = !frog_slots[1];
       frog_slots[0] = frog_slots[0] && frog_slots[1];
@@ -35206,7 +35418,7 @@ Cell p844(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   }
   return frog_slots[0];
 }
-void p845(Cell frog_arg_0, Cell frog_arg_1) {
+void p848(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35267,12 +35479,12 @@ void p845(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[2] = 1;
       frog_slots[1] = frog_slots[1] + frog_slots[2];
       {
-        p845(frog_slots[0], frog_slots[1]);
+        p848(frog_slots[0], frog_slots[1]);
       }
     }
   }
 }
-Cell p846(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p849(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35327,7 +35539,7 @@ Cell p846(Cell frog_arg_0, Cell frog_arg_1) {
           frog_slots[2] = 1;
           frog_slots[1] = frog_slots[1] + frog_slots[2];
           {
-            frog_slots[0] = p846(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p849(frog_slots[0], frog_slots[1]);
           }
         } else {
           frog_slots[0] = 0;
@@ -35337,7 +35549,7 @@ Cell p846(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p847(Cell frog_arg_0) {
+void p850(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35369,7 +35581,7 @@ void p847(Cell frog_arg_0) {
     frog_slots[0] = l0;
     frog_slots[1] = 0;
     {
-      frog_slots[0] = p846(frog_slots[0], frog_slots[1]);
+      frog_slots[0] = p849(frog_slots[0], frog_slots[1]);
     }
     frog_slots[0] = !frog_slots[0];
     if (frog_slots[0] != 0) {
@@ -35380,7 +35592,7 @@ void p847(Cell frog_arg_0) {
     }
   }
 }
-void p848(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p851(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35411,7 +35623,7 @@ void p848(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
         frog_slots[1] = l4;
         frog_slots[2] = l0;
         {
-          frog_slots[0] = p844(frog_slots[0], frog_slots[1], frog_slots[2]);
+          frog_slots[0] = p847(frog_slots[0], frog_slots[1], frog_slots[2]);
         }
         if (frog_slots[0] != 0) {
           frog_slots[0] = l4;
@@ -35421,7 +35633,7 @@ void p848(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           frog_slots[0] = l2;
           frog_slots[1] = l4;
           {
-            frog_slots[0] = p842(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p845(frog_slots[0], frog_slots[1]);
           }
         }
       }
@@ -35432,7 +35644,7 @@ void p848(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-Cell p849(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35572,7 +35784,7 @@ Cell p849(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   }
   return frog_slots[0];
 }
-Cell p850(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p853(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35599,7 +35811,7 @@ Cell p850(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   }
   return frog_slots[0];
 }
-void p851(Cell frog_arg_0) {
+void p854(Cell frog_arg_0) {
   Cell frog_slots[1];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35607,7 +35819,7 @@ void p851(Cell frog_arg_0) {
     p746(frog_slots[0]);
   }
 }
-void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p855(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35624,7 +35836,7 @@ void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     frog_slots[1] = l1;
     frog_slots[2] = l0;
     {
-      frog_slots[0] = p850(frog_slots[0], frog_slots[1], frog_slots[2]);
+      frog_slots[0] = p853(frog_slots[0], frog_slots[1], frog_slots[2]);
     }
     {
       Cell l3 = frog_slots[0];
@@ -35641,7 +35853,7 @@ void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
         }
         frog_slots[0] = l0;
         {
-          p851(frog_slots[0]);
+          p854(frog_slots[0]);
         }
       } else {
         frog_slots[0] = l3;
@@ -35656,7 +35868,7 @@ void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           }
           frog_slots[0] = l0;
           {
-            p851(frog_slots[0]);
+            p854(frog_slots[0]);
           }
           frog_slots[0] = (Cell)(intptr_t)&frog_string_3375714332;
           {
@@ -35675,7 +35887,7 @@ void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
             }
             frog_slots[0] = l0;
             {
-              p851(frog_slots[0]);
+              p854(frog_slots[0]);
             }
           } else {
             frog_slots[0] = (Cell)(intptr_t)&frog_string_2617803408;
@@ -35688,7 +35900,7 @@ void p852(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p853(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p856(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35722,7 +35934,7 @@ void p853(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[1] = l1;
       frog_slots[2] = l0;
       {
-        p852(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p855(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = l1;
@@ -35730,12 +35942,12 @@ void p853(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[3] = 1;
       frog_slots[2] = frog_slots[2] + frog_slots[3];
       {
-        p853(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p856(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
     }
   }
 }
-void p854(Cell frog_arg_0, Cell frog_arg_1) {
+void p857(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35758,7 +35970,7 @@ void p854(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[1] = l0;
     frog_slots[2] = 0;
     {
-      p853(frog_slots[0], frog_slots[1], frog_slots[2]);
+      p856(frog_slots[0], frog_slots[1], frog_slots[2]);
     }
     frog_slots[0] = (Cell)(intptr_t)&frog_string_739023492;
     {
@@ -35766,7 +35978,7 @@ void p854(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-void p855(Cell frog_arg_0, Cell frog_arg_1) {
+void p858(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35800,7 +36012,7 @@ void p855(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[0] = l1;
       frog_slots[1] = l0;
       {
-        p854(frog_slots[0], frog_slots[1]);
+        p857(frog_slots[0], frog_slots[1]);
       }
       frog_slots[0] = (Cell)(intptr_t)&frog_string_2114177392;
       {
@@ -35832,7 +36044,7 @@ void p855(Cell frog_arg_0, Cell frog_arg_1) {
           frog_slots[0] = l1;
           frog_slots[1] = l0;
           {
-            p854(frog_slots[0], frog_slots[1]);
+            p857(frog_slots[0], frog_slots[1]);
           }
           frog_slots[0] = (Cell)(intptr_t)&frog_string_2114177392;
           {
@@ -35852,7 +36064,7 @@ void p855(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[0] = l1;
             frog_slots[1] = l0;
             {
-              p854(frog_slots[0], frog_slots[1]);
+              p857(frog_slots[0], frog_slots[1]);
             }
             frog_slots[0] = (Cell)(intptr_t)&frog_string_1667139005;
             {
@@ -35872,7 +36084,7 @@ void p855(Cell frog_arg_0, Cell frog_arg_1) {
               frog_slots[0] = l1;
               frog_slots[1] = l0;
               {
-                p854(frog_slots[0], frog_slots[1]);
+                p857(frog_slots[0], frog_slots[1]);
               }
               frog_slots[0] = (Cell)(intptr_t)&frog_string_2114177392;
               {
@@ -35894,7 +36106,7 @@ void p855(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-void p856(Cell frog_arg_0) {
+void p859(Cell frog_arg_0) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35927,11 +36139,11 @@ void p856(Cell frog_arg_0) {
     }
     frog_slots[0] = l0;
     {
-      p847(frog_slots[0]);
+      p850(frog_slots[0]);
     }
   }
 }
-void p857(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p860(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -35947,7 +36159,7 @@ void p857(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     frog_slots[0] = l2;
     frog_slots[1] = 0;
     {
-      p845(frog_slots[0], frog_slots[1]);
+      p848(frog_slots[0], frog_slots[1]);
     }
     frog_slots[0] = l2;
     frog_slots[1] = l1;
@@ -35961,15 +36173,15 @@ void p857(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[2] = p346(frog_slots[2], frog_slots[3]);
     }
     {
-      p848(frog_slots[0], frog_slots[1], frog_slots[2]);
+      p851(frog_slots[0], frog_slots[1], frog_slots[2]);
     }
     frog_slots[0] = l2;
     {
-      p856(frog_slots[0]);
+      p859(frog_slots[0]);
     }
   }
 }
-void p858(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+void p861(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36023,12 +36235,12 @@ void p858(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
       frog_slots[4] = 1;
       frog_slots[3] = frog_slots[3] + frog_slots[4];
       {
-        p858(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+        p861(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
       }
     }
   }
 }
-void p859(Cell frog_arg_0) {
+void p862(Cell frog_arg_0) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36076,7 +36288,7 @@ void p859(Cell frog_arg_0) {
     }
   }
 }
-void p860(Cell frog_arg_0, Cell frog_arg_1) {
+void p863(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36126,13 +36338,13 @@ void p860(Cell frog_arg_0, Cell frog_arg_1) {
         frog_slots[0] = l1;
         frog_slots[1] = l2;
         {
-          p860(frog_slots[0], frog_slots[1]);
+          p863(frog_slots[0], frog_slots[1]);
         }
       }
     }
   }
 }
-void p861(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p864(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36198,7 +36410,7 @@ void p861(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           frog_slots[0] = l2;
           frog_slots[1] = l3;
           {
-            p860(frog_slots[0], frog_slots[1]);
+            p863(frog_slots[0], frog_slots[1]);
           }
           frog_slots[0] = l2;
           {
@@ -36215,7 +36427,7 @@ void p861(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p865(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36237,14 +36449,14 @@ void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[0] = l1;
       frog_slots[1] = l0;
       {
-        p855(frog_slots[0], frog_slots[1]);
+        p858(frog_slots[0], frog_slots[1]);
       }
     } else {
       frog_slots[0] = l2;
       frog_slots[1] = l1;
       frog_slots[2] = l0;
       {
-        frog_slots[0] = p849(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p852(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
         Cell l3 = frog_slots[0];
@@ -36253,7 +36465,7 @@ void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
         frog_slots[1] = l1;
         frog_slots[2] = l0;
         {
-          p857(frog_slots[0], frog_slots[1], frog_slots[2]);
+          p860(frog_slots[0], frog_slots[1], frog_slots[2]);
         }
         frog_slots[0] = l3;
         {
@@ -36266,7 +36478,7 @@ void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           frog_slots[1] = l1;
           frog_slots[2] = l0;
           {
-            frog_slots[0] = p849(frog_slots[0], frog_slots[1], frog_slots[2]);
+            frog_slots[0] = p852(frog_slots[0], frog_slots[1], frog_slots[2]);
           }
           {
             Cell l5 = frog_slots[0];
@@ -36299,26 +36511,26 @@ void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
             }
             frog_slots[0] = l5;
             {
-              p859(frog_slots[0]);
+              p862(frog_slots[0]);
             }
             frog_slots[0] = l5;
             frog_slots[1] = l1;
             frog_slots[2] = l0;
             frog_slots[3] = 0;
             {
-              p858(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+              p861(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
             }
             frog_slots[0] = l5;
             frog_slots[1] = l1;
             frog_slots[2] = l0;
             {
-              p857(frog_slots[0], frog_slots[1], frog_slots[2]);
+              p860(frog_slots[0], frog_slots[1], frog_slots[2]);
             }
             frog_slots[0] = l5;
             frog_slots[1] = l1;
             frog_slots[2] = l0;
             {
-              p861(frog_slots[0], frog_slots[1], frog_slots[2]);
+              p864(frog_slots[0], frog_slots[1], frog_slots[2]);
             }
             frog_slots[0] = (Cell)(intptr_t)&frog_string_4161554600;
             {
@@ -36332,7 +36544,7 @@ void p862(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     }
   }
 }
-void p863(Cell frog_arg_0, Cell frog_arg_1) {
+void p866(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36376,7 +36588,7 @@ void p863(Cell frog_arg_0, Cell frog_arg_1) {
         frog_slots[3] = l6;
       }
       {
-        p862(frog_slots[1], frog_slots[2], frog_slots[3]);
+        p865(frog_slots[1], frog_slots[2], frog_slots[3]);
       }
       frog_slots[1] = 1;
       frog_slots[0] = frog_slots[0] + frog_slots[1];
@@ -36387,7 +36599,7 @@ void p863(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-void p864(Cell frog_arg_0) {
+void p867(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36425,7 +36637,7 @@ void p864(Cell frog_arg_0) {
         frog_slots[2] = l4;
       }
       {
-        p863(frog_slots[1], frog_slots[2]);
+        p866(frog_slots[1], frog_slots[2]);
       }
       {
         frog_slots[0] = p220(frog_slots[0]);
@@ -36437,7 +36649,7 @@ void p864(Cell frog_arg_0) {
     }
   }
 }
-void p865(Cell frog_arg_0) {
+void p868(Cell frog_arg_0) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36481,7 +36693,7 @@ void p865(Cell frog_arg_0) {
     }
   }
 }
-void p866(Cell frog_arg_0, Cell frog_arg_1) {
+void p869(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36560,7 +36772,7 @@ void p866(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = 103;
       frog_slots[1] = l2;
       {
-        p869(frog_slots[0], frog_slots[1]);
+        p872(frog_slots[0], frog_slots[1]);
       }
       {
         frog_slots[0] = p150();
@@ -36651,7 +36863,7 @@ void p866(Cell frog_arg_0, Cell frog_arg_1) {
         }
         frog_slots[0] = l2;
         {
-          p870(frog_slots[0]);
+          p873(frog_slots[0]);
         }
         frog_slots[0] = l2;
         {
@@ -36679,47 +36891,47 @@ void p866(Cell frog_arg_0, Cell frog_arg_1) {
         }
         frog_slots[0] = l2;
         {
-          p864(frog_slots[0]);
+          p867(frog_slots[0]);
         }
         frog_slots[0] = l2;
         {
-          p865(frog_slots[0]);
+          p868(frog_slots[0]);
         }
       }
     }
   }
 }
-Cell p867(void) {
+Cell p870(void) {
   Cell frog_slots[1];
   (void)frog_slots;
   frog_slots[0] = 64;
   return frog_slots[0];
 }
-Cell p868(Cell frog_arg_0) {
+Cell p871(Cell frog_arg_0) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
   {
-    frog_slots[1] = p867();
+    frog_slots[1] = p870();
   }
   {
     frog_slots[0] = p181(frog_slots[0], frog_slots[1]);
   }
   return frog_slots[0];
 }
-void p869(Cell frog_arg_0, Cell frog_arg_1) {
+void p872(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
   frog_slots[1] = frog_arg_1;
   {
-    frog_slots[2] = p867();
+    frog_slots[2] = p870();
   }
   {
     p182(frog_slots[0], frog_slots[1], frog_slots[2]);
   }
 }
-void p870(Cell frog_arg_0) {
+void p873(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36813,12 +37025,12 @@ void p870(Cell frog_arg_0) {
       frog_slots[0] = l1;
       frog_slots[1] = l0;
       {
-        p869(frog_slots[0], frog_slots[1]);
+        p872(frog_slots[0], frog_slots[1]);
       }
     }
   }
 }
-Cell p871(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p874(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36833,7 +37045,7 @@ Cell p871(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[0] = p558(frog_slots[0]);
     }
     {
-      frog_slots[0] = p868(frog_slots[0]);
+      frog_slots[0] = p871(frog_slots[0]);
     }
     {
       Cell l2 = frog_slots[0];
@@ -36883,7 +37095,7 @@ Cell p871(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[2] = p501(frog_slots[2], frog_slots[3]);
           }
           {
-            p839(frog_slots[0], frog_slots[1], frog_slots[2]);
+            p842(frog_slots[0], frog_slots[1], frog_slots[2]);
           }
           frog_slots[0] = 1;
         }
@@ -36892,50 +37104,50 @@ Cell p871(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p872(void) {
+Cell p875(void) {
   return (Cell)froglang_fork();
 }
-Cell p873(Cell frog_arg_0) {
+Cell p876(Cell frog_arg_0) {
   return (Cell)froglang_create_file((void *)(intptr_t)frog_arg_0);
 }
-Cell p874(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p877(Cell frog_arg_0, Cell frog_arg_1) {
   return (Cell)froglang_dup2((int)frog_arg_0, (int)frog_arg_1);
 }
-Cell p875(Cell frog_arg_0) {
+Cell p878(Cell frog_arg_0) {
   return (Cell)froglang_close((int)frog_arg_0);
 }
-Cell p876(Cell frog_arg_0) {
+Cell p879(Cell frog_arg_0) {
   return (Cell)froglang_chdir((void *)(intptr_t)frog_arg_0);
 }
-Cell p877(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p880(Cell frog_arg_0, Cell frog_arg_1) {
   return (Cell)froglang_execv((void *)(intptr_t)frog_arg_0, (void *)(intptr_t)frog_arg_1);
 }
-Cell p878(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p881(Cell frog_arg_0, Cell frog_arg_1) {
   return (Cell)froglang_execvp((void *)(intptr_t)frog_arg_0, (void *)(intptr_t)frog_arg_1);
 }
-Cell p879(Cell frog_arg_0) {
+Cell p882(Cell frog_arg_0) {
   return (Cell)froglang_ensure_directory((void *)(intptr_t)frog_arg_0);
 }
-Cell p880(Cell frog_arg_0) {
+Cell p883(Cell frog_arg_0) {
   return (Cell)(froglang_path_exists((void *)(intptr_t)frog_arg_0) != 0);
 }
-Cell p881(Cell frog_arg_0) {
+Cell p884(Cell frog_arg_0) {
   return (Cell)froglang_wait_child((int)frog_arg_0);
 }
-void p882(Cell frog_arg_0) {
+void p885(Cell frog_arg_0) {
   froglang_finish_child((int)frog_arg_0);
 }
-void p883(void) {
+void p886(void) {
   froglang_reset_child_signals();
 }
-Cell p884(void) {
+Cell p887(void) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = 0;
   frog_slots[1] = 103;
   return frog_slots[0];
 }
-Cell p885(Cell frog_arg_0) {
+Cell p888(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36970,7 +37182,7 @@ Cell p885(Cell frog_arg_0) {
   }
   return frog_slots[0];
 }
-Cell p886(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p889(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -36982,7 +37194,7 @@ Cell p886(Cell frog_arg_0, Cell frog_arg_1) {
     (void)l1;
     frog_slots[0] = l1;
     {
-      frog_slots[0] = p885(frog_slots[0]);
+      frog_slots[0] = p888(frog_slots[0]);
     }
     {
       Cell l2 = frog_slots[0];
@@ -37000,7 +37212,7 @@ Cell p886(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p887(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p890(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37013,7 +37225,7 @@ Cell p887(Cell frog_arg_0, Cell frog_arg_1) {
   frog_slots[0] = (Cell)(intptr_t)frog_read_ptr((const void *)(intptr_t)frog_slots[0]);
   return frog_slots[0];
 }
-Cell p888(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p891(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37047,7 +37259,7 @@ Cell p888(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p889(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p892(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37109,7 +37321,7 @@ Cell p889(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   }
   return frog_slots[0];
 }
-Cell p890(Cell frog_arg_0) {
+Cell p893(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37118,7 +37330,7 @@ Cell p890(Cell frog_arg_0) {
     (void)l0;
     frog_slots[0] = l0;
     {
-      frog_slots[0] = p885(frog_slots[0]);
+      frog_slots[0] = p888(frog_slots[0]);
     }
     {
       Cell l1 = frog_slots[0];
@@ -37127,7 +37339,7 @@ Cell p890(Cell frog_arg_0) {
       frog_slots[1] = l1;
       frog_slots[2] = 47;
       {
-        frog_slots[0] = p889(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p892(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
         Cell l2 = frog_slots[0];
@@ -37149,7 +37361,7 @@ Cell p890(Cell frog_arg_0) {
             frog_slots[0] = l0;
             frog_slots[1] = l2;
             {
-              frog_slots[0] = p888(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p891(frog_slots[0], frog_slots[1]);
             }
           }
         }
@@ -37158,7 +37370,7 @@ Cell p890(Cell frog_arg_0) {
   }
   return frog_slots[0];
 }
-Cell p891(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p894(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37175,7 +37387,7 @@ Cell p891(Cell frog_arg_0, Cell frog_arg_1) {
       (void)l2;
       frog_slots[0] = l1;
       {
-        frog_slots[0] = p885(frog_slots[0]);
+        frog_slots[0] = p888(frog_slots[0]);
       }
       {
         Cell l3 = frog_slots[0];
@@ -37184,7 +37396,7 @@ Cell p891(Cell frog_arg_0, Cell frog_arg_1) {
         frog_slots[1] = l3;
         frog_slots[2] = 47;
         {
-          frog_slots[0] = p889(frog_slots[0], frog_slots[1], frog_slots[2]);
+          frog_slots[0] = p892(frog_slots[0], frog_slots[1], frog_slots[2]);
         }
         frog_slots[1] = 1;
         frog_slots[0] = frog_slots[0] + frog_slots[1];
@@ -37192,7 +37404,7 @@ Cell p891(Cell frog_arg_0, Cell frog_arg_1) {
         frog_slots[2] = l3;
         frog_slots[3] = 46;
         {
-          frog_slots[1] = p889(frog_slots[1], frog_slots[2], frog_slots[3]);
+          frog_slots[1] = p892(frog_slots[1], frog_slots[2], frog_slots[3]);
         }
         {
           Cell l4 = frog_slots[1];
@@ -37251,7 +37463,7 @@ Cell p891(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-void p892(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+void p895(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37275,7 +37487,7 @@ void p892(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     frog_write_ptr((void *)(intptr_t)frog_slots[1], (void *)(intptr_t)frog_slots[0]);
   }
 }
-Cell p893(Cell frog_arg_0) {
+Cell p896(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37296,17 +37508,17 @@ Cell p893(Cell frog_arg_0) {
       frog_slots[0] = l1;
       frog_slots[1] = l0;
       {
-        frog_slots[2] = p884();
+        frog_slots[2] = p887();
       }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l1;
     }
   }
   return frog_slots[0];
 }
-void p894(Cell frog_arg_0) {
+void p897(Cell frog_arg_0) {
   Cell frog_slots[1];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37325,7 +37537,7 @@ void p894(Cell frog_arg_0) {
     fputc((int)(unsigned char)frog_slots[0], stderr);
   }
 }
-void p895(Cell frog_arg_0, Cell frog_arg_1) {
+void p898(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37350,7 +37562,7 @@ void p895(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[0] = l0;
     frog_slots[1] = l0;
     {
-      frog_slots[1] = p885(frog_slots[1]);
+      frog_slots[1] = p888(frog_slots[1]);
     }
     {
       p188(frog_slots[0], frog_slots[1]);
@@ -37359,12 +37571,12 @@ void p895(Cell frog_arg_0, Cell frog_arg_1) {
     fputc((int)(unsigned char)frog_slots[0], stderr);
   }
 }
-void p896(Cell frog_arg_0) {
+void p899(Cell frog_arg_0) {
   Cell frog_slots[1];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
   {
-    p894(frog_slots[0]);
+    p897(frog_slots[0]);
   }
   frog_slots[0] = (Cell)(intptr_t)&frog_string_308796962;
   {
@@ -37373,7 +37585,7 @@ void p896(Cell frog_arg_0) {
   frog_slots[0] = 2;
   exit((int)frog_slots[0]);
 }
-void p897(Cell frog_arg_0, Cell frog_arg_1) {
+void p900(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37394,7 +37606,7 @@ void p897(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[0] = l0;
     frog_slots[1] = l0;
     {
-      frog_slots[1] = p885(frog_slots[1]);
+      frog_slots[1] = p888(frog_slots[1]);
     }
     {
       p188(frog_slots[0], frog_slots[1]);
@@ -37409,7 +37621,7 @@ void p897(Cell frog_arg_0, Cell frog_arg_1) {
     exit((int)frog_slots[0]);
   }
 }
-void p898(void) {
+void p901(void) {
   Cell frog_slots[1];
   (void)frog_slots;
   frog_slots[0] = (Cell)(intptr_t)&frog_string_4030729234;
@@ -37417,7 +37629,7 @@ void p898(void) {
     p187(frog_slots[0]);
   }
 }
-frog_results_2 p899(Cell frog_arg_0) {
+frog_results_2 p902(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37427,7 +37639,7 @@ frog_results_2 p899(Cell frog_arg_0) {
     frog_slots[0] = l0;
     frog_slots[1] = l0;
     {
-      frog_slots[1] = p885(frog_slots[1]);
+      frog_slots[1] = p888(frog_slots[1]);
     }
     { const void *path = (const void *)(intptr_t)frog_slots[0]; Cell path_length = frog_slots[1]; void *data; Cell data_length; Cell success = frog_read_file(path, path_length, &data, &data_length); frog_slots[0] = (Cell)(intptr_t)data; frog_slots[1] = data_length; frog_slots[2] = success; }
     {
@@ -37444,25 +37656,25 @@ frog_results_2 p899(Cell frog_arg_0) {
       } else {
         frog_slots[0] = l0;
         {
-          frog_slots[0] = p880(frog_slots[0]);
+          frog_slots[0] = p883(frog_slots[0]);
         }
         if (frog_slots[0] != 0) {
           frog_slots[0] = (Cell)(intptr_t)&frog_string_1142498413;
           frog_slots[1] = l0;
           {
-            p895(frog_slots[0], frog_slots[1]);
+            p898(frog_slots[0], frog_slots[1]);
           }
         } else {
           frog_slots[0] = (Cell)(intptr_t)&frog_string_199439135;
           frog_slots[1] = l0;
           {
-            p895(frog_slots[0], frog_slots[1]);
+            p898(frog_slots[0], frog_slots[1]);
           }
         }
         frog_slots[0] = 1;
         exit((int)frog_slots[0]);
         {
-          frog_slots[0] = p884();
+          frog_slots[0] = p887();
         }
         frog_slots[1] = 0;
       }
@@ -37473,12 +37685,12 @@ frog_results_2 p899(Cell frog_arg_0) {
   frog_result.value_0 = frog_slots[0];
   return frog_result;
 }
-Cell p900(Cell frog_arg_0) {
+Cell p903(Cell frog_arg_0) {
   Cell frog_slots[2];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
   {
-    frog_slots[0] = p881(frog_slots[0]);
+    frog_slots[0] = p884(frog_slots[0]);
   }
   {
     Cell l0 = frog_slots[0];
@@ -37489,7 +37701,7 @@ Cell p900(Cell frog_arg_0) {
     if (frog_slots[0] != 0) {
       frog_slots[0] = (Cell)(intptr_t)&frog_string_2526733709;
       {
-        p894(frog_slots[0]);
+        p897(frog_slots[0]);
       }
       frog_slots[0] = 1;
     } else {
@@ -37498,7 +37710,7 @@ Cell p900(Cell frog_arg_0) {
   }
   return frog_slots[0];
 }
-Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37516,7 +37728,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
     (void)l3;
     frog_slots[0] = l0;
     {
-      frog_slots[0] = p873(frog_slots[0]);
+      frog_slots[0] = p876(frog_slots[0]);
     }
     {
       Cell l4 = frog_slots[0];
@@ -37527,12 +37739,12 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
       if (frog_slots[0] != 0) {
         frog_slots[0] = (Cell)(intptr_t)&frog_string_66939871;
         {
-          p894(frog_slots[0]);
+          p897(frog_slots[0]);
         }
         frog_slots[0] = 1;
       } else {
         {
-          frog_slots[0] = p872();
+          frog_slots[0] = p875();
         }
         {
           Cell l5 = frog_slots[0];
@@ -37543,7 +37755,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
           if (frog_slots[0] != 0) {
             frog_slots[0] = l4;
             {
-              frog_slots[0] = p875(frog_slots[0]);
+              frog_slots[0] = p878(frog_slots[0]);
             }
             {
               Cell l6 = frog_slots[0];
@@ -37551,7 +37763,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
             }
             frog_slots[0] = (Cell)(intptr_t)&frog_string_580931582;
             {
-              p894(frog_slots[0]);
+              p897(frog_slots[0]);
             }
             frog_slots[0] = 1;
           } else {
@@ -37560,18 +37772,18 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
             frog_slots[0] = frog_slots[0] == frog_slots[1];
             if (frog_slots[0] != 0) {
               {
-                p883();
+                p886();
               }
               frog_slots[0] = l4;
               frog_slots[1] = 1;
               {
-                frog_slots[0] = p874(frog_slots[0], frog_slots[1]);
+                frog_slots[0] = p877(frog_slots[0], frog_slots[1]);
               }
               frog_slots[1] = 0;
               frog_slots[0] = frog_slots[0] < frog_slots[1];
               frog_slots[1] = l1;
               {
-                frog_slots[1] = p876(frog_slots[1]);
+                frog_slots[1] = p879(frog_slots[1]);
               }
               frog_slots[2] = 0;
               frog_slots[1] = frog_slots[1] != frog_slots[2];
@@ -37581,7 +37793,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
                 (void)l7;
                 frog_slots[0] = l4;
                 {
-                  frog_slots[0] = p875(frog_slots[0]);
+                  frog_slots[0] = p878(frog_slots[0]);
                 }
                 {
                   Cell l8 = frog_slots[0];
@@ -37591,22 +37803,22 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
                 if (frog_slots[0] != 0) {
                   frog_slots[0] = (Cell)(intptr_t)&frog_string_3157110715;
                   {
-                    p894(frog_slots[0]);
+                    p897(frog_slots[0]);
                   }
                   frog_slots[0] = 1;
                   {
-                    p882(frog_slots[0]);
+                    p885(frog_slots[0]);
                   }
                   frog_slots[0] = 1;
                 } else {
                   frog_slots[0] = l3;
                   frog_slots[1] = l2;
                   {
-                    p866(frog_slots[0], frog_slots[1]);
+                    p869(frog_slots[0], frog_slots[1]);
                   }
                   frog_slots[0] = 0;
                   {
-                    p882(frog_slots[0]);
+                    p885(frog_slots[0]);
                   }
                   frog_slots[0] = 0;
                 }
@@ -37614,7 +37826,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
             } else {
               frog_slots[0] = l4;
               {
-                frog_slots[0] = p875(frog_slots[0]);
+                frog_slots[0] = p878(frog_slots[0]);
               }
               {
                 Cell l9 = frog_slots[0];
@@ -37622,7 +37834,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
               }
               frog_slots[0] = l5;
               {
-                frog_slots[0] = p900(frog_slots[0]);
+                frog_slots[0] = p903(frog_slots[0]);
               }
             }
           }
@@ -37632,7 +37844,7 @@ Cell p901(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
   }
   return frog_slots[0];
 }
-Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
+Cell p905(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37644,7 +37856,7 @@ Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
     (void)l1;
     frog_slots[0] = 13;
     {
-      frog_slots[0] = p893(frog_slots[0]);
+      frog_slots[0] = p896(frog_slots[0]);
     }
     {
       Cell l2 = frog_slots[0];
@@ -37654,92 +37866,92 @@ Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[2] = (Cell)(intptr_t)&frog_string_1762739604;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 1;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_5174471;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 2;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_2161947654;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 3;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_2249960204;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 4;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_3888196481;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 5;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_2455999117;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 6;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_2401811017;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 7;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_1356314405;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 8;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_1271750848;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 9;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_3859557458;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 10;
       frog_slots[2] = l1;
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 11;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_1657636085;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       frog_slots[0] = l2;
       frog_slots[1] = 12;
       frog_slots[2] = l0;
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
-        frog_slots[0] = p872();
+        frog_slots[0] = p875();
       }
       {
         Cell l3 = frog_slots[0];
@@ -37750,7 +37962,7 @@ Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
         if (frog_slots[0] != 0) {
           frog_slots[0] = (Cell)(intptr_t)&frog_string_1451381010;
           {
-            p894(frog_slots[0]);
+            p897(frog_slots[0]);
           }
           frog_slots[0] = 1;
         } else {
@@ -37759,13 +37971,13 @@ Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
           frog_slots[0] = frog_slots[0] == frog_slots[1];
           if (frog_slots[0] != 0) {
             {
-              p883();
+              p886();
             }
             frog_slots[0] = (Cell)(intptr_t)&frog_string_1762739604;
             { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[0]; frog_slots[0] = (Cell)(intptr_t)value->bytes; }
             frog_slots[1] = l2;
             {
-              frog_slots[0] = p878(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p881(frog_slots[0], frog_slots[1]);
             }
             {
               Cell l4 = frog_slots[0];
@@ -37773,17 +37985,17 @@ Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
             }
             frog_slots[0] = (Cell)(intptr_t)&frog_string_4207289817;
             {
-              p894(frog_slots[0]);
+              p897(frog_slots[0]);
             }
             frog_slots[0] = 127;
             {
-              p882(frog_slots[0]);
+              p885(frog_slots[0]);
             }
             frog_slots[0] = 127;
           } else {
             frog_slots[0] = l3;
             {
-              frog_slots[0] = p900(frog_slots[0]);
+              frog_slots[0] = p903(frog_slots[0]);
             }
           }
         }
@@ -37792,7 +38004,7 @@ Cell p902(Cell frog_arg_0, Cell frog_arg_1) {
   }
   return frog_slots[0];
 }
-Cell p903(Cell frog_arg_0) {
+Cell p906(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37801,7 +38013,7 @@ Cell p903(Cell frog_arg_0) {
     (void)l0;
     frog_slots[0] = 1;
     {
-      frog_slots[0] = p893(frog_slots[0]);
+      frog_slots[0] = p896(frog_slots[0]);
     }
     {
       Cell l1 = frog_slots[0];
@@ -37810,10 +38022,10 @@ Cell p903(Cell frog_arg_0) {
       frog_slots[1] = 0;
       frog_slots[2] = l0;
       {
-        p892(frog_slots[0], frog_slots[1], frog_slots[2]);
+        p895(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       {
-        frog_slots[0] = p872();
+        frog_slots[0] = p875();
       }
       {
         Cell l2 = frog_slots[0];
@@ -37824,7 +38036,7 @@ Cell p903(Cell frog_arg_0) {
         if (frog_slots[0] != 0) {
           frog_slots[0] = (Cell)(intptr_t)&frog_string_3776788779;
           {
-            p894(frog_slots[0]);
+            p897(frog_slots[0]);
           }
           frog_slots[0] = 1;
         } else {
@@ -37833,12 +38045,12 @@ Cell p903(Cell frog_arg_0) {
           frog_slots[0] = frog_slots[0] == frog_slots[1];
           if (frog_slots[0] != 0) {
             {
-              p883();
+              p886();
             }
             frog_slots[0] = l0;
             frog_slots[1] = l1;
             {
-              frog_slots[0] = p877(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p880(frog_slots[0], frog_slots[1]);
             }
             {
               Cell l3 = frog_slots[0];
@@ -37851,7 +38063,7 @@ Cell p903(Cell frog_arg_0) {
             frog_slots[0] = l0;
             frog_slots[1] = l0;
             {
-              frog_slots[1] = p885(frog_slots[1]);
+              frog_slots[1] = p888(frog_slots[1]);
             }
             {
               p188(frog_slots[0], frog_slots[1]);
@@ -37860,13 +38072,13 @@ Cell p903(Cell frog_arg_0) {
             fputc((int)(unsigned char)frog_slots[0], stderr);
             frog_slots[0] = 127;
             {
-              p882(frog_slots[0]);
+              p885(frog_slots[0]);
             }
             frog_slots[0] = 127;
           } else {
             frog_slots[0] = l2;
             {
-              frog_slots[0] = p900(frog_slots[0]);
+              frog_slots[0] = p903(frog_slots[0]);
             }
           }
         }
@@ -37875,7 +38087,7 @@ Cell p903(Cell frog_arg_0) {
   }
   return frog_slots[0];
 }
-Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p907(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37891,14 +38103,14 @@ Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     frog_slots[0] = (Cell)(intptr_t)&frog_string_3281777315;
     { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[0]; frog_slots[0] = (Cell)(intptr_t)value->bytes; }
     {
-      frog_slots[0] = p879(frog_slots[0]);
+      frog_slots[0] = p882(frog_slots[0]);
     }
     frog_slots[1] = 0;
     frog_slots[0] = frog_slots[0] != frog_slots[1];
     if (frog_slots[0] != 0) {
       frog_slots[0] = (Cell)(intptr_t)&frog_string_2449417286;
       {
-        p894(frog_slots[0]);
+        p897(frog_slots[0]);
       }
       frog_slots[0] = 1;
     } else {
@@ -37908,7 +38120,7 @@ Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
       frog_slots[3] = (Cell)(intptr_t)&frog_string_266698877;
       { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[3]; frog_slots[3] = (Cell)(intptr_t)value->bytes; }
       {
-        frog_slots[0] = p901(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+        frog_slots[0] = p904(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
       }
       {
         Cell l3 = frog_slots[0];
@@ -37924,7 +38136,7 @@ Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           frog_slots[1] = (Cell)(intptr_t)&frog_string_3455150084;
           { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[1]; frog_slots[1] = (Cell)(intptr_t)value->bytes; }
           {
-            frog_slots[0] = p902(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p905(frog_slots[0], frog_slots[1]);
           }
           {
             Cell l4 = frog_slots[0];
@@ -37938,7 +38150,7 @@ Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
               frog_slots[0] = (Cell)(intptr_t)&frog_string_3455150084;
               { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[0]; frog_slots[0] = (Cell)(intptr_t)value->bytes; }
               {
-                frog_slots[0] = p903(frog_slots[0]);
+                frog_slots[0] = p906(frog_slots[0]);
               }
             }
           }
@@ -37948,7 +38160,7 @@ Cell p904(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   }
   return frog_slots[0];
 }
-Cell p905(Cell frog_arg_0) {
+Cell p908(Cell frog_arg_0) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -37957,7 +38169,7 @@ Cell p905(Cell frog_arg_0) {
     (void)l0;
     frog_slots[0] = l0;
     {
-      frog_results_2 frog_call_result = p899(frog_slots[0]);
+      frog_results_2 frog_call_result = p902(frog_slots[0]);
       frog_slots[0] = frog_call_result.value_0;
       frog_slots[1] = frog_call_result.value_1;
     }
@@ -37968,7 +38180,7 @@ Cell p905(Cell frog_arg_0) {
       (void)l2;
       frog_slots[0] = l0;
       {
-        frog_slots[0] = p890(frog_slots[0]);
+        frog_slots[0] = p893(frog_slots[0]);
       }
       {
         Cell l3 = frog_slots[0];
@@ -37977,14 +38189,14 @@ Cell p905(Cell frog_arg_0) {
         frog_slots[1] = l1;
         frog_slots[2] = l3;
         {
-          frog_slots[0] = p904(frog_slots[0], frog_slots[1], frog_slots[2]);
+          frog_slots[0] = p907(frog_slots[0], frog_slots[1], frog_slots[2]);
         }
       }
     }
   }
   return frog_slots[0];
 }
-Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
+Cell p909(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -38000,7 +38212,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
     frog_slots[0] = l2;
     frog_slots[1] = (Cell)(intptr_t)&frog_string_1456745942;
     {
-      frog_slots[0] = p891(frog_slots[0], frog_slots[1]);
+      frog_slots[0] = p894(frog_slots[0], frog_slots[1]);
     }
     {
       Cell l3 = frog_slots[0];
@@ -38013,7 +38225,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
         frog_slots[0] = l2;
         frog_slots[1] = (Cell)(intptr_t)&frog_string_1680774923;
         {
-          frog_slots[0] = p891(frog_slots[0], frog_slots[1]);
+          frog_slots[0] = p894(frog_slots[0], frog_slots[1]);
         }
       } else {
         frog_slots[0] = l1;
@@ -38023,7 +38235,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
         (void)l4;
         frog_slots[0] = l2;
         {
-          frog_results_2 frog_call_result = p899(frog_slots[0]);
+          frog_results_2 frog_call_result = p902(frog_slots[0]);
           frog_slots[0] = frog_call_result.value_0;
           frog_slots[1] = frog_call_result.value_1;
         }
@@ -38034,7 +38246,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
           (void)l6;
           frog_slots[0] = l2;
           {
-            frog_slots[0] = p890(frog_slots[0]);
+            frog_slots[0] = p893(frog_slots[0]);
           }
           {
             Cell l7 = frog_slots[0];
@@ -38044,7 +38256,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
             frog_slots[2] = l7;
             frog_slots[3] = l3;
             {
-              frog_slots[0] = p901(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
+              frog_slots[0] = p904(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3]);
             }
             {
               Cell l8 = frog_slots[0];
@@ -38058,7 +38270,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
                 frog_slots[0] = l3;
                 frog_slots[1] = l4;
                 {
-                  frog_slots[0] = p902(frog_slots[0], frog_slots[1]);
+                  frog_slots[0] = p905(frog_slots[0], frog_slots[1]);
                 }
                 {
                   Cell l9 = frog_slots[0];
@@ -38073,7 +38285,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
                     if (frog_slots[0] != 0) {
                       frog_slots[0] = l4;
                       {
-                        frog_slots[0] = p903(frog_slots[0]);
+                        frog_slots[0] = p906(frog_slots[0]);
                       }
                     } else {
                       frog_slots[0] = 0;
@@ -38089,7 +38301,7 @@ Cell p906(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {
   }
   return frog_slots[0];
 }
-void p907(Cell frog_arg_0, Cell frog_arg_1) {
+void p910(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[4];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -38105,13 +38317,13 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
     if (frog_slots[0] != 0) {
       frog_slots[0] = (Cell)(intptr_t)&frog_string_544455704;
       {
-        p896(frog_slots[0]);
+        p899(frog_slots[0]);
       }
     }
     frog_slots[0] = l1;
     frog_slots[1] = 2;
     {
-      frog_slots[0] = p887(frog_slots[0], frog_slots[1]);
+      frog_slots[0] = p890(frog_slots[0], frog_slots[1]);
     }
     {
       Cell l2 = frog_slots[0];
@@ -38122,12 +38334,12 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = l2;
       frog_slots[2] = (Cell)(intptr_t)&frog_string_1540192752;
       {
-        frog_slots[1] = p886(frog_slots[1], frog_slots[2]);
+        frog_slots[1] = p889(frog_slots[1], frog_slots[2]);
       }
       frog_slots[2] = l2;
       frog_slots[3] = (Cell)(intptr_t)&frog_string_2142407772;
       {
-        frog_slots[2] = p886(frog_slots[2], frog_slots[3]);
+        frog_slots[2] = p889(frog_slots[2], frog_slots[3]);
       }
       frog_slots[1] = frog_slots[1] || frog_slots[2];
       frog_slots[0] = frog_slots[0] && frog_slots[1];
@@ -38140,7 +38352,7 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
         frog_slots[0] = l2;
         frog_slots[1] = (Cell)(intptr_t)&frog_string_1724746561;
         {
-          frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+          frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
         }
         if (frog_slots[0] != 0) {
           frog_slots[0] = l0;
@@ -38149,13 +38361,13 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
           if (frog_slots[0] != 0) {
             frog_slots[0] = (Cell)(intptr_t)&frog_string_2001096990;
             {
-              p896(frog_slots[0]);
+              p899(frog_slots[0]);
             }
           }
           frog_slots[0] = l1;
           frog_slots[1] = 3;
           {
-            frog_slots[0] = p887(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p890(frog_slots[0], frog_slots[1]);
           }
           {
             Cell l3 = frog_slots[0];
@@ -38163,12 +38375,12 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[0] = l3;
             frog_slots[1] = l3;
             {
-              frog_slots[1] = p885(frog_slots[1]);
+              frog_slots[1] = p888(frog_slots[1]);
             }
             frog_slots[2] = (Cell)(intptr_t)&frog_string_722245873;
             { const FrogString *value = (const FrogString *)(intptr_t)frog_slots[2]; frog_slots[2] = (Cell)(intptr_t)value->bytes; }
             {
-              frog_slots[0] = p904(frog_slots[0], frog_slots[1], frog_slots[2]);
+              frog_slots[0] = p907(frog_slots[0], frog_slots[1], frog_slots[2]);
             }
             exit((int)frog_slots[0]);
           }
@@ -38181,7 +38393,7 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
             frog_slots[0] = (Cell)(intptr_t)&frog_string_2702338655;
             frog_slots[1] = l2;
             {
-              p897(frog_slots[0], frog_slots[1]);
+              p900(frog_slots[0], frog_slots[1]);
             }
           } else {
             frog_slots[0] = l0;
@@ -38190,12 +38402,12 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
             if (frog_slots[0] != 0) {
               frog_slots[0] = (Cell)(intptr_t)&frog_string_1265341850;
               {
-                p896(frog_slots[0]);
+                p899(frog_slots[0]);
               }
             } else {
               frog_slots[0] = l2;
               {
-                frog_slots[0] = p905(frog_slots[0]);
+                frog_slots[0] = p908(frog_slots[0]);
               }
               exit((int)frog_slots[0]);
             }
@@ -38205,7 +38417,7 @@ void p907(Cell frog_arg_0, Cell frog_arg_1) {
     }
   }
 }
-frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
+frog_results_3 p911(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
   Cell frog_slots[6];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -38230,20 +38442,20 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
     if (frog_slots[0] != 0) {
       frog_slots[0] = (Cell)(intptr_t)&frog_string_2031091796;
       {
-        p896(frog_slots[0]);
+        p899(frog_slots[0]);
       }
       {
-        frog_slots[0] = p884();
+        frog_slots[0] = p887();
       }
       {
-        frog_slots[1] = p884();
+        frog_slots[1] = p887();
       }
       frog_slots[2] = 0;
     } else {
       frog_slots[0] = l4;
       frog_slots[1] = l2;
       {
-        frog_slots[0] = p887(frog_slots[0], frog_slots[1]);
+        frog_slots[0] = p890(frog_slots[0], frog_slots[1]);
       }
       {
         Cell l5 = frog_slots[0];
@@ -38256,12 +38468,12 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
           frog_slots[0] = l5;
           frog_slots[1] = (Cell)(intptr_t)&frog_string_1540192752;
           {
-            frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
           }
           frog_slots[1] = l5;
           frog_slots[2] = (Cell)(intptr_t)&frog_string_2142407772;
           {
-            frog_slots[1] = p886(frog_slots[1], frog_slots[2]);
+            frog_slots[1] = p889(frog_slots[1], frog_slots[2]);
           }
           frog_slots[0] = frog_slots[0] || frog_slots[1];
           if (frog_slots[0] != 0) {
@@ -38272,17 +38484,17 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
             frog_slots[0] = 0;
             exit((int)frog_slots[0]);
             {
-              frog_slots[0] = p884();
+              frog_slots[0] = p887();
             }
             {
-              frog_slots[1] = p884();
+              frog_slots[1] = p887();
             }
             frog_slots[2] = 0;
           } else {
             frog_slots[0] = l5;
             frog_slots[1] = (Cell)(intptr_t)&frog_string_1439527038;
             {
-              frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
             }
             if (frog_slots[0] != 0) {
               frog_slots[0] = l4;
@@ -38293,7 +38505,7 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
               frog_slots[3] = l1;
               frog_slots[4] = 1;
               {
-                frog_results_3 frog_call_result = p908(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
+                frog_results_3 frog_call_result = p911(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
                 frog_slots[0] = frog_call_result.value_0;
                 frog_slots[1] = frog_call_result.value_1;
                 frog_slots[2] = frog_call_result.value_2;
@@ -38302,7 +38514,7 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
               frog_slots[0] = l5;
               frog_slots[1] = (Cell)(intptr_t)&frog_string_1657636085;
               {
-                frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+                frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
               }
               if (frog_slots[0] != 0) {
                 frog_slots[0] = l2;
@@ -38313,7 +38525,7 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
                 if (frog_slots[0] != 0) {
                   frog_slots[0] = (Cell)(intptr_t)&frog_string_3038950263;
                   {
-                    p896(frog_slots[0]);
+                    p899(frog_slots[0]);
                   }
                 }
                 frog_slots[0] = l4;
@@ -38326,11 +38538,11 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
                 frog_slots[5] = 1;
                 frog_slots[4] = frog_slots[4] + frog_slots[5];
                 {
-                  frog_slots[3] = p887(frog_slots[3], frog_slots[4]);
+                  frog_slots[3] = p890(frog_slots[3], frog_slots[4]);
                 }
                 frog_slots[4] = l0;
                 {
-                  frog_results_3 frog_call_result = p908(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
+                  frog_results_3 frog_call_result = p911(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
                   frog_slots[0] = frog_call_result.value_0;
                   frog_slots[1] = frog_call_result.value_1;
                   frog_slots[2] = frog_call_result.value_2;
@@ -38339,13 +38551,13 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
                 frog_slots[0] = (Cell)(intptr_t)&frog_string_2507792324;
                 frog_slots[1] = l5;
                 {
-                  p897(frog_slots[0], frog_slots[1]);
+                  p900(frog_slots[0], frog_slots[1]);
                 }
                 {
-                  frog_slots[0] = p884();
+                  frog_slots[0] = p887();
                 }
                 {
-                  frog_slots[1] = p884();
+                  frog_slots[1] = p887();
                 }
                 frog_slots[2] = 0;
               }
@@ -38360,7 +38572,7 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
           if (frog_slots[0] != 0) {
             frog_slots[0] = (Cell)(intptr_t)&frog_string_2031091796;
             {
-              p896(frog_slots[0]);
+              p899(frog_slots[0]);
             }
           }
           frog_slots[0] = l5;
@@ -38376,7 +38588,7 @@ frog_results_3 p908(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog
   frog_result.value_0 = frog_slots[0];
   return frog_result;
 }
-void p909(Cell frog_arg_0, Cell frog_arg_1) {
+void p912(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_slots[5];
   (void)frog_slots;
   frog_slots[0] = frog_arg_0;
@@ -38390,11 +38602,11 @@ void p909(Cell frog_arg_0, Cell frog_arg_1) {
     frog_slots[1] = l0;
     frog_slots[2] = 2;
     {
-      frog_slots[3] = p884();
+      frog_slots[3] = p887();
     }
     frog_slots[4] = 0;
     {
-      frog_results_3 frog_call_result = p908(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
+      frog_results_3 frog_call_result = p911(frog_slots[0], frog_slots[1], frog_slots[2], frog_slots[3], frog_slots[4]);
       frog_slots[0] = frog_call_result.value_0;
       frog_slots[1] = frog_call_result.value_1;
       frog_slots[2] = frog_call_result.value_2;
@@ -38410,13 +38622,13 @@ void p909(Cell frog_arg_0, Cell frog_arg_1) {
       frog_slots[1] = l3;
       frog_slots[2] = l2;
       {
-        frog_slots[0] = p906(frog_slots[0], frog_slots[1], frog_slots[2]);
+        frog_slots[0] = p909(frog_slots[0], frog_slots[1], frog_slots[2]);
       }
       exit((int)frog_slots[0]);
     }
   }
 }
-void p910(void) {
+void p913(void) {
   Cell frog_slots[3];
   (void)frog_slots;
   frog_slots[0] = (Cell)(intptr_t)frog_argv;
@@ -38436,13 +38648,13 @@ void p910(void) {
         frog_slots[1] = frog_call_result.value_1;
       }
       {
-        p866(frog_slots[0], frog_slots[1]);
+        p869(frog_slots[0], frog_slots[1]);
       }
     } else {
       frog_slots[0] = l1;
       frog_slots[1] = 1;
       {
-        frog_slots[0] = p887(frog_slots[0], frog_slots[1]);
+        frog_slots[0] = p890(frog_slots[0], frog_slots[1]);
       }
       {
         Cell l2 = frog_slots[0];
@@ -38450,47 +38662,47 @@ void p910(void) {
         frog_slots[0] = l2;
         frog_slots[1] = (Cell)(intptr_t)&frog_string_1540192752;
         {
-          frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+          frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
         }
         frog_slots[1] = l2;
         frog_slots[2] = (Cell)(intptr_t)&frog_string_2142407772;
         {
-          frog_slots[1] = p886(frog_slots[1], frog_slots[2]);
+          frog_slots[1] = p889(frog_slots[1], frog_slots[2]);
         }
         frog_slots[0] = frog_slots[0] || frog_slots[1];
         if (frog_slots[0] != 0) {
           {
-            p898();
+            p901();
           }
         } else {
           frog_slots[0] = l2;
           frog_slots[1] = (Cell)(intptr_t)&frog_string_718098122;
           {
-            frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+            frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
           }
           if (frog_slots[0] != 0) {
             frog_slots[0] = l1;
             frog_slots[1] = l0;
             {
-              p907(frog_slots[0], frog_slots[1]);
+              p910(frog_slots[0], frog_slots[1]);
             }
           } else {
             frog_slots[0] = l2;
             frog_slots[1] = (Cell)(intptr_t)&frog_string_3281777315;
             {
-              frog_slots[0] = p886(frog_slots[0], frog_slots[1]);
+              frog_slots[0] = p889(frog_slots[0], frog_slots[1]);
             }
             if (frog_slots[0] != 0) {
               frog_slots[0] = l1;
               frog_slots[1] = l0;
               {
-                p909(frog_slots[0], frog_slots[1]);
+                p912(frog_slots[0], frog_slots[1]);
               }
             } else {
               frog_slots[0] = (Cell)(intptr_t)&frog_string_1375150194;
               frog_slots[1] = l2;
               {
-                p897(frog_slots[0], frog_slots[1]);
+                p900(frog_slots[0], frog_slots[1]);
               }
             }
           }
@@ -38526,6 +38738,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_1646057492;
   (void)&frog_string_1787721130;
   (void)&frog_string_1349190650;
+  (void)&frog_string_2937389342;
   (void)&frog_string_2513272949;
   (void)&frog_string_288002260;
   (void)&frog_string_1579491469;
@@ -38872,10 +39085,13 @@ int main(int argc, char **argv) {
   (void)&frog_string_841464354;
   (void)&frog_string_1930379979;
   (void)&frog_string_958305534;
-  (void)&frog_string_2273140127;
   (void)&frog_string_2858035471;
   (void)&frog_string_1233200336;
+  (void)&frog_string_1574210379;
+  (void)&frog_string_2273140127;
   (void)&frog_string_518638965;
+  (void)&frog_string_3252313891;
+  (void)&frog_string_3974263001;
   (void)&frog_string_2970973987;
   (void)&frog_string_886870361;
   (void)&frog_string_2574251974;
@@ -38995,6 +39211,6 @@ int main(int argc, char **argv) {
   (void)&frog_string_2507792324;
   (void)&frog_string_718098122;
   (void)&frog_string_1375150194;
-  p910();
+  p913();
   return 0;
 }

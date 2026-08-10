@@ -63,6 +63,7 @@ def main() -> None:
     assert re.compile(keyword_pattern).fullmatch('case')
     assert re.compile(keyword_pattern).fullmatch('fn')
     assert re.compile(keyword_pattern).fullmatch('const')
+    assert re.compile(keyword_pattern).fullmatch('peek')
     special_regex = re.compile(special_pattern)
     assert special_regex.fullmatch('Node:alloc')
     assert special_regex.fullmatch('Node:sizeof')
