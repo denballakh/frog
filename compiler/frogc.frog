@@ -2736,16 +2736,17 @@ const block-if 1 end
 const block-while 2 end
 const block-let 3 end
 
-const block-kind-offset 0 end
-const block-base-types-offset 8 end
-const block-base-count-offset 16 end
-const block-then-types-offset 24 end
-const block-then-count-offset 32 end
-const block-local-base-offset 40 end
-const block-has-else-offset 48 end
-const block-has-do-offset 56 end
-const block-elif-parent-offset 64 end
-const block-bytes 72 end
+record BlockFrame
+    kind int
+    base_types ptr
+    base_count int
+    then_types ptr
+    then_count int
+    local_base int
+    has_else bool
+    has_do bool
+    elif_parent bool
+end
 
 record LocalEntry
     name_start int
@@ -2901,40 +2902,35 @@ proc types-match ptr ptr int -- bool do
     end
 end
 
-proc block-address ptr int -- ptr do
+proc block-address ptr int -- BlockFrame do
     let cc index do
-        cc @cc-blocks index block-bytes * +
+        cc @cc-blocks index BlockFrame:sizeof * + BlockFrame cast
     end
 end
 
-proc block-field ptr int -- int do field-read end
-proc set-block-field int ptr int -- do field-write end
-proc block-pointer-field ptr int -- ptr do pointer-field-read end
-proc set-block-pointer-field ptr ptr int -- do pointer-field-write end
-
-proc push-block ptr int -- ptr do
+proc push-block ptr int -- BlockFrame do
     let cc kind do
         cc cc @cc-block-count block-address
         let block do
-            kind block block-kind-offset set-block-field
+            kind block !BlockFrame.kind
             cc type-snapshot
             let snapshot count do
-                snapshot block block-base-types-offset set-block-pointer-field
-                count block block-base-count-offset set-block-field
+                snapshot block !BlockFrame.base_types
+                count block !BlockFrame.base_count
             end
-            0 block block-then-types-offset set-block-field
-            0 block block-then-count-offset set-block-field
-            cc @cc-local-count block block-local-base-offset set-block-field
-            0 block block-has-else-offset set-block-field
-            0 block block-has-do-offset set-block-field
-            0 block block-elif-parent-offset set-block-field
+            0 ptr cast block !BlockFrame.then_types
+            0 block !BlockFrame.then_count
+            cc @cc-local-count block !BlockFrame.local_base
+            false block !BlockFrame.has_else
+            false block !BlockFrame.has_do
+            false block !BlockFrame.elif_parent
             cc @cc-block-count 1 + cc !cc-block-count
             block
         end
     end
 end
 
-proc top-block ptr -- ptr do
+proc top-block ptr -- BlockFrame do
     let cc do
         if cc @cc-block-count 0 <= do
             "control-flow block stack underflow" fail
@@ -2943,7 +2939,7 @@ proc top-block ptr -- ptr do
     end
 end
 
-proc pop-block ptr -- ptr do
+proc pop-block ptr -- BlockFrame do
     peek cc do top-block
         cc @cc-block-count 1 - cc !cc-block-count
     end
@@ -6167,10 +6163,10 @@ proc compile-while ptr -- do
     end
 end
 
-proc require-block-types ptr ptr -- do
+proc require-block-types ptr BlockFrame -- do
     let cc block do
-        block block-base-types-offset block-pointer-field
-        block block-base-count-offset block-field
+        block @BlockFrame.base_types
+        block @BlockFrame.base_count
         cc rot rot types-match
         let matches do
             if matches ! do
@@ -6183,11 +6179,11 @@ end
 proc compile-do ptr -- do
     peek cc do top-block
         let block do
-            if block block-has-do-offset block-field 0 != do
+            if block @BlockFrame.has_do do
                 "duplicate do in control-flow block" fail
             end
-            if cc @cc-type-count block block-base-count-offset block-field <= do
-                if block block-elif-parent-offset block-field 0 != do
+            if cc @cc-type-count block @BlockFrame.base_count <= do
+                if block @BlockFrame.elif_parent do
                     "elif requires a condition before do" fail
                 else
                     "if or while requires a condition before do" fail
@@ -6195,7 +6191,7 @@ proc compile-do ptr -- do
             end
             cc type-bool type-expect
             cc block require-block-types
-            block block-kind-offset block-field
+            block @BlockFrame.kind
             let kind do
                 if kind block-if == do
                     cc @cc-type-count
@@ -6218,7 +6214,7 @@ proc compile-do ptr -- do
                     end
                 end
             end
-            1 block block-has-do-offset set-block-field
+            true block !BlockFrame.has_do
         end
     end
 end
@@ -6226,25 +6222,25 @@ end
 proc compile-else ptr -- do
     peek cc do top-block
         let block do
-            if block block-kind-offset block-field block-if != do
+            if block @BlockFrame.kind block-if != do
                 "else outside if" fail
             end
-            if block block-has-else-offset block-field 0 != do
+            if block @BlockFrame.has_else do
                 "duplicate else" fail
             end
-            if block block-has-do-offset block-field 0 == do
+            if block @BlockFrame.has_do ! do
                 "else requires a preceding if arm and do" fail
             end
             cc type-snapshot
             let then-types then-count do
-                then-types block block-then-types-offset set-block-pointer-field
-                then-count block block-then-count-offset set-block-field
+                then-types block !BlockFrame.then_types
+                then-count block !BlockFrame.then_count
             end
             cc
-            block block-base-types-offset block-pointer-field
-            block block-base-count-offset block-field
+            block @BlockFrame.base_types
+            block @BlockFrame.base_count
             restore-type-snapshot
-            1 block block-has-else-offset set-block-field
+            true block !BlockFrame.has_else
             cc indent-less
             cc "} else {" emit-line
             cc indent-more
@@ -6255,34 +6251,34 @@ end
 proc compile-elif ptr -- do
     peek cc do top-block
         let block do
-            if block block-kind-offset block-field block-if != do
+            if block @BlockFrame.kind block-if != do
                 "elif outside if" fail
             end
-            if block block-has-do-offset block-field 0 == do
+            if block @BlockFrame.has_do ! do
                 "elif requires a preceding if arm and do" fail
             end
-            if block block-has-else-offset block-field 0 != do
+            if block @BlockFrame.has_else do
                 "elif after else" fail
             end
             cc compile-else
             cc block-if push-block
             let nested do
-                1 nested block-elif-parent-offset set-block-field
+                true nested !BlockFrame.elif_parent
             end
         end
     end
 end
 
-proc close-if-block ptr ptr -- do
+proc close-if-block ptr BlockFrame -- do
     let cc block do
-        if block block-has-do-offset block-field 0 == do
+        if block @BlockFrame.has_do ! do
             "if requires do before end" fail
         end
-        if block block-has-else-offset block-field 0 == do
+        if block @BlockFrame.has_else ! do
             cc block require-block-types
         else
-            block block-then-types-offset block-pointer-field
-            block block-then-count-offset block-field
+            block @BlockFrame.then_types
+            block @BlockFrame.then_count
             let then-types then-count do
                 if cc then-types then-count types-match ! do
                     "if branches leave different stack shapes" fail
@@ -6295,9 +6291,9 @@ proc close-if-block ptr ptr -- do
     end
 end
 
-proc close-while-block ptr ptr -- do
+proc close-while-block ptr BlockFrame -- do
     let cc block do
-        if block block-has-do-offset block-field 0 == do
+        if block @BlockFrame.has_do ! do
             "while requires do before end" fail
         end
         cc block require-block-types
@@ -6306,17 +6302,17 @@ proc close-while-block ptr ptr -- do
     end
 end
 
-proc close-let-block ptr ptr -- do
+proc close-let-block ptr BlockFrame -- do
     let cc block do
-        block block-local-base-offset block-field cc !cc-local-count
+        block @BlockFrame.local_base cc !cc-local-count
         cc indent-less
         cc "}" emit-line
     end
 end
 
-proc close-end-chain ptr ptr -- do
+proc close-end-chain ptr BlockFrame -- do
     let cc block do
-        block block-kind-offset block-field
+        block @BlockFrame.kind
         let kind do
             if kind block-if == do
                 cc block close-if-block
@@ -6328,7 +6324,7 @@ proc close-end-chain ptr ptr -- do
                 "unknown block kind" fail
             end
         end
-        if block block-elif-parent-offset block-field 0 != do
+        if block @BlockFrame.elif_parent do
             cc pop-block
             let parent do
                 cc parent close-end-chain
@@ -7415,7 +7411,7 @@ proc create-compile-context ptr ModuleContext int -- ptr do
                 type-capacity cc !cc-type-capacity
             end
             0 cc !cc-type-count
-            program @program-token-count 1 + block-bytes * alloc cc !cc-blocks
+            program @program-token-count 1 + BlockFrame:sizeof * alloc cc !cc-blocks
             0 cc !cc-block-count
             program @program-token-count 1 + LocalEntry:sizeof * alloc cc !cc-locals
             0 cc !cc-local-count
