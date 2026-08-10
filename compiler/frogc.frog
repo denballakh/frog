@@ -14,7 +14,7 @@ proc type-none -- int do 0 end
 proc type-nominal-base -- int do 1000 end
 proc type-function-base -- int do 1 32 << end
 
-proc max-int -- int do 1 62 << dup 1 - + end
+const max-int 1 62 << 1 62 << 1 - + end
 proc min-int -- int do 0 max-int - 1 - end
 
 proc token-int -- int do 1 end
