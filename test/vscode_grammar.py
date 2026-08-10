@@ -27,6 +27,8 @@ def main() -> None:
     grammar = dictionary(json.loads(GRAMMAR.read_text()))
     root_patterns = patterns(grammar['patterns'])
     assert sum(pattern.get('include') == '#literals' for pattern in root_patterns) == 1
+    root_includes = [pattern.get('include') for pattern in root_patterns]
+    assert root_includes.index('#special') < root_includes.index('#types')
 
     repository = dictionary(grammar['repository'])
     literals = dictionary(repository['literals'])
@@ -37,6 +39,8 @@ def main() -> None:
     operator = named_pattern(patterns(operators['patterns']), 'keyword.operator.frog')
     keywords = dictionary(repository['keywords'])
     keyword = named_pattern(patterns(keywords['patterns']), 'keyword.control.frog')
+    types_repository = dictionary(repository['types'])
+    type_pattern = named_pattern(patterns(types_repository['patterns']), 'storage.type.frog')
     special = dictionary(repository['special'])
     special_function = named_pattern(patterns(special['patterns']), 'support.function')
 
@@ -52,6 +56,8 @@ def main() -> None:
     special_pattern = special_function['match']
     assert isinstance(keyword_pattern, str)
     assert isinstance(special_pattern, str)
+    type_regex = re.compile(cast(str, type_pattern['match']))
+    assert type_regex.fullmatch('String')
     assert re.compile(keyword_pattern).fullmatch('record')
     assert re.compile(keyword_pattern).fullmatch('union')
     assert re.compile(keyword_pattern).fullmatch('case')
@@ -65,6 +71,8 @@ def main() -> None:
     assert special_regex.fullmatch('F:ref:plus-one')
     assert special_regex.fullmatch('F:ref:inc"quoted')
     assert special_regex.fullmatch('Mapper:call')
+    assert special_regex.fullmatch('String.bytes')
+    assert special_regex.fullmatch('String.len')
     assert special_regex.fullmatch('?')
     assert special_regex.fullmatch('Node.bytes') is None
     assert special_regex.fullmatch('Maybe.some') is None

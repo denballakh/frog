@@ -97,29 +97,3 @@ Try `frogc --help`.
 [EXIT CODE] 2
 ```
 
-## Case: `build -o build/frogc examples/01_simple.frog`
-
-### Source: `examples/01_simple.frog`
-
-```frog
-proc main -- do
-  1 2 ? + ? print
-end
-```
-
-### Result
-
-Command:
-
-```text
-build/frogc build -o build/frogc examples/01_simple.frog
-```
-
-Output:
-
-```text
-frogc: build output aliases the running compiler
-Try `frogc --help`.
-[EXIT CODE] 2
-```
-

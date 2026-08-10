@@ -1,20 +1,26 @@
 proc main -- do
-    "README.md" read-file
-    let data length success do
-        if success do
-            data @u8 putc
-            10 putc
-            length 0 > print
-        else
-            1 exit
+    "README.md"
+    let path do
+        path String.bytes path String.len read-file
+        let data length success do
+            if success do
+                data @u8 putc
+                10 putc
+                length 0 > print
+            else
+                1 exit
+            end
         end
     end
 
-    "frog-read-file-missing" read-file
-    let data length success do
-        data drop
-        length print
-        success print
+    "frog-read-file-missing"
+    let path do
+        path String.bytes path String.len read-file
+        let data length success do
+            data drop
+            length print
+            success print
+        end
     end
 
     0 ptr cast 0 read-file

@@ -6,14 +6,14 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 
 ## Values And Literals
 
-- Supported runtime value classes are `int`, `bool`, `ptr`, nominal record and union handles, nominal function references, and `type`.
-- Procedure signatures can name `int`, `bool`, `ptr`, and visible record, union, or function-reference types.
+- Supported runtime value classes are `int`, `bool`, `ptr`, `String`, nominal record and union handles, nominal function references, and `type`.
+- Procedure signatures can name `int`, `bool`, `ptr`, `String`, and visible record, union, or function-reference types.
 - `int` is a signed 64-bit integer in generated C. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw character. Backslash escape handling is not implemented.
-- String literals push `ptr int`: a pointer to their bytes followed by their byte length. Their bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped. Equal decoded byte strings share one generated storage object across all modules, even when their source spellings differ, so their pointers compare equal.
-- Generated C string symbols use a deterministic hash of the decoded bytes and a collision suffix when unequal strings have the same hash. The generated C initializer has a trailing NUL byte, but Frog's explicit byte length excludes it and continues to preserve embedded NUL bytes.
+- String literals push one `String` value. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`; there are no descriptor-field setters or per-use allocations. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
+- Generated C stores each pooled literal as a static `{ byte pointer, Cell length }` descriptor plus a writable C string-literal byte array. Equal decoded strings share one descriptor and byte array across all modules and macro expansions, so writes through `String.bytes` are visible through every equal literal in the program. Symbols use a deterministic content hash and a collision suffix when unequal strings have the same hash. The byte array has a trailing NUL, but `String.len` excludes it and preserves embedded NUL bytes.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 
@@ -58,9 +58,9 @@ proc main -- do
 end
 ```
 
-`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be `int`, `bool`, `ptr`, or any visible record or union type; nominal fields store handles rather than inline values.
+`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be `int`, `bool`, `ptr`, `String`, or any visible nominal type; handle-valued fields store one Cell rather than inline data.
 
-Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
+Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
 
 Every field occupies one eight-byte Frog cell in declaration order, with no padding. `Name.field` reads a field with stack effect `Name -- FieldType`; `Name.field!` writes it with stack effect `FieldType Name --`. Type-level operations use `:` while fields use `.`, so a field named `sizeof` or `alloc` does not collide with `Name:sizeof` or `Name:alloc`.
 
@@ -88,7 +88,7 @@ proc main -- do
 end
 ```
 
-`union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be `int`, `bool`, `ptr`, or any visible record or union type.
+`union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be `int`, `bool`, `ptr`, `String`, or any visible nominal type.
 
 `Name:variant` constructs a value, consuming the declared payload when present. `Name.variant?` validates the stored tag and has stack effect `Name -- Name bool`, preserving the handle so an immediately following `if` can project it. `Name.variant` validates that the value has exactly that variant, consumes the handle, and produces its payload; for a payloadless variant it only validates and consumes the handle. Invalid tags and wrong-variant projections terminate the program with status 1.
 
@@ -318,9 +318,9 @@ end
 ### Casts
 
 - `cast`: `x type -- y`
-- Casts allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/record-or-union-handle conversions. Function-reference types support only same-type casts.
+- Casts allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/record-or-union-handle conversions. `String` and function-reference types support only same-type casts.
 - Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
-- The destination type is pushed with the `int`, `bool`, `ptr`, or visible record, union, or function-reference type word.
+- The destination type is pushed with the `int`, `bool`, `ptr`, `String`, or visible record, union, or function-reference type word.
 
 ### Output And Debugging
 

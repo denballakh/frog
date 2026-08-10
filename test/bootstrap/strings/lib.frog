@@ -1,3 +1,7 @@
-proc shared -- ptr int do
+proc shared -- String do
     "\x73ame"
+end
+
+macro shared-macro
+    "same"
 end

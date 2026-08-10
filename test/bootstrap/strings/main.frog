@@ -1,56 +1,69 @@
-from "lib.frog" import shared
+from "lib.frog" import ( shared shared-macro )
 
 proc main -- do
-    "same"
-    let root-bytes root-length do
-        shared
-        let imported-bytes imported-length do
-            root-length imported-length == print
-            root-bytes int cast imported-bytes int cast == print
+    "same" dup String.len
+    let root root-length do
+        shared dup String.len
+        let imported imported-length do
+            shared-macro dup String.len
+            let macro-value macro-length do
+                root-length imported-length == print
+                root String.bytes int cast imported String.bytes int cast == print
+                root-length macro-length == print
+                root String.bytes int cast macro-value String.bytes int cast == print
+            end
         end
     end
 
-    "a"
-    let plain-bytes plain-length do
-        "\x61"
-        let escaped-bytes escaped-length do
+    "a" dup String.len
+    let plain plain-length do
+        "\x61" dup String.len
+        let escaped escaped-length do
             plain-length escaped-length == print
-            plain-bytes int cast escaped-bytes int cast == print
+            plain String.bytes int cast escaped String.bytes int cast == print
+            98 plain String.bytes !u8
+            escaped String.bytes @u8 print
         end
     end
 
-    "\xB2\x39\x51\x9B\xF2\x9C\x09\x91"
+    "\xB2\x39\x51\x9B\xF2\x9C\x09\x91" dup String.len
     let first-collision first-length do
-        "\xEF\xEF\x6D\x6A\x8C\xFD\xCE\x4F"
+        "\xEF\xEF\x6D\x6A\x8C\xFD\xCE\x4F" dup String.len
         let second-collision second-length do
             first-length second-length == print
-            first-collision int cast second-collision int cast != print
-            first-collision @u8 print
-            second-collision @u8 print
+            first-collision String.bytes int cast second-collision String.bytes int cast != print
+            first-collision String.bytes @u8 print
+            second-collision String.bytes @u8 print
         end
     end
 
-    "A\"\\\n\0\xFF??/"
-    let bytes length do
+    "A\"\\\n\0\xFF??/" dup String.len
+    let value length do
         length print
-        bytes @u8 print
-        bytes 1 + @u8 print
-        bytes 2 + @u8 print
-        bytes 3 + @u8 print
-        bytes 4 + @u8 print
-        bytes 5 + @u8 print
-        bytes 6 + @u8 print
-        bytes 7 + @u8 print
-        bytes 8 + @u8 print
+        value String.bytes
+        let bytes do
+            bytes @u8 print
+            bytes 1 + @u8 print
+            bytes 2 + @u8 print
+            bytes 3 + @u8 print
+            bytes 4 + @u8 print
+            bytes 5 + @u8 print
+            bytes 6 + @u8 print
+            bytes 7 + @u8 print
+            bytes 8 + @u8 print
+        end
     end
 
     "line one
-// still string \"quoted\""
+// still string \"quoted\"" dup String.len
     let multiline multiline-length do
         multiline-length print
-        multiline 8 + @u8 print
-        multiline 9 + @u8 print
-        multiline 25 + @u8 print
-        multiline 32 + @u8 print
+        multiline String.bytes
+        let bytes do
+            bytes 8 + @u8 print
+            bytes 9 + @u8 print
+            bytes 25 + @u8 print
+            bytes 32 + @u8 print
+        end
     end
 end

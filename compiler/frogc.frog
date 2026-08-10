@@ -9,6 +9,7 @@ proc type-int -- int do 1 end
 proc type-bool -- int do 2 end
 proc type-ptr -- int do 3 end
 proc type-type -- int do 4 end
+proc type-string -- int do 5 end
 proc type-none -- int do 0 end
 proc type-nominal-base -- int do 1000 end
 proc type-function-base -- int do 1 32 << end
@@ -221,7 +222,7 @@ proc memory-copy ptr ptr int -- do
     end
 end
 
-proc emit ptr int -- do
+proc emit-bytes ptr int -- do
     let bytes length do
         0
         while dup length < do
@@ -232,7 +233,13 @@ proc emit ptr int -- do
     end
 end
 
-proc emit-error ptr int -- do
+proc emit String -- do
+    let value do
+        value String.bytes value String.len emit-bytes
+    end
+end
+
+proc emit-error-bytes ptr int -- do
     let bytes length do
         0
         while dup length < do
@@ -243,7 +250,13 @@ proc emit-error ptr int -- do
     end
 end
 
-proc fail ptr int -- do
+proc emit-error String -- do
+    let value do
+        value String.bytes value String.len emit-error-bytes
+    end
+end
+
+proc fail String -- do
     "frogc: " emit-error
     emit-error
     10 eputc
@@ -349,6 +362,12 @@ proc bytes-equal ptr int ptr int -- bool do
             end
             let index equal do equal end
         end
+    end
+end
+
+proc bytes-equal-string ptr int String -- bool do
+    let bytes length value do
+        bytes length value String.bytes value String.len bytes-equal
     end
 end
 
@@ -576,9 +595,15 @@ proc token-slice ptr int -- ptr int do
     end
 end
 
-proc token-equals ptr int ptr int -- bool do
-    let ctx index bytes length do
-        ctx index token-slice bytes length bytes-equal
+proc token-equals ptr int String -- bool do
+    let ctx index value do
+        ctx index token-slice value bytes-equal-string
+    end
+end
+
+proc string-type-name ptr int -- bool do
+    let ctx token-index do
+        ctx token-index "String" token-equals
     end
 end
 
@@ -697,9 +722,9 @@ end
 
 proc classify-word ptr int int -- int int do
     let source start length do
-        if source start + length "true" bytes-equal do
+        if source start + length "true" bytes-equal-string do
             token-bool 1
-        elif source start + length "false" bytes-equal do
+        elif source start + length "false" bytes-equal-string do
             token-bool 0
         elif source start length all-digits do
             token-int source start length 10 parse-integer
@@ -815,7 +840,7 @@ proc lex-word ptr int int int -- do
         end
         ctx ctx-lex-index start -
         let length do
-            if ctx ctx-source start + length "//" bytes-equal do
+            if ctx ctx-source start + length "//" bytes-equal-string do
                 ctx skip-comment
             else
                 ctx ctx-source start length classify-word
@@ -1278,6 +1303,7 @@ proc reserved-c-symbol ptr int -- bool do
         ctx token-index "main" token-equals ||
         ctx token-index "Cell" token-equals ||
         ctx token-index "FrogStack" token-equals ||
+        ctx token-index "FrogString" token-equals ||
         ctx token-index generated-proc-symbol ||
         ctx token-index frog-internal-symbol ||
     end
@@ -1309,6 +1335,8 @@ proc parse-type-token ptr int -- int do
             type-bool
         elif ctx token-index "ptr" token-equals do
             type-ptr
+        elif ctx token-index "String" token-equals do
+            type-string
         else
             if ctx token-index reserved-name do
                 "unknown type in procedure signature" fail
@@ -1515,7 +1543,7 @@ proc fail-duplicate-declaration ptr int -- do
     let ctx token-index do
         "frogc: " emit-error
         "duplicate declaration name: " emit-error
-        ctx token-index token-slice emit-error
+        ctx token-index token-slice emit-error-bytes
         10 eputc
         1 exit
     end
@@ -1541,7 +1569,7 @@ proc scan-record-fields ptr int int -- int do
                 if existing-field 0 >= do
                     "frogc: " emit-error
                     "duplicate record field: " emit-error
-                    ctx token-index token-slice emit-error
+                    ctx token-index token-slice emit-error-bytes
                     10 eputc
                     1 exit
                 end
@@ -1594,13 +1622,14 @@ proc scan-one-record ptr int -- int do
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
+                ctx name-token string-type-name ||
             do
                 "invalid record name" fail
             end
             if ctx name-token find-record 0 >= do
                 "frogc: " emit-error
                 "duplicate record name: " emit-error
-                ctx name-token token-slice emit-error
+                ctx name-token token-slice emit-error-bytes
                 10 eputc
                 1 exit
             end
@@ -1671,7 +1700,7 @@ proc scan-union-cases ptr int int -- int do
                     if existing-case 0 >= do
                         "frogc: " emit-error
                         "duplicate union variant: " emit-error
-                        ctx name-token token-slice emit-error
+                        ctx name-token token-slice emit-error-bytes
                         10 eputc
                         1 exit
                     end
@@ -1751,13 +1780,14 @@ proc scan-one-union ptr int -- int do
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
+                ctx name-token string-type-name ||
             do
                 "invalid union name" fail
             end
             if ctx name-token find-union 0 >= do
                 "frogc: " emit-error
                 "duplicate union name: " emit-error
-                ctx name-token token-slice emit-error
+                ctx name-token token-slice emit-error-bytes
                 10 eputc
                 1 exit
             end
@@ -1821,13 +1851,14 @@ proc scan-one-function ptr int -- int do
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
+                ctx name-token string-type-name ||
             do
                 "invalid function name" fail
             end
             if ctx name-token find-function 0 >= do
                 "frogc: " emit-error
                 "duplicate function name: " emit-error
-                ctx name-token token-slice emit-error
+                ctx name-token token-slice emit-error-bytes
                 10 eputc
                 1 exit
             end
@@ -2082,7 +2113,10 @@ proc scan-one-macro ptr int -- int do
                 "expected macro name" fail
             end
             ctx name-token require-word
-            if ctx name-token reserved-name do
+            if
+                ctx name-token reserved-name
+                ctx name-token string-type-name ||
+            do
                 "reserved keyword cannot be a macro name" fail
             end
             ctx name-token find-macro
@@ -2189,14 +2223,17 @@ proc allocate-proc ptr int bool -- int do
             "expected procedure name" fail
         end
         ctx name-token require-word
-        if ctx name-token reserved-name do
+        if
+            ctx name-token reserved-name
+            ctx name-token string-type-name ||
+        do
             "reserved keyword cannot be a procedure name" fail
         end
         ctx name-token find-proc
         let existing-proc do
             if existing-proc 0 >= do
                 "duplicate procedure name: " emit-error
-                ctx name-token token-slice emit-error
+                ctx name-token token-slice emit-error-bytes
                 10 eputc
                 1 exit
             end
@@ -2475,6 +2512,7 @@ proc require-import-name ptr int -- do
             ctx token "int" token-equals ||
             ctx token "bool" token-equals ||
             ctx token "ptr" token-equals ||
+            ctx token string-type-name ||
         do
             "invalid imported name" fail
         end
@@ -2921,10 +2959,10 @@ proc emit-indent ptr -- do
     end
 end
 
-proc emit-line ptr ptr int -- do
-    let cc bytes length do
+proc emit-line ptr String -- do
+    let cc code do
         cc emit-indent
-        bytes length emit
+        code emit
         10 putc
     end
 end
@@ -3936,12 +3974,12 @@ proc resolve-all-module-scopes ptr -- do
     end
 end
 
-proc resolve-nominal-type-token ptr int ptr int -- int do
-    let ctx token-index error-message error-length do
+proc resolve-nominal-type-token ptr int String -- int do
+    let ctx token-index error-message do
         ctx ctx token-index find-scope-symbol
         let symbol-index do
             if symbol-index 0 < do
-                error-message error-length fail
+                error-message fail
                 0
             else
                 ctx symbol-index scope-kind-at
@@ -3959,7 +3997,7 @@ proc resolve-nominal-type-token ptr int ptr int -- int do
                         ctx symbol-index scope-definition-index-at
                         function-type-at
                     else
-                        error-message error-length fail
+                        error-message fail
                         0
                     end
                 end
@@ -4286,6 +4324,11 @@ proc emit-c-preamble ptr -- do
 
 typedef int64_t Cell;
 typedef struct {
+  uint8_t *bytes;
+  Cell len;
+} FrogString;
+
+typedef struct {
   Cell* values;
   int64_t count;
   int64_t capacity;
@@ -4402,22 +4445,9 @@ int froglang_ensure_directory(void* path) {
   return 0;
 }
 
-void* froglang_realpath(void* path, void* resolved) {
-  return realpath((const char*)path, (char*)resolved);
-}
-
 int froglang_path_exists(void* path) {
   struct stat info;
   return stat((const char*)path, &info) == 0;
-}
-
-int froglang_same_file(void* first, void* second) {
-  struct stat first_info;
-  struct stat second_info;
-  return stat((const char*)first, &first_info) == 0
-      && stat((const char*)second, &second_info) == 0
-      && first_info.st_dev == second_info.st_dev
-      && first_info.st_ino == second_info.st_ino;
 }
 
 int froglang_wait_child(int child) {
@@ -4501,14 +4531,25 @@ proc emit-string-symbol ptr int -- do
     end
 end
 
+proc emit-string-bytes-symbol ptr int -- do
+    let program string-index do
+        program string-index emit-string-symbol
+        "_bytes" emit
+    end
+end
+
 proc emit-c-string-literal ptr int -- do
     let program string-index do
-        "static const uint8_t " emit program string-index emit-string-symbol
+        "static uint8_t " emit program string-index emit-string-bytes-symbol
         "[] = \"" emit
         program string-index string-data-at
         program string-index string-length-at
         emit-c-string-bytes
         "\";\n" emit
+        "static const FrogString " emit program string-index emit-string-symbol
+        " = { " emit program string-index emit-string-bytes-symbol ", " emit
+        program string-index string-length-at emit-unsigned
+        " };\n" emit
     end
 end
 
@@ -4532,7 +4573,7 @@ proc emit-string-references ptr -- do
         while dup program program-string-count < do
             dup
             let string-index do
-                "  (void)" emit program string-index emit-string-symbol ";\n" emit
+                "  (void)&" emit program string-index emit-string-symbol ";\n" emit
             end
             1 +
         end
@@ -4556,7 +4597,7 @@ end
 
 proc emit-c-symbol ptr int -- do
     let ctx proc-index do
-        ctx ctx proc-index proc-c-symbol-token-at token-slice emit
+        ctx ctx proc-index proc-c-symbol-token-at token-slice emit-bytes
     end
 end
 
@@ -4708,20 +4749,20 @@ proc apply-function-contract ptr ptr int -- do
     end
 end
 
-proc compile-fixed-binary ptr int int ptr int -- do
-    let cc input-type output-type code code-length do
+proc compile-fixed-binary ptr int int String -- do
+    let cc input-type output-type code do
         cc input-type type-expect
         cc input-type type-expect
         cc output-type type-push
-        cc code code-length emit-line
+        cc code emit-line
     end
 end
 
-proc compile-fixed-unary ptr int int ptr int -- do
-    let cc input-type output-type code code-length do
+proc compile-fixed-unary ptr int int String -- do
+    let cc input-type output-type code do
         cc input-type type-expect
         cc output-type type-push
-        cc code code-length emit-line
+        cc code emit-line
     end
 end
 
@@ -4832,6 +4873,7 @@ proc compile-cast-intrinsic ptr -- do
                     target-type type-int ==
                     target-type type-bool == ||
                     target-type type-ptr == ||
+                    target-type type-string == ||
                     target-type type-is-nominal ||
                     target-type type-is-function ||
                     !
@@ -4861,19 +4903,19 @@ proc compile-cast-intrinsic ptr -- do
     end
 end
 
-proc compile-read-memory ptr int ptr int -- do
-    let cc token-index code code-length do
+proc compile-read-memory ptr int String -- do
+    let cc token-index code do
         cc type-ptr type-expect
         cc type-int type-push
-        cc code code-length emit-line
+        cc code emit-line
     end
 end
 
-proc compile-write-memory ptr int ptr int -- do
-    let cc token-index code code-length do
+proc compile-write-memory ptr int String -- do
+    let cc token-index code do
         cc type-ptr type-expect
         cc type-int type-expect
-        cc code code-length emit-line
+        cc code emit-line
     end
 end
 
@@ -4989,12 +5031,8 @@ proc emit-push-string ptr int -- do
         cc cc-defining-module token-index token-value-at
         let string-index do
             cc emit-indent
-            "frog_push((Cell)(intptr_t)" emit
+            "frog_push((Cell)(intptr_t)&" emit
             cc cc-program string-index emit-string-symbol
-            ");" emit 10 putc
-            cc emit-indent
-            "frog_push(" emit
-            cc cc-program string-index string-length-at emit-unsigned
             ");" emit 10 putc
         end
     end
@@ -5218,6 +5256,9 @@ proc bind-let-names ptr int int -- do
         if count 0 > do
             first-token count 1 - +
             let name-token do
+                if cc cc-defining-module name-token string-type-name do
+                    "String cannot be a local name" fail
+                end
                 cc type-pop
                 let value-type do
                     cc name-token value-type add-local
@@ -5457,11 +5498,11 @@ proc compile-record-special ptr ptr int int -- bool do
                     bytes separator 1 + +
                     length separator 1 + -
                     let operation operation-length do
-                        if operation operation-length "alloc" bytes-equal do
+                        if operation operation-length "alloc" bytes-equal-string do
                             module record-index record-type-at cc swap type-push
                             cc module record-index record-field-count-at cell-bytes * emit-record-allocation
                             true
-                        elif operation operation-length "sizeof" bytes-equal do
+                        elif operation operation-length "sizeof" bytes-equal-string do
                             cc type-int type-push
                             cc module record-index record-field-count-at cell-bytes * emit-push-integer
                             true
@@ -5800,18 +5841,18 @@ proc compile-function-operation ptr ptr int int -- bool do
                     bytes separator 1 + +
                     length separator 1 + -
                     let operation operation-length do
-                        if operation operation-length "call" bytes-equal do
+                        if operation operation-length "call" bytes-equal-string do
                             cc function-module function-index function-type-at type-expect
                             cc function-module function-index apply-function-contract
                             cc function-module function-index emit-function-call
                             true
-                        elif operation operation-length "ref" bytes-equal do
+                        elif operation operation-length "ref" bytes-equal-string do
                             "expected function reference target" fail
                             false
                         elif
                             operation-length 4 >=
                             if dup do
-                                drop operation 4 "ref:" bytes-equal
+                                drop operation 4 "ref:" bytes-equal-string
                             end
                         do
                             if operation-length 4 == do
@@ -5863,6 +5904,24 @@ proc compile-function-word ptr int -- bool do
     end
 end
 
+proc compile-string-word ptr int -- bool do
+    let cc token-index do
+        if cc cc-defining-module token-index "String.bytes" token-equals do
+            cc type-string type-expect
+            cc type-ptr type-push
+            cc "{ const FrogString *value = (const FrogString *)(intptr_t)frog_pop(); frog_push((Cell)(intptr_t)value->bytes); }" emit-line
+            true
+        elif cc cc-defining-module token-index "String.len" token-equals do
+            cc type-string type-expect
+            cc type-int type-push
+            cc "{ const FrogString *value = (const FrogString *)(intptr_t)frog_pop(); frog_push(value->len); }" emit-line
+            true
+        else
+            false
+        end
+    end
+end
+
 proc compile-type-word ptr int -- bool do
     let cc token-index do
         if cc cc-defining-module token-index "int" token-equals do
@@ -5876,6 +5935,10 @@ proc compile-type-word ptr int -- bool do
         elif cc cc-defining-module token-index "ptr" token-equals do
             cc type-literal-base type-ptr + type-push
             cc type-literal-base type-ptr + emit-push-integer
+            true
+        elif cc cc-defining-module token-index "String" token-equals do
+            cc type-literal-base type-string + type-push
+            cc type-literal-base type-string + emit-push-integer
             true
         else
             if cc token-index compile-record-type-word do
@@ -5925,6 +5988,7 @@ proc compile-ordinary-word ptr int -- do
                 cc cc-scope-module symbol-index scope-definition-index-at
                 compile-macro
             elif cc token-index compile-type-word do
+            elif cc token-index compile-string-word do
             elif cc token-index compile-record-word do
             elif cc token-index compile-union-word do
             elif cc token-index compile-function-word do
@@ -5997,8 +6061,7 @@ proc compile-token ptr int -- int do
                 cc cc-defining-module token-index token-value-at cc swap emit-push-integer
                 token-index 1 +
             elif kind token-string == do
-                cc type-ptr type-push
-                cc type-int type-push
+                cc type-string type-push
                 cc token-index emit-push-string
                 token-index 1 +
             elif kind token-word == do
@@ -6358,8 +6421,8 @@ macro swap let a b do b a end end
 macro swap2 let a b c d do c d a b end end
 macro rot let a b c do b c a end end
 "
-            let source source-length do
-                prelude source source-length initialize-module-source
+            let source do
+                prelude source String.bytes source String.len initialize-module-source
             end
             load-loaded prelude set-ctx-load-state
             prelude program set-program-prelude-module
@@ -6398,14 +6461,11 @@ extern cli-chdir froglang_chdir c-ptr -- c-int end
 extern cli-execv froglang_execv c-ptr c-ptr -- c-int end
 extern cli-execvp froglang_execvp c-ptr c-ptr -- c-int end
 extern cli-ensure-directory froglang_ensure_directory c-ptr -- c-int end
-extern cli-realpath froglang_realpath c-ptr c-ptr -- c-ptr end
 extern cli-path-exists froglang_path_exists c-ptr -- c-bool end
-extern cli-same-file froglang_same_file c-ptr c-ptr -- c-bool end
 extern cli-wait-child froglang_wait_child c-int -- c-int end
 extern cli-finish-child froglang_finish_child c-int -- end
 extern cli-reset-child-signals froglang_reset_child_signals -- end
 
-proc max-cli-path-bytes -- int do 4096 end
 proc null-pointer -- ptr do 0 ptr cast end
 
 proc cstring-length ptr -- int do
@@ -6417,18 +6477,12 @@ proc cstring-length ptr -- int do
     end
 end
 
-proc cstring-equals ptr ptr int -- bool do
-    let cstring bytes length do
+proc cstring-equals ptr String -- bool do
+    let cstring value do
         cstring cstring-length
         let cstring-byte-count do
-            cstring cstring-byte-count bytes length bytes-equal
+            cstring cstring-byte-count value String.bytes value String.len bytes-equal
         end
-    end
-end
-
-proc cstrings-equal ptr ptr -- bool do
-    let first second do
-        first first cstring-length second second cstring-length bytes-equal
     end
 end
 
@@ -6469,9 +6523,9 @@ proc parent-path ptr -- ptr do
             path length 47 last-index-of-byte
             let slash do
                 if slash 0 < do
-                    "." drop
+                    "." String.bytes
                 elif slash 0 == do
-                    "/" drop
+                    "/" String.bytes
                 else
                     path slash copy-cstring
                 end
@@ -6480,87 +6534,24 @@ proc parent-path ptr -- ptr do
     end
 end
 
-proc replace-path-suffix ptr ptr int -- ptr do
-    let path suffix suffix-length do
-        path cstring-length
-        let path-length do
-            path path-length 47 last-index-of-byte 1 +
-            path path-length 46 last-index-of-byte
-            let base dot do
-                if dot base > do dot else path-length end
-                let prefix-length do
-                    prefix-length suffix-length + 1 + alloc
-                    let result do
-                        path result prefix-length memory-copy
-                        suffix result prefix-length + suffix-length memory-copy
-                        0 result prefix-length suffix-length + byte-write
-                        result
-                    end
-                end
-            end
-        end
-    end
-end
-
-proc path-identity ptr -- ptr int bool do
-    let path do
-        max-cli-path-bytes alloc
-        let resolved do
-            path resolved cli-realpath
-            let existing do
-                if existing int cast 0 != do
-                    resolved resolved cstring-length true
-                else
-                    path parent-path
-                    let parent do
-                        parent resolved cli-realpath
-                        let resolved-parent do
-                            if resolved-parent int cast 0 == do
-                                null-pointer 0 false
-                            else
-                                path cstring-length
-                                let path-length do
-                                    path path-length 47 last-index-of-byte 1 +
-                                    let name-start do
-                                        path-length name-start -
-                                        resolved cstring-length
-                                        let name-length resolved-length do
-                                            resolved-length 1 + name-length +
-                                            let identity-length do
-                                                if identity-length 1 + max-cli-path-bytes > do
-                                                    null-pointer 0 false
-                                                else
-                                                    47 resolved resolved-length byte-write
-                                                    path name-start + resolved resolved-length 1 + + name-length memory-copy
-                                                    0 resolved identity-length byte-write
-                                                    resolved identity-length true
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
+proc replace-path-suffix ptr String -- ptr do
+    let path suffix do
+        suffix String.len
+        let suffix-length do
+            path cstring-length
+            let path-length do
+                path path-length 47 last-index-of-byte 1 +
+                path path-length 46 last-index-of-byte
+                let base dot do
+                    if dot base > do dot else path-length end
+                    let prefix-length do
+                        prefix-length suffix-length + 1 + alloc
+                        let result do
+                            path result prefix-length memory-copy
+                            suffix String.bytes result prefix-length + suffix-length memory-copy
+                            0 result prefix-length suffix-length + byte-write
+                            result
                         end
-                    end
-                end
-            end
-        end
-    end
-end
-
-proc paths-alias ptr ptr -- bool do
-    let first second do
-        if first second cli-same-file do
-            true
-        else
-            first path-identity
-            let first-identity first-length first-known do
-                second path-identity
-                let second-identity second-length second-known do
-                    if first-known second-known && do
-                        first-identity first-length second-identity second-length bytes-equal
-                    else
-                        false
                     end
                 end
             end
@@ -6584,35 +6575,35 @@ proc allocate-pointer-array int -- ptr do
     end
 end
 
-proc cli-error ptr int -- do
-    let message length do
+proc cli-error String -- do
+    let message do
         "frogc: " emit-error
-        message length emit-error
+        message emit-error
         10 eputc
     end
 end
 
-proc cli-error-path ptr int ptr -- do
-    let message message-length path do
+proc cli-error-path String ptr -- do
+    let message path do
         "frogc: " emit-error
-        message message-length emit-error
+        message emit-error
         ": " emit-error
-        path path cstring-length emit-error
+        path path cstring-length emit-error-bytes
         10 eputc
     end
 end
 
-proc cli-usage-error ptr int -- do
+proc cli-usage-error String -- do
     cli-error
     "Try `frogc --help`.\n" emit-error
     2 exit
 end
 
-proc cli-usage-error-value ptr int ptr -- do
-    let message message-length value do
+proc cli-usage-error-value String ptr -- do
+    let message value do
         "frogc: " emit-error
-        message message-length emit-error
-        value value cstring-length emit-error
+        message emit-error
+        value value cstring-length emit-error-bytes
         10 eputc
         "Try `frogc --help`.\n" emit-error
         2 exit
@@ -6705,18 +6696,18 @@ proc compile-c-source ptr ptr -- int do
     let source executable do
         13 allocate-pointer-array
         let arguments do
-            arguments 0 "gcc" drop set-pointer-at
-            arguments 1 "-std=c11" drop set-pointer-at
-            arguments 2 "-pedantic" drop set-pointer-at
-            arguments 3 "-Wall" drop set-pointer-at
-            arguments 4 "-Wextra" drop set-pointer-at
-            arguments 5 "-Wconversion" drop set-pointer-at
-            arguments 6 "-Werror" drop set-pointer-at
-            arguments 7 "-O2" drop set-pointer-at
-            arguments 8 "-x" drop set-pointer-at
-            arguments 9 "c" drop set-pointer-at
+            arguments 0 "gcc" String.bytes set-pointer-at
+            arguments 1 "-std=c11" String.bytes set-pointer-at
+            arguments 2 "-pedantic" String.bytes set-pointer-at
+            arguments 3 "-Wall" String.bytes set-pointer-at
+            arguments 4 "-Wextra" String.bytes set-pointer-at
+            arguments 5 "-Wconversion" String.bytes set-pointer-at
+            arguments 6 "-Werror" String.bytes set-pointer-at
+            arguments 7 "-O2" String.bytes set-pointer-at
+            arguments 8 "-x" String.bytes set-pointer-at
+            arguments 9 "c" String.bytes set-pointer-at
             arguments 10 source set-pointer-at
-            arguments 11 "-o" drop set-pointer-at
+            arguments 11 "-o" String.bytes set-pointer-at
             arguments 12 executable set-pointer-at
             cli-fork
             let child do
@@ -6725,7 +6716,7 @@ proc compile-c-source ptr ptr -- int do
                     1
                 elif child 0 == do
                     cli-reset-child-signals
-                    "gcc" drop arguments cli-execvp drop
+                    "gcc" String.bytes arguments cli-execvp drop
                     "unable to run gcc" cli-error
                     127 cli-finish-child
                     127
@@ -6751,7 +6742,7 @@ proc run-executable ptr -- int do
                     cli-reset-child-signals
                     executable arguments cli-execv drop
                     "unable to run " emit-error
-                    executable executable cstring-length emit-error
+                    executable executable cstring-length emit-error-bytes
                     10 eputc
                     127 cli-finish-child
                     127
@@ -6765,21 +6756,21 @@ end
 
 proc run-source ptr int ptr -- int do
     let source source-length directory do
-        if "build" drop cli-ensure-directory 0 != do
+        if "build" String.bytes cli-ensure-directory 0 != do
             "unable to create build directory" cli-error
             1
         else
-            source source-length directory "build/frog-run.c" drop compile-frog-source
+            source source-length directory "build/frog-run.c" String.bytes compile-frog-source
             let compile-status do
                 if compile-status 0 != do
                     compile-status
                 else
-                    "build/frog-run.c" drop "build/frog-run.exe" drop compile-c-source
+                    "build/frog-run.c" String.bytes "build/frog-run.exe" String.bytes compile-c-source
                     let c-status do
                         if c-status 0 != do
                             c-status
                         else
-                            "build/frog-run.exe" drop run-executable
+                            "build/frog-run.exe" String.bytes run-executable
                         end
                     end
                 end
@@ -6800,14 +6791,6 @@ proc run-file ptr -- int do
     end
 end
 
-proc reject-path-alias ptr ptr ptr int -- do
-    let first second message message-length do
-        if first second paths-alias do
-            message message-length cli-usage-error
-        end
-    end
-end
-
 proc build-file ptr ptr bool -- int do
     let path requested-output should-run do
         path ".c" replace-path-suffix
@@ -6820,11 +6803,6 @@ proc build-file ptr ptr bool -- int do
             let executable do
                 path read-source-path
                 let source source-length do
-                    path c-file "generated C path aliases the source file" reject-path-alias
-                    path executable "executable path aliases the source file" reject-path-alias
-                    c-file executable "executable path aliases the generated C file" reject-path-alias
-                    c-file "/proc/self/exe" drop "build output aliases the running compiler" reject-path-alias
-                    executable "/proc/self/exe" drop "build output aliases the running compiler" reject-path-alias
                     path parent-path
                     let directory do
                         source source-length directory c-file compile-frog-source
@@ -6869,7 +6847,7 @@ proc run-command ptr int -- do
                 end
                 argv 3 argv-at
                 let code do
-                    code code cstring-length "." drop run-source exit
+                    code code cstring-length "." String.bytes run-source exit
                 end
             elif argument @u8 45 == do
                 "unknown run option: " argument cli-usage-error-value

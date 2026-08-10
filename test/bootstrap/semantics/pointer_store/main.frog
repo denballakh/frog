@@ -1,7 +1,7 @@
 proc main -- do
     8 alloc
     let slot do
-        "A" drop slot !ptr
+        "A" String.bytes slot !ptr
         slot @ptr @u8 print
     end
 end

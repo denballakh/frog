@@ -1,1 +1,1 @@
-proc text -- ptr int do "P" end
+proc text -- String do "P" end

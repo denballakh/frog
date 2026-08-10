@@ -155,7 +155,7 @@ Commands:
 
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
 - When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and snapshot coverage, user-facing docs, and optionally the VS Code grammar.
-- String literals lower to a UTF-8 byte pointer and byte length (`ptr int`); generated globals and macro expansion must retain the defining module's literal identity.
+- String literals lower to one `String` handle backed by a static byte-pointer/length descriptor. `String.bytes` and `String.len` expose its fields; byte storage is writable and shared by equal pooled literals, and generated globals and macro expansion must retain the defining module's pooled literal identity.
 - Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
 - Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
@@ -165,7 +165,7 @@ Commands:
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.
 - `test/__main__.py` uses `SourceSpec` to materialize concise inline bodies, declarations before or after `main`, and verbatim malformed structural probes. It must write and snapshot the materialized source.
 - Do not treat generated `.c` or `.exe` files as authoritative source, except for the intentional bootstrap seed `compiler/frogc.c`. Other generated files remain disposable build/test artifacts.
-- CLI `build` intentionally writes outputs directly and provides no locking or rollback transaction.
+- CLI `build` intentionally writes outputs directly and provides no locking, rollback transaction, or path-alias validation. Users are responsible for choosing distinct input and output paths.
 
 ## VS Code Grammar
 

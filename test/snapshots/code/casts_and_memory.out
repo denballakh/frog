@@ -428,7 +428,7 @@ Output:
 
 ```frog
 proc main -- do
-    "README.md" read-file let data length success do success print length 0 > print data @u8 putc 10 putc end
+    "README.md" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end
 end
 ```
 
@@ -454,7 +454,7 @@ true
 
 ```frog
 proc main -- do
-    "frog-read-file-missing" read-file let data length success do data drop length print success print end
+    "frog-read-file-missing" dup String.bytes swap String.len read-file let data length success do data drop length print success print end
 end
 ```
 

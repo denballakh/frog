@@ -37,7 +37,7 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The compiler supports nominal pointer-backed records and tagged unions, nominal first-class function references, module-aware macros, an embedded standard macro prelude, scalar C foreign-function declarations, a deterministic checked literal-add peephole optimization, and root-relative imports of procedures, external functions, nominal types, and macros, including aliases, grouped imports, and reexports.
+The compiler supports pooled struct-backed strings, nominal pointer-backed records and tagged unions, nominal first-class function references, module-aware macros, an embedded standard macro prelude, scalar C foreign-function declarations, a deterministic checked literal-add peephole optimization, and root-relative imports of procedures, external functions, nominal types, and macros, including aliases, grouped imports, and reexports.
 
 To bootstrap manually without Python:
 

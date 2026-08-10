@@ -204,7 +204,7 @@ frogc: unterminated string literal
 
 ```frog
 proc main -- do
-    "" ? drop drop
+    "" ? drop
 end
 ```
 
@@ -228,7 +228,7 @@ Output:
 
 ```frog
 proc main -- do
-    "abc" ? drop drop
+    "abc" ? drop
 end
 ```
 
@@ -252,7 +252,7 @@ Output:
 
 ```frog
 proc main -- do
-    "abc\n" ? drop drop
+    "abc\n" ? drop
 end
 ```
 
@@ -276,7 +276,7 @@ Output:
 
 ```frog
 proc main -- do
-    "abc'" ? drop drop
+    "abc'" ? drop
 end
 ```
 
@@ -300,7 +300,7 @@ Output:
 
 ```frog
 proc main -- do
-    "abc\"" ? drop drop
+    "abc\"" ? drop
 end
 ```
 
@@ -324,7 +324,7 @@ Output:
 
 ```frog
 proc main -- do
-    "A\n\x42\0é" let p n do n print p @u8 print p 1 + @u8 print p 2 + @u8 print p 3 + @u8 print p 4 + @u8 print end
+    "A\n\x42\0é" let s do s String.len print s String.bytes let p do p @u8 print p 1 + @u8 print p 2 + @u8 print p 3 + @u8 print p 4 + @u8 print end end
 end
 ```
 
