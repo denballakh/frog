@@ -28,7 +28,7 @@ const generated-c-check-constants 1 4 << end
 const generated-c-check-procedure-symbols 1 5 << end
 const generated-c-check-strings 1 6 << end
 const generated-c-required-checks 1 7 << 1 - end
-const expected-test-cases 473 end
+const expected-test-cases 477 end
 
 proc frog-test-context ptr ptr -- FrogTestContext do
     let compiler executable do
@@ -418,6 +418,10 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
                     "generated-c/optimizer folded 18 once" context frog-check
                     function function-length "\n  frog_value_0 = 9;\n" String.bytes "\n  frog_value_0 = 9;\n" String.len bytes-count 1 ==
                     "generated-c/optimizer folded 9 once" context frog-check
+                    function function-length "\n  frog_value_0 = -3;\n" String.bytes "\n  frog_value_0 = -3;\n" String.len bytes-count 1 ==
+                    "generated-c/optimizer folded negative sum once" context frog-check
+                    function function-length "\n  frog_value_0 = INT64_MIN;\n" String.bytes "\n  frog_value_0 = INT64_MIN;\n" String.len bytes-count 1 ==
+                    "generated-c/optimizer folded minimum once" context frog-check
 
                     function function-length "\n  frog_value_0 = 5;\n" String.bytes "\n  frog_value_0 = 5;\n" String.len bytes-index-of
                     function function-length "\n  frog_value_0 = 18;\n" String.bytes "\n  frog_value_0 = 18;\n" String.len bytes-index-of
@@ -434,6 +438,20 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
                     "    frog_value_0 = 9223372036854775807;\n    frog_value_1 = 1;\n    frog_value_0 = frog_value_0 + frog_value_1;\n"
                     String.len bytes-contain
                     "generated-c/optimizer overflow body remains" context frog-check
+
+                    function function-length
+                    "    frog_value_0 = INT64_MIN;\n    frog_value_1 = -1;\n    frog_value_0 = frog_value_0 + frog_value_1;\n"
+                    String.bytes
+                    "    frog_value_0 = INT64_MIN;\n    frog_value_1 = -1;\n    frog_value_0 = frog_value_0 + frog_value_1;\n"
+                    String.len bytes-contain
+                    "generated-c/optimizer negative overflow body remains" context frog-check
+
+                    function function-length
+                    "    frog_value_0 = -1;\n    frog_value_1 = INT64_MIN;\n    frog_value_0 = frog_value_0 + frog_value_1;\n"
+                    String.bytes
+                    "    frog_value_0 = -1;\n    frog_value_1 = INT64_MIN;\n    frog_value_0 = frog_value_0 + frog_value_1;\n"
+                    String.len bytes-contain
+                    "generated-c/optimizer minimum right operand overflow body remains" context frog-check
                 end
             end
             generated-c-check-optimizer context frog-mark-generated-check

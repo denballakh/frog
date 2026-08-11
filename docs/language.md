@@ -10,7 +10,7 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, `String`, nominal record and union handles, nominal function references, and `type`.
 - Procedure signatures can name `int`, `bool`, `ptr`, `String`, and visible record, union, or function-reference types.
-- `int` is a signed 64-bit integer. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
+- `int` is a signed 64-bit integer. Integer literals are decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks with an optional leading `+` or `-`. Their values must be within `-9223372036854775808` through `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. A standalone `+` or `-` remains an arithmetic word.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw Unicode codepoint. `\'` represents
@@ -151,7 +151,7 @@ c-call allocate malloc CSize -- CPtr end
 c-call release free CPtr -- end
 
 proc main -- do
-    0 9 - magnitude print
+    -9 magnitude print
     "frog" String.bytes length print
     8 allocate release
 end

@@ -1406,7 +1406,7 @@ Cell frog_proc_76_source_2Dbyte(Cell frog_arg_0, Cell frog_arg_1);
 void frog_proc_77_lex_2Dadvance(Cell frog_arg_0);
 Cell frog_proc_78_all_2Ddigits(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 Cell frog_proc_79_integer_2Dliteral_2Dbase(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
-Cell frog_proc_80_parse_2Dinteger(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
+Cell frog_proc_80_parse_2Dinteger(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4);
 frog_results_2 frog_proc_81_classify_2Dword(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2);
 void frog_proc_82_skip_2Dcomment(Cell frog_arg_0);
 void frog_proc_83_lex_2Dstring(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3);
@@ -4119,7 +4119,7 @@ Cell frog_proc_79_integer_2Dliteral_2Dbase(Cell frog_arg_0, Cell frog_arg_1, Cel
   }
   return frog_value_0;
 }
-Cell frog_proc_80_parse_2Dinteger(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3) {
+Cell frog_proc_80_parse_2Dinteger(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2, Cell frog_arg_3, Cell frog_arg_4) {
   Cell frog_value_0;
   (void)&frog_value_0;
   Cell frog_value_1;
@@ -4130,20 +4130,25 @@ Cell frog_proc_80_parse_2Dinteger(Cell frog_arg_0, Cell frog_arg_1, Cell frog_ar
   (void)&frog_value_3;
   Cell frog_value_4;
   (void)&frog_value_4;
+  Cell frog_value_5;
+  (void)&frog_value_5;
   frog_value_0 = frog_arg_0;
   frog_value_1 = frog_arg_1;
   frog_value_2 = frog_arg_2;
   frog_value_3 = frog_arg_3;
+  frog_value_4 = frog_arg_4;
   {
-    Cell l0 = frog_value_3;
+    Cell l0 = frog_value_4;
     (void)l0;
-    Cell l1 = frog_value_2;
+    Cell l1 = frog_value_3;
     (void)l1;
-    Cell l2 = frog_value_1;
+    Cell l2 = frog_value_2;
     (void)l2;
-    Cell l3 = frog_value_0;
+    Cell l3 = frog_value_1;
     (void)l3;
-    frog_value_0 = l1;
+    Cell l4 = frog_value_0;
+    (void)l4;
+    frog_value_0 = l2;
     frog_value_1 = 0;
     frog_value_0 = frog_value_0 == frog_value_1;
     if (frog_value_0 != 0) {
@@ -4152,95 +4157,116 @@ Cell frog_proc_80_parse_2Dinteger(Cell frog_arg_0, Cell frog_arg_1, Cell frog_ar
         frog_proc_11_fail(frog_value_0);
       }
     }
-    frog_value_0 = 0;
-    frog_value_1 = 0;
-    while (1) {
-      {
-        Cell l4 = frog_value_1;
-        (void)l4;
-        Cell l5 = frog_value_0;
-        (void)l5;
-        frog_value_0 = l5;
-        frog_value_1 = l4;
-        frog_value_2 = l5;
-        frog_value_3 = l1;
-        frog_value_2 = frog_value_2 < frog_value_3;
-      }
-      if (frog_value_2 == 0) break;
-      {
-        Cell l6 = frog_value_1;
-        (void)l6;
-        Cell l7 = frog_value_0;
-        (void)l7;
-        frog_value_0 = l3;
-        frog_value_1 = l2;
-        frog_value_2 = l7;
-        frog_value_1 = frog_value_1 + frog_value_2;
-        {
-          frog_value_0 = frog_proc_4_byte_2Dread(frog_value_0, frog_value_1);
-        }
-        {
-          frog_value_0 = frog_proc_19_digit_2Dvalue(frog_value_0);
-        }
-        {
-          Cell l8 = frog_value_0;
-          (void)l8;
-          frog_value_0 = l8;
-          frog_value_1 = 0;
-          frog_value_0 = frog_value_0 < frog_value_1;
-          frog_value_1 = l8;
-          frog_value_2 = l0;
-          frog_value_1 = frog_value_1 >= frog_value_2;
-          frog_value_0 = frog_value_0 || frog_value_1;
-          if (frog_value_0 != 0) {
-            frog_value_0 = (Cell)(intptr_t)&frog_string_2608803669;
-            {
-              frog_proc_11_fail(frog_value_0);
-            }
-          }
-          frog_value_0 = l6;
-          frog_value_1 = 9223372036854775807;
-          frog_value_2 = l0;
-          if (frog_value_2 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
-          frog_value_1 = frog_value_1 / frog_value_2;
-          frog_value_0 = frog_value_0 > frog_value_1;
-          frog_value_1 = l6;
-          frog_value_2 = 9223372036854775807;
-          frog_value_3 = l0;
-          if (frog_value_3 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
-          frog_value_2 = frog_value_2 / frog_value_3;
-          frog_value_1 = frog_value_1 == frog_value_2;
-          frog_value_2 = l8;
-          frog_value_3 = 9223372036854775807;
-          frog_value_4 = l0;
-          if (frog_value_4 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
-          frog_value_3 = frog_value_3 % frog_value_4;
-          frog_value_2 = frog_value_2 > frog_value_3;
-          frog_value_1 = frog_value_1 && frog_value_2;
-          frog_value_0 = frog_value_0 || frog_value_1;
-          if (frog_value_0 != 0) {
-            frog_value_0 = (Cell)(intptr_t)&frog_string_1020491445;
-            {
-              frog_proc_11_fail(frog_value_0);
-            }
-          }
-          frog_value_0 = l7;
-          frog_value_1 = 1;
-          frog_value_0 = frog_value_0 + frog_value_1;
-          frog_value_1 = l6;
-          frog_value_2 = l0;
-          frog_value_1 = frog_value_1 * frog_value_2;
-          frog_value_2 = l8;
-          frog_value_1 = frog_value_1 + frog_value_2;
-        }
-      }
+    frog_value_0 = l0;
+    if (frog_value_0 != 0) {
+      frog_value_0 = INT64_MIN;
+    } else {
+      frog_value_0 = 0;
+      frog_value_1 = 9223372036854775807;
+      frog_value_0 = frog_value_0 - frog_value_1;
     }
     {
-      Cell l9 = frog_value_1;
-      (void)l9;
-      Cell l10 = frog_value_0;
-      (void)l10;
-      frog_value_0 = l9;
+      Cell l5 = frog_value_0;
+      (void)l5;
+      frog_value_0 = 0;
+      frog_value_1 = 0;
+      while (1) {
+        {
+          Cell l6 = frog_value_1;
+          (void)l6;
+          Cell l7 = frog_value_0;
+          (void)l7;
+          frog_value_0 = l7;
+          frog_value_1 = l6;
+          frog_value_2 = l7;
+          frog_value_3 = l2;
+          frog_value_2 = frog_value_2 < frog_value_3;
+        }
+        if (frog_value_2 == 0) break;
+        {
+          Cell l8 = frog_value_1;
+          (void)l8;
+          Cell l9 = frog_value_0;
+          (void)l9;
+          frog_value_0 = l4;
+          frog_value_1 = l3;
+          frog_value_2 = l9;
+          frog_value_1 = frog_value_1 + frog_value_2;
+          {
+            frog_value_0 = frog_proc_4_byte_2Dread(frog_value_0, frog_value_1);
+          }
+          {
+            frog_value_0 = frog_proc_19_digit_2Dvalue(frog_value_0);
+          }
+          {
+            Cell l10 = frog_value_0;
+            (void)l10;
+            frog_value_0 = l10;
+            frog_value_1 = 0;
+            frog_value_0 = frog_value_0 < frog_value_1;
+            frog_value_1 = l10;
+            frog_value_2 = l1;
+            frog_value_1 = frog_value_1 >= frog_value_2;
+            frog_value_0 = frog_value_0 || frog_value_1;
+            if (frog_value_0 != 0) {
+              frog_value_0 = (Cell)(intptr_t)&frog_string_2608803669;
+              {
+                frog_proc_11_fail(frog_value_0);
+              }
+            }
+            frog_value_0 = l8;
+            frog_value_1 = l5;
+            frog_value_2 = l1;
+            if (frog_value_2 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
+            frog_value_1 = frog_value_1 / frog_value_2;
+            frog_value_0 = frog_value_0 < frog_value_1;
+            frog_value_1 = l8;
+            frog_value_2 = l5;
+            frog_value_3 = l1;
+            if (frog_value_3 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
+            frog_value_2 = frog_value_2 / frog_value_3;
+            frog_value_1 = frog_value_1 == frog_value_2;
+            frog_value_2 = l10;
+            frog_value_3 = 0;
+            frog_value_4 = l5;
+            frog_value_5 = l1;
+            if (frog_value_5 == 0) { fputs("frog: division by zero\n", stderr); exit(1); }
+            frog_value_4 = frog_value_4 % frog_value_5;
+            frog_value_3 = frog_value_3 - frog_value_4;
+            frog_value_2 = frog_value_2 > frog_value_3;
+            frog_value_1 = frog_value_1 && frog_value_2;
+            frog_value_0 = frog_value_0 || frog_value_1;
+            if (frog_value_0 != 0) {
+              frog_value_0 = (Cell)(intptr_t)&frog_string_1020491445;
+              {
+                frog_proc_11_fail(frog_value_0);
+              }
+            }
+            frog_value_0 = l9;
+            frog_value_1 = 1;
+            frog_value_0 = frog_value_0 + frog_value_1;
+            frog_value_1 = l8;
+            frog_value_2 = l1;
+            frog_value_1 = frog_value_1 * frog_value_2;
+            frog_value_2 = l10;
+            frog_value_1 = frog_value_1 - frog_value_2;
+          }
+        }
+      }
+      {
+        Cell l11 = frog_value_1;
+        (void)l11;
+        Cell l12 = frog_value_0;
+        (void)l12;
+        frog_value_0 = l0;
+        if (frog_value_0 != 0) {
+          frog_value_0 = l11;
+        } else {
+          frog_value_0 = 0;
+          frog_value_1 = l11;
+          frog_value_0 = frog_value_0 - frog_value_1;
+        }
+      }
     }
   }
   return frog_value_0;
@@ -4256,6 +4282,8 @@ frog_results_2 frog_proc_81_classify_2Dword(Cell frog_arg_0, Cell frog_arg_1, Ce
   (void)&frog_value_3;
   Cell frog_value_4;
   (void)&frog_value_4;
+  Cell frog_value_5;
+  (void)&frog_value_5;
   frog_value_0 = frog_arg_0;
   frog_value_1 = frog_arg_1;
   frog_value_2 = frog_arg_2;
@@ -4290,50 +4318,107 @@ frog_results_2 frog_proc_81_classify_2Dword(Cell frog_arg_0, Cell frog_arg_1, Ce
         frog_value_0 = 2;
         frog_value_1 = 0;
       } else {
-        frog_value_0 = l2;
-        frog_value_1 = l1;
-        frog_value_2 = l0;
+        frog_value_0 = l0;
+        frog_value_1 = 1;
+        frog_value_0 = frog_value_0 > frog_value_1;
+        frog_value_1 = l2;
+        frog_value_2 = l1;
         {
-          frog_value_0 = frog_proc_78_all_2Ddigits(frog_value_0, frog_value_1, frog_value_2);
+          frog_value_1 = frog_proc_4_byte_2Dread(frog_value_1, frog_value_2);
         }
+        frog_value_2 = 43;
+        frog_value_1 = frog_value_1 == frog_value_2;
+        frog_value_2 = l2;
+        frog_value_3 = l1;
+        {
+          frog_value_2 = frog_proc_4_byte_2Dread(frog_value_2, frog_value_3);
+        }
+        frog_value_3 = 45;
+        frog_value_2 = frog_value_2 == frog_value_3;
+        frog_value_1 = frog_value_1 || frog_value_2;
+        frog_value_0 = frog_value_0 && frog_value_1;
         if (frog_value_0 != 0) {
           frog_value_0 = 1;
+        } else {
+          frog_value_0 = 0;
+        }
+        {
+          Cell l3 = frog_value_0;
+          (void)l3;
+          frog_value_0 = l3;
+          frog_value_1 = 1;
+          frog_value_0 = frog_value_0 == frog_value_1;
           frog_value_1 = l2;
           frog_value_2 = l1;
-          frog_value_3 = l0;
-          frog_value_4 = 10;
           {
-            frog_value_1 = frog_proc_80_parse_2Dinteger(frog_value_1, frog_value_2, frog_value_3, frog_value_4);
+            frog_value_1 = frog_proc_4_byte_2Dread(frog_value_1, frog_value_2);
           }
-        } else {
-          frog_value_0 = l2;
-          frog_value_1 = l1;
-          frog_value_2 = l0;
+          frog_value_2 = 45;
+          frog_value_1 = frog_value_1 == frog_value_2;
+          frog_value_0 = frog_value_0 && frog_value_1;
           {
-            frog_value_0 = frog_proc_79_integer_2Dliteral_2Dbase(frog_value_0, frog_value_1, frog_value_2);
-          }
-          {
-            Cell l3 = frog_value_0;
-            (void)l3;
-            frog_value_0 = l3;
-            frog_value_1 = 0;
-            frog_value_0 = frog_value_0 > frog_value_1;
-            if (frog_value_0 != 0) {
-              frog_value_0 = 1;
-              frog_value_1 = l2;
-              frog_value_2 = l1;
-              frog_value_3 = 2;
-              frog_value_2 = frog_value_2 + frog_value_3;
-              frog_value_3 = l0;
-              frog_value_4 = 2;
-              frog_value_3 = frog_value_3 - frog_value_4;
-              frog_value_4 = l3;
+            Cell l4 = frog_value_0;
+            (void)l4;
+            frog_value_0 = l1;
+            frog_value_1 = l3;
+            frog_value_0 = frog_value_0 + frog_value_1;
+            frog_value_1 = l0;
+            frog_value_2 = l3;
+            frog_value_1 = frog_value_1 - frog_value_2;
+            {
+              Cell l5 = frog_value_1;
+              (void)l5;
+              Cell l6 = frog_value_0;
+              (void)l6;
+              frog_value_0 = l2;
+              frog_value_1 = l6;
+              frog_value_2 = l5;
               {
-                frog_value_1 = frog_proc_80_parse_2Dinteger(frog_value_1, frog_value_2, frog_value_3, frog_value_4);
+                frog_value_0 = frog_proc_78_all_2Ddigits(frog_value_0, frog_value_1, frog_value_2);
               }
-            } else {
-              frog_value_0 = 5;
-              frog_value_1 = 0;
+              if (frog_value_0 != 0) {
+                frog_value_0 = 1;
+                frog_value_1 = l2;
+                frog_value_2 = l6;
+                frog_value_3 = l5;
+                frog_value_4 = 10;
+                frog_value_5 = l4;
+                {
+                  frog_value_1 = frog_proc_80_parse_2Dinteger(frog_value_1, frog_value_2, frog_value_3, frog_value_4, frog_value_5);
+                }
+              } else {
+                frog_value_0 = l2;
+                frog_value_1 = l6;
+                frog_value_2 = l5;
+                {
+                  frog_value_0 = frog_proc_79_integer_2Dliteral_2Dbase(frog_value_0, frog_value_1, frog_value_2);
+                }
+                {
+                  Cell l7 = frog_value_0;
+                  (void)l7;
+                  frog_value_0 = l7;
+                  frog_value_1 = 0;
+                  frog_value_0 = frog_value_0 > frog_value_1;
+                  if (frog_value_0 != 0) {
+                    frog_value_0 = 1;
+                    frog_value_1 = l2;
+                    frog_value_2 = l6;
+                    frog_value_3 = 2;
+                    frog_value_2 = frog_value_2 + frog_value_3;
+                    frog_value_3 = l5;
+                    frog_value_4 = 2;
+                    frog_value_3 = frog_value_3 - frog_value_4;
+                    frog_value_4 = l7;
+                    frog_value_5 = l4;
+                    {
+                      frog_value_1 = frog_proc_80_parse_2Dinteger(frog_value_1, frog_value_2, frog_value_3, frog_value_4, frog_value_5);
+                    }
+                  } else {
+                    frog_value_0 = 5;
+                    frog_value_1 = 0;
+                  }
+                }
+              }
             }
           }
         }
@@ -36540,91 +36625,114 @@ Cell frog_proc_573_try_2Dcompile_2Dconstant_2Dadd(Cell frog_arg_0, Cell frog_arg
           (void)l3;
           Cell l4 = frog_value_0;
           (void)l4;
-          frog_value_0 = l4;
-          frog_value_1 = 9223372036854775807;
-          frog_value_2 = l3;
-          frog_value_1 = frog_value_1 - frog_value_2;
-          frog_value_0 = frog_value_0 <= frog_value_1;
+          frog_value_0 = l3;
+          frog_value_1 = 0;
+          frog_value_0 = frog_value_0 > frog_value_1;
           if (frog_value_0 != 0) {
-            frog_value_0 = l2;
-            {
-              frog_value_0 = frog_proc_300_cc_2Ddebug_2Dtracing(frog_value_0);
+            frog_value_0 = l4;
+            frog_value_1 = 9223372036854775807;
+            frog_value_2 = l3;
+            frog_value_1 = frog_value_1 - frog_value_2;
+            frog_value_0 = frog_value_0 <= frog_value_1;
+          } else {
+            frog_value_0 = l3;
+            frog_value_1 = 0;
+            frog_value_0 = frog_value_0 < frog_value_1;
+            if (frog_value_0 != 0) {
+              frog_value_0 = l4;
+              frog_value_1 = INT64_MIN;
+              frog_value_2 = l3;
+              frog_value_1 = frog_value_1 - frog_value_2;
+              frog_value_0 = frog_value_0 >= frog_value_1;
+            } else {
+              frog_value_0 = 1;
             }
+          }
+          {
+            Cell l5 = frog_value_0;
+            (void)l5;
+            frog_value_0 = l5;
             if (frog_value_0 != 0) {
               frog_value_0 = l2;
               {
-                frog_value_0 = frog_proc_265__40cc_2Dmax_2Dtype_2Dcount(frog_value_0);
+                frog_value_0 = frog_proc_300_cc_2Ddebug_2Dtracing(frog_value_0);
               }
-              {
-                Cell l5 = frog_value_0;
-                (void)l5;
+              if (frog_value_0 != 0) {
                 frog_value_0 = l2;
-                frog_value_1 = l1;
                 {
-                  frog_value_0 = frog_proc_571_compile_2Dtoken(frog_value_0, frog_value_1);
+                  frog_value_0 = frog_proc_265__40cc_2Dmax_2Dtype_2Dcount(frog_value_0);
                 }
                 {
                   Cell l6 = frog_value_0;
                   (void)l6;
-                }
-                frog_value_0 = l2;
-                frog_value_1 = l1;
-                frog_value_2 = 1;
-                frog_value_1 = frog_value_1 + frog_value_2;
-                {
-                  frog_value_0 = frog_proc_571_compile_2Dtoken(frog_value_0, frog_value_1);
-                }
-                {
-                  Cell l7 = frog_value_0;
-                  (void)l7;
-                }
-                frog_value_0 = l2;
-                frog_value_1 = l1;
-                frog_value_2 = 2;
-                frog_value_1 = frog_value_1 + frog_value_2;
-                {
-                  frog_value_0 = frog_proc_571_compile_2Dtoken(frog_value_0, frog_value_1);
-                }
-                {
-                  Cell l8 = frog_value_0;
-                  (void)l8;
-                }
-                frog_value_0 = l2;
-                {
-                  frog_value_0 = frog_proc_254__40cc_2Dtype_2Dcount(frog_value_0);
-                }
-                frog_value_1 = l5;
-                frog_value_0 = frog_value_0 > frog_value_1;
-                if (frog_value_0 != 0) {
+                  frog_value_0 = l2;
+                  frog_value_1 = l1;
+                  {
+                    frog_value_0 = frog_proc_571_compile_2Dtoken(frog_value_0, frog_value_1);
+                  }
+                  {
+                    Cell l7 = frog_value_0;
+                    (void)l7;
+                  }
+                  frog_value_0 = l2;
+                  frog_value_1 = l1;
+                  frog_value_2 = 1;
+                  frog_value_1 = frog_value_1 + frog_value_2;
+                  {
+                    frog_value_0 = frog_proc_571_compile_2Dtoken(frog_value_0, frog_value_1);
+                  }
+                  {
+                    Cell l8 = frog_value_0;
+                    (void)l8;
+                  }
+                  frog_value_0 = l2;
+                  frog_value_1 = l1;
+                  frog_value_2 = 2;
+                  frog_value_1 = frog_value_1 + frog_value_2;
+                  {
+                    frog_value_0 = frog_proc_571_compile_2Dtoken(frog_value_0, frog_value_1);
+                  }
+                  {
+                    Cell l9 = frog_value_0;
+                    (void)l9;
+                  }
                   frog_value_0 = l2;
                   {
                     frog_value_0 = frog_proc_254__40cc_2Dtype_2Dcount(frog_value_0);
                   }
-                } else {
-                  frog_value_0 = l5;
+                  frog_value_1 = l6;
+                  frog_value_0 = frog_value_0 > frog_value_1;
+                  if (frog_value_0 != 0) {
+                    frog_value_0 = l2;
+                    {
+                      frog_value_0 = frog_proc_254__40cc_2Dtype_2Dcount(frog_value_0);
+                    }
+                  } else {
+                    frog_value_0 = l6;
+                  }
+                  frog_value_1 = l2;
+                  {
+                    frog_proc_284__21cc_2Dmax_2Dtype_2Dcount(frog_value_0, frog_value_1);
+                  }
                 }
-                frog_value_1 = l2;
+              } else {
+                frog_value_0 = l2;
+                frog_value_1 = 1;
                 {
-                  frog_proc_284__21cc_2Dmax_2Dtype_2Dcount(frog_value_0, frog_value_1);
+                  frog_proc_304_type_2Dpush(frog_value_0, frog_value_1);
+                }
+                frog_value_0 = l2;
+                frog_value_1 = l4;
+                frog_value_2 = l3;
+                frog_value_1 = frog_value_1 + frog_value_2;
+                {
+                  frog_proc_507_emit_2Dpush_2Dinteger(frog_value_0, frog_value_1);
                 }
               }
+              frog_value_0 = 1;
             } else {
-              frog_value_0 = l2;
-              frog_value_1 = 1;
-              {
-                frog_proc_304_type_2Dpush(frog_value_0, frog_value_1);
-              }
-              frog_value_0 = l2;
-              frog_value_1 = l4;
-              frog_value_2 = l3;
-              frog_value_1 = frog_value_1 + frog_value_2;
-              {
-                frog_proc_507_emit_2Dpush_2Dinteger(frog_value_0, frog_value_1);
-              }
+              frog_value_0 = 0;
             }
-            frog_value_0 = 1;
-          } else {
-            frog_value_0 = 0;
           }
         }
       } else {

@@ -176,6 +176,9 @@ Commands:
 - Character literals contain one raw Unicode codepoint; `\'` is the only
   character escape and represents a single quote. Preserve raw `'\'` as the
   backslash character and keep other backslash spellings invalid.
+- Integer literals accept an optional leading `+` or `-` in decimal, binary,
+  octal, and hexadecimal forms. They cover the complete signed 64-bit range;
+  standalone `+` and `-` remain arithmetic words.
 - The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.

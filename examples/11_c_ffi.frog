@@ -12,7 +12,7 @@ c-call allocate malloc CSize -- CPtr end
 c-call release free CPtr -- end
 
 proc main -- do
-    0 42 - magnitude print
+    -42 magnitude print
     "frog" String.bytes length print
     32 allocate release
 end

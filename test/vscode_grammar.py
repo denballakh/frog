@@ -29,6 +29,7 @@ def main() -> None:
     assert sum(pattern.get('include') == '#literals' for pattern in root_patterns) == 1
     root_includes = [pattern.get('include') for pattern in root_patterns]
     assert root_includes.index('#special') < root_includes.index('#types')
+    assert root_includes.index('#literals') < root_includes.index('#operators')
 
     repository = dictionary(grammar['repository'])
     literals = dictionary(repository['literals'])
@@ -137,16 +138,27 @@ def main() -> None:
     numeric_pattern = numeric['match']
     assert isinstance(numeric_pattern, str)
     numeric_regex = re.compile(numeric_pattern)
-    for spelling in ('0', '123', '0b111', '0o222', '0x333', '0xAbCd'):
+    for spelling in (
+        '0',
+        '123',
+        '-7',
+        '+7',
+        '0b111',
+        '-0b111',
+        '+0o222',
+        '0x333',
+        '-0x333',
+        '+0xAbCd',
+    ):
         assert numeric_regex.fullmatch(spelling), spelling
-    for spelling in ('0b', '0b2', '0o8', '0x', '0xg'):
+    for spelling in ('+', '-', '0b', '-0b', '0b2', '0o8', '0x', '+0x', '0xg'):
         assert numeric_regex.fullmatch(spelling) is None, spelling
-    for source in ('0x1.2', '0b1-foo', 'name-123', '123abc'):
+    for source in ('0x1.2', '-0x1.2', '0b1-foo', 'name-123', 'name+123', '123abc'):
         assert numeric_regex.search(source) is None, source
 
-    after_string = numeric_regex.search('"value"0x2a ')
+    after_string = numeric_regex.search('"value"-0x2a ')
     assert after_string is not None
-    assert after_string.group() == '0x2a'
+    assert after_string.group() == '-0x2a'
 
 
 if __name__ == '__main__':

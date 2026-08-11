@@ -682,35 +682,40 @@ proc integer-literal-base ptr int int -- int do
     end
 end
 
-proc parse-integer ptr int int int -- int do
-    let source start length base do
+proc parse-integer ptr int int int bool -- int do
+    let source start length base negative do
         if length 0 == do
             "invalid integer literal" fail
         end
-        0 0
-        while
-            peek index value do index length <
-            end
-        do
-            let index value do
-                source start index + byte-read digit-value
-                let digit do
-                    if digit 0 < digit base >= || do
-                        "invalid integer literal" fail
+        if negative do min-int else 0 max-int - end
+        let limit do
+            0 0
+            while
+                peek index value do index length <
+                end
+            do
+                let index value do
+                    source start index + byte-read digit-value
+                    let digit do
+                        if digit 0 < digit base >= || do
+                            "invalid integer literal" fail
+                        end
+                        if
+                            value limit base / <
+                            value limit base / ==
+                            digit 0 limit base % - > && ||
+                        do
+                            "integer literal exceeds the signed 64-bit range" fail
+                        end
+                        index 1 +
+                        value base * digit -
                     end
-                    if
-                        value max-int base / >
-                        value max-int base / ==
-                        digit max-int base % > && ||
-                    do
-                        "integer literal exceeds the signed 64-bit range" fail
-                    end
-                    index 1 +
-                    value base * digit +
                 end
             end
+            let index value do
+                if negative do value else 0 value - end
+            end
         end
-        let index value do value end
     end
 end
 
@@ -720,15 +725,34 @@ proc classify-word ptr int int -- int int do
             token-bool 1
         elif source start + length "false" bytes-equal-string do
             token-bool 0
-        elif source start length all-digits do
-            token-int source start length 10 parse-integer
         else
-            source start length integer-literal-base
-            let base do
-                if base 0 > do
-                    token-int source start 2 + length 2 - base parse-integer
-                else
-                    token-word 0
+            if
+                length 1 >
+                source start byte-read 43 ==
+                source start byte-read 45 == || &&
+            do
+                1
+            else
+                0
+            end
+            let sign-length do
+                sign-length 1 == source start byte-read 45 == &&
+                let negative do
+                    start sign-length + length sign-length -
+                    let literal-start literal-length do
+                        if source literal-start literal-length all-digits do
+                            token-int source literal-start literal-length 10 negative parse-integer
+                        else
+                            source literal-start literal-length integer-literal-base
+                            let base do
+                                if base 0 > do
+                                    token-int source literal-start 2 + literal-length 2 - base negative parse-integer
+                                else
+                                    token-word 0
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -7880,27 +7904,36 @@ proc try-compile-constant-add ptr int int -- bool do
             cc @cc-defining-module token-index token-value-at
             cc @cc-defining-module token-index 1 + token-value-at
             let left right do
-                if left max-int right - <= do
-                    if cc cc-debug-tracing do
-                        cc @cc-max-type-count
-                        let previous-maximum do
-                            cc token-index compile-token drop
-                            cc token-index 1 + compile-token drop
-                            cc token-index 2 + compile-token drop
-                            if cc @cc-type-count previous-maximum > do
-                                cc @cc-type-count
-                            else
-                                previous-maximum
-                            end
-                            cc !cc-max-type-count
-                        end
-                    else
-                        cc type-int type-push
-                        cc left right + emit-push-integer
-                    end
-                    true
+                if right 0 > do
+                    left max-int right - <=
+                elif right 0 < do
+                    left min-int right - >=
                 else
-                    false
+                    true
+                end
+                let fits do
+                    if fits do
+                        if cc cc-debug-tracing do
+                            cc @cc-max-type-count
+                            let previous-maximum do
+                                cc token-index compile-token drop
+                                cc token-index 1 + compile-token drop
+                                cc token-index 2 + compile-token drop
+                                if cc @cc-type-count previous-maximum > do
+                                    cc @cc-type-count
+                                else
+                                    previous-maximum
+                                end
+                                cc !cc-max-type-count
+                            end
+                        else
+                            cc type-int type-push
+                            cc left right + emit-push-integer
+                        end
+                        true
+                    else
+                        false
+                    end
                 end
             end
         else

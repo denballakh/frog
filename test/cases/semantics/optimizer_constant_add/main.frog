@@ -5,9 +5,14 @@ proc main -- do
     0x10 0b10 + print
     1 2 dynamic-add print
     constant-add print
+    5 -2 + print
+    -5 +2 + print
+    0 -9223372036854775808 + print
 
     if false do
         9223372036854775807 1 + drop
+        -9223372036854775808 -1 + drop
+        -1 -9223372036854775808 + drop
     end
 end
 

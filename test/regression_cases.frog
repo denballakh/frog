@@ -35,7 +35,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/imports/builtins_explicit/main.frog" "test/cases/imports/builtins_explicit" "42\n" "" 0 "" "" "" "imports/builtins_explicit" context frog-run-case
         "test/cases/semantics/bool_cast/main.frog" "test/cases/semantics/bool_cast" "1\n0\n1\n" "" 0 "" "" "" "semantics/bool_cast" context frog-run-case
         "test/cases/semantics/integer_max/main.frog" "test/cases/semantics/integer_max" "9223372036854775807\n" "" 0 "" "" "" "semantics/integer_max" context frog-run-case
-        "test/cases/semantics/integer_bases/main.frog" "test/cases/semantics/integer_bases" "0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n" "" 0 "" "" "" "semantics/integer_bases" context frog-run-case
+        "test/cases/semantics/integer_bases/main.frog" "test/cases/semantics/integer_bases" "0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n-7\n7\n0\n0\n-7\n7\n-146\n146\n-819\n43981\n9223372036854775807\n-9223372036854775808\n-9223372036854775808\n-9223372036854775808\n-9223372036854775808\n" "" 0 "" "" "" "semantics/integer_bases" context frog-run-case
         "test/cases/semantics/builtins_shadow/main.frog" "test/cases/semantics/builtins_shadow" "42\n7\n2\n1\n6\n99\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n" "" 0 "" "" "" "semantics/builtins_shadow" context frog-run-case
         "test/cases/semantics/macro_shadow/main.frog" "test/cases/semantics/macro_shadow" "11\n21\n31\n" "" 0 "" "" "" "semantics/macro_shadow" context frog-run-case
         "test/cases/semantics/characters/main.frog" "test/cases/semantics/characters" "65\n233\n8364\n128512\n92\n39\n" "" 0 "" "" "" "semantics/characters" context frog-run-case
@@ -47,7 +47,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/semantics/unions_layout/main.frog" "test/cases/semantics/unions_layout" "true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n" "" 0 "" "" "" "semantics/unions_layout" context frog-run-case
         "test/cases/semantics/functions_layout/main.frog" "test/cases/semantics/functions_layout" "42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n11\n22\n99\n11\n22\n77\n17\n" "" 0 "test/cases/semantics/functions_layout/helper.c" "" "" "semantics/functions_layout" context frog-run-case
         "test/cases/semantics/functions_macro_shadow/main.frog" "test/cases/semantics/functions_macro_shadow" "99\n" "" 0 "" "" "" "semantics/functions_macro_shadow" context frog-run-case
-        "test/cases/semantics/optimizer_constant_add/main.frog" "test/cases/semantics/optimizer_constant_add" "5\n18\n3\n9\n" "" 0 "" "" "" "semantics/optimizer_constant_add" context frog-run-case
+        "test/cases/semantics/optimizer_constant_add/main.frog" "test/cases/semantics/optimizer_constant_add" "5\n18\n3\n9\n3\n-3\n-9223372036854775808\n" "" 0 "" "" "" "semantics/optimizer_constant_add" context frog-run-case
         "test/cases/semantics/optimizer_macro_shadow/main.frog" "test/cases/semantics/optimizer_macro_shadow" "41\n" "" 0 "" "" "" "semantics/optimizer_macro_shadow" context frog-run-case
         "test/cases/semantics/type_stack_growth/main.frog" "test/cases/semantics/type_stack_growth" "42\n" "" 0 "" "" "" "semantics/type_stack_growth" context frog-run-case
         "test/cases/semantics/procedure_symbols/main.frog" "test/cases/semantics/procedure_symbols" "" "" 0 "" "" "" "semantics/procedure_symbols" context frog-run-case
@@ -153,6 +153,10 @@ proc run-regression-cases FrogTestContext -- do
         "proc main -- do 0b1000000000000000000000000000000000000000000000000000000000000000 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_binary_overflow" context frog-error-source
         "proc main -- do 0o1000000000000000000000 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_octal_overflow" context frog-error-source
         "proc main -- do 0x8000000000000000 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_hex_overflow" context frog-error-source
+        "proc main -- do +9223372036854775808 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_explicit_positive_overflow" context frog-error-source
+        "proc main -- do -9223372036854775809 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_negative_overflow" context frog-error-source
+        "proc main -- do -0x8000000000000001 print end\n" "test/cases/semantics" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_negative_hex_overflow" context frog-error-source
+        "proc main -- do -0x print end\n" "test/cases/semantics" "frogc: invalid integer literal\n" "semantics-error/integer_negative_hex_missing_digits" context frog-error-source
         "proc main -- do '\x80' drop end\n" "test/cases/semantics" "frogc: invalid character literal\n" "semantics-error/character_malformed_utf8" context frog-error-source
         "proc main -- do '\xE2\x82' drop end\n" "test/cases/semantics" "frogc: invalid character literal\n" "semantics-error/character_truncated_utf8" context frog-error-source
         "proc main -- do if true end end\n" "test/cases/semantics" "frogc: if requires do before end\n" "semantics-error/if_without_do" context frog-error-source

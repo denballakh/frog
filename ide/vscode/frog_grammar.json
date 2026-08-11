@@ -7,8 +7,8 @@
     { "include": "#special" },
     { "include": "#types" },
     { "include": "#punctiation" },
-    { "include": "#operators" },
-    { "include": "#literals" }
+    { "include": "#literals" },
+    { "include": "#operators" }
   ],
   "repository": {
     "comments": {
@@ -87,7 +87,7 @@
           ]
         },
         {
-          "match": "(?:(?<=[\"'])|(?<!\\S))(?:0b[01]+|0o[0-7]+|0x[0-9A-Fa-f]+|[0-9]+)(?!\\S)",
+          "match": "(?:(?<=[\"'])|(?<!\\S))[+-]?(?:0b[01]+|0o[0-7]+|0x[0-9A-Fa-f]+|[0-9]+)(?!\\S)",
           "name": "constant.numeric.frog"
         },
         {
