@@ -2,6 +2,8 @@
 
 FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
+Compiler errors are written to standard error and start with `frogc:`. When an ordinary source word fails static stack or operand checks, the diagnostic includes that word's source spelling, for example `frogc: +: compile-time stack underflow`. A failure inside macro expansion is attributed to the outer source word that invoked the expansion.
+
 ## Values And Literals
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, `String`, nominal record and union handles, nominal function references, and `type`.

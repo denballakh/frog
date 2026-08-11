@@ -10,12 +10,12 @@ proc run-inline-cases FrogTestContext -- do
 
         // basics (7)
         "1 2 + print" "3\n" "" 0 "code/basics/01" context frog-inline-run-body
-        "1 + print" "frogc: compile-time stack underflow\n" 1 "code/basics/02" context frog-inline-error-body
+        "1 + print" "frogc: +: compile-time stack underflow\n" 1 "code/basics/02" context frog-inline-error-body
         "1 2 +" "frogc: procedure output stack depth mismatch\n" 1 "code/basics/03" context frog-inline-error-body
         "? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?" "10\n" "" 0 "code/basics/04" context frog-inline-run-body
-        "+" "frogc: compile-time stack underflow\n" 1 "code/basics/05" context frog-inline-error-body
-        "~" "frogc: compile-time stack underflow\n" 1 "code/basics/06" context frog-inline-error-body
-        "/%" "frogc: compile-time stack underflow\n" 1 "code/basics/07" context frog-inline-error-body
+        "+" "frogc: +: compile-time stack underflow\n" 1 "code/basics/05" context frog-inline-error-body
+        "~" "frogc: ~: compile-time stack underflow\n" 1 "code/basics/06" context frog-inline-error-body
+        "/%" "frogc: /%: compile-time stack underflow\n" 1 "code/basics/07" context frog-inline-error-body
 
         // arithmetic (13)
         "25 7 + print" "32\n" "" 0 "code/arithmetic/01" context frog-inline-run-body
@@ -35,16 +35,16 @@ proc run-inline-cases FrogTestContext -- do
         "25 ~ print" "-26\n" "" 0 "code/arithmetic/13" context frog-inline-run-body
 
         // int_bool_type_errors (10)
-        "true 5 + print" "frogc: invalid operand types for pointer/integer arithmetic\n" 1 "code/int_bool_type_errors/01" context frog-inline-error-body
-        "true 5 * print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/02" context frog-inline-error-body
-        "true 5 % print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/03" context frog-inline-error-body
-        "true 5 | print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/04" context frog-inline-error-body
-        "true 5 << print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/05" context frog-inline-error-body
-        "true 5 && print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/06" context frog-inline-error-body
-        "true 5 ! print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/07" context frog-inline-error-body
-        "true 5 swap ~ print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/08" context frog-inline-error-body
-        "true 5 == print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/09" context frog-inline-error-body
-        "true 5 < print" "frogc: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/10" context frog-inline-error-body
+        "true 5 + print" "frogc: +: invalid operand types for pointer/integer arithmetic\n" 1 "code/int_bool_type_errors/01" context frog-inline-error-body
+        "true 5 * print" "frogc: *: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/02" context frog-inline-error-body
+        "true 5 % print" "frogc: %: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/03" context frog-inline-error-body
+        "true 5 | print" "frogc: |: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/04" context frog-inline-error-body
+        "true 5 << print" "frogc: <<: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/05" context frog-inline-error-body
+        "true 5 && print" "frogc: &&: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/06" context frog-inline-error-body
+        "true 5 ! print" "frogc: !: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/07" context frog-inline-error-body
+        "true 5 swap ~ print" "frogc: ~: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/08" context frog-inline-error-body
+        "true 5 == print" "frogc: ==: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/09" context frog-inline-error-body
+        "true 5 < print" "frogc: <: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/10" context frog-inline-error-body
 
         // booleans (4)
         "true false && print" "false\n" "" 0 "code/booleans/01" context frog-inline-run-body
@@ -89,12 +89,12 @@ proc run-inline-cases FrogTestContext -- do
 4
 3
 " "" 0 "code/stack_intrinsics/08" context frog-inline-run-body
-        "print" "frogc: compile-time stack underflow\n" 1 "code/stack_intrinsics/09" context frog-inline-error-body
+        "print" "frogc: print: compile-time stack underflow\n" 1 "code/stack_intrinsics/09" context frog-inline-error-body
         "?" "" "" 0 "code/stack_intrinsics/10" context frog-inline-run-body
-        "dup" "frogc: compile-time stack underflow\n" 1 "code/stack_intrinsics/11" context frog-inline-error-body
-        "swap" "frogc: compile-time stack underflow\n" 1 "code/stack_intrinsics/12" context frog-inline-error-body
-        "drop" "frogc: compile-time stack underflow\n" 1 "code/stack_intrinsics/13" context frog-inline-error-body
-        "rot" "frogc: compile-time stack underflow\n" 1 "code/stack_intrinsics/14" context frog-inline-error-body
+        "dup" "frogc: dup: compile-time stack underflow\n" 1 "code/stack_intrinsics/11" context frog-inline-error-body
+        "swap" "frogc: swap: compile-time stack underflow\n" 1 "code/stack_intrinsics/12" context frog-inline-error-body
+        "drop" "frogc: drop: compile-time stack underflow\n" 1 "code/stack_intrinsics/13" context frog-inline-error-body
+        "rot" "frogc: rot: compile-time stack underflow\n" 1 "code/stack_intrinsics/14" context frog-inline-error-body
 
         // if_blocks (28)
         "1 2 == if do 5 else 7 end print" "frogc: if or while requires a condition before do\n" 1 "code/if_blocks/01" context frog-inline-error-body
@@ -214,12 +214,12 @@ end
         "proc a int -- int do 2 * end" "5 a print" "" "10\n" "" 0 "code/procedures/01" context frog-inline-run-source
         "proc a do 2 * end" "" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/02" context frog-inline-error-source
         "proc a int do 2 * end" "" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/03" context frog-inline-error-source
-        "proc a -- do 2 * end" "" "" "frogc: compile-time stack underflow\n" 1 "code/procedures/04" context frog-inline-error-source
+        "proc a -- do 2 * end" "" "" "frogc: *: compile-time stack underflow\n" 1 "code/procedures/04" context frog-inline-error-source
         "proc a int -- do 2 * end" "" "" "frogc: procedure output stack depth mismatch\n" 1 "code/procedures/05" context frog-inline-error-source
         "proc a int -- int int do 2 * end" "" "" "frogc: procedure output stack depth mismatch\n" 1 "code/procedures/06" context frog-inline-error-source
         "proc a int -- int do drop 5 end" "5 a print" "" "5\n" "" 0 "code/procedures/07" context frog-inline-run-source
-        "proc a bool -- int do drop 5 end" "5 a print" "" "frogc: compile-time stack type mismatch\n" 1 "code/procedures/08" context frog-inline-error-source
-        "proc a int int -- int do + end" "5 a print" "" "frogc: compile-time stack underflow\n" 1 "code/procedures/09" context frog-inline-error-source
+        "proc a bool -- int do drop 5 end" "5 a print" "" "frogc: a: compile-time stack type mismatch\n" 1 "code/procedures/08" context frog-inline-error-source
+        "proc a int int -- int do + end" "5 a print" "" "frogc: a: compile-time stack underflow\n" 1 "code/procedures/09" context frog-inline-error-source
         "proc a x -- y do + end" "5 a print" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/10" context frog-inline-error-source
         "proc a int int -- int do + end" "5 7 a print" "" "12\n" "" 0 "code/procedures/11" context frog-inline-run-source
         "proc ++ int -- int do 1 + end" "5 ++ print" "" "6\n" "" 0 "code/procedures/12" context frog-inline-run-source

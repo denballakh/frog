@@ -180,6 +180,7 @@ Commands:
 - Frog `int` is an `int64_t` cell in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.
+- Static stack and operand failures caused by ordinary words use `frogc: <source-word>: <message>`. Preserve the outer source spelling across nested macro expansion.
 - Keep ordinary language and compiler test declarations in Frog manifests. Python tests are reserved for host policies that Frog cannot conveniently control itself.
 - Do not treat generated `.c` or `.exe` files as authoritative source, except for the intentional bootstrap seed `compiler/frogc.c`. Other generated files remain disposable build/test artifacts.
 - CLI `build` intentionally writes outputs directly and provides no locking, rollback transaction, or path-alias validation. Users are responsible for choosing distinct input and output paths.

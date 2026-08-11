@@ -2738,7 +2738,10 @@ const cc-scope-module-offset 96 end
 const cc-emitting-offset 104 end
 const cc-max-type-count-offset 112 end
 const cc-type-capacity-offset 120 end
-const cc-bytes 128 end
+const cc-diagnostic-module-offset 128 end
+const cc-diagnostic-token-offset 136 end
+const cc-diagnostic-active-offset 144 end
+const cc-bytes 152 end
 
 const block-if 1 end
 const block-while 2 end
@@ -2780,6 +2783,9 @@ proc @cc-scope-module ptr -- ModuleContext do cc-scope-module-offset pointer-fie
 proc @cc-emitting ptr -- bool do cc-emitting-offset field-read 0 != end
 proc @cc-max-type-count ptr -- int do cc-max-type-count-offset field-read end
 proc @cc-type-capacity ptr -- int do cc-type-capacity-offset field-read end
+proc @cc-diagnostic-module ptr -- ModuleContext do cc-diagnostic-module-offset pointer-field-read ModuleContext cast end
+proc @cc-diagnostic-token ptr -- int do cc-diagnostic-token-offset field-read end
+proc @cc-diagnostic-active ptr -- bool do cc-diagnostic-active-offset field-read 0 != end
 
 proc !cc-defining-module ModuleContext ptr -- do let value cc do value ptr cast cc cc-defining-module-offset pointer-field-write end end
 proc !cc-proc int ptr -- do cc-proc-offset field-write end
@@ -2802,6 +2808,29 @@ proc !cc-emitting bool ptr -- do
 end
 proc !cc-max-type-count int ptr -- do cc-max-type-count-offset field-write end
 proc !cc-type-capacity int ptr -- do cc-type-capacity-offset field-write end
+proc !cc-diagnostic-module ModuleContext ptr -- do let value cc do value ptr cast cc cc-diagnostic-module-offset pointer-field-write end end
+proc !cc-diagnostic-token int ptr -- do cc-diagnostic-token-offset field-write end
+proc !cc-diagnostic-active bool ptr -- do
+    let value cc do
+        if value do 1 else 0 end
+        cc cc-diagnostic-active-offset field-write
+    end
+end
+
+proc fail-compile-word ptr String -- do
+    let cc message do
+        if cc @cc-diagnostic-active do
+            "frogc: " emit-error
+            cc @cc-diagnostic-module cc @cc-diagnostic-token token-slice emit-error-bytes
+            ": " emit-error
+            message emit-error
+            10 eputc
+            1 exit
+        else
+            message fail
+        end
+    end
+end
 
 proc cc-type-address ptr int -- ptr do
     let cc index do
@@ -2848,7 +2877,7 @@ end
 proc type-pop ptr -- int do
     let cc do
         if cc @cc-type-count 0 <= do
-            "compile-time stack underflow" fail
+            cc "compile-time stack underflow" fail-compile-word
         end
         cc @cc-type-count 1 -
         peek index do cc !cc-type-count
@@ -2860,7 +2889,7 @@ end
 proc type-expect ptr int -- do
     let cc expected do
         if cc type-pop expected != do
-            "compile-time stack type mismatch" fail
+            cc "compile-time stack type mismatch" fail-compile-word
         end
     end
 end
@@ -5780,7 +5809,7 @@ proc compile-add-sub ptr bool -- do
                 if left-type type-ptr == right-type type-int == && do
                     cc type-ptr type-push
                 else
-                    "invalid operand types for pointer/integer arithmetic" fail
+                    cc "invalid operand types for pointer/integer arithmetic" fail-compile-word
                 end
             end
             if subtract do
@@ -5880,7 +5909,7 @@ proc compile-cast-intrinsic ptr -- do
                     target-type type-is-function ||
                     !
                 do
-                    "cast target is not a type literal" fail
+                    cc "cast target is not a type literal" fail-compile-word
                 end
                 if
                     source-type target-type ==
@@ -5892,7 +5921,7 @@ proc compile-cast-intrinsic ptr -- do
                     source-type type-is-nominal target-type type-ptr == && ||
                     !
                 do
-                    "unsupported cast" fail
+                    cc "unsupported cast" fail-compile-word
                 end
                 cc target-type type-push
                 if source-type type-int == target-type type-bool == && do
@@ -6050,7 +6079,7 @@ proc compile-memory-io-intrinsic ptr int -- bool do
                         " ? \"true\\n\" : \"false\\n\", stdout);" emit 10 putc
                     end
                 else
-                    "printing this type is not supported" fail
+                    cc "printing this type is not supported" fail-compile-word
                 end
             end
             true
@@ -7218,51 +7247,60 @@ end
 
 proc compile-ordinary-word ptr int -- do
     let cc token-index do
-        cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
-        let symbol-index do
-            cc token-index token-resolves-to-macro
-            let is-macro do
-            if is-macro do
-                cc
-                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
-                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
-                compile-macro
-            elif cc token-index compile-type-word do
-            elif cc token-index compile-string-word do
-            elif cc token-index compile-record-word do
-            elif cc token-index compile-union-word do
-            elif cc token-index compile-function-word do
-            elif cc token-index compile-intrinsic do
-            else
-                cc token-index find-local
-                let local-index do
-                    if local-index 0 >= do
-                        cc token-index local-index compile-local-reference
-                    else
-                        if symbol-index 0 >= do
-                            if cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-constant == do
-                                cc
-                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
-                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
-                                compile-constant
-                            elif cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
-                                "unknown word" fail
-                            else
-                                cc
-                                token-index
-                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
-                                cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
-                                compile-procedure-call
-                            end
+        cc @cc-diagnostic-active
+        let diagnostic-active do
+            if diagnostic-active ! do
+                cc @cc-defining-module cc !cc-diagnostic-module
+                token-index cc !cc-diagnostic-token
+                true cc !cc-diagnostic-active
+            end
+            cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
+            let symbol-index do
+                cc token-index token-resolves-to-macro
+                let is-macro do
+                if is-macro do
+                    cc
+                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
+                    compile-macro
+                elif cc token-index compile-type-word do
+                elif cc token-index compile-string-word do
+                elif cc token-index compile-record-word do
+                elif cc token-index compile-union-word do
+                elif cc token-index compile-function-word do
+                elif cc token-index compile-intrinsic do
+                else
+                    cc token-index find-local
+                    let local-index do
+                        if local-index 0 >= do
+                            cc token-index local-index compile-local-reference
                         else
-                            if cc token-index compile-prelude-macro ! do
-                                "unknown word" fail
+                            if symbol-index 0 >= do
+                                if cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-constant == do
+                                    cc
+                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
+                                    compile-constant
+                                elif cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
+                                    "unknown word" fail
+                                else
+                                    cc
+                                    token-index
+                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
+                                    compile-procedure-call
+                                end
+                            else
+                                if cc token-index compile-prelude-macro ! do
+                                    "unknown word" fail
+                                end
                             end
                         end
                     end
                 end
+                end
             end
-            end
+            if diagnostic-active ! do false cc !cc-diagnostic-active end
         end
     end
 end
@@ -7447,6 +7485,7 @@ proc create-compile-context ptr ModuleContext int -- ptr do
             0 cc !cc-indent
             false cc !cc-emitting
             0 cc !cc-max-type-count
+            false cc !cc-diagnostic-active
             cc
         end
     end

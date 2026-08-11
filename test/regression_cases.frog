@@ -91,11 +91,11 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/imports/unions_collision/main.frog" "test/cases/imports/unions_collision" "frogc: import alias conflict\n" "imports-error/unions_collision" context frog-error-fixture
         "test/cases/imports/unions_alias_reserved/main.frog" "test/cases/imports/unions_alias_reserved" "frogc: invalid imported name\n" "imports-error/unions_alias_reserved" context frog-error-fixture
         "test/cases/imports/unions_alias_invalid_identifier/main.frog" "test/cases/imports/unions_alias_invalid_identifier" "frogc: union import alias must be an identifier\n" "imports-error/unions_alias_invalid_identifier" context frog-error-fixture
-        "test/cases/imports/unions_nominal_mismatch/main.frog" "test/cases/imports/unions_nominal_mismatch" "frogc: compile-time stack type mismatch\n" "imports-error/unions_nominal_mismatch" context frog-error-fixture
+        "test/cases/imports/unions_nominal_mismatch/main.frog" "test/cases/imports/unions_nominal_mismatch" "frogc: unwrap: compile-time stack type mismatch\n" "imports-error/unions_nominal_mismatch" context frog-error-fixture
         "test/cases/imports/functions_alias_reserved/main.frog" "test/cases/imports/functions_alias_reserved" "frogc: invalid imported name\n" "imports-error/functions_alias_reserved" context frog-error-fixture
         "test/cases/imports/functions_alias_invalid_identifier/main.frog" "test/cases/imports/functions_alias_invalid_identifier" "frogc: function import alias must be an identifier\n" "imports-error/functions_alias_invalid_identifier" context frog-error-fixture
         "test/cases/imports/functions_alias_collision/main.frog" "test/cases/imports/functions_alias_collision" "frogc: import alias conflict\n" "imports-error/functions_alias_collision" context frog-error-fixture
-        "test/cases/imports/functions_nominal_mismatch/main.frog" "test/cases/imports/functions_nominal_mismatch" "frogc: compile-time stack type mismatch\n" "imports-error/functions_nominal_mismatch" context frog-error-fixture
+        "test/cases/imports/functions_nominal_mismatch/main.frog" "test/cases/imports/functions_nominal_mismatch" "frogc: ApplyImported:call: compile-time stack type mismatch\n" "imports-error/functions_nominal_mismatch" context frog-error-fixture
         "test/cases/semantics/integer_overflow/main.frog" "test/cases/semantics/integer_overflow" "frogc: integer literal exceeds the signed 64-bit range\n" "semantics-error/integer_overflow" context frog-error-fixture
         "test/cases/semantics/character_empty/main.frog" "test/cases/semantics/character_empty" "frogc: invalid character literal\n" "semantics-error/character_empty" context frog-error-fixture
         "test/cases/semantics/character_two_codepoints/main.frog" "test/cases/semantics/character_two_codepoints" "frogc: invalid character literal\n" "semantics-error/character_two_codepoints" context frog-error-fixture
@@ -157,23 +157,26 @@ proc run-regression-cases FrogTestContext -- do
         "extern main abs c-int -- c-int end\n" "test/cases/semantics" "frogc: main cannot be external\n" "semantics-error/extern_main" context frog-error-source
         "proc main -- do extern magnitude abs c-int -- c-int end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/extern_inside_proc" context frog-error-source
         "macro bad extern magnitude abs c-int -- c-int end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/extern_inside_macro" context frog-error-source
-        "extern magnitude abs c-int -- c-int end\nproc main -- do true magnitude drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/extern_contract_type" context frog-error-source
+        "extern magnitude abs c-int -- c-int end\nproc main -- do true magnitude drop end\n" "test/cases/semantics" "frogc: magnitude: compile-time stack type mismatch\n" "semantics-error/extern_contract_type" context frog-error-source
         "extern as-int abs c-int -- c-int end\nextern as-ptr abs c-int -- c-ptr end\nproc main -- do end\n" "test/cases/semantics" "frogc: incompatible declarations for C symbol\n" "semantics-error/extern_incompatible_contract" context frog-error-source
-        "record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc @Point.x drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/record_wrong_owner" context frog-error-source
-        "record Point x int end\nproc main -- do Point:alloc let point do true point !Point.x end end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/record_wrong_value" context frog-error-source
+        "macro outer dup end\nproc main -- do outer end\n" "test/cases/semantics" "frogc: outer: compile-time stack underflow\n" "diagnostics-error/nested_macro_word" context frog-error-source
+        "proc main -- do 1 2 cast drop end\n" "test/cases/semantics" "frogc: cast: cast target is not a type literal\n" "diagnostics-error/cast_target" context frog-error-source
+        "proc main -- do 0 ptr cast print end\n" "test/cases/semantics" "frogc: print: printing this type is not supported\n" "diagnostics-error/unsupported_print" context frog-error-source
+        "record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc @Point.x drop end\n" "test/cases/semantics" "frogc: @Point.x: compile-time stack type mismatch\n" "semantics-error/record_wrong_owner" context frog-error-source
+        "record Point x int end\nproc main -- do Point:alloc let point do true point !Point.x end end\n" "test/cases/semantics" "frogc: !Point.x: compile-time stack type mismatch\n" "semantics-error/record_wrong_value" context frog-error-source
         "record Point x int end\nproc main -- do Point:alloc @Point.y drop end\n" "test/cases/semantics" "frogc: unknown record field\n" "semantics-error/record_unknown_field" context frog-error-source
         "record Point x int end\nproc main -- do Point:alloc Point.x drop end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/record_legacy_getter" context frog-error-source
         "record Point x int end\nproc main -- do 1 Point:alloc Point.x! end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/record_legacy_setter" context frog-error-source
         "record Point x Missing end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown type in record field\n" "semantics-error/record_unknown_type" context frog-error-source
         "record Point x int x bool end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate record field: x\n" "semantics-error/record_duplicate_field" context frog-error-source
-        "record Point x int end\nproc main -- do 1 Point cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/record_unsupported_cast" context frog-error-source
+        "record Point x int end\nproc main -- do 1 Point cast drop end\n" "test/cases/semantics" "frogc: cast: unsupported cast\n" "semantics-error/record_unsupported_cast" context frog-error-source
         "union Maybe end\nproc main -- do end\n" "test/cases/semantics" "frogc: union must declare at least one variant\n" "semantics-error/union_empty" context frog-error-source
         "union Maybe case x case x end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate union variant: x\n" "semantics-error/union_duplicate_variant" context frog-error-source
         "union Maybe case some Missing end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown type in union variant\n" "semantics-error/union_unknown_type" context frog-error-source
         "union Maybe case pair int bool end\nproc main -- do end\n" "test/cases/semantics" "frogc: union variant may carry at most one value\n" "semantics-error/union_multiple_payloads" context frog-error-source
         "union Maybe case none end\nproc main -- do Maybe:other drop end\n" "test/cases/semantics" "frogc: unknown union variant\n" "semantics-error/union_unknown_variant" context frog-error-source
-        "union Maybe case some int end\nproc main -- do true Maybe:some drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/union_wrong_payload_type" context frog-error-source
-        "union Maybe case none end\nproc main -- do 1 Maybe cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/union_unsupported_cast" context frog-error-source
+        "union Maybe case some int end\nproc main -- do true Maybe:some drop end\n" "test/cases/semantics" "frogc: Maybe:some: compile-time stack type mismatch\n" "semantics-error/union_wrong_payload_type" context frog-error-source
+        "union Maybe case none end\nproc main -- do 1 Maybe cast drop end\n" "test/cases/semantics" "frogc: cast: unsupported cast\n" "semantics-error/union_unsupported_cast" context frog-error-source
         "proc main -- do union Maybe case none end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/union_inside_proc" context frog-error-source
         "macro bad union Maybe case none end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/union_inside_macro" context frog-error-source
         "union end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected union name\n" "semantics-error/union_missing_name" context frog-error-source
@@ -191,15 +194,15 @@ proc run-regression-cases FrogTestContext -- do
         "fn Mapper -- int" "test/cases/semantics" "frogc: expected end after function signature\n" "semantics-error/function_missing_end" context frog-error-source
         "proc main -- do fn Mapper -- end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/function_inside_proc" context frog-error-source
         "macro bad fn Mapper -- end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/function_inside_macro" context frog-error-source
-        "fn Mapper int -- int end\nproc inc int -- int do 1 + end\nproc main -- do true Mapper:ref:inc Mapper:call drop end\n" "test/cases/semantics" "frogc: compile-time stack type mismatch\n" "semantics-error/function_call_type_mismatch" context frog-error-source
-        "fn Mapper int -- int end\nproc main -- do 1 Mapper cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/function_unsupported_int_cast" context frog-error-source
-        "fn Mapper int -- int end\nproc main -- do 0 ptr cast Mapper cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/function_unsupported_ptr_cast" context frog-error-source
-        "fn First -- end\nfn Second -- end\nproc target -- do end\nproc main -- do First:ref:target Second cast drop end\n" "test/cases/semantics" "frogc: unsupported cast\n" "semantics-error/function_unsupported_function_cast" context frog-error-source
+        "fn Mapper int -- int end\nproc inc int -- int do 1 + end\nproc main -- do true Mapper:ref:inc Mapper:call drop end\n" "test/cases/semantics" "frogc: Mapper:call: compile-time stack type mismatch\n" "semantics-error/function_call_type_mismatch" context frog-error-source
+        "fn Mapper int -- int end\nproc main -- do 1 Mapper cast drop end\n" "test/cases/semantics" "frogc: cast: unsupported cast\n" "semantics-error/function_unsupported_int_cast" context frog-error-source
+        "fn Mapper int -- int end\nproc main -- do 0 ptr cast Mapper cast drop end\n" "test/cases/semantics" "frogc: cast: unsupported cast\n" "semantics-error/function_unsupported_ptr_cast" context frog-error-source
+        "fn First -- end\nfn Second -- end\nproc target -- do end\nproc main -- do First:ref:target Second cast drop end\n" "test/cases/semantics" "frogc: cast: unsupported cast\n" "semantics-error/function_unsupported_function_cast" context frog-error-source
         "fn Mapper -- end\nfn Mapper -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate function name: Mapper\n" "semantics-error/function_duplicate_name" context frog-error-source
         "record Mapper value int end\nfn Mapper -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate declaration name: Mapper\n" "semantics-error/function_declaration_collision" context frog-error-source
         "fn Pair int -- int int end\nproc one int -- int do end\nproc main -- do Pair:ref:one drop end\n" "test/cases/semantics" "frogc: function reference contract mismatch\n" "semantics-error/function_output_contract_mismatch" context frog-error-source
         "macro + 1 2 + end\nproc main -- do + drop end\n" "test/cases/semantics" "frogc: recursive macro expansion\n" "semantics-error/optimizer_recursive_macro_shadow" context frog-error-source
-        "proc main -- do 1 true + drop end\n" "test/cases/semantics" "frogc: invalid operand types for pointer/integer arithmetic\n" "semantics-error/optimizer_type_error" context frog-error-source
+        "proc main -- do 1 true + drop end\n" "test/cases/semantics" "frogc: +: invalid operand types for pointer/integer arithmetic\n" "semantics-error/optimizer_type_error" context frog-error-source
         "record String value int end\nproc main -- do end\n" "test/cases/strings" "frogc: invalid record name\n" "strings-error/reserved-string-record" context frog-error-source
         "union String case value end\nproc main -- do end\n" "test/cases/strings" "frogc: invalid union name\n" "strings-error/reserved-string-union" context frog-error-source
         "fn String -- end\nproc main -- do end\n" "test/cases/strings" "frogc: invalid function name\n" "strings-error/reserved-string-function" context frog-error-source
@@ -208,10 +211,9 @@ proc run-regression-cases FrogTestContext -- do
         "proc main -- do 1 let String do end end\n" "test/cases/strings" "frogc: String cannot be a local name\n" "strings-error/reserved-string-local" context frog-error-source
         "from \"lib.frog\" import shared as String\nproc main -- do end\n" "test/cases/strings" "frogc: invalid imported name\n" "strings-error/reserved-string-import" context frog-error-source
         "extern bad FrogString -- c-int end\nproc main -- do bad drop end\n" "test/cases/strings" "frogc: invalid C symbol\n" "strings-error/reserved-c-string-symbol" context frog-error-source
-        "proc main -- do \"x\" @u8 drop end\n" "test/cases/strings" "frogc: compile-time stack type mismatch\n" "strings-error/string-as-ptr" context frog-error-source
-        "proc main -- do \"x\" 1 + drop end\n" "test/cases/strings" "frogc: invalid operand types for pointer/integer arithmetic\n" "strings-error/string-as-int" context frog-error-source
+        "proc main -- do \"x\" @u8 drop end\n" "test/cases/strings" "frogc: @u8: compile-time stack type mismatch\n" "strings-error/string-as-ptr" context frog-error-source
+        "proc main -- do \"x\" 1 + drop end\n" "test/cases/strings" "frogc: +: invalid operand types for pointer/integer arithmetic\n" "strings-error/string-as-int" context frog-error-source
         context frog-large-path-error
         context frog-stable-string-symbol
     end
 end
-
