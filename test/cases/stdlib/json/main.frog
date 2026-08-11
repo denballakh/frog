@@ -172,23 +172,23 @@ proc main -- do
         value json-free
     end
 
-    "\x22\x22" parse
+    "\"\"" parse
     let value do
         value JsonValue.string? assert drop
         value "" assert-string
         value json-free
     end
-    "\x22\\\x22\\\\\\/\\b\\f\\n\\r\\t\x22" parse
+    "\"\\\"\\\\\\/\\b\\f\\n\\r\\t\"" parse
     let value do
-        value "\x22\\/\x08\x0c\n\r\t" assert-string
+        value "\"\\/\x08\x0c\n\r\t" assert-string
         value json-free
     end
-    "\x22\\u20AC\x22" parse
+    "\"\\u20AC\"" parse
     let value do
         value "\xE2\x82\xAC" assert-string
         value json-free
     end
-    "\x22\\uD83D\\uDE00\x22" parse
+    "\"\\uD83D\\uDE00\"" parse
     let value do
         value "\xF0\x9F\x98\x80" assert-string
         value json-free
@@ -206,7 +206,7 @@ proc main -- do
     "9223372036854775808" "9223372036854775808" assert-non-int-number
     "-9223372036854775809" "-9223372036854775809" assert-non-int-number
 
-    "[null,true,\x22x\x22,3]" parse
+    "[null,true,\"x\",3]" parse
     let array do
         array JsonValue.array? assert drop
         array 4 assert-array-length
@@ -235,7 +235,7 @@ proc main -- do
         array json-free
     end
 
-    "{\x22n\x22:null,\x22a\x22:[{\x22b\x22:\x22ok\x22}]}" parse
+    "{\"n\":null,\"a\":[{\"b\":\"ok\"}]}" parse
     let object do
         object JsonValue.object? assert drop
         object "n" json-object-get
@@ -261,7 +261,7 @@ proc main -- do
         object json-free
     end
 
-    "{\x22same\x22:1,\x22same\x22:2}" parse
+    "{\"same\":1,\"same\":2}" parse
     let object do
         object "same" json-object-get
         let child found do
@@ -283,18 +283,18 @@ proc main -- do
     "[]x" assert-reject
     "[1,]" assert-reject
     "[,1]" assert-reject
-    "{\x22a\x22:1,}" assert-reject
-    "{\x22a\x22 1}" assert-reject
+    "{\"a\":1,}" assert-reject
+    "{\"a\" 1}" assert-reject
     "[1" assert-reject
-    "{\x22a\x22:1" assert-reject
+    "{\"a\":1" assert-reject
     91 assert-one-byte-reject
     123 assert-one-byte-reject
-    "\x22\\x\x22" assert-reject
-    "\x22\\u12G4\x22" assert-reject
-    "\x22\\uD800\x22" assert-reject
-    "\x22\\uDC00\x22" assert-reject
-    "\x22\\uD800\\u0041\x22" assert-reject
-    "\x22raw\x01control\x22" dup String.bytes swap String.len assert-reject-bytes
+    "\"\\x\"" assert-reject
+    "\"\\u12G4\"" assert-reject
+    "\"\\uD800\"" assert-reject
+    "\"\\uDC00\"" assert-reject
+    "\"\\uD800\\u0041\"" assert-reject
+    "\"raw\x01control\"" dup String.bytes swap String.len assert-reject-bytes
     "01" assert-reject
     "-" assert-reject
     "1." assert-reject

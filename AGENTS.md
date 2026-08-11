@@ -170,6 +170,9 @@ Commands:
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
+- Character literals contain one raw Unicode codepoint; `\'` is the only
+  character escape and represents a single quote. Preserve raw `'\'` as the
+  backslash character and keep other backslash spellings invalid.
 - The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.

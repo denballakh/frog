@@ -54,6 +54,8 @@ def main() -> None:
     character_regex = re.compile(character_pattern)
     assert character_regex.fullmatch("'E'")
     assert character_regex.fullmatch("'é'")
+    assert character_regex.fullmatch(r"'\'")
+    assert character_regex.fullmatch(r"'\''")
     assert character_regex.fullmatch("''") is None
     assert character_regex.fullmatch("'EE'") is None
     assert character_regex.fullmatch("'\\n'") is None

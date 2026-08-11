@@ -108,7 +108,7 @@ proc http-token-byte? int -- bool do
         byte 36 == ||
         byte 37 == ||
         byte 38 == ||
-        byte 39 == ||
+        byte '\'' == ||
         byte 42 == ||
         byte 43 == ||
         byte 45 == ||

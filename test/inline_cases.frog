@@ -189,7 +189,7 @@ end
         "'aa'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/04" context frog-inline-error-body
         "'\\n'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/05" context frog-inline-error-body
         "'\\t'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/06" context frog-inline-error-body
-        "'\\''" "frogc: unterminated character literal\n" 1 "code/literals_and_comments/07" context frog-inline-error-body
+        "'\\'' print" "39\n" "" 0 "code/literals_and_comments/07" context frog-inline-run-body
         "\"" "frogc: unterminated string literal\n" 1 "code/literals_and_comments/08" context frog-inline-error-body
         "\"\" ? drop" "" "" 0 "code/literals_and_comments/09" context frog-inline-run-body
         "\"abc\" ? drop" "" "" 0 "code/literals_and_comments/10" context frog-inline-run-body

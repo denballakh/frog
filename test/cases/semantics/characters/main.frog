@@ -3,4 +3,6 @@ proc main -- do
     'é' print
     '€' print
     '😀' print
+    '\' print
+    '\'' print
 end

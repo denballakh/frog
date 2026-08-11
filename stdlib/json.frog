@@ -310,8 +310,8 @@ proc json-parser-string-escape JsonParser ByteBuffer -- bool do
             parser @JsonParser.bytes parser @JsonParser.index + @u8
             parser @JsonParser.index 1 + parser !JsonParser.index
             let escape do
-                if escape 34 == do
-                    34 buffer byte-buffer-push true
+                if escape '"' == do
+                    '"' buffer byte-buffer-push true
                 elif escape 92 == do
                     92 buffer byte-buffer-push true
                 elif escape 47 == do
@@ -375,7 +375,7 @@ proc json-parser-string-text JsonParser -- JsonText bool do
     let parser do
         if parser json-parser-at-end? do
             json-text-failure
-        elif parser @JsonParser.bytes parser @JsonParser.index + @u8 34 != do
+        elif parser @JsonParser.bytes parser @JsonParser.index + @u8 '"' != do
             json-text-failure
         else
             parser @JsonParser.index 1 + parser !JsonParser.index
@@ -390,7 +390,7 @@ proc json-parser-string-text JsonParser -- JsonText bool do
                         else
                             parser @JsonParser.bytes parser @JsonParser.index + @u8
                             let byte do
-                                if byte 34 == do
+                                if byte '"' == do
                                     parser @JsonParser.index 1 + parser !JsonParser.index
                                     true true
                                 elif byte 92 == do
@@ -566,7 +566,7 @@ proc json-parser-value JsonParser int -- JsonValue bool do
                     else
                         json-parse-failure
                     end
-                elif byte 34 == do
+                elif byte '"' == do
                     parser json-parser-string-text
                     let text valid do
                         if valid do text JsonValue:string true else json-parse-failure end

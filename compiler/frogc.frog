@@ -763,7 +763,7 @@ proc lex-string ModuleContext int int int -- do
                 let done do
                     ctx ctx @ModuleContext.lex_index source-byte
                     let byte do
-                        if byte 34 == do
+                        if byte '"' == do
                             true
                         else
                             if byte 92 == do
@@ -800,24 +800,41 @@ proc lex-character ModuleContext int int int -- do
         if ctx ctx @ModuleContext.lex_index source-byte 10 == do
             "unterminated character literal" fail
         end
-        if ctx ctx @ModuleContext.lex_index source-byte 39 == do
-            "invalid character literal" fail
-        end
-        ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
-        let value width do
-            ctx width lex-advance-count
-            if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
-                "unterminated character literal" fail
+        ctx @ModuleContext.lex_index 2 +
+        let closing-index do
+            if closing-index ctx @ModuleContext.source_length >= do
+                false
+            else
+                ctx ctx @ModuleContext.lex_index source-byte 92 ==
+                ctx ctx @ModuleContext.lex_index 1 + source-byte '\'' == &&
+                ctx closing-index source-byte '\'' == &&
             end
-            if ctx ctx @ModuleContext.lex_index source-byte 39 != do
-                if ctx ctx @ModuleContext.lex_index source-byte 10 == do
-                    "unterminated character literal" fail
-                else
+        end
+        let quote-escape do
+            if quote-escape do
+                ctx 3 lex-advance-count
+                ctx token-char start 4 '\'' line column add-token
+            else
+                if ctx ctx @ModuleContext.lex_index source-byte '\'' == do
                     "invalid character literal" fail
                 end
+                ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
+                let value width do
+                    ctx width lex-advance-count
+                    if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
+                        "unterminated character literal" fail
+                    end
+                    if ctx ctx @ModuleContext.lex_index source-byte '\'' != do
+                        if ctx ctx @ModuleContext.lex_index source-byte 10 == do
+                            "unterminated character literal" fail
+                        else
+                            "invalid character literal" fail
+                        end
+                    end
+                    ctx lex-advance
+                    ctx token-char start width 2 + value line column add-token
+                end
             end
-            ctx lex-advance
-            ctx token-char start width 2 + value line column add-token
         end
     end
 end
@@ -863,10 +880,10 @@ proc lex ModuleContext -- do
                     ctx @ModuleContext.lex_line
                     ctx @ModuleContext.lex_column
                     let start line column do
-                        if byte 34 == do
+                        if byte '"' == do
                             ctx start line column lex-string
                         else
-                            if byte 39 == do
+                            if byte '\'' == do
                                 ctx start line column lex-character
                             else
                                 ctx start line column lex-word
@@ -3503,7 +3520,7 @@ proc decoded-string-unit ModuleContext int int -- int int do
                     ctx token escape-index raw-string-byte
                     let escaped do
                         if escaped 92 == do 92 2
-                        elif escaped 34 == do 34 2
+                        elif escaped '"' == do '"' 2
                         elif escaped 110 == do 10 2
                         elif escaped 114 == do 13 2
                         elif escaped 116 == do 9 2
@@ -5462,7 +5479,7 @@ end
 
 proc emit-c-string-byte int -- do
     let byte do
-        if byte 34 == do
+        if byte '"' == do
             "\\\"" emit
         elif byte 92 == do
             "\\\\" emit

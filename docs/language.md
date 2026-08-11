@@ -13,7 +13,8 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 - `int` is a signed 64-bit integer. Integer literals are non-negative decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks and must not exceed `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. Negative values are produced by operations, not by signed literal syntax.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
-- Character literals accept exactly one raw character. Backslash escape handling is not implemented.
+- Character literals accept exactly one raw Unicode codepoint. `\'` represents
+  a single quote; a raw backslash remains written as `'\'`.
 - String literals push one `String` value. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
 - Equal decoded string literals share writable byte storage, so writes through `String.bytes` are visible through every equal literal in the program. The storage has a trailing NUL byte, while `String.len` excludes that terminator and includes embedded NUL bytes.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
