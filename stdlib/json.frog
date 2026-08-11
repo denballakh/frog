@@ -1,0 +1,977 @@
+from "libc.frog" import ( alloc free )
+from "string.frog" import (
+    bytes-copy
+    bytes-equal
+    ByteBuffer
+    byte-buffer-new
+    byte-buffer-push
+    byte-buffer-free
+)
+from "containers.frog" import (
+    PtrArray
+    ptr-array-new
+    ptr-array-push
+    ptr-array-get
+    ptr-array-free
+)
+
+const json-max-depth 64 end
+const json-int-max 1 62 << 1 62 << 1 - + end
+const json-int-magnitude-limit json-int-max 10 / end
+const json-int-max-last-digit json-int-max 10 % end
+const json-int-min-last-digit json-int-max-last-digit 1 + end
+
+record JsonText
+    bytes ptr
+    len int
+end
+
+record JsonArray
+    values PtrArray
+end
+
+record JsonObjectEntry
+    key JsonText
+    value JsonValue
+    next ptr
+end
+
+record JsonObject
+    head ptr
+end
+
+union JsonValue
+    case null
+    case boolean bool
+    case number JsonText
+    case string JsonText
+    case array JsonArray
+    case object JsonObject
+end
+
+record JsonParser
+    bytes ptr
+    len int
+    index int
+end
+
+proc json-null-pointer? ptr -- bool do
+    int cast 0 ==
+end
+
+proc json-null-value -- JsonValue do
+    0 ptr cast JsonValue cast
+end
+
+proc json-parse-failure -- JsonValue bool do
+    json-null-value false
+end
+
+proc json-text-failure -- JsonText bool do
+    0 ptr cast JsonText cast false
+end
+
+proc json-text-copy ptr int -- JsonText do
+    let source length do
+        length alloc
+        let bytes do
+            source bytes length bytes-copy
+            JsonText:alloc
+            let text do
+                bytes text !JsonText.bytes
+                length text !JsonText.len
+                text
+            end
+        end
+    end
+end
+
+proc json-text-free JsonText -- do
+    let text do
+        text @JsonText.bytes free
+        text ptr cast free
+    end
+end
+
+proc json-value-null? JsonValue -- bool do
+    JsonValue.null?
+    let value matches do matches end
+end
+
+proc json-value-boolean? JsonValue -- bool do
+    JsonValue.boolean?
+    let value matches do matches end
+end
+
+proc json-value-number? JsonValue -- bool do
+    JsonValue.number?
+    let value matches do matches end
+end
+
+proc json-value-string? JsonValue -- bool do
+    JsonValue.string?
+    let value matches do matches end
+end
+
+proc json-value-array? JsonValue -- bool do
+    JsonValue.array?
+    let value matches do matches end
+end
+
+proc json-ptr-array-free-values PtrArray -- do
+    let values do
+        0
+        while dup values @PtrArray.count < do
+            let index do
+                values index ptr-array-get
+                let child found do
+                    if found do child JsonValue cast json-free end
+                    index 1 +
+                end
+            end
+        end
+        drop
+        values ptr-array-free
+    end
+end
+
+proc json-array-free JsonArray -- do
+    let array do
+        array @JsonArray.values json-ptr-array-free-values
+        array ptr cast free
+    end
+end
+
+proc json-object-free JsonObject -- do
+    let object do
+        object @JsonObject.head
+        while dup json-null-pointer? ! do
+            JsonObjectEntry cast
+            let entry do
+                entry @JsonObjectEntry.next
+                entry @JsonObjectEntry.key json-text-free
+                entry @JsonObjectEntry.value json-free
+                entry ptr cast free
+            end
+        end
+        drop
+        object ptr cast free
+    end
+end
+
+proc json-free JsonValue -- do
+    let value do
+        if value ptr cast json-null-pointer? do
+        elif value json-value-null? do
+            value ptr cast free
+        elif value json-value-boolean? do
+            value ptr cast free
+        elif value json-value-number? do
+            value JsonValue.number json-text-free
+            value ptr cast free
+        elif value json-value-string? do
+            value JsonValue.string json-text-free
+            value ptr cast free
+        elif value json-value-array? do
+            value JsonValue.array json-array-free
+            value ptr cast free
+        else
+            value JsonValue.object json-object-free
+            value ptr cast free
+        end
+    end
+end
+
+proc json-whitespace? int -- bool do
+    let byte do
+        byte 0x20 ==
+        byte 0x09 == ||
+        byte 0x0a == ||
+        byte 0x0d == ||
+    end
+end
+
+proc json-digit? int -- bool do
+    let byte do byte 48 >= byte 57 <= && end
+end
+
+proc json-parser-at-end? JsonParser -- bool do
+    let parser do parser @JsonParser.index parser @JsonParser.len >= end
+end
+
+proc json-parser-next-is JsonParser int -- bool do
+    let parser expected do
+        if parser json-parser-at-end? do
+            false
+        else
+            parser @JsonParser.bytes parser @JsonParser.index + @u8 expected ==
+        end
+    end
+end
+
+proc json-parser-skip-whitespace JsonParser -- do
+    let parser do
+        parser @JsonParser.index
+        while peek index do
+            if index parser @JsonParser.len < do
+                parser @JsonParser.bytes index + @u8 json-whitespace?
+            else
+                false
+            end
+        end
+        do
+            1 +
+        end
+        let index do index parser !JsonParser.index end
+    end
+end
+
+proc json-parser-consume JsonParser String -- bool do
+    let parser expected do
+        if expected String.len parser @JsonParser.len parser @JsonParser.index - > do
+            false
+        elif parser @JsonParser.bytes parser @JsonParser.index + expected String.len
+            expected String.bytes expected String.len bytes-equal
+        do
+            parser @JsonParser.index expected String.len + parser !JsonParser.index
+            true
+        else
+            false
+        end
+    end
+end
+
+proc json-hex-value int -- int bool do
+    let byte do
+        if byte 48 >= byte 57 <= && do
+            byte 48 - true
+        elif byte 65 >= byte 70 <= && do
+            byte 65 - 10 + true
+        elif byte 97 >= byte 102 <= && do
+            byte 97 - 10 + true
+        else
+            0 false
+        end
+    end
+end
+
+proc json-parser-hex4 JsonParser -- int bool do
+    let parser do
+        0 0 true
+        while peek count value valid do
+            count 4 < valid &&
+        end
+        do
+            let count value valid do
+                if parser json-parser-at-end? do
+                    4 value false
+                else
+                    parser @JsonParser.bytes parser @JsonParser.index + @u8 json-hex-value
+                    let digit digit-valid do
+                        if digit-valid do
+                            parser @JsonParser.index 1 + parser !JsonParser.index
+                            count 1 + value 16 * digit + true
+                        else
+                            4 value false
+                        end
+                    end
+                end
+            end
+        end
+        let count value valid do value valid end
+    end
+end
+
+proc json-buffer-push-codepoint int ByteBuffer -- do
+    let codepoint buffer do
+        if codepoint 0x7f <= do
+            codepoint buffer byte-buffer-push
+        elif codepoint 0x7ff <= do
+            0xc0 codepoint 6 >> | buffer byte-buffer-push
+            0x80 codepoint 0x3f & | buffer byte-buffer-push
+        elif codepoint 0xffff <= do
+            0xe0 codepoint 12 >> | buffer byte-buffer-push
+            0x80 codepoint 6 >> 0x3f & | buffer byte-buffer-push
+            0x80 codepoint 0x3f & | buffer byte-buffer-push
+        else
+            0xf0 codepoint 18 >> | buffer byte-buffer-push
+            0x80 codepoint 12 >> 0x3f & | buffer byte-buffer-push
+            0x80 codepoint 6 >> 0x3f & | buffer byte-buffer-push
+            0x80 codepoint 0x3f & | buffer byte-buffer-push
+        end
+    end
+end
+
+proc json-parser-string-escape JsonParser ByteBuffer -- bool do
+    let parser buffer do
+        if parser json-parser-at-end? do
+            false
+        else
+            parser @JsonParser.bytes parser @JsonParser.index + @u8
+            parser @JsonParser.index 1 + parser !JsonParser.index
+            let escape do
+                if escape 34 == do
+                    34 buffer byte-buffer-push true
+                elif escape 92 == do
+                    92 buffer byte-buffer-push true
+                elif escape 47 == do
+                    47 buffer byte-buffer-push true
+                elif escape 98 == do
+                    8 buffer byte-buffer-push true
+                elif escape 102 == do
+                    12 buffer byte-buffer-push true
+                elif escape 110 == do
+                    10 buffer byte-buffer-push true
+                elif escape 114 == do
+                    13 buffer byte-buffer-push true
+                elif escape 116 == do
+                    9 buffer byte-buffer-push true
+                elif escape 117 == do
+                    parser json-parser-hex4
+                    let first first-valid do
+                        if first-valid ! do
+                            false
+                        elif first 0xd800 >= first 0xdbff <= && do
+                            if parser @JsonParser.len parser @JsonParser.index - 2 < do
+                                false
+                            elif parser @JsonParser.bytes parser @JsonParser.index + @u8 92 != do
+                                false
+                            elif parser @JsonParser.bytes parser @JsonParser.index 1 + + @u8 117 != do
+                                false
+                            else
+                                parser @JsonParser.index 2 + parser !JsonParser.index
+                                parser json-parser-hex4
+                                let second second-valid do
+                                    if second-valid
+                                        second 0xdc00 >= &&
+                                        second 0xdfff <= &&
+                                    do
+                                        first 0xd800 - 0x400 *
+                                        second 0xdc00 - +
+                                        0x10000 +
+                                        buffer json-buffer-push-codepoint
+                                        true
+                                    else
+                                        false
+                                    end
+                                end
+                            end
+                        elif first 0xdc00 >= first 0xdfff <= && do
+                            false
+                        else
+                            first buffer json-buffer-push-codepoint
+                            true
+                        end
+                    end
+                else
+                    false
+                end
+            end
+        end
+    end
+end
+
+proc json-parser-string-text JsonParser -- JsonText bool do
+    let parser do
+        if parser json-parser-at-end? do
+            json-text-failure
+        elif parser @JsonParser.bytes parser @JsonParser.index + @u8 34 != do
+            json-text-failure
+        else
+            parser @JsonParser.index 1 + parser !JsonParser.index
+            16 byte-buffer-new
+            let buffer do
+                false true
+                while peek finished valid do finished ! valid && end
+                do
+                    let finished valid do
+                        if parser json-parser-at-end? do
+                            true false
+                        else
+                            parser @JsonParser.bytes parser @JsonParser.index + @u8
+                            let byte do
+                                if byte 34 == do
+                                    parser @JsonParser.index 1 + parser !JsonParser.index
+                                    true true
+                                elif byte 92 == do
+                                    parser @JsonParser.index 1 + parser !JsonParser.index
+                                    if parser buffer json-parser-string-escape do
+                                        false true
+                                    else
+                                        true false
+                                    end
+                                elif byte 0x20 < do
+                                    true false
+                                else
+                                    parser @JsonParser.index 1 + parser !JsonParser.index
+                                    byte buffer byte-buffer-push
+                                    false true
+                                end
+                            end
+                        end
+                    end
+                end
+                let finished valid do
+                    if valid do
+                        JsonText:alloc
+                        let text do
+                            buffer @ByteBuffer.bytes text !JsonText.bytes
+                            buffer @ByteBuffer.len text !JsonText.len
+                            buffer ptr cast free
+                            text true
+                        end
+                    else
+                        buffer byte-buffer-free
+                        json-text-failure
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc json-parser-consume-digits JsonParser -- int do
+    let parser do
+        parser @JsonParser.index
+        let start do
+            start
+            while peek index do
+                if index parser @JsonParser.len < do
+                    parser @JsonParser.bytes index + @u8 json-digit?
+                else
+                    false
+                end
+            end
+            do
+                1 +
+            end
+            let index do
+                index parser !JsonParser.index
+                index start -
+            end
+        end
+    end
+end
+
+proc json-parser-number-integer JsonParser -- bool do
+    let parser do
+        if parser json-parser-at-end? do
+            false
+        else
+            parser @JsonParser.bytes parser @JsonParser.index + @u8
+            let byte do
+                if byte 48 == do
+                    parser @JsonParser.index 1 + parser !JsonParser.index
+                    if parser json-parser-at-end? do
+                        true
+                    else
+                        parser @JsonParser.bytes parser @JsonParser.index + @u8 json-digit? !
+                    end
+                elif byte 49 >= byte 57 <= && do
+                    parser json-parser-consume-digits drop
+                    true
+                else
+                    false
+                end
+            end
+        end
+    end
+end
+
+proc json-parser-number-fraction JsonParser -- bool do
+    let parser do
+        if parser json-parser-at-end? do
+            true
+        elif parser @JsonParser.bytes parser @JsonParser.index + @u8 46 != do
+            true
+        else
+            parser @JsonParser.index 1 + parser !JsonParser.index
+            parser json-parser-consume-digits 0 >
+        end
+    end
+end
+
+proc json-parser-number-exponent JsonParser -- bool do
+    let parser do
+        if parser json-parser-at-end? do
+            true
+        else
+            parser @JsonParser.bytes parser @JsonParser.index + @u8
+            let byte do
+                if byte 101 != byte 69 != && do
+                    true
+                else
+                    parser @JsonParser.index 1 + parser !JsonParser.index
+                    if parser json-parser-at-end? ! do
+                        parser @JsonParser.bytes parser @JsonParser.index + @u8
+                        let sign do
+                            if sign 43 == sign 45 == || do
+                                parser @JsonParser.index 1 + parser !JsonParser.index
+                            end
+                        end
+                    end
+                    parser json-parser-consume-digits 0 >
+                end
+            end
+        end
+    end
+end
+
+proc json-parser-number JsonParser -- JsonValue bool do
+    let parser do
+        parser @JsonParser.index
+        let start do
+            if parser json-parser-at-end? ! do
+                if parser @JsonParser.bytes parser @JsonParser.index + @u8 45 == do
+                    parser @JsonParser.index 1 + parser !JsonParser.index
+                end
+            end
+            if parser json-parser-number-integer ! do
+                json-parse-failure
+            elif parser json-parser-number-fraction ! do
+                json-parse-failure
+            elif parser json-parser-number-exponent ! do
+                json-parse-failure
+            else
+                parser @JsonParser.bytes start +
+                parser @JsonParser.index start -
+                json-text-copy JsonValue:number true
+            end
+        end
+    end
+end
+
+proc json-parser-value JsonParser int -- JsonValue bool do
+    let parser depth do
+        if parser json-parser-at-end? do
+            json-parse-failure
+        else
+            parser @JsonParser.bytes parser @JsonParser.index + @u8
+            let byte do
+                if byte 110 == do
+                    if parser "null" json-parser-consume do
+                        JsonValue:null true
+                    else
+                        json-parse-failure
+                    end
+                elif byte 116 == do
+                    if parser "true" json-parser-consume do
+                        true JsonValue:boolean true
+                    else
+                        json-parse-failure
+                    end
+                elif byte 102 == do
+                    if parser "false" json-parser-consume do
+                        false JsonValue:boolean true
+                    else
+                        json-parse-failure
+                    end
+                elif byte 34 == do
+                    parser json-parser-string-text
+                    let text valid do
+                        if valid do text JsonValue:string true else json-parse-failure end
+                    end
+                elif byte 91 == do
+                    if depth json-max-depth >= do
+                        json-parse-failure
+                    else
+                        parser depth 1 + json-parser-array
+                    end
+                elif byte 123 == do
+                    if depth json-max-depth >= do
+                        json-parse-failure
+                    else
+                        parser depth 1 + json-parser-object
+                    end
+                elif byte 45 == byte json-digit? || do
+                    parser json-parser-number
+                else
+                    json-parse-failure
+                end
+            end
+        end
+    end
+end
+
+proc json-parser-array JsonParser int -- JsonValue bool do
+    let parser depth do
+        parser @JsonParser.index 1 + parser !JsonParser.index
+        parser json-parser-skip-whitespace
+        4 ptr-array-new
+        let values do
+            if parser 93 json-parser-next-is do
+                parser @JsonParser.index 1 + parser !JsonParser.index
+                JsonArray:alloc
+                let array do
+                    values array !JsonArray.values
+                    array JsonValue:array true
+                end
+            else
+                false true
+                while peek finished valid do finished ! valid && end
+                do
+                    let finished valid do
+                        parser depth json-parser-value
+                        let child child-valid do
+                            if child-valid do
+                                child ptr cast values ptr-array-push
+                                parser json-parser-skip-whitespace
+                                if parser json-parser-at-end? do
+                                    true false
+                                else
+                                    parser @JsonParser.bytes parser @JsonParser.index + @u8
+                                    let delimiter do
+                                        if delimiter 44 == do
+                                            parser @JsonParser.index 1 + parser !JsonParser.index
+                                            parser json-parser-skip-whitespace
+                                            false true
+                                        elif delimiter 93 == do
+                                            parser @JsonParser.index 1 + parser !JsonParser.index
+                                            true true
+                                        else
+                                            true false
+                                        end
+                                    end
+                                end
+                            else
+                                true false
+                            end
+                        end
+                    end
+                end
+                let finished valid do
+                    if valid do
+                        JsonArray:alloc
+                        let array do
+                            values array !JsonArray.values
+                            array JsonValue:array true
+                        end
+                    else
+                        values json-ptr-array-free-values
+                        json-parse-failure
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc json-parser-object JsonParser int -- JsonValue bool do
+    let parser depth do
+        parser @JsonParser.index 1 + parser !JsonParser.index
+        parser json-parser-skip-whitespace
+        JsonObject:alloc
+        let object do
+            0 ptr cast object !JsonObject.head
+            if parser 125 json-parser-next-is do
+                parser @JsonParser.index 1 + parser !JsonParser.index
+                object JsonValue:object true
+            else
+                false true
+                while peek finished valid do finished ! valid && end
+                do
+                    let finished valid do
+                        parser json-parser-string-text
+                        let key key-valid do
+                            if key-valid ! do
+                                true false
+                            else
+                                parser json-parser-skip-whitespace
+                                if parser json-parser-at-end? do
+                                    key json-text-free
+                                    true false
+                                elif parser @JsonParser.bytes parser @JsonParser.index + @u8 58 != do
+                                    key json-text-free
+                                    true false
+                                else
+                                    parser @JsonParser.index 1 + parser !JsonParser.index
+                                    parser json-parser-skip-whitespace
+                                    parser depth json-parser-value
+                                    let child child-valid do
+                                        if child-valid ! do
+                                            key json-text-free
+                                            true false
+                                        else
+                                            JsonObjectEntry:alloc
+                                            let entry do
+                                                key entry !JsonObjectEntry.key
+                                                child entry !JsonObjectEntry.value
+                                                object @JsonObject.head entry !JsonObjectEntry.next
+                                                entry ptr cast object !JsonObject.head
+                                            end
+                                            parser json-parser-skip-whitespace
+                                            if parser json-parser-at-end? do
+                                                true false
+                                            else
+                                                parser @JsonParser.bytes parser @JsonParser.index + @u8
+                                                let delimiter do
+                                                    if delimiter 44 == do
+                                                        parser @JsonParser.index 1 + parser !JsonParser.index
+                                                        parser json-parser-skip-whitespace
+                                                        false true
+                                                    elif delimiter 125 == do
+                                                        parser @JsonParser.index 1 + parser !JsonParser.index
+                                                        true true
+                                                    else
+                                                        true false
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                let finished valid do
+                    if valid do
+                        object JsonValue:object true
+                    else
+                        object json-object-free
+                        json-parse-failure
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc json-parse-bytes ptr int -- JsonValue bool do
+    let bytes length do
+        if length 0 < do
+            json-parse-failure
+        elif length 0 > bytes json-null-pointer? && do
+            json-parse-failure
+        else
+            JsonParser:alloc
+            let parser do
+                bytes parser !JsonParser.bytes
+                length parser !JsonParser.len
+                0 parser !JsonParser.index
+                parser json-parser-skip-whitespace
+                parser 0 json-parser-value
+                let value valid do
+                    if valid do
+                        parser json-parser-skip-whitespace
+                        if parser @JsonParser.index parser @JsonParser.len == do
+                            parser ptr cast free
+                            value true
+                        else
+                            value json-free
+                            parser ptr cast free
+                            json-parse-failure
+                        end
+                    else
+                        parser ptr cast free
+                        json-parse-failure
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc json-parse String -- JsonValue bool do
+    let source do source String.bytes source String.len json-parse-bytes end
+end
+
+proc json-boolean JsonValue -- bool bool do
+    let value do
+        if value ptr cast json-null-pointer? do
+            false false
+        else
+            value JsonValue.boolean?
+            let candidate matches do
+                if matches do candidate JsonValue.boolean true else false false end
+            end
+        end
+    end
+end
+
+proc json-string-bytes JsonValue -- ptr int bool do
+    let value do
+        if value ptr cast json-null-pointer? do
+            0 ptr cast 0 false
+        else
+            value JsonValue.string?
+            let candidate matches do
+                if matches do
+                    candidate JsonValue.string
+                    let text do text @JsonText.bytes text @JsonText.len true end
+                else
+                    0 ptr cast 0 false
+                end
+            end
+        end
+    end
+end
+
+proc json-number-bytes JsonValue -- ptr int bool do
+    let value do
+        if value ptr cast json-null-pointer? do
+            0 ptr cast 0 false
+        else
+            value JsonValue.number?
+            let candidate matches do
+                if matches do
+                    candidate JsonValue.number
+                    let text do text @JsonText.bytes text @JsonText.len true end
+                else
+                    0 ptr cast 0 false
+                end
+            end
+        end
+    end
+end
+
+proc json-number-int JsonValue -- int bool do
+    json-number-bytes
+    let bytes length is-number do
+        if is-number ! length 0 == || do
+            0 false
+        else
+            0 false
+            let index negative do
+                if bytes @u8 45 == do
+                    1 true
+                else
+                    index negative
+                end
+                let index negative do
+                    if index length >= do
+                        0 false
+                    elif bytes index + @u8 48 == index 1 + length < && do
+                        0 false
+                    else
+                        index 0 true
+                        while peek current result valid do
+                            current length < valid &&
+                        end
+                        do
+                            let current result valid do
+                                bytes current + @u8
+                                let byte do
+                                    if byte json-digit? ! do
+                                        length result false
+                                    else
+                                        byte 48 -
+                                        let digit do
+                                            if negative do
+                                                if result 0 json-int-magnitude-limit - <
+                                                    result 0 json-int-magnitude-limit - ==
+                                                    digit json-int-min-last-digit > && ||
+                                                do
+                                                    length result false
+                                                else
+                                                    current 1 + result 10 * digit - true
+                                                end
+                                            else
+                                                if result json-int-magnitude-limit >
+                                                    result json-int-magnitude-limit ==
+                                                    digit json-int-max-last-digit > && ||
+                                                do
+                                                    length result false
+                                                else
+                                                    current 1 + result 10 * digit + true
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                        let current result valid do result valid end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc json-array-length JsonValue -- int bool do
+    let value do
+        if value ptr cast json-null-pointer? do
+            0 false
+        else
+            value JsonValue.array?
+            let candidate matches do
+                if matches do
+                    candidate JsonValue.array @JsonArray.values @PtrArray.count true
+                else
+                    0 false
+                end
+            end
+        end
+    end
+end
+
+proc json-array-get JsonValue int -- JsonValue bool do
+    let value index do
+        if value ptr cast json-null-pointer? do
+            json-parse-failure
+        else
+            value JsonValue.array?
+            let candidate matches do
+                if matches do
+                    candidate JsonValue.array @JsonArray.values index ptr-array-get
+                    let item found do
+                        if found do item JsonValue cast true else json-parse-failure end
+                    end
+                else
+                    json-parse-failure
+                end
+            end
+        end
+    end
+end
+
+proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
+    let value key key-length do
+        if key-length 0 < do
+            json-parse-failure
+        elif key-length 0 > key json-null-pointer? && do
+            json-parse-failure
+        elif value ptr cast json-null-pointer? do
+            json-parse-failure
+        else
+            value JsonValue.object?
+            let candidate matches do
+                if matches ! do
+                    json-parse-failure
+                else
+                    candidate JsonValue.object @JsonObject.head json-null-value false
+                    while peek current result found do
+                        current json-null-pointer? ! found ! &&
+                    end
+                    do
+                        let current result found do
+                            current JsonObjectEntry cast
+                            let entry do
+                                if entry @JsonObjectEntry.key
+                                    let entry-key do
+                                        entry-key @JsonText.bytes entry-key @JsonText.len
+                                        key key-length bytes-equal
+                                    end
+                                do
+                                    0 ptr cast entry @JsonObjectEntry.value true
+                                else
+                                    entry @JsonObjectEntry.next result false
+                                end
+                            end
+                        end
+                    end
+                    let current result found do
+                        if found do result true else json-parse-failure end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc json-object-get JsonValue String -- JsonValue bool do
+    let value key do
+        value key String.bytes key String.len json-object-get-bytes
+    end
+end

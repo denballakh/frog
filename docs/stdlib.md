@@ -146,6 +146,46 @@ fixed bucket count with chained entries; they do not resize automatically.
 bool` are structural macros that work with `PtrArray`, `PtrList`, and
 `StringMap`.
 
+## JSON
+
+`stdlib/json.frog` parses one complete JSON value into an exclusively owned
+tree. `JsonValue` is a tagged union with `null`, `boolean`, `number`, `string`,
+`array`, and `object` variants. Number payloads preserve their source lexemes;
+string payloads contain decoded bytes.
+
+- `json-parse`: `String -- value success` parses a literal string.
+- `json-parse-bytes`: `bytes len -- value success` parses a byte range.
+- `json-boolean`: `value -- boolean success` reads a boolean payload.
+- `json-string-bytes`: `value -- bytes len success` borrows decoded string
+  bytes.
+- `json-number-bytes`: `value -- bytes len success` borrows the original
+  number lexeme.
+- `json-number-int`: `value -- integer success` converts an integer-form number
+  lexeme when it fits Frog's signed 64-bit `int`. Fraction and exponent forms
+  return `false`, even when their mathematical value is integral.
+- `json-array-length`: `value -- length success` reads an array length.
+- `json-array-get`: `value index -- child found` borrows an indexed child.
+- `json-object-get`: `value key -- child found` borrows the last member with a
+  literal `String` key.
+- `json-object-get-bytes`: `value key key_len -- child found` performs the same
+  lookup with a byte-range key.
+- `json-free`: `value --` recursively releases a parsed tree.
+
+Parsing accepts RFC 8259 structure, literals, number syntax, JSON whitespace,
+escaped Unicode, and valid UTF-16 surrogate pairs in `\u` escapes. Raw
+non-control string bytes are preserved without UTF-8 validation. The parser
+rejects malformed input, trailing non-whitespace bytes, lone surrogates,
+unsupported escapes, and more than 64 nested array/object containers; a root
+container counts as one level. Object lookup uses the last member when a key
+appears more than once.
+
+On success, the caller owns the returned root and must call `json-free` exactly
+once. Array/object children and scalar byte ranges returned by helpers are
+borrowed until their root is freed. On failure, parsing frees partial state and
+returns a null `JsonValue` handle with `false`. Wrong-variant, missing-key, and
+out-of-range helper calls likewise return a neutral value with `false` and do
+not change ownership.
+
 ## Subprocesses
 
 `stdlib/subprocess.frog` runs a program with captured standard output and

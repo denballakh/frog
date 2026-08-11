@@ -1,0 +1,325 @@
+from "../../../../stdlib/json.frog" import (
+    JsonValue JsonText JsonArray JsonObject
+    json-parse json-parse-bytes json-free
+    json-boolean json-string-bytes json-number-bytes json-number-int
+    json-array-length json-array-get json-object-get json-object-get-bytes
+)
+from "../../../../stdlib/string.frog" import (
+    bytes-equal ByteBuffer byte-buffer-new byte-buffer-push byte-buffer-free
+)
+from "../../../../stdlib/libc.frog" import ( alloc free exit )
+
+proc assert bool -- do
+    let condition do
+        if condition do else 1 exit end
+    end
+end
+
+proc assert-null-result JsonValue bool -- do
+    let value found do
+        found ! assert
+        value ptr cast int cast 0 == assert
+    end
+end
+
+proc parse String -- JsonValue do
+    json-parse
+    let value success do
+        success assert
+        value
+    end
+end
+
+proc assert-reject String -- do
+    json-parse assert-null-result
+end
+
+proc assert-reject-bytes ptr int -- do
+    json-parse-bytes assert-null-result
+end
+
+proc assert-one-byte-reject int -- do
+    let byte do
+        1 alloc
+        let bytes do
+            byte bytes !u8
+            bytes 1 assert-reject-bytes
+            bytes free
+        end
+    end
+end
+
+proc assert-boolean JsonValue bool -- do
+    let value expected do
+        value json-boolean
+        let actual success do
+            success assert
+            actual expected && actual ! expected ! && || assert
+        end
+    end
+end
+
+proc assert-string JsonValue String -- do
+    let value expected do
+        value json-string-bytes
+        let bytes length success do
+            success assert
+            bytes length expected String.bytes expected String.len bytes-equal assert
+        end
+    end
+end
+
+proc assert-number-bytes JsonValue String -- do
+    let value expected do
+        value json-number-bytes
+        let bytes length success do
+            success assert
+            bytes length expected String.bytes expected String.len bytes-equal assert
+        end
+    end
+end
+
+proc assert-number-int-value JsonValue int -- do
+    let value expected do
+        value json-number-int
+        let actual success do
+            success assert
+            actual expected == assert
+        end
+    end
+end
+
+proc assert-number-not-int JsonValue -- do
+    json-number-int
+    let ignored success do
+        ignored drop
+        success ! assert
+    end
+end
+
+proc assert-int-number String String int -- do
+    let source lexeme expected do
+        source parse
+        let value do
+            value JsonValue.number? assert drop
+            value lexeme assert-number-bytes
+            value expected assert-number-int-value
+            value json-free
+        end
+    end
+end
+
+proc assert-non-int-number String String -- do
+    let source lexeme do
+        source parse
+        let value do
+            value JsonValue.number? assert drop
+            value lexeme assert-number-bytes
+            value assert-number-not-int
+            value json-free
+        end
+    end
+end
+
+proc assert-array-length JsonValue int -- do
+    let value expected do
+        value json-array-length
+        let actual success do
+            success assert
+            actual expected == assert
+        end
+    end
+end
+
+proc nested-array-json int -- ByteBuffer do
+    let depth do
+        depth 2 * 1 + byte-buffer-new
+        let buffer do
+            0
+            while dup depth < do
+                91 buffer byte-buffer-push
+                1 +
+            end
+            drop
+            48 buffer byte-buffer-push
+            0
+            while dup depth < do
+                93 buffer byte-buffer-push
+                1 +
+            end
+            drop
+            buffer
+        end
+    end
+end
+
+proc main -- do
+    "null" parse
+    let value do
+        value JsonValue.null? assert drop
+        value json-free
+    end
+    "true" parse
+    let value do
+        value JsonValue.boolean? assert drop
+        value true assert-boolean
+        value json-free
+    end
+    "false" parse
+    let value do
+        value JsonValue.boolean? assert drop
+        value false assert-boolean
+        value json-free
+    end
+
+    "\x22\x22" parse
+    let value do
+        value JsonValue.string? assert drop
+        value "" assert-string
+        value json-free
+    end
+    "\x22\\\x22\\\\\\/\\b\\f\\n\\r\\t\x22" parse
+    let value do
+        value "\x22\\/\x08\x0c\n\r\t" assert-string
+        value json-free
+    end
+    "\x22\\u20AC\x22" parse
+    let value do
+        value "\xE2\x82\xAC" assert-string
+        value json-free
+    end
+    "\x22\\uD83D\\uDE00\x22" parse
+    let value do
+        value "\xF0\x9F\x98\x80" assert-string
+        value json-free
+    end
+
+    "0" "0" 0 assert-int-number
+    "-0" "-0" 0 assert-int-number
+    "42" "42" 42 assert-int-number
+    "-17" "-17" 0 17 - assert-int-number
+    "9223372036854775807" "9223372036854775807" 9223372036854775807 assert-int-number
+    "-9223372036854775808" "-9223372036854775808" 0 9223372036854775807 - 1 - assert-int-number
+    "1.25" "1.25" assert-non-int-number
+    "1e2" "1e2" assert-non-int-number
+    "1E-2" "1E-2" assert-non-int-number
+    "9223372036854775808" "9223372036854775808" assert-non-int-number
+    "-9223372036854775809" "-9223372036854775809" assert-non-int-number
+
+    "[null,true,\x22x\x22,3]" parse
+    let array do
+        array JsonValue.array? assert drop
+        array 4 assert-array-length
+        array 0 json-array-get
+        let child found do
+            found assert
+            child JsonValue.null? assert drop
+        end
+        array 1 json-array-get
+        let child found do
+            found assert
+            child true assert-boolean
+        end
+        array 2 json-array-get
+        let child found do
+            found assert
+            child "x" assert-string
+        end
+        array 3 json-array-get
+        let child found do
+            found assert
+            child 3 assert-number-int-value
+        end
+        array 4 json-array-get assert-null-result
+        array 0 1 - json-array-get assert-null-result
+        array json-free
+    end
+
+    "{\x22n\x22:null,\x22a\x22:[{\x22b\x22:\x22ok\x22}]}" parse
+    let object do
+        object JsonValue.object? assert drop
+        object "n" json-object-get
+        let child found do
+            found assert
+            child JsonValue.null? assert drop
+        end
+        object "missing" json-object-get assert-null-result
+        object "a" json-object-get
+        let array found do
+            found assert
+            array 1 assert-array-length
+            array 0 json-array-get
+            let nested found do
+                found assert
+                nested "b" String.bytes 1 json-object-get-bytes
+                let child found do
+                    found assert
+                    child "ok" assert-string
+                end
+            end
+        end
+        object json-free
+    end
+
+    "{\x22same\x22:1,\x22same\x22:2}" parse
+    let object do
+        object "same" json-object-get
+        let child found do
+            found assert
+            child 2 assert-number-int-value
+        end
+        object json-free
+    end
+
+    " \t\r\n [ 1 ] \n" parse
+    let value do
+        value 1 assert-array-length
+        value json-free
+    end
+
+    "" assert-reject
+    " \t\r\n" assert-reject
+    "true false" assert-reject
+    "[]x" assert-reject
+    "[1,]" assert-reject
+    "[,1]" assert-reject
+    "{\x22a\x22:1,}" assert-reject
+    "{\x22a\x22 1}" assert-reject
+    "[1" assert-reject
+    "{\x22a\x22:1" assert-reject
+    91 assert-one-byte-reject
+    123 assert-one-byte-reject
+    "\x22\\x\x22" assert-reject
+    "\x22\\u12G4\x22" assert-reject
+    "\x22\\uD800\x22" assert-reject
+    "\x22\\uDC00\x22" assert-reject
+    "\x22\\uD800\\u0041\x22" assert-reject
+    "\x22raw\x01control\x22" dup String.bytes swap String.len assert-reject-bytes
+    "01" assert-reject
+    "-" assert-reject
+    "1." assert-reject
+    "1e" assert-reject
+    "1e+" assert-reject
+    "+1" assert-reject
+    ".1" assert-reject
+    "NaN" assert-reject
+    "Infinity" assert-reject
+    "nul" assert-reject
+    "True" assert-reject
+
+    64 nested-array-json
+    let buffer do
+        buffer @ByteBuffer.bytes buffer @ByteBuffer.len json-parse-bytes
+        let value success do
+            success assert
+            value JsonValue.array? assert drop
+            value json-free
+        end
+        buffer byte-buffer-free
+    end
+    65 nested-array-json
+    let buffer do
+        buffer @ByteBuffer.bytes buffer @ByteBuffer.len assert-reject-bytes
+        buffer byte-buffer-free
+    end
+end
