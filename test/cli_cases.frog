@@ -1,4 +1,4 @@
-from "framework.frog" import ( FrogTestContext frog-check )
+from "framework.frog" import ( FrogTestContext frog-check frog-count-case )
 from "../stdlib/string.frog" import bytes-equal
 from "../stdlib/subprocess.frog" import (
     CompletedProcess
@@ -66,6 +66,7 @@ end
 
 proc frog-cli-case-1 String String String int String FrogTestContext -- do
     let first expected-stdout expected-stderr expected-status name context do
+        context frog-count-case
         first context frog-cli-argv-1
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -73,6 +74,7 @@ end
 
 proc frog-cli-case-2 String String String String int String FrogTestContext -- do
     let first second expected-stdout expected-stderr expected-status name context do
+        context frog-count-case
         first second context frog-cli-argv-2
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -80,6 +82,7 @@ end
 
 proc frog-cli-case-3 String String String String String int String FrogTestContext -- do
     let first second third expected-stdout expected-stderr expected-status name context do
+        context frog-count-case
         first second third context frog-cli-argv-3
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end

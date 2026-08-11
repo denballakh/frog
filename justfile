@@ -25,14 +25,11 @@ check: typecheck fmt _vscode-grammar
 [group("test")]
 test: check bootstrap-check frog-regressions
     python -m test
-    git diff --exit-code HEAD -- test/snapshots
-    git status --short -- test/snapshots
-    test -z "$(git status --porcelain -- test/snapshots)"
 
 [group("test")]
 frog-regressions: frogc-seed
     build/frogc build -o build/frog-tests test/runner.frog
-    build/frog-tests "{{justfile_directory()}}/build/frogc" "{{justfile_directory()}}/build/frog-test-case.exe"
+    python -m test --frog-only
 
 _compile-frogc source output:
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"
@@ -63,16 +60,6 @@ bootstrap-update: frogc-seed
     cd compiler && ../build/frogc.candidate2 < frogc.frog > ../build/frogc.candidate3.c
     cmp build/frogc.candidate2.c build/frogc.candidate3.c
     cp build/frogc.candidate2.c compiler/frogc.c
-
-[group("test")]
-show-diff:
-    git diff -- test/snapshots
-    git status --short -- test/snapshots
-
-# ONLY run this if you are ABSOLUTELY SURE the snapshot output changes are correct.
-[group("test")]
-approve-diff:
-    git add -A test/snapshots
 
 [group("run")]
 [positional-arguments]

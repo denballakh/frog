@@ -1,43 +1,68 @@
 # Testing
 
-The snapshot suite is orchestrated by `test/__main__.py` through:
+Run the complete suite with:
 
 ```sh
 just test
 ```
 
-`just test` runs formatting, Python typechecking, compiler fixed-point checks, the Frog-owned regression corpus, and snapshot generation. It fails if `test/snapshots/` has tracked or untracked changes afterward.
+This runs Python formatting and type checks, validates the VS Code grammar,
+checks the compiler bootstrap fixed point, runs the Frog-owned test corpus, and
+checks the remaining host-specific CLI policies.
 
-`compiler/frogc.frog` implements the compiler, typechecker, C emitter, and process/file CLI orchestration. `test/runner.frog` owns language and runtime regressions. `test/__main__.py` materializes the remaining snapshot cases, invokes the Frog-written CLI in subprocesses, and renders snapshots. Python is test-only; there is no Python language implementation or interpreter.
+## Frog test corpus
 
-`just bootstrap-check` verifies that `compiler/frogc.c`, stage 2, and stage 3 are byte-identical. Language and runtime regressions are normal test cases rather than a separate bootstrap suite.
+`test/runner.frog` runs the language, compiler, standard-library, example,
+import, and CLI cases. Successful programs are compiled to C, built with strict
+C11 warnings, and executed. Tests compare exact output, diagnostics, and exit
+status, and also check selected generated-C properties.
 
-`test/runner.frog`, `test/framework.frog`, and `test/regression_cases.frog` run the fixtures under `test/cases/`. They use the compiler's stdin-to-stdout mode, compile successful output with strict C11 warnings, link fixture-local helper C where required, and check exact output, exit status, diagnostics, and selected generated-C properties. Run this corpus directly with `just frog-regressions`.
+The runner verifies that all 429 registered cases execute. Update that expected
+total only when intentionally adding or removing a case.
 
-Snapshots are Markdown-style `.out` files. They embed the Frog source or CLI command being tested, followed by captured output, so a snapshot diff can usually be reviewed without opening the fixture source separately.
+The case manifests are:
 
-Snapshot groups:
+- `test/regression_cases.frog` for fixture-based language, compiler, generated-C,
+  and standard-library regressions;
+- `test/inline_cases.frog` for concise source snippets;
+- `test/import_cases.frog` for multi-file import behavior;
+- `test/cli_cases.frog` for ordinary command-line behavior;
+- `test/example_cases.frog` for every checked-in example.
 
-- `test/snapshots/examples/`: one snapshot per `examples/*.frog` file.
-- `test/snapshots/cli/`: grouped CLI argument behavior.
-- `test/snapshots/code/`: grouped inline Frog snippets.
-- `test/snapshots/imports/`: one snapshot per multi-file import-system case.
+Fixtures live under `test/cases/`. Inline helpers wrap ordinary snippet bodies
+in `proc main -- do ... end`; malformed whole-program cases provide their source
+verbatim.
 
-Each example, inline snippet, and multi-file case runs once through the native `build/frogc run` path. That path compiles Frog to C, compiles the C program, and executes the resulting binary.
-
-Top-level `examples/*.frog` files are discovered automatically. Adding an example therefore requires reviewing and committing its generated snapshot, but no test-runner registration.
-
-Inline cases use immutable `SourceSpec` values. `body` is mechanically indented inside an explicit `proc main -- do ... end`; `before_main` and `after_main` hold declarations whose placement matters; `raw_source` is reserved for malformed or top-level structural probes. Snapshots embed the fully materialized source, not the concise fields. Multi-file roots use the same representation, while imported module files remain verbatim source.
-
-One focused CLI snapshot exercises `build -r` under `test/tmp_fs/`. Additional assertions force GCC to fail after Frog has directly regenerated the C output, verify that a subsequent successful build is deterministic, and verify lexical import resolution through a symlinked root source. `run` reuses ignored scratch artifacts under `build/`, so it does not publish artifacts beside examples.
-
-`test/tmp_fs/` is recreated for a run and removed in a `finally` block. Regression artifacts, generated source, and executables remain inside that temporary tree. Each subprocess has a bounded timeout; exceeding it fails the test run rather than producing an approvable snapshot.
-
-Useful commands:
+Run only this corpus with:
 
 ```sh
-just show-diff
-just approve-diff
+just frog-regressions
 ```
 
-Only run `just approve-diff` after carefully reviewing the regenerated snapshots.
+## Host policy checks
+
+`test/__main__.py` is limited to CLI policies that require host environment or
+filesystem control. It verifies behavior across a forced GCC failure and checks
+lexical import resolution through a symlinked root source. Each launched process
+group, including the Frog runner and its children, has a 30-second timeout and
+process-group termination. Frog source used by these checks lives under
+`test/cases/host_policy/`.
+
+Python is test-only. The compiler, CLI, and all language/compiler case
+declarations and assertions are implemented in Frog; there is no Python Frog
+compiler or interpreter.
+
+Run only the host policy checks after building `build/frogc` with:
+
+```sh
+python -m test
+```
+
+`test/tmp_fs/` is recreated for the host checks and removed afterward. Other
+generated `.c` and `.exe` files are disposable build artifacts.
+
+## Bootstrap check
+
+`just bootstrap-check` verifies that the checked-in `compiler/frogc.c`, stage 2,
+and stage 3 are byte-identical. Language behavior belongs in the Frog test
+corpus rather than in a separate bootstrap suite.

@@ -1,0 +1,3 @@
+proc main -- do
+    42 print
+end
