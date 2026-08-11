@@ -1,4 +1,4 @@
-proc exercise-prelude -- do
+proc exercise-builtins -- do
     true "must not fail" assert
     10 20 dup2 print print print print
     30 drop

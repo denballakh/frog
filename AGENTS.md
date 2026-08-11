@@ -41,8 +41,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
   through explicit C interop and implement library policy in Frog.
-- `stdlib/builtins.frog`: Embedded source text for the standard fallback
-  prelude macros and procedures.
+- `stdlib/builtins.frog`: Ordinary Frog declarations for the implicitly loaded,
+  shadowable standard macros and procedures.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
   manually managed growable `ByteBuffer` record.
 - `stdlib/containers.frog`: Pointer arrays, pointer lists, and fixed-bucket
@@ -147,6 +147,7 @@ Commands:
 - Imported files contribute procedures, records, unions, function-reference types, and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
+- `stdlib/builtins.frog` is loaded once as a normal module after the root's explicit import graph. Every other module resolves its otherwise-unknown macro and ordinary-procedure words from that module as a final, shadowable fallback; the builtins module does not implicitly import itself.
 - `container-count` and `container-empty?` are structural container macros over the shared `count` field of `PtrArray`, `PtrList`, and `StringMap`; preserve their record-agnostic behavior.
 - Parsed `JsonValue` roots exclusively own every descendant. `json-free` recursively releases a root; scalar byte ranges and array/object children returned by lookup helpers are borrowed and must not be freed separately.
 - `http-serve-connection` owns and closes its connected descriptor; `http-serve-one` borrows its listener. HTTP handlers borrow the request only during the call and transfer an owned copied-body response back to the server.
@@ -161,7 +162,8 @@ Commands:
 - The compiler executable is kept under `build/` beside the repository's
   `stdlib/` directory at the parent level. The search root is captured before
   file commands change directory, so filter, `run`, and `build` resolve the
-  same `stdlib/...` module identity. A slashless `argv[0]` leaves the search
+  same `stdlib/...` module identity. Every compilation loads
+  `stdlib/builtins.frog`, so a slashless `argv[0]` leaves the required search
   root unavailable; do not add PATH search or an importer-relative fallback.
 
 ## Language Semantics
@@ -170,7 +172,7 @@ Commands:
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
-- `assert` is a shadowable prelude procedure with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs.
+- `assert` is a shadowable procedure in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs.
 - Character literals contain one raw Unicode codepoint; `\'` is the only
   character escape and represents a single quote. Preserve raw `'\'` as the
   backslash character and keep other backslash spellings invalid.
@@ -197,7 +199,7 @@ Commands:
 - String literals lower to one `String` handle backed by a static byte-pointer/length descriptor. `String.bytes` and `String.len` expose its fields; byte storage is writable and shared by equal pooled literals, and generated globals and macro expansion must retain the defining module's pooled literal identity.
 - Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
-- The compiler imports `builtin-prelude-source` from `stdlib/builtins.frog` when it is built, then constructs the fallback prelude module from that embedded string at runtime. Prelude macros and ordinary non-C-bound procedures are fallback words; C-bound procedures remain private. Do not replace this with a runtime filesystem dependency; the checked compiler seed must remain standalone.
+- The compiler loads `stdlib/builtins.frog` through the normal canonical module loader for every compilation and stores that module as the final fallback scope. It contains declarations directly; do not recreate an embedded source string. Ordinary non-C-bound procedures and macros are fallback words, while C-bound procedures remain private.
 - Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
 - The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
 - Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.

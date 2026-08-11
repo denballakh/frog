@@ -1,4 +1,4 @@
-from "fallbacks.frog" import exercise-prelude
+from "fallbacks.frog" import exercise-builtins
 
 proc drop int -- int do 1 + end
 macro swap let first second do first second end end
@@ -15,5 +15,5 @@ proc main -- do
     1 2 swap print print
     3 dup + print
     false "ignored" assert print
-    exercise-prelude
+    exercise-builtins
 end

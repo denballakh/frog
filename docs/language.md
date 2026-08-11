@@ -207,13 +207,13 @@ end
 
 Constant expressions accept literals, visible constant references, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. They do not execute macros, procedures, control flow, local bindings, allocation, memory or I/O operations, casts, or nominal-type operations. Integer overflow, division by zero, and invalid shifts are compile errors. Constant shifts require a non-negative value and a count from 0 through 62.
 
-Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a prelude definition.
+Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a builtins definition.
 
-## Standard Prelude
+## Implicit Builtins Module
 
-The standard prelude provides `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` in every module. The stack operations behave like ordinary macros; `assert` is an ordinary procedure. All prelude definitions may be shadowed.
+The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) as an ordinary Frog module for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `assert` is an ordinary procedure.
 
-Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a prelude definition. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
+Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
 
 - `dup`: `a -- a a`
 - `dup2`: `a b -- a b a b`
@@ -244,7 +244,8 @@ Import declarations are collected before procedure bodies are compiled, so impor
 Import paths beginning with `stdlib/` are resolved from the compiler
 distribution's standard-library root. They do not fall back to the importing
 module's directory. Prefix the path with `./` to import a local directory named
-`stdlib` instead.
+`stdlib` instead. Because `stdlib/builtins.frog` is loaded for every program,
+the compiler distribution's standard-library root must always be available.
 
 All other relative import paths are resolved from the directory containing the
 importing module. For example, inside `pkg/use.frog`,

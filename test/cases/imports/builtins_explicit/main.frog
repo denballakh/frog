@@ -1,0 +1,9 @@
+from "stdlib/builtins.frog" import (
+    dup as builtin-dup
+    assert as builtin-assert
+)
+
+proc main -- do
+    true "must not fail" builtin-assert
+    21 builtin-dup + print
+end

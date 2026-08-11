@@ -8,7 +8,6 @@ from "stdlib/libc.frog" import (
     fork create-file dup2 close chdir get-current-directory execv execvp
     ensure-directory wait-child finish-child reset-child-signals
 )
-from "stdlib/builtins.frog" import builtin-prelude-source
 
 const cell-bytes 8 end
 
@@ -2843,7 +2842,7 @@ proc scan-one-import ModuleContext int -- int do
             path-token 1 + let import-token do
                 if import-token ctx @ModuleContext.token_count >= do "expected import after import path" fail end
                 if ctx import-token "import" token-equals ! do "expected import after import path" fail end
-                ctx path-token normalize-import-path let canonical canonical-length do
+                ctx path-token decoded-import-path normalize-path let canonical canonical-length do
                     import-token 1 + let item-token do
                         if item-token ctx @ModuleContext.token_count >= do "expected imported name" fail end
                         if ctx item-token "(" token-equals do
@@ -3243,7 +3242,7 @@ proc cc-debug-tracing ptr -- bool do
         cc @cc-program @program-debug
         cc @cc-emitting ! &&
         cc @cc-procedure-module ptr cast int cast
-        cc @cc-program @program-prelude-module ptr cast int cast != &&
+        cc @cc-program @program-builtins-module ptr cast int cast != &&
     end
 end
 
@@ -4147,8 +4146,7 @@ proc decoded-import-path ModuleContext int -- ptr int do
     end
 end
 
-proc normalize-import-path ModuleContext int -- ptr int do
-    decoded-import-path
+proc normalize-path ptr int -- ptr int do
     let bytes length do
         length 1 + cell-bytes * alloc
         let starts do
@@ -4261,7 +4259,14 @@ proc load-module-imports ptr ModuleContext -- do
         0
         while dup module @ModuleContext.import_count < do
             dup let import-index do
-                program module import-index load-import-target drop
+                module import-index import-at
+                let entry do
+                    program
+                    entry @ImportEntry.canonical_path
+                    entry @ImportEntry.canonical_path_length
+                    load-module-path
+                    entry !ImportEntry.target_module
+                end
             end
             1 +
         end
@@ -4269,46 +4274,37 @@ proc load-module-imports ptr ModuleContext -- do
     end
 end
 
-proc load-import-target ptr ModuleContext int -- ModuleContext do
-    let program importing-module import-index do
-        importing-module import-index import-at
-        let entry do
-            entry @ImportEntry.canonical_path
-            entry @ImportEntry.canonical_path_length
-            let canonical canonical-length do
-                program canonical canonical-length find-module-by-path
-                let existing do
-                    if existing ptr cast int cast 0 != do
-                        if existing @ModuleContext.load_state load-loading == do
-                            "cyclic import" fail
-                        end
-                        existing entry !ImportEntry.target_module
-                        existing
-                    else
-                        canonical canonical-length read-file
-                        let source source-length success do
-                            if success ! do
-                                "import file not found" fail
-                            end
-                            ModuleContext:alloc
-                            let module do
-                                canonical module !ModuleContext.canonical_path
-                                canonical-length module !ModuleContext.canonical_path_length
-                                0 ptr cast module !ModuleContext.imports
-                                0 module !ModuleContext.import_count
-                                0 ptr cast module !ModuleContext.scope
-                                0 module !ModuleContext.scope_count
-                                load-loading module !ModuleContext.load_state
-                                resolve-new module !ModuleContext.resolve_state
-                                false module !ModuleContext.is_root
-                                program module program-add-module
-                                module source source-length initialize-module-source
-                                program module load-module-imports
-                                load-loaded module !ModuleContext.load_state
-                                module entry !ImportEntry.target_module
-                                module
-                            end
-                        end
+proc load-module-path ptr ptr int -- ModuleContext do
+    let program canonical canonical-length do
+        program canonical canonical-length find-module-by-path
+        let existing do
+            if existing ptr cast int cast 0 != do
+                if existing @ModuleContext.load_state load-loading == do
+                    "cyclic import" fail
+                end
+                existing
+            else
+                canonical canonical-length read-file
+                let source source-length success do
+                    if success ! do
+                        "import file not found" fail
+                    end
+                    ModuleContext:alloc
+                    let module do
+                        canonical module !ModuleContext.canonical_path
+                        canonical-length module !ModuleContext.canonical_path_length
+                        0 ptr cast module !ModuleContext.imports
+                        0 module !ModuleContext.import_count
+                        0 ptr cast module !ModuleContext.scope
+                        0 module !ModuleContext.scope_count
+                        load-loading module !ModuleContext.load_state
+                        resolve-new module !ModuleContext.resolve_state
+                        false module !ModuleContext.is_root
+                        program module program-add-module
+                        module source source-length initialize-module-source
+                        program module load-module-imports
+                        load-loaded module !ModuleContext.load_state
+                        module
                     end
                 end
             end
@@ -7786,7 +7782,7 @@ proc compile-ordinary-word ptr int -- do
                                         compile-procedure-call
                                     end
                                 else
-                                    if cc token-index compile-prelude-word ! do
+                                    if cc token-index compile-builtins-word ! do
                                         "unknown word" fail
                                     end
                                 end
@@ -8242,7 +8238,7 @@ proc compile-source ptr int bool ptr int -- do
             debug program !program-debug
             standard-library-root program !program-standard-library-root
             standard-library-root-length program !program-standard-library-root-length
-            0 ptr cast ModuleContext cast program !program-prelude-module
+            0 ptr cast ModuleContext cast program !program-builtins-module
             ModuleContext:alloc
             let ctx do
                 0 ptr cast ctx !ModuleContext.canonical_path
@@ -8259,7 +8255,7 @@ proc compile-source ptr int bool ptr int -- do
                 ctx source source-length initialize-module-source
                 program ctx load-module-imports
                 load-loaded ctx !ModuleContext.load_state
-                program initialize-prelude
+                program initialize-builtins
                 program initialize-string-pool
                 program resolve-all-module-scopes
                 program evaluate-all-constants
@@ -8273,84 +8269,78 @@ proc compile-source ptr int bool ptr int -- do
     end
 end
 
-const program-prelude-module-offset 64 end
-proc @program-prelude-module ptr -- ModuleContext do program-prelude-module-offset pointer-field-read ModuleContext cast end
-proc !program-prelude-module ModuleContext ptr -- do let value program do value ptr cast program program-prelude-module-offset pointer-field-write end end
+const program-builtins-module-offset 64 end
+proc @program-builtins-module ptr -- ModuleContext do program-builtins-module-offset pointer-field-read ModuleContext cast end
+proc !program-builtins-module ModuleContext ptr -- do let value program do value ptr cast program program-builtins-module-offset pointer-field-write end end
 
-proc initialize-prelude ptr -- do
+proc initialize-builtins ptr -- do
     let program do
-        ModuleContext:alloc
-        let prelude do
-            0 ptr cast prelude !ModuleContext.canonical_path
-            0 prelude !ModuleContext.canonical_path_length
-            0 ptr cast prelude !ModuleContext.imports
-            0 prelude !ModuleContext.import_count
-            0 ptr cast prelude !ModuleContext.scope
-            0 prelude !ModuleContext.scope_count
-            load-loading prelude !ModuleContext.load_state
-            resolve-new prelude !ModuleContext.resolve_state
-            false prelude !ModuleContext.is_root
-            program prelude program-add-module
-            builtin-prelude-source
-            let source do
-                prelude source String.bytes source String.len initialize-module-source
+        "stdlib/builtins.frog"
+        let path do
+            program @program-root-module path String.bytes path String.len standard-library-import-path
+            normalize-path
+            let canonical canonical-length do
+                program canonical canonical-length load-module-path
+                program !program-builtins-module
             end
-            load-loaded prelude !ModuleContext.load_state
-            prelude program !program-prelude-module
         end
     end
 end
 
-proc compile-prelude-word ptr int -- bool do
+proc compile-builtins-word ptr int -- bool do
     let cc token-index do
-        if
-            cc @cc-procedure-module ptr cast int cast
-            cc @cc-program @program-prelude-module ptr cast int cast ==
-            cc @cc-defining-module token-index "prelude-assert-fail" token-equals &&
-        do
-            cc type-string type-expect
-            if cc @cc-emitting do
-                cc @cc-type-count
-                let value-index do
-                    cc emit-indent
-                    "{ const FrogString *value = (const FrogString *)(intptr_t)" emit
-                    cc value-index emit-slot
-                    "; (void)fwrite(value->bytes, 1, (size_t)value->len, stderr); (void)fputc(10, stderr); exit(1); }" emit
-                    10 putc
+        cc @cc-procedure-module ptr cast int cast
+        cc @cc-program @program-builtins-module ptr cast int cast ==
+        let compiling-builtins do
+            if compiling-builtins do
+                if cc @cc-defining-module token-index "builtins-assert-fail" token-equals do
+                    cc type-string type-expect
+                    if cc @cc-emitting do
+                        cc @cc-type-count
+                        let value-index do
+                            cc emit-indent
+                            "{ const FrogString *value = (const FrogString *)(intptr_t)" emit
+                            cc value-index emit-slot
+                            "; (void)fwrite(value->bytes, 1, (size_t)value->len, stderr); (void)fputc(10, stderr); exit(1); }" emit
+                            10 putc
+                        end
+                    end
+                    true
+                else
+                    false
                 end
-            end
-            true
-        else
-            cc @cc-program @program-prelude-module
-            peek prelude do cc @cc-defining-module token-index find-scope-symbol
-                let symbol-index do
-                    if symbol-index 0 < do
-                        false
-                    else
-                        prelude symbol-index scope-at
-                        let symbol do
-                            if symbol @ScopeEntry.kind scope-macro == do
-                                cc
-                                symbol @ScopeEntry.definition_module
-                                symbol @ScopeEntry.definition_index
-                                compile-macro
-                                true
-                            elif symbol @ScopeEntry.kind scope-procedure == do
-                                if
+            else
+                cc @cc-program @program-builtins-module
+                peek builtins do cc @cc-defining-module token-index find-scope-symbol
+                    let symbol-index do
+                        if symbol-index 0 < do
+                            false
+                        else
+                            builtins symbol-index scope-at
+                            let symbol do
+                                if symbol @ScopeEntry.kind scope-macro == do
+                                    cc
                                     symbol @ScopeEntry.definition_module
                                     symbol @ScopeEntry.definition_index
-                                    proc-c-binding-at c-binding-none ==
-                                do
-                                    cc token-index
-                                    symbol @ScopeEntry.definition_module
-                                    symbol @ScopeEntry.definition_index
-                                    compile-procedure-call
+                                    compile-macro
                                     true
+                                elif symbol @ScopeEntry.kind scope-procedure == do
+                                    if
+                                        symbol @ScopeEntry.definition_module
+                                        symbol @ScopeEntry.definition_index
+                                        proc-c-binding-at c-binding-none ==
+                                    do
+                                        cc token-index
+                                        symbol @ScopeEntry.definition_module
+                                        symbol @ScopeEntry.definition_index
+                                        compile-procedure-call
+                                        true
+                                    else
+                                        false
+                                    end
                                 else
                                     false
                                 end
-                            else
-                                false
                             end
                         end
                     end

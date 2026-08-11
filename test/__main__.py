@@ -118,6 +118,20 @@ def check_lexical_symlink_import() -> None:
     assert result.stdout == '42\n'
 
 
+def check_slashless_compiler_policy() -> None:
+    environment = os.environ.copy()
+    assert 'PATH' in environment
+    environment['PATH'] = f'{FROGC.parent}{os.pathsep}{environment["PATH"]}'
+
+    help_result = capture_command('frogc', '--help', env=environment)
+    assert help_result.returncode == 0
+    assert help_result.stdout.startswith('Usage:\n')
+
+    compile_result = capture_command('frogc', 'run', '-c', 'proc main -- do end', env=environment)
+    assert compile_result.returncode == 1
+    assert compile_result.stdout == 'frogc: standard library path is unavailable\n'
+
+
 def main() -> None:
     arguments = sys.argv[1:]
     if arguments:
@@ -131,6 +145,7 @@ def main() -> None:
     try:
         check_failed_build_policy()
         check_lexical_symlink_import()
+        check_slashless_compiler_policy()
     finally:
         shutil.rmtree(TMP_FS, ignore_errors=True)
 

@@ -1,15 +1,15 @@
-const builtin-prelude-source "macro dup peek a do a end end
+macro dup peek a do a end end
 macro dup2 peek a b do a b end end
 macro drop let a do end end
 macro swap let a b do b a end end
 macro swap2 let a b c d do c d a b end end
 macro rot let a b c do b c a end end
+
 proc assert bool String -- do
     let condition message do
         if condition do
         else
-            message prelude-assert-fail
+            message builtins-assert-fail
         end
     end
 end
-" end

@@ -11,6 +11,15 @@ The compiler locates this search path from its own executable path. Invoke it
 with a path containing `/`, such as `build/frogc`; a name found only through
 the shell's `PATH` does not identify the accompanying standard library.
 
+## builtins
+
+`stdlib/builtins.frog` is an ordinary Frog module loaded implicitly for every
+program. It defines the standard stack macros `dup`, `dup2`, `drop`, `swap`,
+`swap2`, and `rot`, plus the `assert` procedure documented in the
+[language reference](language.md#implicit-builtins-module). Its definitions are
+available without an import and may be shadowed; explicit imports from the
+module are also supported.
+
 ## libc
 
 `stdlib/libc.frog` declares its C dependencies with `c-include`, maps trusted header
