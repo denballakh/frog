@@ -4,7 +4,7 @@
 // profile.  It reads one Frog source file from stdin and writes C to stdout.
 
 from "../stdlib/libc.frog" import (
-    alloc putc getc eputc exit
+    alloc putc getc eputc exit read-file
     fork create-file dup2 close chdir execv execvp
     ensure-directory wait-child finish-child reset-child-signals
 )
@@ -19,12 +19,6 @@ const type-string 5 end
 const type-none 0 end
 const type-nominal-base 1000 end
 const type-function-base 1 32 << end
-
-const c-abi-int 1 end
-const c-abi-bool 2 end
-const c-abi-ptr 3 end
-const c-abi-size 4 end
-const c-abi-ssize 5 end
 
 const max-int 1 62 << 1 62 << 1 - + end
 const min-int 0 max-int - 1 - end
@@ -53,10 +47,13 @@ const proc-output-start-offset 48 end
 const proc-output-count-offset 56 end
 const proc-index-offset 64 end
 const proc-global-id-offset 72 end
-const proc-external-offset 80 end
-const proc-c-symbol-token-offset 88 end
-const proc-prototype-offset 96 end
-const proc-bytes 104 end
+const proc-c-symbol-token-offset 80 end
+const proc-c-binding-offset 88 end
+const proc-bytes 96 end
+
+const c-binding-none 0 end
+const c-binding-call 1 end
+const c-binding-value 2 end
 
 const program-root-module-offset 0 end
 const program-module-head-offset 8 end
@@ -143,6 +140,9 @@ const function-output-count-offset 40 end
 const function-type-offset 48 end
 const function-bytes 56 end
 
+const c-include-system 1 end
+const c-include-local 2 end
+
 record ModuleContext
     source ptr
     source_length int
@@ -151,7 +151,6 @@ record ModuleContext
     procs ptr
     proc_count int
     types ptr
-    c_abi_types ptr
     type_count int
     lex_index int
     lex_line int
@@ -185,6 +184,11 @@ record ModuleContext
     function_type_count int
     constants ptr
     constant_count int
+    c_types ptr
+    c_type_count int
+    c_includes ptr
+    c_include_count int
+    c_signature_types ptr
 end
 
 record ConstantEvaluator
@@ -202,6 +206,25 @@ record ImportEntry
     canonical_path_length int
 end
 
+record CTypeEntry
+    name_start int
+    name_length int
+    frog_type int
+    type_token int
+end
+
+record CIncludeEntry
+    kind int
+    token int
+end
+
+record CSignatureType
+    active bool
+    token int
+    definition_module ModuleContext
+    definition_index int
+end
+
 record ScopeEntry
     name_module ModuleContext
     name_start int
@@ -217,6 +240,7 @@ const scope-record 3 end
 const scope-union 4 end
 const scope-function 5 end
 const scope-constant 6 end
+const scope-c-type 7 end
 
 const load-new 0 end
 const load-loading 1 end
@@ -876,21 +900,12 @@ proc proc-output-start-at ModuleContext int -- int do proc-output-start-offset p
 proc proc-output-count-at ModuleContext int -- int do proc-output-count-offset proc-field end
 proc proc-index-at ModuleContext int -- int do proc-index-offset proc-field end
 proc proc-global-id-at ModuleContext int -- int do proc-global-id-offset proc-field end
-proc proc-external-at ModuleContext int -- bool do proc-external-offset proc-field 0 != end
 proc proc-c-symbol-token-at ModuleContext int -- int do proc-c-symbol-token-offset proc-field end
-proc proc-prototype-at ModuleContext int -- bool do proc-prototype-offset proc-field 0 != end
+proc proc-c-binding-at ModuleContext int -- int do proc-c-binding-offset proc-field end
 
-proc set-proc-external bool ModuleContext int -- do
+proc set-proc-c-binding int ModuleContext int -- do
     let value ctx index do
-        if value do 1 else 0 end
-        ctx index proc-external-offset set-proc-field
-    end
-end
-
-proc set-proc-prototype bool ModuleContext int -- do
-    let value ctx index do
-        if value do 1 else 0 end
-        ctx index proc-prototype-offset set-proc-field
+        value ctx index proc-c-binding-offset set-proc-field
     end
 end
 
@@ -1140,22 +1155,34 @@ proc type-at ModuleContext int -- int do
     end
 end
 
+proc c-signature-type-at ModuleContext int -- CSignatureType do
+    let ctx index do
+        ctx @ModuleContext.c_signature_types index CSignatureType:sizeof * + CSignatureType cast
+    end
+end
+
 proc add-type ModuleContext int -- do
     let ctx value do
+        ctx ctx @ModuleContext.type_count c-signature-type-at
+        let signature do
+            false signature !CSignatureType.active
+            0 signature !CSignatureType.token
+            0 ptr cast ModuleContext cast signature !CSignatureType.definition_module
+            0 1 - signature !CSignatureType.definition_index
+        end
         value ctx @ModuleContext.types ctx @ModuleContext.type_count cell-bytes * field-write
         ctx @ModuleContext.type_count 1 + ctx !ModuleContext.type_count
     end
 end
 
-proc c-abi-type-at ModuleContext int -- int do
-    let ctx index do
-        ctx @ModuleContext.c_abi_types index cell-bytes * field-read
-    end
-end
-
-proc add-c-abi-type ModuleContext int -- do
-    let ctx value do
-        value ctx @ModuleContext.c_abi_types ctx @ModuleContext.type_count cell-bytes * field-write
+proc add-c-signature-type ModuleContext int -- do
+    let ctx token do
+        ctx type-none add-type
+        ctx ctx @ModuleContext.type_count 1 - c-signature-type-at
+        let signature do
+            true signature !CSignatureType.active
+            token signature !CSignatureType.token
+        end
     end
 end
 
@@ -1182,48 +1209,15 @@ proc reserved-name ModuleContext int -- bool do
         ctx token-index "from" token-equals ||
         ctx token-index "import" token-equals ||
         ctx token-index "as" token-equals ||
-        ctx token-index "extern" token-equals ||
-        ctx token-index "prototype" token-equals ||
+        ctx token-index "c-include" token-equals ||
+        ctx token-index "c-type" token-equals ||
+        ctx token-index "c-call" token-equals ||
+        ctx token-index "c-value" token-equals ||
         ctx token-index "record" token-equals ||
         ctx token-index "union" token-equals ||
         ctx token-index "case" token-equals ||
         ctx token-index "fn" token-equals ||
         ctx token-index "--" token-equals ||
-    end
-end
-
-proc parse-c-abi-type-token ModuleContext int -- int do
-    peek ctx token-index do require-word
-        if ctx token-index "c-int" token-equals do
-            c-abi-int
-        elif ctx token-index "c-bool" token-equals do
-            c-abi-bool
-        elif ctx token-index "c-ptr" token-equals do
-            c-abi-ptr
-        elif ctx token-index "c-size" token-equals do
-            c-abi-size
-        elif ctx token-index "c-ssize" token-equals do
-            c-abi-ssize
-        else
-            "unknown C ABI type" fail
-            0
-        end
-    end
-end
-
-proc c-abi-semantic-type int -- int do
-    let abi-type do
-        if abi-type c-abi-bool == do type-bool
-        elif abi-type c-abi-ptr == do type-ptr
-        else type-int
-        end
-    end
-end
-
-proc add-external-type ModuleContext int -- do
-    let ctx abi-type do
-        ctx abi-type add-c-abi-type
-        abi-type c-abi-semantic-type ctx swap add-type
     end
 end
 
@@ -1330,6 +1324,52 @@ proc valid-c-symbol ModuleContext int -- bool do
             else
                 bytes length 1 c-identifier-suffix-valid
             end
+        end
+    end
+end
+
+proc valid-c-include-byte int -- bool do
+    let byte do
+        byte 65 >= byte 90 <= &&
+        byte 97 >= byte 122 <= && ||
+        byte 48 >= byte 57 <= && ||
+        byte 95 == || byte 46 == || byte 47 == || byte 43 == || byte 45 == ||
+    end
+end
+
+proc validate-c-include-token ModuleContext int -- do
+    let ctx token do
+        if ctx token token-kind-at token-string != do "expected C include path string" fail end
+        ctx token decoded-string-length
+        let length do
+            if length 0 == do "C include path must not be empty" fail end
+            0
+            while dup length < do
+                dup let index do
+                    if ctx token index decoded-string-byte valid-c-include-byte ! do "invalid C include path" fail end
+                end
+                1 +
+            end
+            drop
+        end
+    end
+end
+
+proc validate-c-type-spelling ModuleContext int -- do
+    let ctx token do
+        if ctx token token-kind-at token-string != do "expected C type string" fail end
+        ctx token decoded-string-length let length do
+            if length 0 == do "C type must not be empty" fail end
+            0
+            while dup length < do
+                dup let index do
+                    ctx token index decoded-string-byte let byte do
+                        if byte 0 == byte 10 == || byte 13 == || do "invalid C type spelling" fail end
+                    end
+                end
+                1 +
+            end
+            drop
         end
     end
 end
@@ -1573,6 +1613,24 @@ end
 
 proc find-function ModuleContext int -- int do 0 find-function-from end
 
+proc c-type-at ModuleContext int -- CTypeEntry do let ctx index do ctx @ModuleContext.c_types index CTypeEntry:sizeof * + CTypeEntry cast end end
+proc c-include-at ModuleContext int -- CIncludeEntry do let ctx index do ctx @ModuleContext.c_includes index CIncludeEntry:sizeof * + CIncludeEntry cast end end
+proc c-type-name-equals-token ModuleContext int int -- bool do
+    let ctx index token do
+        ctx index c-type-at let entry do
+            ctx @ModuleContext.source entry @CTypeEntry.name_start + entry @CTypeEntry.name_length ctx token token-slice bytes-equal
+        end
+    end
+end
+proc find-c-type-from ModuleContext int int -- int do
+    let ctx token index do
+        if index ctx @ModuleContext.c_type_count >= do 0 1 -
+        elif ctx index token c-type-name-equals-token do index
+        else ctx token index 1 + find-c-type-from end
+    end
+end
+proc find-c-type ModuleContext int -- int do 0 find-c-type-from end
+
 proc fail-duplicate-declaration ModuleContext int -- do
     let ctx token-index do
         "frogc: " emit-error
@@ -1673,6 +1731,7 @@ proc scan-one-record ModuleContext int -- int do
                 ctx name-token find-constant 0 >= ||
                 ctx name-token find-union 0 >= ||
                 ctx name-token find-function 0 >= ||
+                ctx name-token find-c-type 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -1832,6 +1891,7 @@ proc scan-one-union ModuleContext int -- int do
                 ctx name-token find-constant 0 >= ||
                 ctx name-token find-record 0 >= ||
                 ctx name-token find-function 0 >= ||
+                ctx name-token find-c-type 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -1903,6 +1963,7 @@ proc scan-one-function ModuleContext int -- int do
                 ctx name-token find-constant 0 >= ||
                 ctx name-token find-record 0 >= ||
                 ctx name-token find-union 0 >= ||
+                ctx name-token find-c-type 0 >= ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -2005,7 +2066,10 @@ proc scan-macro-body ModuleContext int -- int do
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
                         ctx token-index "const" token-equals ||
-                        ctx token-index "extern" token-equals ||
+                        ctx token-index "c-include" token-equals ||
+                        ctx token-index "c-type" token-equals ||
+                        ctx token-index "c-call" token-equals ||
+                        ctx token-index "c-value" token-equals ||
                         ctx token-index "record" token-equals ||
                         ctx token-index "union" token-equals ||
                         ctx token-index "fn" token-equals ||
@@ -2052,7 +2116,10 @@ proc validate-macro-body ModuleContext int int -- do
                                     ctx token-index "proc" token-equals
                                     ctx token-index "macro" token-equals ||
                                     ctx token-index "const" token-equals ||
-                                    ctx token-index "extern" token-equals ||
+                                    ctx token-index "c-include" token-equals ||
+                                    ctx token-index "c-type" token-equals ||
+                                    ctx token-index "c-call" token-equals ||
+                                    ctx token-index "c-value" token-equals ||
                                     ctx token-index "record" token-equals ||
                                     ctx token-index "union" token-equals ||
                                     ctx token-index "fn" token-equals ||
@@ -2165,6 +2232,8 @@ proc scan-one-macro ModuleContext int -- int do
                 ctx name-token find-record 0 >=
                 ctx name-token find-union 0 >= ||
                 ctx name-token find-function 0 >= ||
+                ctx name-token find-c-type 0 >=
+                ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -2197,7 +2266,10 @@ proc constant-expression-forbidden-word ModuleContext int -- bool do
         ctx token-index "proc" token-equals ||
         ctx token-index "macro" token-equals ||
         ctx token-index "const" token-equals ||
-        ctx token-index "extern" token-equals ||
+        ctx token-index "c-include" token-equals ||
+        ctx token-index "c-type" token-equals ||
+        ctx token-index "c-call" token-equals ||
+        ctx token-index "c-value" token-equals ||
         ctx token-index "record" token-equals ||
         ctx token-index "union" token-equals ||
         ctx token-index "fn" token-equals ||
@@ -2261,6 +2333,8 @@ proc scan-one-constant ModuleContext int -- int do
                 ctx name-token find-record 0 >= ||
                 ctx name-token find-union 0 >= ||
                 ctx name-token find-function 0 >= ||
+                ctx name-token find-c-type 0 >=
+                ||
             do
                 ctx name-token fail-duplicate-declaration
             end
@@ -2304,7 +2378,10 @@ proc scan-block-end-with-outer-elif ModuleContext int bool -- int do
                         ctx token-index "proc" token-equals
                         ctx token-index "macro" token-equals ||
                         ctx token-index "const" token-equals ||
-                        ctx token-index "extern" token-equals ||
+                        ctx token-index "c-include" token-equals ||
+                        ctx token-index "c-type" token-equals ||
+                        ctx token-index "c-call" token-equals ||
+                        ctx token-index "c-value" token-equals ||
                         ctx token-index "record" token-equals ||
                         ctx token-index "union" token-equals ||
                         ctx token-index "fn" token-equals ||
@@ -2351,8 +2428,8 @@ end
 proc scan-block-end ModuleContext int -- int do false scan-block-end-with-outer-elif end
 proc scan-ignored-block-end ModuleContext int -- int do true scan-block-end-with-outer-elif end
 
-proc allocate-proc ModuleContext int bool -- int do
-    let ctx name-token external do
+proc allocate-proc ModuleContext int -- int do
+    let ctx name-token do
         if name-token ctx @ModuleContext.token_count >= do
             "expected procedure name" fail
         end
@@ -2376,6 +2453,7 @@ proc allocate-proc ModuleContext int bool -- int do
             ctx name-token find-record 0 >=
             ctx name-token find-union 0 >= ||
             ctx name-token find-function 0 >= ||
+            ctx name-token find-c-type 0 >= ||
             ctx name-token find-constant 0 >= ||
         do
             ctx name-token fail-duplicate-declaration
@@ -2387,8 +2465,7 @@ proc allocate-proc ModuleContext int bool -- int do
             ctx name-token token-length-at ctx proc-index proc-name-length-offset set-proc-field
             proc-index ctx proc-index proc-index-offset set-proc-field
             ctx @ModuleContext.program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
-            external ctx proc-index set-proc-external
-            false ctx proc-index set-proc-prototype
+            c-binding-none ctx proc-index set-proc-c-binding
             proc-index
         end
     end
@@ -2398,7 +2475,7 @@ proc scan-one-proc ModuleContext int -- int do
     let ctx proc-token do
         proc-token 1 +
         let name-token do
-            ctx name-token false allocate-proc
+            ctx name-token allocate-proc
             let proc-index do
                 ctx @ModuleContext.type_count ctx proc-index proc-input-start-offset set-proc-field
                 name-token 1 + 0
@@ -2470,79 +2547,162 @@ proc scan-one-proc ModuleContext int -- int do
     end
 end
 
-proc scan-one-extern ModuleContext int -- int do
-    let ctx extern-token do
-        extern-token 1 +
-        let first-token do
-            if first-token ctx @ModuleContext.token_count >= do "expected procedure name" fail end
-            if ctx first-token "prototype" token-equals do true first-token 1 + else false first-token end
-        end
-        let prototype name-token do
-            ctx name-token true allocate-proc
-            let proc-index do
-                prototype ctx proc-index set-proc-prototype
-                if ctx name-token "main" token-equals do
-                    "main cannot be external" fail
+proc scan-one-c-include ModuleContext int -- int do
+    let ctx token do
+        token 1 + let kind-token do
+            if kind-token ctx @ModuleContext.token_count >= do "expected C include kind" fail end
+            if ctx kind-token "system" token-equals do c-include-system
+            elif ctx kind-token "local" token-equals do c-include-local
+            else "expected C include kind" fail 0 end
+            kind-token 1 + let kind path-token do
+                if path-token ctx @ModuleContext.token_count >= do "expected C include path string" fail end
+                ctx path-token validate-c-include-token
+                path-token 1 + let end-token do
+                    if end-token ctx @ModuleContext.token_count >= do "expected end after C include" fail end
+                    if ctx end-token "end" token-equals ! do "expected end after C include" fail end
+                    ctx @ModuleContext.c_include_count dup ctx swap c-include-at let index entry do
+                        kind entry !CIncludeEntry.kind
+                        path-token entry !CIncludeEntry.token
+                        index 1 + ctx !ModuleContext.c_include_count
+                        end-token 1 +
+                    end
                 end
-                name-token 1 +
-                let symbol-token do
-                    if symbol-token ctx @ModuleContext.token_count >= do
-                        "expected C symbol" fail
-                    end
-                    ctx symbol-token require-word
-                    if ctx symbol-token valid-c-symbol ! do
-                        "invalid C symbol" fail
-                    end
-                    symbol-token ctx proc-index proc-c-symbol-token-offset set-proc-field
+            end
+        end
+    end
+end
 
-                    ctx @ModuleContext.type_count ctx proc-index proc-input-start-offset set-proc-field
-                    symbol-token 1 + 0
-                    while
-                        peek token-index count do
-                            token-index ctx @ModuleContext.token_count <
-                            if dup do
-                                drop ctx token-index "--" token-equals !
-                            end
-                        end
-                    do
-                        let token-index count do
-                            ctx token-index parse-c-abi-type-token ctx swap add-external-type
-                            token-index 1 + count 1 +
+proc scan-one-c-type ModuleContext int -- int do
+    let ctx token do
+        token 1 + let name do
+            if name ctx @ModuleContext.token_count >= do "expected C type name" fail end
+            ctx name require-word
+            if ctx name reserved-name ctx name string-type-name || do "invalid C type name" fail end
+            if
+                ctx name find-proc 0 >=
+                ctx name find-macro 0 >= ||
+                ctx name find-constant 0 >= ||
+                ctx name find-record 0 >= ||
+                ctx name find-union 0 >= ||
+                ctx name find-function 0 >= ||
+                ctx name find-c-type 0 >= ||
+            do
+                ctx name fail-duplicate-declaration
+            end
+            name 1 + let frog-token do
+                if frog-token ctx @ModuleContext.token_count >= do "expected C type representation" fail end
+                if ctx frog-token "int" token-equals do type-int
+                elif ctx frog-token "bool" token-equals do type-bool
+                elif ctx frog-token "ptr" token-equals do type-ptr
+                else "expected C type representation" fail 0 end
+                frog-token 1 + let frog-type spelling do
+                    if spelling ctx @ModuleContext.token_count >= do "expected C type string" fail end
+                    ctx spelling validate-c-type-spelling
+                    spelling 1 + let end-token do
+                        if end-token ctx @ModuleContext.token_count >= do "expected end after C type" fail end
+                        if ctx end-token "end" token-equals ! do "expected end after C type" fail end
+                        ctx @ModuleContext.c_type_count dup ctx swap c-type-at let index entry do
+                            ctx name token-start-at entry !CTypeEntry.name_start
+                            ctx name token-length-at entry !CTypeEntry.name_length
+                            frog-type entry !CTypeEntry.frog_type
+                            spelling entry !CTypeEntry.type_token
+                            index 1 + ctx !ModuleContext.c_type_count
+                            end-token 1 +
                         end
                     end
-                    let token-index input-count do
-                        if token-index ctx @ModuleContext.token_count >= do
-                            "expected -- in external signature" fail
-                        end
-                        input-count ctx proc-index proc-input-count-offset set-proc-field
-                        token-index 1 +
-                    end
+                end
+            end
+        end
+    end
+end
 
-                    ctx @ModuleContext.type_count ctx proc-index proc-output-start-offset set-proc-field
-                    0
-                    while
-                        peek token-index count do
-                            token-index ctx @ModuleContext.token_count <
-                            if dup do
-                                drop ctx token-index "end" token-equals !
-                            end
-                        end
-                    do
-                        let token-index count do
-                            ctx token-index parse-c-abi-type-token ctx swap add-external-type
-                            token-index 1 + count 1 +
+proc scan-c-signature-types ModuleContext int String -- int int do
+    let ctx token stop do
+        token 0
+        while peek current count do
+            current ctx @ModuleContext.token_count <
+            if dup do
+                drop
+                ctx current stop token-equals !
+                ctx current "proc" token-equals ! &&
+                ctx current "macro" token-equals ! &&
+                ctx current "const" token-equals ! &&
+                ctx current "c-include" token-equals ! &&
+                ctx current "c-type" token-equals ! &&
+                ctx current "c-call" token-equals ! &&
+                ctx current "c-value" token-equals ! &&
+                ctx current "record" token-equals ! &&
+                ctx current "union" token-equals ! &&
+                ctx current "fn" token-equals ! &&
+                ctx current "from" token-equals ! &&
+            end
+        end do
+            let current count do
+                ctx current require-word
+                ctx current add-c-signature-type
+                current 1 + count 1 +
+            end
+        end
+    end
+end
+
+proc scan-one-c-call ModuleContext int -- int do
+    let ctx token do
+        token 1 + let name do
+            ctx name allocate-proc let index do
+                c-binding-call ctx index set-proc-c-binding
+                if ctx name "main" token-equals do "main cannot be a C binding" fail end
+                name 1 + let symbol do
+                    if symbol ctx @ModuleContext.token_count >= do "expected C symbol" fail end
+                    ctx symbol require-word
+                    if ctx symbol valid-c-symbol ! do "invalid C symbol" fail end
+                    symbol ctx index proc-c-symbol-token-offset set-proc-field
+                    ctx @ModuleContext.type_count ctx index proc-input-start-offset set-proc-field
+                    ctx symbol 1 + "--" scan-c-signature-types let next count do
+                        if next ctx @ModuleContext.token_count >= do "expected -- in C call signature" fail end
+                        if ctx next "--" token-equals ! do "expected -- in C call signature" fail end
+                        count ctx index proc-input-count-offset set-proc-field
+                        ctx @ModuleContext.type_count ctx index proc-output-start-offset set-proc-field
+                        ctx next 1 + "end" scan-c-signature-types let end-token outputs do
+                            if end-token ctx @ModuleContext.token_count >= do "expected end after C call" fail end
+                            if ctx end-token "end" token-equals ! do "expected end after C call" fail end
+                            if outputs 1 > do "C call may return at most one value" fail end
+                            outputs ctx index proc-output-count-offset set-proc-field
+                            index 1 + ctx !ModuleContext.proc_count
+                            end-token 1 +
                         end
                     end
-                    let token-index output-count do
-                        if token-index ctx @ModuleContext.token_count >= do
-                            "expected end after external signature" fail
+                end
+            end
+        end
+    end
+end
+
+proc scan-one-c-value ModuleContext int -- int do
+    let ctx token do
+        token 1 + let name do
+            ctx name allocate-proc let index do
+                c-binding-value ctx index set-proc-c-binding
+                if ctx name "main" token-equals do "main cannot be a C binding" fail end
+                name 1 + let symbol do
+                    if symbol ctx @ModuleContext.token_count >= do "expected C symbol" fail end
+                    ctx symbol require-word
+                    if ctx symbol valid-c-symbol ! do "invalid C symbol" fail end
+                    symbol ctx index proc-c-symbol-token-offset set-proc-field
+                    symbol 1 + let separator do
+                        if separator ctx @ModuleContext.token_count >= do "expected -- in C value signature" fail end
+                        if ctx separator "--" token-equals ! do "expected -- in C value signature" fail end
+                        0 ctx index proc-input-count-offset set-proc-field
+                        ctx @ModuleContext.type_count ctx index proc-input-start-offset set-proc-field
+                        ctx @ModuleContext.type_count ctx index proc-output-start-offset set-proc-field
+                        ctx separator 1 + "end" scan-c-signature-types let end-token outputs do
+                            if end-token ctx @ModuleContext.token_count >= do "expected end after C value" fail end
+                            if ctx end-token "end" token-equals ! do "expected end after C value" fail end
+                            if outputs 1 != do "C value must return exactly one value" fail end
+                            outputs ctx index proc-output-count-offset set-proc-field
+                            index 1 + ctx !ModuleContext.proc_count
+                            end-token 1 +
                         end
-                        if output-count 1 > do
-                            "external procedure may return at most one value" fail
-                        end
-                        output-count ctx proc-index proc-output-count-offset set-proc-field
-                        proc-index 1 + ctx !ModuleContext.proc_count
-                        token-index 1 +
                     end
                 end
             end
@@ -2715,6 +2875,8 @@ proc scan-declarations ModuleContext -- do
         0 ctx !ModuleContext.union_case_count
         0 ctx !ModuleContext.function_count
         0 ctx !ModuleContext.function_type_count
+        0 ctx !ModuleContext.c_type_count
+        0 ctx !ModuleContext.c_include_count
         0
         while dup ctx @ModuleContext.token_count < do
             let token-index do
@@ -2746,9 +2908,24 @@ proc scan-declarations ModuleContext -- do
                     ctx token-index scan-one-proc
                 elif
                     ctx token-index token-kind-at token-word ==
-                    ctx token-index "extern" token-equals &&
+                    ctx token-index "c-include" token-equals &&
                 do
-                    ctx token-index scan-one-extern
+                    ctx token-index scan-one-c-include
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "c-type" token-equals &&
+                do
+                    ctx token-index scan-one-c-type
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "c-call" token-equals &&
+                do
+                    ctx token-index scan-one-c-call
+                elif
+                    ctx token-index token-kind-at token-word ==
+                    ctx token-index "c-value" token-equals &&
+                do
+                    ctx token-index scan-one-c-value
                 elif
                     ctx token-index token-kind-at token-word ==
                     ctx token-index "record" token-equals &&
@@ -3981,7 +4158,6 @@ proc initialize-module-source ModuleContext ptr int -- do
         ctx @ModuleContext.token_count 1 + macro-bytes * alloc ctx !ModuleContext.macros
         ctx @ModuleContext.token_count 1 + constant-bytes * alloc ctx !ModuleContext.constants
         ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.types
-        ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.c_abi_types
         ctx @ModuleContext.token_count 1 + ImportEntry:sizeof * alloc ctx !ModuleContext.imports
         ctx @ModuleContext.token_count 1 + ScopeEntry:sizeof * alloc ctx !ModuleContext.scope
         ctx @ModuleContext.token_count 1 + record-bytes * alloc ctx !ModuleContext.records
@@ -3990,6 +4166,9 @@ proc initialize-module-source ModuleContext ptr int -- do
         ctx @ModuleContext.token_count 1 + union-case-bytes * alloc ctx !ModuleContext.union_cases
         ctx @ModuleContext.token_count 1 + function-bytes * alloc ctx !ModuleContext.functions
         ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.function_types
+        ctx @ModuleContext.token_count 1 + CTypeEntry:sizeof * alloc ctx !ModuleContext.c_types
+        ctx @ModuleContext.token_count 1 + CIncludeEntry:sizeof * alloc ctx !ModuleContext.c_includes
+        ctx @ModuleContext.token_count 1 + CSignatureType:sizeof * alloc ctx !ModuleContext.c_signature_types
         0 ctx !ModuleContext.scope_count
         resolve-new ctx !ModuleContext.resolve_state
         ctx scan-declarations
@@ -4203,6 +4382,7 @@ proc resolve-one-import ModuleContext int -- do
                                 ctx visible-token find-record 0 >= ||
                                 ctx visible-token find-union 0 >= ||
                                 ctx visible-token find-function 0 >= ||
+                                ctx visible-token find-c-type 0 >= ||
                             do
                                 "import alias conflict" fail
                             end
@@ -4320,6 +4500,14 @@ proc resolve-module-scope ModuleContext -- do
                     ctx
                     constant-index
                     add-scope-symbol
+                end
+                1 +
+            end
+            drop
+            0
+            while dup ctx @ModuleContext.c_type_count < do
+                dup let index do
+                    ctx ctx ctx index c-type-at @CTypeEntry.name_start ctx index c-type-at @CTypeEntry.name_length scope-c-type ctx index add-scope-symbol
                 end
                 1 +
             end
@@ -4695,8 +4883,7 @@ proc evaluate-constant-intrinsic ConstantEvaluator ModuleContext int -- bool do
 end
 
 proc constant-runtime-intrinsic-word ModuleContext int -- bool do
-    peek module token-index do "read-file" token-equals
-        module token-index "cast" token-equals ||
+    peek module token-index do "cast" token-equals
         module token-index "args" token-equals ||
         module token-index "@ptr" token-equals ||
         module token-index "@i8" token-equals ||
@@ -4975,14 +5162,28 @@ proc resolve-module-signature-types ModuleContext -- do
         while dup ctx @ModuleContext.type_count < do
             dup
             let type-index do
-                ctx type-index type-at
-                let value-type do
-                    if value-type 0 < do
-                        ctx
-                        value-type unresolved-type-token-index
-                        "unknown type in procedure signature"
-                        resolve-nominal-type-token
-                        ctx @ModuleContext.types type-index cell-bytes * field-write
+                ctx type-index c-signature-type-at let signature do
+                    if signature @CSignatureType.active do
+                        ctx ctx signature @CSignatureType.token find-scope-symbol let symbol do
+                            if symbol 0 < do "unknown C type" fail end
+                            if ctx symbol scope-at @ScopeEntry.kind scope-c-type != do "unknown C type" fail end
+                            ctx symbol scope-at let entry do
+                                entry @ScopeEntry.definition_module signature !CSignatureType.definition_module
+                                entry @ScopeEntry.definition_index signature !CSignatureType.definition_index
+                                entry @ScopeEntry.definition_module entry @ScopeEntry.definition_index c-type-at @CTypeEntry.frog_type
+                                ctx @ModuleContext.types type-index cell-bytes * field-write
+                            end
+                        end
+                    else
+                        ctx type-index type-at let value-type do
+                            if value-type 0 < do
+                                ctx
+                                value-type unresolved-type-token-index
+                                "unknown type in procedure signature"
+                                resolve-nominal-type-token
+                                ctx @ModuleContext.types type-index cell-bytes * field-write
+                            end
+                        end
                     end
                 end
             end
@@ -5074,68 +5275,6 @@ proc resolve-all-types ptr -- do
     end
 end
 
-proc external-symbols-equal ModuleContext int ModuleContext int -- bool do
-    let first first-index second second-index do
-        first first first-index proc-c-symbol-token-at token-slice
-        second second second-index proc-c-symbol-token-at token-slice
-        bytes-equal
-    end
-end
-
-proc external-inputs-equal ModuleContext int ModuleContext int -- bool do
-    let first first-index second second-index do
-        if first first-index proc-input-count-at second second-index proc-input-count-at != do
-            false
-        else
-            0 true
-            while
-                peek input-index equal do
-                    input-index first first-index proc-input-count-at < equal &&
-                end
-            do
-                let input-index equal do
-                    input-index 1 +
-                    equal
-                    first first first-index proc-input-start-at input-index + c-abi-type-at
-                    second second second-index proc-input-start-at input-index + c-abi-type-at
-                    == &&
-                end
-            end
-            let input-index equal do equal end
-        end
-    end
-end
-
-proc external-outputs-equal ModuleContext int ModuleContext int -- bool do
-    let first first-index second second-index do
-        if first first-index proc-output-count-at second second-index proc-output-count-at != do
-            false
-        elif first first-index proc-output-count-at 0 == do
-            true
-        else
-            first first first-index proc-output-start-at c-abi-type-at
-            second second second-index proc-output-start-at c-abi-type-at
-            ==
-        end
-    end
-end
-
-proc external-contracts-equal ModuleContext int ModuleContext int -- bool do
-    peek first first-index second second-index do external-inputs-equal
-        first first-index second second-index external-outputs-equal &&
-    end
-end
-
-proc external-declaration-modes-match ModuleContext int ModuleContext int -- bool do
-    let first first-index second second-index do
-        if first first-index proc-prototype-at do
-            second second-index proc-prototype-at
-        else
-            second second-index proc-prototype-at !
-        end
-    end
-end
-
 proc function-input-type-at ModuleContext int int -- int do
     let ctx function-index input-index do
         ctx ctx function-index function-input-start-at input-index + function-signature-type-at
@@ -5210,147 +5349,11 @@ proc function-proc-contracts-equal ModuleContext int ModuleContext int -- bool d
     end
 end
 
-proc emit-error-c-abi-type-name int -- do
-    let value-type do
-        if value-type c-abi-int == do
-            "c-int" emit-error
-        elif value-type c-abi-bool == do
-            "c-bool" emit-error
-        elif value-type c-abi-ptr == do
-            "c-ptr" emit-error
-        elif value-type c-abi-size == do
-            "c-size" emit-error
-        elif value-type c-abi-ssize == do
-            "c-ssize" emit-error
-        else
-            "unknown" emit-error
-        end
-    end
-end
-
-proc emit-error-c-abi-type-array-items ModuleContext int int -- do
-    let module start count do
-        0
-        while dup count < do
-            dup
-            let index do
-                if index 0 > do " " emit-error end
-                module start index + c-abi-type-at emit-error-c-abi-type-name
-            end
-            1 +
-        end
-        drop
-    end
-end
-
-proc emit-error-c-abi-type-array ModuleContext int int -- do
-    let module start count do
-        "[" emit-error
-        module start count emit-error-c-abi-type-array-items
-        "]" emit-error
-    end
-end
-
-proc emit-error-external-contract ModuleContext int -- do
-    let module proc-index do
-        module module proc-index proc-input-start-at module proc-index proc-input-count-at
-        emit-error-c-abi-type-array
-        " -- " emit-error
-        module module proc-index proc-output-start-at module proc-index proc-output-count-at
-        emit-error-c-abi-type-array
-    end
-end
-
-proc fail-external-contract ModuleContext int ModuleContext int -- do
-    let module proc-index expected-module expected-index do
-        "frogc: incompatible declarations for C symbol: expected " emit-error
-        expected-module expected-index emit-error-external-contract
-        ", actual " emit-error
-        module proc-index emit-error-external-contract
-        10 eputc
-        1 exit
-    end
-end
-
-proc require-external-compatible-with-module ModuleContext int ModuleContext int -- do
-    let ctx proc-index other limit do
-        0
-        while dup limit < do
-            dup
-            let other-index do
-                if other other-index proc-external-at do
-                    if ctx proc-index other other-index external-symbols-equal do
-                        if ctx proc-index other other-index external-declaration-modes-match ! do
-                            "frogc: incompatible declaration modes for C symbol\n" emit-error
-                            1 exit
-                        elif ctx proc-index other other-index external-contracts-equal ! do
-                            ctx proc-index other other-index fail-external-contract
-                        end
-                    end
-                end
-            end
-            1 +
-        end
-        drop
-    end
-end
-
-proc require-external-compatible-with-earlier ptr ModuleContext int -- do
-    let program ctx proc-index do
-        program @program-module-head
-        while dup ptr cast int cast ctx ptr cast int cast != do
-            dup
-            let other do
-                ctx proc-index other other @ModuleContext.proc_count require-external-compatible-with-module
-            end
-            @ModuleContext.next_module
-        end
-        drop
-        ctx proc-index ctx proc-index require-external-compatible-with-module
-    end
-end
-
-proc validate-module-external-declarations ptr ModuleContext -- do
-    let program ctx do
-        0
-        while dup ctx @ModuleContext.proc_count < do
-            dup
-            let proc-index do
-                if ctx proc-index proc-external-at do
-                    program ctx proc-index require-external-compatible-with-earlier
-                end
-            end
-            1 +
-        end
-        drop
-    end
-end
-
-proc validate-external-declarations ptr -- do
-    peek program do @program-module-head
-        while dup ptr cast int cast 0 != do
-            dup program swap validate-module-external-declarations
-            @ModuleContext.next_module
-        end
-        drop
-    end
-end
-
 proc emit-c-preamble -- do
     "#define _POSIX_C_SOURCE 200809L
 
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 typedef int64_t Cell;
 typedef struct {
@@ -5361,7 +5364,26 @@ typedef struct {
 static int frog_argc;
 static char **frog_argv;
 
-void frog_runtime_fail(void) {
+" emit
+end
+
+proc emit-c-private-headers -- do
+    "#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+" emit
+end
+
+proc emit-c-runtime -- do
+    "void frog_runtime_fail(void) {
   exit(1);
 }
 
@@ -5370,42 +5392,6 @@ void* frog_alloc(Cell size) {
   void* value = malloc((size_t)size);
   if (value == NULL && size != 0) frog_runtime_fail();
   return value;
-}
-
-void* froglang_alloc(int size) {
-  return frog_alloc((Cell)size);
-}
-
-void froglang_eputc(int byte) {
-  (void)fputc((int)(unsigned char)byte, stderr);
-}
-
-" emit
-    "Cell frog_read_file(const void* path_bytes, Cell path_length, void** data, Cell* data_length) {
-  *data = NULL;
-  *data_length = 0;
-  if (path_length < 0 || (uint64_t)path_length >= SIZE_MAX) return 0;
-  if (path_length > 0 && path_bytes == NULL) return 0;
-  if (path_length > 0 && memchr(path_bytes, 0, (size_t)path_length) != NULL) return 0;
-  char* path = malloc((size_t)path_length + 1);
-  if (path == NULL) return 0;
-  if (path_length > 0) memcpy(path, path_bytes, (size_t)path_length);
-  path[(size_t)path_length] = '\\0';
-  FILE* file = fopen(path, \"rb\");
-  free(path);
-  if (file == NULL) return 0;
-  if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return 0; }
-  long end = ftell(file);
-  if (end < 0 || (uint64_t)end > INT64_MAX) { fclose(file); return 0; }
-  if (fseek(file, 0, SEEK_SET) != 0) { fclose(file); return 0; }
-  size_t size = (size_t)end;
-  unsigned char* bytes = malloc(size == 0 ? 1 : size);
-  if (bytes == NULL) { fclose(file); return 0; }
-  if (fread(bytes, 1, size, file) != size) { free(bytes); fclose(file); return 0; }
-  if (fclose(file) != 0) { free(bytes); return 0; }
-  *data = bytes;
-  *data_length = (Cell)size;
-  return 1;
 }
 
 " emit
@@ -5436,59 +5422,6 @@ void frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; mem
 void frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }
-
-" emit
-    "void* froglang_tmpfile(void) { return tmpfile(); }
-int froglang_file_putc(int byte, void* stream) { return fputc(byte, (FILE*)stream); }
-int froglang_file_getc(void* stream) { return fgetc((FILE*)stream); }
-void froglang_file_rewind(void* stream) { rewind((FILE*)stream); }
-int froglang_file_flush(void* stream) { return fflush((FILE*)stream); }
-int froglang_file_descriptor(void* stream) { return fileno((FILE*)stream); }
-int froglang_file_close(void* stream) { return fclose((FILE*)stream); }
-
-" emit
-    "int froglang_fork(void) {
-  if (fflush(NULL) != 0) return -1;
-  return (int)fork();
-}
-int froglang_create_file(void* path) { return open((const char*)path, O_WRONLY | O_CREAT | O_TRUNC, 0600); }
-int froglang_chdir(void* path) { return chdir((const char*)path); }
-int froglang_execv(void* path, void* arguments) { return execv((const char*)path, (char* const*)arguments); }
-int froglang_execvp(void* file, void* arguments) { return execvp((const char*)file, (char* const*)arguments); }
-
-int froglang_ensure_directory(void* path) {
-  const char* directory = (const char*)path;
-  if (mkdir(directory, 0777) != 0 && errno != EEXIST) return -1;
-  struct stat info;
-  if (stat(directory, &info) != 0 || !S_ISDIR(info.st_mode)) return -1;
-  return 0;
-}
-
-int froglang_wait_child(int child) {
-  int status;
-  while (waitpid((pid_t)child, &status, 0) < 0) {
-    if (errno != EINTR) return -1;
-  }
-  if (WIFEXITED(status)) return WEXITSTATUS(status);
-  if (WIFSIGNALED(status)) return 128 + WTERMSIG(status);
-  return 1;
-}
-
-void froglang_finish_child(int status) {
-  if (fflush(stdout) != 0) status = 1;
-  _exit(status);
-}
-
-void froglang_reset_child_signals(void) {
-  struct sigaction action;
-  memset(&action, 0, sizeof(action));
-  action.sa_handler = SIG_DFL;
-  sigemptyset(&action.sa_mask);
-  (void)sigaction(SIGINT, &action, NULL);
-  (void)sigaction(SIGTERM, &action, NULL);
-  (void)sigaction(SIGPIPE, &action, NULL);
-  (void)sigaction(SIGHUP, &action, NULL);
-}
 
 " emit
 end
@@ -5594,57 +5527,9 @@ proc emit-string-references ptr -- do
     end
 end
 
-proc emit-c-abi-type int -- do
-    let value-type do
-        if value-type c-abi-int == do
-            "int" emit
-        elif value-type c-abi-bool == do
-            "int" emit
-        elif value-type c-abi-ptr == do
-            "void *" emit
-        elif value-type c-abi-size == do
-            "size_t" emit
-        elif value-type c-abi-ssize == do
-            "ssize_t" emit
-        else
-            "internal unknown C ABI type" fail
-        end
-    end
-end
-
 proc emit-c-symbol ModuleContext int -- do
     let ctx proc-index do
         ctx ctx proc-index proc-c-symbol-token-at token-slice emit-bytes
-    end
-end
-
-proc emit-c-parameter-types ModuleContext int int -- do
-    let ctx proc-index input-index do
-        if input-index ctx proc-index proc-input-count-at < do
-            if input-index 0 != do ", " emit end
-            ctx
-            ctx proc-index proc-input-start-at input-index +
-            c-abi-type-at emit-c-abi-type
-            ctx proc-index input-index 1 + emit-c-parameter-types
-        end
-    end
-end
-
-proc emit-external-c-prototype ModuleContext int -- do
-    let ctx proc-index do
-        "extern " emit
-        if ctx proc-index proc-output-count-at 0 == do
-            "void" emit
-        else
-            ctx ctx proc-index proc-output-start-at c-abi-type-at emit-c-abi-type
-        end
-        " " emit ctx proc-index emit-c-symbol "(" emit
-        if ctx proc-index proc-input-count-at 0 == do
-            "void" emit
-        else
-            ctx proc-index 0 emit-c-parameter-types
-        end
-        ");\n" emit
     end
 end
 
@@ -5846,9 +5731,6 @@ end
 
 proc emit-c-prototype ModuleContext int -- do
     let ctx proc-index do
-        if ctx proc-index proc-external-at ctx proc-index proc-prototype-at && do
-            ctx proc-index emit-external-c-prototype
-        end
         ctx proc-index emit-proc-signature ";\n" emit
     end
 end
@@ -5870,6 +5752,11 @@ end
 proc emit-c-emitter-support ptr -- do
     let program do
         emit-c-preamble
+        program emit-c-includes
+        program emit-c-types
+        program compile-all-c-bindings
+        emit-c-private-headers
+        emit-c-runtime
         program emit-string-globals
         program emit-result-typedefs
         program @program-module-head
@@ -5877,6 +5764,62 @@ proc emit-c-emitter-support ptr -- do
             dup emit-prototypes
             @ModuleContext.next_module
         end
+        drop
+    end
+end
+
+proc emit-decoded-string ModuleContext int -- do
+    let ctx token do
+        0
+        while dup ctx token decoded-string-length < do
+            dup let index do ctx token index decoded-string-byte putc end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-c-type-spelling ModuleContext int -- do
+    let ctx index do ctx index c-type-at @CTypeEntry.type_token ctx swap emit-decoded-string end
+end
+
+proc emit-c-includes-module ModuleContext int -- do
+    let ctx index do
+        if index ctx @ModuleContext.c_include_count < do
+            ctx index c-include-at let entry do
+                "#include " emit
+                if entry @CIncludeEntry.kind c-include-system == do "<" emit else "\"" emit end
+                ctx entry @CIncludeEntry.token emit-decoded-string
+                if entry @CIncludeEntry.kind c-include-system == do ">\n" emit else "\"\n" emit end
+            end
+            ctx index 1 + emit-c-includes-module
+        end
+    end
+end
+
+proc emit-c-includes ptr -- do
+    let program do
+        program @program-module-head
+        while dup ptr cast int cast 0 != do
+            dup 0 emit-c-includes-module
+            @ModuleContext.next_module
+        end
+        drop
+    end
+end
+
+proc emit-c-types-module ModuleContext int -- do
+    let ctx index do
+        if index ctx @ModuleContext.c_type_count < do
+            "_Static_assert(sizeof(" emit ctx index emit-c-type-spelling ") <= sizeof(Cell), \"C FFI type exceeds Cell\");\n" emit
+            ctx index 1 + emit-c-types-module
+        end
+    end
+end
+
+proc emit-c-types ptr -- do
+    let program do program @program-module-head
+        while dup ptr cast int cast 0 != do dup 0 emit-c-types-module @ModuleContext.next_module end
         drop
     end
 end
@@ -6403,22 +6346,6 @@ proc compile-write-memory ptr String -- do
     end
 end
 
-proc emit-read-file ptr -- do
-    let cc do
-        if cc @cc-emitting do
-            cc @cc-type-count 3 -
-            let base do
-                cc emit-indent "{ const void *path = (const void *)(intptr_t)" emit
-                cc base emit-slot "; Cell path_length = " emit cc base 1 + emit-slot
-                "; void *data; Cell data_length; Cell success = frog_read_file(path, path_length, &data, &data_length); " emit
-                cc base emit-slot " = (Cell)(intptr_t)data; " emit
-                cc base 1 + emit-slot " = data_length; " emit
-                cc base 2 + emit-slot " = success; }" emit 10 putc
-            end
-        end
-    end
-end
-
 proc emit-read-pointer ptr -- do
     let cc do
         if cc @cc-emitting do
@@ -6445,15 +6372,7 @@ end
 
 proc compile-memory-io-intrinsic ptr int -- bool do
     let cc token-index do
-        if cc @cc-defining-module token-index "read-file" token-equals do
-            cc type-int type-expect
-            cc type-ptr type-expect
-            cc type-ptr type-push
-            cc type-int type-push
-            cc type-bool type-push
-            cc emit-read-file
-            true
-        elif cc @cc-defining-module token-index "cast" token-equals do
+        if cc @cc-defining-module token-index "cast" token-equals do
             cc compile-cast-intrinsic true
         elif cc @cc-defining-module token-index "args" token-equals do
             cc type-ptr type-push
@@ -7975,83 +7894,52 @@ proc create-compile-context ptr ModuleContext int -- ptr do
     end
 end
 
-proc proc-input-type-at ModuleContext int int -- int do
-    let ctx proc-index input-index do
-        ctx ctx proc-index proc-input-start-at input-index + c-abi-type-at
-    end
-end
-
 proc emit-ffi-argument-name int -- do
     emit-proc-argument-name
 end
 
-proc emit-external-argument ModuleContext int int -- do
-    peek ctx proc-index input-index do proc-input-type-at
-        let input-type do
-            if input-type c-abi-int == do
-                "(int)" emit input-index emit-ffi-argument-name
-            elif input-type c-abi-bool == do
-                "(int)(" emit input-index emit-ffi-argument-name " != 0)" emit
-            elif input-type c-abi-ptr == do
-                "(void *)(intptr_t)" emit input-index emit-ffi-argument-name
-            elif input-type c-abi-size == do
-                "(size_t)" emit input-index emit-ffi-argument-name
-            elif input-type c-abi-ssize == do
-                "(ssize_t)" emit input-index emit-ffi-argument-name
-            else
-                "internal unknown C ABI argument type" fail
-            end
+proc emit-c-signature-type-name ModuleContext int -- do
+    let ctx type-index do
+        ctx type-index c-signature-type-at let signature do
+            signature @CSignatureType.definition_module signature @CSignatureType.definition_index emit-c-type-spelling
         end
     end
 end
 
-proc emit-external-arguments ModuleContext int int -- do
+proc emit-c-binding-arguments ModuleContext int int -- do
     let ctx proc-index input-index do
         if input-index ctx proc-index proc-input-count-at < do
             if input-index 0 != do ", " emit end
-            ctx proc-index input-index emit-external-argument
-            ctx proc-index input-index 1 + emit-external-arguments
+            ctx ctx proc-index proc-input-start-at input-index + type-at
+            let value-type do
+                "(" emit ctx ctx proc-index proc-input-start-at input-index + emit-c-signature-type-name
+                if value-type type-int == do ")" emit input-index emit-ffi-argument-name
+                elif value-type type-bool == do ")(" emit input-index emit-ffi-argument-name " != 0)" emit
+                else ")(intptr_t)" emit input-index emit-ffi-argument-name end
+            end
+            ctx proc-index input-index 1 + emit-c-binding-arguments
         end
     end
 end
 
-proc emit-external-call-expression ModuleContext int -- do
-    peek ctx proc-index do emit-c-symbol "(" emit
-        ctx proc-index 0 emit-external-arguments
-        ")" emit
+proc emit-c-binding-expression ModuleContext int -- do
+    peek ctx proc-index do emit-c-symbol
+        if ctx proc-index proc-c-binding-at c-binding-call == do
+            "(" emit ctx proc-index 0 emit-c-binding-arguments ")" emit
+        end
     end
 end
 
-proc compile-external-procedure ModuleContext int -- do
+proc compile-c-binding-procedure ModuleContext int -- do
     peek ctx proc-index do emit-proc-signature " {\n" emit
         if ctx proc-index proc-output-count-at 0 == do
-            "  " emit ctx proc-index emit-external-call-expression ";\n" emit
+            "  " emit ctx proc-index emit-c-binding-expression ";\n" emit
         else
-            ctx ctx proc-index proc-output-start-at c-abi-type-at
-            let output-type do
-                if output-type c-abi-int == do
-                    "  return (Cell)" emit
-                    ctx proc-index emit-external-call-expression
-                    ";\n" emit
-                elif output-type c-abi-bool == do
-                    "  return (Cell)(" emit
-                    ctx proc-index emit-external-call-expression
-                    " != 0);\n" emit
-                elif output-type c-abi-ptr == do
-                    "  return (Cell)(intptr_t)" emit
-                    ctx proc-index emit-external-call-expression
-                    ";\n" emit
-                elif output-type c-abi-size == do
-                    "  return (Cell)" emit
-                    ctx proc-index emit-external-call-expression
-                    ";\n" emit
-                elif output-type c-abi-ssize == do
-                    "  return (Cell)" emit
-                    ctx proc-index emit-external-call-expression
-                    ";\n" emit
-                else
-                    "internal unknown C ABI return type" fail
-                end
+            ctx ctx proc-index proc-output-start-at type-at let value-type do
+                "  return " emit
+                if value-type type-int == do "(Cell)(" emit ctx ctx proc-index proc-output-start-at emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ");\n" emit
+                elif value-type type-bool == do "(Cell)((" emit ctx ctx proc-index proc-output-start-at emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ") != 0);\n" emit
+                else "(Cell)(intptr_t)(" emit ctx ctx proc-index proc-output-start-at emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ");\n" emit end
             end
         end
         "}\n" emit
@@ -8135,9 +8023,7 @@ end
 
 proc compile-procedure ptr ModuleContext int -- do
     let program ctx proc-index do
-        if ctx proc-index proc-external-at do
-            ctx proc-index compile-external-procedure
-        else
+        if ctx proc-index proc-c-binding-at c-binding-none == do
             program ctx proc-index create-compile-context
             peek measurement do ctx proc-index compile-procedure-body
                 measurement @cc-max-type-count
@@ -8157,6 +8043,31 @@ proc compile-procedure ptr ModuleContext int -- do
                 end
             end
         end
+    end
+end
+
+proc compile-c-bindings-module ModuleContext -- do
+    let ctx do
+        0
+        while dup ctx @ModuleContext.proc_count < do
+            dup let proc-index do
+                if ctx proc-index proc-c-binding-at c-binding-none != do
+                    ctx proc-index compile-c-binding-procedure
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc compile-all-c-bindings ptr -- do
+    peek program do @program-module-head
+        while dup ptr cast int cast 0 != do
+            dup compile-c-bindings-module
+            @ModuleContext.next_module
+        end
+        drop
     end
 end
 
@@ -8231,7 +8142,6 @@ proc compile-source ptr int bool -- do
                 program resolve-all-module-scopes
                 program evaluate-all-constants
                 program resolve-all-types
-                program validate-external-declarations
 
                 program emit-c-emitter-support
                 program compile-all-procedures

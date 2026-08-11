@@ -39,7 +39,7 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The language supports strings, nominal records and tagged unions, first-class function references, compile-time constants and macros, scalar C foreign-function declarations, and source-relative imports with aliases, groups, and reexports. See the [language reference](./docs/language.md) for syntax and semantics.
+The language supports strings, nominal records and tagged unions, first-class function references, compile-time constants and macros, C interop declarations, and source-relative imports with aliases, groups, and reexports. See the [language reference](./docs/language.md) for syntax and semantics.
 
 To bootstrap manually without Python:
 
@@ -60,4 +60,4 @@ Feature-focused examples:
 
 - [records](./examples/09_records.frog)
 - [tagged unions](./examples/10_tagged_unions.frog)
-- [C FFI](./examples/11_c_ffi.frog)
+- [C interop](./examples/11_c_ffi.frog)

@@ -227,25 +227,63 @@ end
         "proc take int bool -- do drop drop end" "\"keep\" true 1 take drop" "" "frogc: take: stack contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/procedures/14" context frog-inline-error-source
         "" "int" "" "frogc: procedure output contract mismatch: expected [], actual [type]\n" 1 "code/procedures/15" context frog-inline-error-source
 
-        // c_ffi (6)
+        // c_ffi (10)
         "from \"../../stdlib/libc.frog\" import alloc
 
-extern magnitude abs c-int -- c-int end
-extern release free c-ptr -- end" "0 9 - magnitude print
+c-include system \"stdlib.h\" end
+c-type CInt int \"int\" end
+c-type CPtr ptr \"void *\" end
+c-call magnitude abs CInt -- CInt end
+c-call release free CPtr -- end" "0 9 - magnitude print
 8 alloc release" "" "9\n" "" 0 "code/c_ffi/01" context frog-inline-run-source
-        "extern magnitude abs c-int -- c-int end" "0 9 - magnitude print" "" "9\n" "" 0 "code/c_ffi/02_header_backed_abs" context frog-inline-run-source
-        "extern allocate malloc c-size -- c-ptr end
-extern release free c-ptr -- end" "8 allocate release" "" "" "" 0 "code/c_ffi/03_c_size_input" context frog-inline-run-source
-        "extern length strlen c-ptr -- c-size end" "\"frog\" String.bytes length print" "" "4\n" "" 0 "code/c_ffi/04_c_size_output" context frog-inline-run-source
-        "extern write-fd write c-int c-ptr c-size -- c-ssize end" "1 \"ok\\n\" dup String.bytes swap String.len write-fd print" "" "ok\n3\n" "" 0 "code/c_ffi/05_c_ssize_output" context frog-inline-run-source
-        "extern open-file open c-ptr c-int c-int -- c-int end
-extern close-file close c-int -- end" "\"/dev/null\" String.bytes 1 0 open-file
+        "c-include system \"stdlib.h\" end
+c-type CInt int \"int\" end
+c-call magnitude abs CInt -- CInt end" "0 9 - magnitude print" "" "9\n" "" 0 "code/c_ffi/02_header_backed_abs" context frog-inline-run-source
+        "c-include system \"stdlib.h\" end
+c-type CSize int \"size_t\" end
+c-type CPtr ptr \"void *\" end
+c-call allocate malloc CSize -- CPtr end
+c-call release free CPtr -- end" "8 allocate release" "" "" "" 0 "code/c_ffi/03_c_size_input" context frog-inline-run-source
+        "c-include system \"string.h\" end
+c-type CSize int \"size_t\" end
+c-type CPtr ptr \"const void *\" end
+c-call length strlen CPtr -- CSize end" "\"frog\" String.bytes length print" "" "4\n" "" 0 "code/c_ffi/04_c_size_output" context frog-inline-run-source
+        "c-include system \"unistd.h\" end
+c-type CInt int \"int\" end
+c-type CPtr ptr \"const void *\" end
+c-type CSize int \"size_t\" end
+c-type CSSize int \"ssize_t\" end
+c-call write-fd write CInt CPtr CSize -- CSSize end" "1 \"ok\\n\" dup String.bytes swap String.len write-fd print" "" "ok\n3\n" "" 0 "code/c_ffi/05_c_ssize_output" context frog-inline-run-source
+        "c-include system \"fcntl.h\" end
+c-include system \"unistd.h\" end
+c-type CInt int \"int\" end
+c-type CPtr ptr \"const char *\" end
+c-call open-file open CPtr CInt CInt -- CInt end
+c-call close-file close CInt -- end" "\"/dev/null\" String.bytes 1 0 open-file
 if dup 0 >= do
     close-file true
 else
     drop false
 end
 print" "" "true\n" "" 0 "code/c_ffi/06_variadic_open" context frog-inline-run-source
+        "c-include system \"stdio.h\" end
+c-type CInt int \"int\" end
+c-type CFile ptr \"FILE *\" end
+c-value error-stream stderr -- CFile end
+c-call error-putc fputc CInt CFile -- CInt end" "69 error-stream error-putc drop" "" "" "E" 0 "code/c_ffi/07_c_value_stderr" context frog-inline-run-source
+        "c-include system \"stdio.h\" end
+c-type CInt int \"int\" end
+c-value seek-set SEEK_SET -- CInt end" "seek-set print" "" "0\n" "" 0 "code/c_ffi/08_c_value_numeric" context frog-inline-run-source
+        "c-include system \"sys/wait.h\" end
+c-type CBool bool \"int\" end
+c-type CInt int \"int\" end
+c-call exited WIFEXITED CInt -- CBool end" "0 exited print" "" "true\n" "" 0 "code/c_ffi/09_function_like_macro" context frog-inline-run-source
+        "c-include system \"signal.h\" end
+c-type CInt int \"int\" end
+c-type Handler ptr \"void (*)(int)\" end
+c-value hangup SIGHUP -- CInt end
+c-value default-handler SIG_DFL -- Handler end
+c-call set-handler signal CInt Handler -- Handler end" "hangup default-handler set-handler drop" "" "" "" 0 "code/c_ffi/10_function_pointer" context frog-inline-run-source
 
         // casts_and_memory (19)
         "5 int ? cast ? print" "5\n" "" 0 "code/casts_and_memory/01" context frog-inline-run-body
@@ -276,13 +314,13 @@ end" "3 countdown print" "" "0\n" "" 0 "code/casts_and_memory/12" context frog-i
         "from \"../../stdlib/libc.frog\" import alloc
 
 proc cell ptr int -- int do + @u8 end" "4 alloc let p do 42 p !u8 p 0 cell print end" "" "42\n" "" 0 "code/casts_and_memory/17" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import putc" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end" "" "true
+        "from \"../../stdlib/libc.frog\" import ( putc read-file )" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end" "" "true
 true
 #
 " "" 0 "code/casts_and_memory/18" context frog-inline-run-source
-        "\"frog-read-file-missing\" dup String.bytes swap String.len read-file let data length success do data drop length print success print end" "0
+        "from \"../../stdlib/libc.frog\" import read-file" "\"frog-read-file-missing\" dup String.bytes swap String.len read-file let data length success do data drop length print success print end" "" "0
 false
-" "" 0 "code/casts_and_memory/19" context frog-inline-run-body
+" "" 0 "code/casts_and_memory/19" context frog-inline-run-source
 
         // process_arguments (1)
         "from \"../../stdlib/libc.frog\" import putc" "args let argv argc do argc print argv @ptr @u8 putc 10 putc end" "" "1

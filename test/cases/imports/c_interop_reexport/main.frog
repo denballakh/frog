@@ -1,0 +1,8 @@
+from "facade.frog" import ( magnitude CInt as Number )
+
+c-call magnitude-again abs Number -- Number end
+
+proc main -- do
+    0 9 - magnitude print
+    0 8 - magnitude-again print
+end

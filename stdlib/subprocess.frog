@@ -1,11 +1,4 @@
-from "libc.frog" import ( alloc free eputc fork dup2 chdir execvp wait-child finish-child )
-extern subprocess-tmpfile froglang_tmpfile -- c-ptr end
-extern subprocess-file-putc froglang_file_putc c-int c-ptr -- c-int end
-extern subprocess-file-getc froglang_file_getc c-ptr -- c-int end
-extern subprocess-file-rewind froglang_file_rewind c-ptr -- end
-extern subprocess-file-flush froglang_file_flush c-ptr -- c-int end
-extern subprocess-file-descriptor froglang_file_descriptor c-ptr -- c-int end
-extern subprocess-file-close froglang_file_close c-ptr -- c-int end
+from "libc.frog" import ( alloc free eputc fork dup2 chdir execvp wait-child finish-child subprocess-tmpfile subprocess-file-putc subprocess-file-getc subprocess-file-rewind subprocess-file-flush subprocess-file-descriptor subprocess-file-close )
 
 const subprocess-pointer-bytes 8 end
 const subprocess-capture-initial-capacity 256 end

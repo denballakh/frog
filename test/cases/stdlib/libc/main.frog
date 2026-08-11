@@ -1,4 +1,6 @@
-from "../../../../stdlib/libc.frog" import ( alloc free putc getc eputc exit )
+from "../../../../stdlib/libc.frog" import (
+    alloc free putc getc eputc exit ensure-directory
+)
 
 proc require bool -- do
     let condition do
@@ -15,6 +17,8 @@ proc main -- do
     end
 
     getc 0 1 - == require
+    "." String.bytes ensure-directory 0 == require
+    "README.md" String.bytes ensure-directory 0 < require
     65 putc
     69 eputc
     0 exit

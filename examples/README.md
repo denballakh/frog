@@ -12,4 +12,4 @@ Every example is a complete program with an explicit `proc main -- do ... end`. 
 - `08_gcd_grid.frog`: Euclidean GCD rendered as a coprimality grid.
 - `09_records.frog`: Record allocation, field access, and a typed procedure.
 - `10_tagged_unions.frog`: A tagged result with checked testing and projection.
-- `11_c_ffi.frog`: Calls C standard-library functions through scalar C FFI.
+- `11_c_ffi.frog`: Calls C standard-library functions through explicit C interop declarations.

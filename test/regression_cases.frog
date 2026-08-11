@@ -1,4 +1,8 @@
-from "framework.frog" import ( FrogTestContext frog-run-case frog-run-status-case frog-error-fixture frog-error-source frog-large-path-error frog-stable-string-symbol )
+from "framework.frog" import (
+    FrogTestContext frog-run-case frog-run-status-case frog-error-fixture
+    frog-error-source frog-c-build-error-source frog-large-path-error
+    frog-stable-string-symbol
+)
 
 proc run-regression-cases FrogTestContext -- do
     let context do
@@ -8,7 +12,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/imports/macro_scope/main.frog" "test/cases/imports/macro_scope" "18\n" "" 0 "" "" "" "imports/macro_scope" context frog-run-case
         "test/cases/imports/module_relative_nested/main.frog" "test/cases/imports/module_relative_nested" "99\n" "" 0 "" "" "" "imports/module_relative_nested" context frog-run-case
         "test/cases/imports/macro_reexport_scope/main.frog" "test/cases/imports/macro_reexport_scope" "14\n" "" 0 "" "" "" "imports/macro_reexport_scope" context frog-run-case
-        "test/cases/imports/extern_reexport/main.frog" "test/cases/imports/extern_reexport" "9\n" "" 0 "" "" "" "imports/extern_reexport" context frog-run-case
+        "test/cases/imports/c_interop_reexport/main.frog" "test/cases/imports/c_interop_reexport" "9\n8\n" "" 0 "" "" "" "imports/c_interop_reexport" context frog-run-case
         "test/cases/imports/one_byte_path/main.frog" "test/cases/imports/one_byte_path" "21\n" "" 0 "" "" "" "imports/one_byte_path" context frog-run-case
         "test/cases/imports/string_module_ids/main.frog" "test/cases/imports/string_module_ids" "PDR\n" "" 0 "" "" "" "imports/string_module_ids" context frog-run-case
         "test/cases/imports/path_length_limit/main.frog" "test/cases/imports/path_length_limit" "33\n" "" 0 "" "" "" "imports/path_length_limit" context frog-run-case
@@ -23,7 +27,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/imports/functions_alias/main.frog" "test/cases/imports/functions_alias" "6\n" "" 0 "" "" "" "imports/functions_alias" context frog-run-case
         "test/cases/imports/functions_reexport/main.frog" "test/cases/imports/functions_reexport" "43\n" "" 0 "" "" "" "imports/functions_reexport" context frog-run-case
         "test/cases/imports/functions_macro_private/main.frog" "test/cases/imports/functions_macro_private" "42\n" "" 0 "" "" "" "imports/functions_macro_private" context frog-run-case
-        "test/cases/imports/functions_extern/main.frog" "test/cases/imports/functions_extern" "77\n" "" 0 "" "" "" "imports/functions_extern" context frog-run-case
+        "test/cases/imports/functions_c_call/main.frog" "test/cases/imports/functions_c_call" "77\n" "" 0 "" "" "" "imports/functions_c_call" context frog-run-case
         "test/cases/imports/optimizer_macro_scope/main.frog" "test/cases/imports/optimizer_macro_scope" "41\n" "" 0 "" "" "" "imports/optimizer_macro_scope" context frog-run-case
         "test/cases/imports/constants_reexport/main.frog" "test/cases/imports/constants_reexport" "42\n" "" 0 "" "" "" "imports/constants_reexport" context frog-run-case
         "test/cases/imports/peek_macro/main.frog" "test/cases/imports/peek_macro" "7\n4\n3\n" "" 0 "" "" "" "imports/peek_macro" context frog-run-case
@@ -64,7 +68,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/stdlib/test/fail.frog" "test/cases/stdlib/test" "" "FAIL: first failure\nFAIL: second failure\n" 1 "" "" "" "stdlib/test_fail" context frog-run-case
         "test/cases/imports/missing_file/main.frog" "test/cases/imports/missing_file" "frogc: import file not found\n" "imports-error/missing_file" context frog-error-fixture
         "test/cases/imports/missing_name/main.frog" "test/cases/imports/missing_name" "frogc: imported name not found\n" "imports-error/missing_name" context frog-error-fixture
-        "test/cases/imports/extern_contract_conflict/main.frog" "test/cases/imports/extern_contract_conflict" "frogc: incompatible declarations for C symbol: expected [c-int] -- [c-int], actual [c-int] -- [c-ptr]\n" "imports-error/extern_contract_conflict" context frog-error-fixture
+        "test/cases/imports/c_call_variadic_contracts/main.frog" "test/cases/imports/c_call_variadic_contracts" "" "" 0 "" "" "" "imports/c_call_variadic_contracts" context frog-run-case
         "test/cases/imports/alias_conflict/main.frog" "test/cases/imports/alias_conflict" "frogc: import alias conflict\n" "imports-error/alias_conflict" context frog-error-fixture
         "test/cases/imports/local_alias_conflict/main.frog" "test/cases/imports/local_alias_conflict" "frogc: import alias conflict\n" "imports-error/local_alias_conflict" context frog-error-fixture
         "test/cases/imports/direct_cycle/main.frog" "test/cases/imports/direct_cycle" "frogc: cyclic import\n" "imports-error/direct_cycle" context frog-error-fixture
@@ -147,20 +151,25 @@ proc run-regression-cases FrogTestContext -- do
         "proc main -- do if true end end\n" "test/cases/semantics" "frogc: if requires do before end\n" "semantics-error/if_without_do" context frog-error-source
         "proc main -- do if true else end end\n" "test/cases/semantics" "frogc: else requires a preceding if arm and do\n" "semantics-error/else_without_do" context frog-error-source
         "proc main -- do while end end\n" "test/cases/semantics" "frogc: while requires do before end\n" "semantics-error/while_without_do" context frog-error-source
-        "extern magnitude not-valid c-int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_invalid_c_symbol" context frog-error-source
-        "extern invalid int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_c_keyword" context frog-error-source
-        "extern invalid frog_push c-int -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_internal_symbol" context frog-error-source
-        "extern invalid frog_proc_0_main -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/extern_generated_proc_symbol" context frog-error-source
-        "extern magnitude abs int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown C ABI type\n" "semantics-error/extern_unknown_abi_type" context frog-error-source
-        "extern pair abs c-int -- c-int c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: external procedure may return at most one value\n" "semantics-error/extern_multiple_outputs" context frog-error-source
-        "extern magnitude abs c-int -- c-int\n" "test/cases/semantics" "frogc: expected end after external signature\n" "semantics-error/extern_missing_end" context frog-error-source
-        "extern main abs c-int -- c-int end\n" "test/cases/semantics" "frogc: main cannot be external\n" "semantics-error/extern_main" context frog-error-source
-        "proc main -- do extern magnitude abs c-int -- c-int end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/extern_inside_proc" context frog-error-source
-        "macro bad extern magnitude abs c-int -- c-int end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/extern_inside_macro" context frog-error-source
-        "extern magnitude abs c-int -- c-int end\nproc main -- do true magnitude drop end\n" "test/cases/semantics" "frogc: magnitude: stack contract mismatch: expected [int], actual [bool]\n" "semantics-error/extern_contract_type" context frog-error-source
-        "extern as-int abs c-int -- c-int end\nextern as-ptr abs c-int -- c-ptr end\nproc main -- do end\n" "test/cases/semantics" "frogc: incompatible declarations for C symbol: expected [c-int] -- [c-int], actual [c-int] -- [c-ptr]\n" "semantics-error/extern_incompatible_contract" context frog-error-source
-        "extern first abs c-int -- c-int end\nextern prototype second abs c-int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: incompatible declaration modes for C symbol\n" "semantics-error/extern_incompatible_mode" context frog-error-source
-        "extern first f c-int c-bool -- c-ptr end\nextern second f c-bool c-int -- c-ptr end\nproc main -- do end\n" "test/cases/semantics" "frogc: incompatible declarations for C symbol: expected [c-int c-bool] -- [c-ptr], actual [c-bool c-int] -- [c-ptr]\n" "diagnostics-error/extern_input_order" context frog-error-source
+        "extern magnitude abs c-int -- c-int end\nproc main -- do end\n" "test/cases/semantics" "frogc: only declarations and imports are allowed at top level\n" "semantics-error/legacy_extern_rejected" context frog-error-source
+        "c-type CInt int \"int\" end\nc-call magnitude abs CInt -- CInt end\nproc main -- do 0 1 - magnitude drop end\n" "test/cases/semantics" "generated-c-error/c_call_requires_include" context frog-c-build-error-source
+        "c-include unknown \"stdio.h\" end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected C include kind\n" "semantics-error/c_include_kind" context frog-error-source
+        "c-include system \"\" end\nproc main -- do end\n" "test/cases/semantics" "frogc: C include path must not be empty\n" "semantics-error/c_include_path" context frog-error-source
+        "c-include system \"stdio.h\"\nproc main -- do end\n" "test/cases/semantics" "frogc: expected end after C include\n" "semantics-error/c_include_end" context frog-error-source
+        "c-type Bad frog \"int\" end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected C type representation\n" "semantics-error/c_type_representation" context frog-error-source
+        "c-type Bad int \"\" end\nproc main -- do end\n" "test/cases/semantics" "frogc: C type must not be empty\n" "semantics-error/c_type_empty" context frog-error-source
+        "c-type Number int \"int\" end\nc-type Number int \"int\" end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate declaration name: Number\n" "semantics-error/c_type_duplicate" context frog-error-source
+        "c-call magnitude abs Missing -- Missing end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown C type\n" "semantics-error/c_call_unknown_type" context frog-error-source
+        "c-type CInt int \"int\" end\nc-call pair abs CInt -- CInt CInt end\nproc main -- do end\n" "test/cases/semantics" "frogc: C call may return at most one value\n" "semantics-error/c_call_multiple_outputs" context frog-error-source
+        "c-type CInt int \"int\" end\nc-call magnitude abs CInt -- CInt\nproc main -- do end\n" "test/cases/semantics" "frogc: expected end after C call\n" "semantics-error/c_call_missing_end" context frog-error-source
+        "c-type CInt int \"int\" end\nc-call invalid not-valid -- CInt end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/c_call_invalid_symbol" context frog-error-source
+        "c-type CInt int \"int\" end\nc-value seek-set SEEK_SET CInt end\nproc main -- do end\n" "test/cases/semantics" "frogc: expected -- in C value signature\n" "semantics-error/c_value_separator" context frog-error-source
+        "c-type CInt int \"int\" end\nc-value seek-set SEEK_SET -- end\nproc main -- do end\n" "test/cases/semantics" "frogc: C value must return exactly one value\n" "semantics-error/c_value_output" context frog-error-source
+        "c-type CInt int \"int\" end\nc-value invalid not-valid -- CInt end\nproc main -- do end\n" "test/cases/semantics" "frogc: invalid C symbol\n" "semantics-error/c_value_invalid_symbol" context frog-error-source
+        "proc main -- do c-include system \"stdio.h\" end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/c_include_inside_proc" context frog-error-source
+        "macro bad c-type Number int \"int\" end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/c_type_inside_macro" context frog-error-source
+        "proc main -- do c-call magnitude abs -- end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/c_call_inside_proc" context frog-error-source
+        "macro bad c-value seek-set SEEK_SET -- CInt end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/c_value_inside_macro" context frog-error-source
         "from \"shape.frog\" import Point as Imported\nrecord Point x int end\nproc take Imported -- do drop end\nproc main -- do Point:alloc take end\n" "test/cases/imports/records_collision" "frogc: take: stack contract mismatch: expected [shape.frog:Point], actual [Point]\n" "diagnostics-error/nominal_identity" context frog-error-source
         "macro outer dup end\nproc main -- do outer end\n" "test/cases/semantics" "frogc: outer: compile-time stack underflow\n" "diagnostics-error/nested_macro_word" context frog-error-source
         "proc main -- do 1 2 cast drop end\n" "test/cases/semantics" "frogc: cast: cast target is not a type literal\n" "diagnostics-error/cast_target" context frog-error-source
@@ -213,7 +222,7 @@ proc run-regression-cases FrogTestContext -- do
         "macro String 1 end\nproc main -- do end\n" "test/cases/strings" "frogc: reserved keyword cannot be a macro name\n" "strings-error/reserved-string-macro" context frog-error-source
         "proc main -- do 1 let String do end end\n" "test/cases/strings" "frogc: String cannot be a local name\n" "strings-error/reserved-string-local" context frog-error-source
         "from \"lib.frog\" import shared as String\nproc main -- do end\n" "test/cases/strings" "frogc: invalid imported name\n" "strings-error/reserved-string-import" context frog-error-source
-        "extern bad FrogString -- c-int end\nproc main -- do bad drop end\n" "test/cases/strings" "frogc: invalid C symbol\n" "strings-error/reserved-c-string-symbol" context frog-error-source
+        "c-type CInt int \"int\" end\nc-call bad FrogString -- CInt end\nproc main -- do bad drop end\n" "test/cases/strings" "frogc: invalid C symbol\n" "strings-error/reserved-c-string-symbol" context frog-error-source
         "proc main -- do \"x\" @u8 drop end\n" "test/cases/strings" "frogc: @u8: compile-time stack type mismatch\n" "strings-error/string-as-ptr" context frog-error-source
         "proc main -- do \"x\" 1 + drop end\n" "test/cases/strings" "frogc: +: invalid operand types for pointer/integer arithmetic\n" "strings-error/string-as-int" context frog-error-source
         context frog-large-path-error

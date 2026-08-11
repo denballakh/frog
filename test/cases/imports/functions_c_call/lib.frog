@@ -1,0 +1,5 @@
+c-include system "stdlib.h" end
+c-type CInt int "int" end
+c-call magnitude abs CInt -- CInt end
+
+fn Magnitude int -- int end

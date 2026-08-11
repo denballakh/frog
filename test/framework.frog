@@ -1,4 +1,4 @@
-from "../stdlib/libc.frog" import free
+from "../stdlib/libc.frog" import ( free read-file )
 from "../stdlib/string.frog" import (
     bytes-equal bytes-index-of bytes-contain bytes-count bytes-starts-with string-equal
     ByteBuffer byte-buffer-new byte-buffer-push
@@ -28,7 +28,7 @@ const generated-c-check-constants 1 4 << end
 const generated-c-check-procedure-symbols 1 5 << end
 const generated-c-check-strings 1 6 << end
 const generated-c-required-checks 1 7 << 1 - end
-const expected-test-cases 448 end
+const expected-test-cases 457 end
 
 proc frog-test-context ptr ptr -- FrogTestContext do
     let compiler executable do
@@ -344,14 +344,26 @@ end
 proc frog-check-semantic-c ptr int String FrogTestContext -- do
     let bytes length name context do
         if name "semantics/c_ffi" string-equal do
+            bytes length "#include <stdlib.h>" String.bytes "#include <stdlib.h>" String.len bytes-contain
+            "generated-c/c-ffi system include" context frog-check
+            bytes length "#include \"test/cases/semantics/c_ffi/helper.h\"" String.bytes "#include \"test/cases/semantics/c_ffi/helper.h\"" String.len bytes-contain
+            "generated-c/c-ffi local include" context frog-check
+            bytes length "_Static_assert(sizeof(int) <= sizeof(Cell), \"C FFI type exceeds Cell\");" String.bytes "_Static_assert(sizeof(int) <= sizeof(Cell), \"C FFI type exceeds Cell\");" String.len bytes-contain
+            "generated-c/c-ffi int size assertion" context frog-check
+            bytes length "_Static_assert(sizeof(void *) <= sizeof(Cell), \"C FFI type exceeds Cell\");" String.bytes "_Static_assert(sizeof(void *) <= sizeof(Cell), \"C FFI type exceeds Cell\");" String.len bytes-contain
+            "generated-c/c-ffi pointer size assertion" context frog-check
+            bytes length "frog_c_type_" String.bytes "frog_c_type_" String.len bytes-contain !
+            "generated-c/c-ffi no generated C type typedef" context frog-check
             bytes length
             "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n"
-            "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n  return (Cell)ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(intptr_t)frog_arg_2);\n}\n"
-            "generated-c/c-ffi exact body" context frog-check-exact-function
+            "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n  return (Cell)(int)(ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(intptr_t)frog_arg_2));\n}\n"
+            "generated-c/c-ffi raw type wrapper" context frog-check-exact-function
+            bytes length "int ffi_test_answer(void);" String.bytes "int ffi_test_answer(void);" String.len bytes-contain !
+            "generated-c/c-ffi helper API comes from header" context frog-check
             generated-c-check-c-ffi context frog-mark-generated-check
         elif name "code/c_ffi/02_header_backed_abs" string-equal do
             bytes length "int abs(int);" String.bytes "int abs(int);" String.len bytes-contain !
-            "generated-c/c-ffi header-backed abs has no prototype" context frog-check
+            "generated-c/c-ffi abs has no redundant declaration" context frog-check
             generated-c-check-c-ffi context frog-mark-generated-check
         elif name "semantics/functions_layout" string-equal do
             bytes length "Cell frog_proc_0_before_2Dinc(void);"
@@ -709,6 +721,23 @@ proc frog-error-source String String String String FrogTestContext -- do
         let result do
             result expected-stderr name context frog-check-compile-error
             result completed-process-free
+        end
+    end
+end
+
+proc frog-c-build-error-source String String String FrogTestContext -- do
+    let source cwd name context do
+        context frog-count-case
+        source cwd context frog-compile-source
+        let compiler-result do
+            if compiler-result name context frog-check-compiler do
+                compiler-result "" context frog-build-generated
+                let build-result do
+                    build-result @CompletedProcess.returncode 0 != name context frog-check
+                    build-result completed-process-free
+                end
+            end
+            compiler-result completed-process-free
         end
     end
 end

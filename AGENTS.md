@@ -33,15 +33,14 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `examples/08_gcd_grid.frog`: Euclidean GCD rendered as a 40x40 coprimality grid using `#` for coprime coordinates and space otherwise.
 - `examples/09_records.frog`: Record allocation, field access, and a typed procedure.
 - `examples/10_tagged_unions.frog`: A tagged result with checked testing and projection.
-- `examples/11_c_ffi.frog`: Calls C standard-library functions through scalar C FFI.
+- `examples/11_c_ffi.frog`: Calls C standard-library functions through explicit C interop declarations.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/stdlib.md`: User-facing standard-library module reference.
 - `docs/testing.md`: Test suite layout and commands.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
-- `stdlib/`: Dependency-free Frog modules. These modules use public Frog
-  declarations and narrow generated-runtime ABI functions where libc cannot be
-  represented by the scalar C FFI directly.
+- `stdlib/`: Dependency-free Frog modules. They declare external dependencies
+  through explicit C interop and implement library policy in Frog.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
   manually managed growable `ByteBuffer` record.
 - `stdlib/subprocess.frog`: Direct child execution with literal argv/input,
@@ -114,7 +113,7 @@ Useful direct commands:
 - `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
 - `build -r FILE` runs the resulting executable.
-- CLI argument parsing, path construction, build policy, process setup, and exit-status forwarding are implemented in Frog in `compiler/frogc.frog`. Generated-C runtime adapters expose only the POSIX ABI details that the scalar C FFI cannot represent directly.
+- CLI argument parsing, path construction, build policy, process setup, and exit-status forwarding are implemented in Frog in `compiler/frogc.frog` over the bindings in `stdlib/libc.frog`.
 
 Current CLI help output:
 
@@ -142,6 +141,7 @@ Commands:
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
 - Generated procedures use normal C parameters and return values. A measurement pass determines maximum operand depth, then emission uses scalar `Cell frog_value_N` locals for those positions; generated code has no runtime operand-stack object or per-procedure operand-stack array.
+- Generated C emits source-requested headers, C-type assertions, and mechanical C-binding wrappers before compiler-private runtime headers. This ordering ensures a `c-call` or `c-value` cannot rely on declarations leaked by the runtime implementation.
 - Generated C procedure names use `frog_proc_<global-id>_<encoded-source-name>`. ASCII letters and digits remain readable; every other UTF-8 byte, including `_`, is encoded as uppercase `_HH`. Numeric global IDs remain the function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
@@ -154,11 +154,11 @@ Commands:
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
-- `read-file` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
+- The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
-- `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary macros imported from `stdlib/libc.frog`, not language intrinsics.
-- Plain `extern` reuses declarations from the standard C/POSIX headers in the generated preamble instead of emitting a competing prototype. `extern prototype` explicitly emits one for a separately linked symbol without an included declaration. Frog contracts remain fixed-arity even when an existing C declaration is variadic. C ABI metadata is distinct from the Frog semantic contract; `c-size` and `c-ssize` both appear as `int` to Frog code.
-- Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Keep C adapters only where the FFI cannot express the platform signature or the operation needs wait/status or child-process policy.
+- `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.
+- C interop declarations explicitly request system or local headers, name Frog-visible C types with trusted raw C type names, and bind calls or values. Calls retain fixed Frog arity even for variadic C declarations. Header declarations are authoritative: the compiler synthesizes neither C declarations nor dynamic loading.
+- Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Generated C wrappers perform only mechanical Cell/C-ABI conversion; wait/status and child-process policy stay in Frog.
 - `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `@Name.field`/`!Name.field` provide statically typed access.
 - Record fields occupy one eight-byte Cell in declaration order. Record-valued fields store handles, and only explicit `ptr`/record casts cross the nominal boundary.
 - `union Name case Variant [PayloadType] ... end` defines a nominal pointer-backed tagged union with zero or one payload Cell per variant. `Name:variant` constructs, `Name.variant?` preserves and tests a validated handle, and `Name.variant` performs a checked projection.
@@ -183,7 +183,7 @@ Commands:
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.
 - Static stack and operand failures caused by ordinary words use `frogc: <source-word>: <message>`. Preserve the outer source spelling across nested macro expansion.
-- Contract mismatch diagnostics render expected and actual types in source order. Call failures render only the relevant actual stack suffix; function-reference and external-declaration failures render both full contracts. Qualify nominal types from imported modules with their defining canonical path.
+- Contract mismatch diagnostics render expected and actual types in source order. Call failures render only the relevant actual stack suffix; function-reference failures render both full contracts. Qualify nominal types from imported modules with their defining canonical path.
 - Keep ordinary language and compiler test declarations in Frog manifests. Python tests are reserved for host policies that Frog cannot conveniently control itself.
 - Do not treat generated `.c` or `.exe` files as authoritative source, except for the intentional bootstrap seed `compiler/frogc.c`. Other generated files remain disposable build/test artifacts.
 - CLI `build` intentionally writes outputs directly and provides no locking, rollback transaction, or path-alias validation. Users are responsible for choosing distinct input and output paths.

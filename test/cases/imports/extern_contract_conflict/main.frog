@@ -1,5 +1,0 @@
-from "first.frog" import as-int
-from "second.frog" import as-ptr
-
-proc main -- do
-end

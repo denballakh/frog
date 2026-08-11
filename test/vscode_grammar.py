@@ -33,6 +33,7 @@ def main() -> None:
     repository = dictionary(grammar['repository'])
     literals = dictionary(repository['literals'])
     literal_patterns = patterns(literals['patterns'])
+    character = named_pattern(literal_patterns, 'constant.character.frog')
     string = named_pattern(literal_patterns, 'string.quoted.double.frog')
     numeric = named_pattern(literal_patterns, 'constant.numeric.frog')
     operators = dictionary(repository['operators'])
@@ -47,6 +48,15 @@ def main() -> None:
     assert string['begin'] == '"'
     assert string['end'] == '"'
     assert 'match' not in string
+
+    character_pattern = character['match']
+    assert isinstance(character_pattern, str)
+    character_regex = re.compile(character_pattern)
+    assert character_regex.fullmatch("'E'")
+    assert character_regex.fullmatch("'é'")
+    assert character_regex.fullmatch("''") is None
+    assert character_regex.fullmatch("'EE'") is None
+    assert character_regex.fullmatch("'\\n'") is None
 
     operator_pattern = operator['match']
     assert isinstance(operator_pattern, str)
@@ -64,9 +74,11 @@ def main() -> None:
     assert re.compile(keyword_pattern).fullmatch('fn')
     assert re.compile(keyword_pattern).fullmatch('const')
     assert re.compile(keyword_pattern).fullmatch('peek')
-    assert re.compile(keyword_pattern).fullmatch('prototype')
-    assert type_regex.fullmatch('c-size')
-    assert type_regex.fullmatch('c-ssize')
+    assert re.compile(keyword_pattern).fullmatch('c-include')
+    assert re.compile(keyword_pattern).fullmatch('c-type')
+    assert re.compile(keyword_pattern).fullmatch('c-call')
+    assert re.compile(keyword_pattern).fullmatch('c-value')
+    assert type_regex.fullmatch('LegacyAbiType') is None
     special_regex = re.compile(special_pattern)
     assert special_regex.fullmatch('Node:alloc')
     assert special_regex.fullmatch('Node:sizeof')
@@ -81,7 +93,7 @@ def main() -> None:
     assert special_regex.fullmatch('String.bytes')
     assert special_regex.fullmatch('String.len')
     assert special_regex.fullmatch('?')
-    for library_word in ('alloc', 'putc', 'getc', 'eputc', 'exit'):
+    for library_word in ('alloc', 'putc', 'getc', 'eputc', 'exit', 'read-file'):
         assert special_regex.fullmatch(library_word) is None
     assert special_regex.fullmatch('Node.bytes') is None
     assert special_regex.fullmatch('Node.bytes!') is None

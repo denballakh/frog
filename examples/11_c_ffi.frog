@@ -1,11 +1,18 @@
-from "../stdlib/libc.frog" import alloc
+c-include system "stdlib.h" end
+c-include system "string.h" end
 
-extern magnitude abs c-int -- c-int end
-extern length strlen c-ptr -- c-size end
-extern release free c-ptr -- end
+c-type CInt int "int" end
+c-type CSize int "size_t" end
+c-type CBytes ptr "const char *" end
+c-type CPtr ptr "void *" end
+
+c-call magnitude abs CInt -- CInt end
+c-call length strlen CBytes -- CSize end
+c-call allocate malloc CSize -- CPtr end
+c-call release free CPtr -- end
 
 proc main -- do
     0 42 - magnitude print
     "frog" String.bytes length print
-    32 alloc release
+    32 allocate release
 end

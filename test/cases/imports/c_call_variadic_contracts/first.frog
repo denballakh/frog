@@ -1,0 +1,6 @@
+c-include system "fcntl.h" end
+c-include system "unistd.h" end
+c-type Path ptr "const char *" end
+c-type CInt int "int" end
+c-call open-two open Path CInt -- CInt end
+c-call close-file close CInt -- CInt end

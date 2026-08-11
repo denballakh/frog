@@ -10,18 +10,27 @@ from "../stdlib/libc.frog" import ( alloc free putc getc eputc exit )
 
 ## libc
 
-`stdlib/libc.frog` exposes the small C-library surface used by Frog programs:
+`stdlib/libc.frog` declares its C dependencies with `c-include`, maps trusted header
+types with `c-type`, and wraps header-declared functions, macros, and values
+with private `c-call` and `c-value` bindings. The compiler emits no C
+declarations for those symbols.
+
+It exposes this small C-library surface to Frog programs:
 
 - `alloc`: `int -- ptr` allocates uninitialized bytes. The size must be
-  non-negative and fit in the target C `int`.
+  non-negative and representable as the target C `size_t`.
 - `free`: `ptr --` releases memory allocated by `alloc`.
 - `putc`: `int --` writes the low byte to standard output.
 - `getc`: `-- int` reads one byte from standard input, or returns `-1` at EOF.
 - `eputc`: `int --` writes the low byte to standard error.
 - `exit`: `int --` terminates the process with the supplied status.
+- `read-file`: `path_ptr path_length -- data_ptr data_length success` reads a
+  path into an allocated byte buffer. On failure it returns length `0` and
+  `false`; the data pointer must not be dereferenced. On success the caller
+  releases the data with `free`.
 
-The imported names are macros, so callers see the stack effects above rather
-than the return values of the underlying C I/O functions.
+These are ordinary Frog procedures, so callers use the Frog contracts above
+rather than the underlying C signatures.
 
 The module also exposes the POSIX operations used by the compiler and
 subprocess library:
@@ -40,8 +49,9 @@ subprocess library:
 
 Paths and argument arrays use NUL-terminated C strings. `create-file` opens a
 write-only, truncated file with mode `0600`. `ensure-directory` accepts an
-existing directory. `wait-child` waits through interrupted system calls and
-returns a normal exit status or `128` plus the terminating signal. The other
+existing directory that can be opened. `wait-child` waits through interrupted
+system calls and returns a normal exit status or `128` plus the terminating
+signal. The other
 integer-returning operations return a negative value on failure. `finish-child`
 flushes standard output and terminates without running parent cleanup code.
 

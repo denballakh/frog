@@ -1,10 +1,10 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, external C functions, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, C interop declarations, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
 Compiler errors are written to standard error and start with `frogc:`. When an ordinary source word fails static stack or operand checks, the diagnostic includes that word's source spelling, for example `frogc: +: compile-time stack underflow`. A failure inside macro expansion is attributed to the outer source word that invoked the expansion.
 
-Contract mismatch diagnostics show expected and actual types in brackets. Types are ordered from the lower stack position to the top, matching their order in source signatures. For a failed call, the actual list contains only the relevant top-of-stack suffix; unrelated values below it are omitted. Nominal types defined in imported modules use `<module-path>:<declaration-name>` so distinct same-named types remain distinguishable. Full function-reference and external C contracts show their input and output lists separated by `--`.
+Contract mismatch diagnostics show expected and actual types in brackets. Types are ordered from the lower stack position to the top, matching their order in source signatures. For a failed call, the actual list contains only the relevant top-of-stack suffix; unrelated values below it are omitted. Nominal types defined in imported modules use `<module-path>:<declaration-name>` so distinct same-named types remain distinguishable. Full function-reference and C-call contracts show their input and output lists separated by `--`.
 
 ## Values And Literals
 
@@ -68,7 +68,7 @@ Record instances use manual memory management. `Name:alloc` has stack effect `--
 
 `@Name.field` reads a field with stack effect `Name -- FieldType`; `!Name.field` writes it with stack effect `FieldType Name --`. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
 
-Record types are nominal. Two declarations with identical fields are different types, and field access requires the declared owner type. Explicit `ptr` to record and record to `ptr` casts are available for raw allocation and C FFI boundaries; direct casts between different record types are rejected.
+Record types are nominal. Two declarations with identical fields are different types, and field access requires the declared owner type. Explicit `ptr` to record and record to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different record types are rejected.
 
 See the runnable [records example](../examples/09_records.frog).
 
@@ -123,7 +123,7 @@ proc main -- do
 end
 ```
 
-`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and external Frog procedures are supported.
+`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and C-call procedures are supported.
 
 `Name:call` has stack effect `<inputs> Name -- <outputs>`: the function reference is on top of its inputs. Function-reference types are nominal, so independently declared types with identical contracts are not interchangeable. They may appear in procedure signatures, record fields, union payloads, and other function-reference contracts.
 
@@ -131,38 +131,45 @@ A function reference is opaque and can call only a procedure whose complete reso
 
 There are no anonymous functions, captured environments, closures, implicit contract coercions, or C callback conversions. Exact macros may shadow `Name:ref:procedure` or `Name:call`; otherwise qualified function operations have the same precedence over locals and procedures as other nominal operations.
 
-## C Foreign Functions
+## C Interop
 
-External C functions use an explicit Frog name, C linker symbol, and scalar ABI contract:
+C interop declarations explicitly name the headers, C type spellings, calls, and values that a Frog module uses:
 
 ```frog
-from "stdlib/libc.frog" import alloc
+c-include system "stdlib.h" end
+c-include system "string.h" end
 
-extern magnitude abs c-int -- c-int end
-extern length strlen c-ptr -- c-size end
-extern release free c-ptr -- end
+c-type CInt int "int" end
+c-type CSize int "size_t" end
+c-type CBytes ptr "const char *" end
+c-type CPtr ptr "void *" end
+
+c-call magnitude abs CInt -- CInt end
+c-call length strlen CBytes -- CSize end
+c-call allocate malloc CSize -- CPtr end
+c-call release free CPtr -- end
 
 proc main -- do
     0 9 - magnitude print
     "frog" String.bytes length print
-    8 alloc release
+    8 allocate release
 end
 ```
 
-The supported ABI types are `c-int` (Frog `int`, C `int`), `c-bool` (Frog `bool`, C `int` normalized to zero or one), `c-ptr` (Frog `ptr`, C `void *`), `c-size` (Frog `int`, C `size_t`), and `c-ssize` (Frog `int`, C `ssize_t`). An external function may consume any number of values and return zero or one value.
+`c-include system "name.h" end` emits a system-header include. `c-include local "path.h" end` emits a local-header include. Every referenced C function or object must be declared, and every referenced C macro must be defined, by an explicitly included header. Frog does not synthesize declarations or load libraries dynamically.
 
-An `extern` reuses a declaration already available from the generated C preamble and emits no competing prototype. Its Frog contract has a fixed arity, but the existing C declaration may be variadic. This form is intended for functions and function-like macros declared by the standard C and POSIX headers included in generated C. `extern prototype` instead emits a matching non-variadic C prototype for a symbol supplied by another translation unit without an included declaration. Frog does not load libraries dynamically or include arbitrary user headers.
+`c-type Name int|bool|ptr "C type name" end` maps a trusted C type name to a Frog representation. For example, `"size_t"` maps `size_t` to Frog `int`, `"FILE *"` maps `FILE *` to Frog `ptr`, and `"void (*)(int)"` may be represented as Frog `ptr`. `int` values use ordinary C integer conversion, `bool` results are normalized to `true` or `false`, and `ptr` values use the target's object-pointer/integer representation.
 
-The C symbol must be an ASCII C identifier that is not a C11 keyword or a Frog-reserved name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. The symbol must be available when the program is linked.
+`c-call FrogName CSymbol Inputs -- [Output] end` binds a C function or function-like macro. Its Frog contract has fixed arity, even when the header declaration is variadic. `c-value FrogName CSymbol -- Output end` binds a C object or object-like macro. Calls and values are Frog procedures, so they can be imported, aliased, reexported, and used as function-reference targets. C types can likewise be imported and reexported, including under aliases.
 
-External functions use normal Frog name resolution and static stack-contract checking. They can be imported, aliased, and reexported like Frog procedures. Multiple Frog names may bind the same C symbol only when every declaration has the same ABI contract and declaration mode.
-
-The [C FFI example](../examples/11_c_ffi.frog) uses symbols from the C standard library. A symbol supplied by another C source file without an included declaration must use `extern prototype`. Generate C and link both sources:
+The C symbol must be an ASCII C identifier that is not a C11 keyword or a Frog-reserved name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. The [C interop example](../examples/11_c_ffi.frog) uses standard-library headers. A separately linked helper needs a local header that declares the functions or objects it exposes:
 
 ```sh
 build/frogc < program.frog > program.c
 gcc -std=c11 program.c helper.c -o program
 ```
+
+Function-pointer types such as `"void (*)(int)"` can be represented as Frog `ptr`, but passing or storing those values uses target-dependent function-pointer/integer conversion. This is an unsafe boundary; portable Frog code should avoid function-pointer interop.
 
 ## Macros
 
@@ -179,7 +186,7 @@ end
 
 `macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. User-defined and imported macros expand before normal word resolution, so they can shadow intrinsics or procedures with the same name.
 
-Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `extern`, `record`, `union`, `fn`, `const`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
+Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `c-include`, `c-type`, `c-call`, `c-value`, `record`, `union`, `fn`, `const`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
 
 ## Compile-Time Constants
 
@@ -216,7 +223,7 @@ Prelude names are fallback definitions. Resolution prefers a user-defined or imp
 
 ## Imports
 
-Imports make procedures, external functions, constants, records, unions, function-reference types, and macros from another Frog file visible in the importing module:
+Imports make procedures, C calls and values, C types, constants, records, unions, function-reference types, and macros from another Frog file visible in the importing module:
 
 ```frog
 from "math.frog" import inc
@@ -252,7 +259,7 @@ proc main -- do
 end
 ```
 
-Imported top-level code is ignored. Imported files contribute procedure, external-function, constant, record, union, function-reference-type, and macro definitions, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `M:some`, `M.some?`, and `F:call`.
+Imported top-level code is ignored. Imported files contribute procedure, C call, C value, C type, constant, record, union, function-reference-type, and macro declarations, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `M:some`, `M.some?`, and `F:call`.
 
 Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 
@@ -295,17 +302,20 @@ end
 ## Language Constructs
 
 - `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
-- `extern [prototype] frog-name c-symbol <c-inputs> -- [c-output] end` declares a C function with zero or one output. The optional modifier emits a non-variadic C prototype; plain `extern` reuses an existing declaration.
+- `c-include system|local "path" end` explicitly includes a system or local C header.
+- `c-type Name int|bool|ptr "C type name" end` declares an importable trusted C type representation.
+- `c-call frog-name c-symbol c-types... -- [c-type] end` declares a fixed-arity C function or function-like-macro call with zero or one output.
+- `c-value frog-name c-symbol -- c-type end` declares a zero-input C object or object-like-macro value.
 - `record Name field Type ... end` defines a nominal record.
 - `union Name case Variant [PayloadType] ... end` defines a nominal tagged union.
 - `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract.
 - `const name <expression> end` eagerly evaluates a restricted expression and defines one or more typed literal values.
 - A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
 - Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid; there is no implicit `main`.
-- Only procedure, external-function, constant, record, union, function-reference, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
+- Only procedure, C interop, constant, record, union, function-reference, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
 - Procedure calls use the procedure name as a word and are statically checked against the declared contract.
 - `macro name <body> end` defines a compile-time token substitution.
-- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, external functions, constants, records, unions, function-reference types, or macros from another file.
+- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, C calls, C values, C types, constants, records, unions, function-reference types, or macros from another file.
 - `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
 - `while ... do ... end` repeats while the condition leaves `true`.
 - `let name... do ... end` binds visible stack values to local names in source order.
@@ -354,7 +364,6 @@ end
 
 ### Memory
 
-- `read-file`: `path_ptr path_length -- data_ptr data_length success` reads a UTF-8 path into an allocated byte buffer. On failure it returns length `0` and `false`; the data pointer must not be dereferenced.
 - Pointer arithmetic supports `ptr int + -- ptr` and `ptr int - -- ptr`; offsets are in bytes.
 - `int ptr +` is not supported.
 - Signed pointer reads: `@i8`, `@i16`, `@i32`, `@i64`, each `ptr -- int`.
@@ -381,4 +390,4 @@ Byte allocation, byte-oriented standard I/O, memory release, and process termina
 
 ## Runtime Limits
 
-Runtime signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count have unspecified results. Right shift of a negative value is platform-dependent. Compile-time constant arithmetic rejects these cases instead. Pointer/integer casts require a target where object pointers fit in an integer. An unsigned 64-bit read above `9223372036854775807`, or passing a Frog `int` outside the target C `int` range through `c-int`, is platform-dependent.
+Runtime signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count have unspecified results. Right shift of a negative value is platform-dependent. Compile-time constant arithmetic rejects these cases instead. Pointer/integer casts require a target where object pointers fit in an integer. C interop conversions follow the declared C type, so values outside that target C type's range and function-pointer values represented as `ptr` are target-dependent.

@@ -1,12 +1,19 @@
 from "../../../../stdlib/libc.frog" import alloc
 
-extern prototype ffi-answer ffi_test_answer -- c-int end
-extern prototype ffi-mix ffi_test_mix c-int c-bool c-ptr -- c-int end
-extern prototype ffi-truth ffi_test_truth c-int -- c-bool end
-extern prototype ffi-identity ffi_test_identity c-ptr -- c-ptr end
-extern ffi-free free c-ptr -- end
-extern prototype ffi-answer-again ffi_test_answer -- c-int end
-extern prototype legacy-p0 p0 -- c-int end
+c-include system "stdlib.h" end
+c-include local "test/cases/semantics/c_ffi/helper.h" end
+
+c-call ffi-answer ffi_test_answer -- CInt end
+c-call ffi-mix ffi_test_mix CInt CBool CPtr -- CInt end
+c-call ffi-truth ffi_test_truth CInt -- CBool end
+c-call ffi-identity ffi_test_identity CPtr -- CPtr end
+c-call ffi-free free CPtr -- end
+c-call ffi-answer-again ffi_test_answer -- CInt end
+c-call legacy-p0 p0 -- CInt end
+
+c-type CInt int "int" end
+c-type CBool bool "int" end
+c-type CPtr ptr "void *" end
 
 proc main -- do
     ffi-answer print

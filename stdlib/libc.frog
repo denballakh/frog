@@ -1,24 +1,286 @@
-extern libc-allocate froglang_alloc c-int -- c-ptr end
-extern libc-free free c-ptr -- end
-extern libc-putchar putchar c-int -- c-int end
-extern libc-getchar getchar -- c-int end
-extern libc-eputchar froglang_eputc c-int -- end
-extern libc-exit exit c-int -- end
-extern fork froglang_fork -- c-int end
-extern create-file froglang_create_file c-ptr -- c-int end
-extern dup2 dup2 c-int c-int -- c-int end
-extern close close c-int -- c-int end
-extern chdir froglang_chdir c-ptr -- c-int end
-extern execv froglang_execv c-ptr c-ptr -- c-int end
-extern execvp froglang_execvp c-ptr c-ptr -- c-int end
-extern ensure-directory froglang_ensure_directory c-ptr -- c-int end
-extern wait-child froglang_wait_child c-int -- c-int end
-extern finish-child froglang_finish_child c-int -- end
-extern reset-child-signals froglang_reset_child_signals -- end
+c-include system "errno.h" end
+c-include system "dirent.h" end
+c-include system "fcntl.h" end
+c-include system "signal.h" end
+c-include system "stdio.h" end
+c-include system "stdlib.h" end
+c-include system "string.h" end
+c-include system "sys/stat.h" end
+c-include system "sys/types.h" end
+c-include system "sys/wait.h" end
+c-include system "unistd.h" end
 
-macro alloc libc-allocate end
-macro free libc-free end
-macro putc libc-putchar drop end
-macro getc libc-getchar end
-macro eputc libc-eputchar end
-macro exit libc-exit end
+c-type CBool bool "int" end
+c-type CInt int "int" end
+c-type CLong int "long" end
+c-type CMode int "mode_t" end
+c-type CPid int "pid_t" end
+c-type CSize int "size_t" end
+c-type CPtr ptr "void *" end
+c-type CConstPtr ptr "const void *" end
+c-type CIntPtr ptr "int *" end
+c-type CPath ptr "const char *" end
+c-type CArgv ptr "char *const *" end
+c-type CDir ptr "DIR *" end
+c-type CFile ptr "FILE *" end
+c-type CSignalHandler ptr "void (*)(int)" end
+
+c-call c-malloc malloc CSize -- CPtr end
+c-call c-free free CPtr -- end
+c-call c-putchar putchar CInt -- CInt end
+c-call c-getchar getchar -- CInt end
+c-call c-fputc fputc CInt CFile -- CInt end
+c-call c-exit exit CInt -- end
+c-call c-_exit _exit CInt -- end
+
+c-call c-fflush fflush CFile -- CInt end
+c-value c-stdout stdout -- CFile end
+c-value c-stderr stderr -- CFile end
+
+c-call c-fork fork -- CPid end
+c-call c-open open CPath CInt CMode -- CInt end
+c-value c-o-wronly O_WRONLY -- CInt end
+c-value c-o-creat O_CREAT -- CInt end
+c-value c-o-trunc O_TRUNC -- CInt end
+c-call c-dup2 dup2 CInt CInt -- CInt end
+c-call c-close close CInt -- CInt end
+c-call c-chdir chdir CPath -- CInt end
+c-call c-execv execv CPath CArgv -- CInt end
+c-call c-execvp execvp CPath CArgv -- CInt end
+
+c-call c-mkdir mkdir CPath CMode -- CInt end
+c-call c-opendir opendir CPath -- CDir end
+c-call c-closedir closedir CDir -- CInt end
+c-value c-errno errno -- CInt end
+c-value c-eexist EEXIST -- CInt end
+c-value c-eintr EINTR -- CInt end
+
+c-call c-waitpid waitpid CPid CIntPtr CInt -- CPid end
+c-call c-wifexited WIFEXITED CInt -- CBool end
+c-call c-wexitstatus WEXITSTATUS CInt -- CInt end
+c-call c-wifsignaled WIFSIGNALED CInt -- CBool end
+c-call c-wtermsig WTERMSIG CInt -- CInt end
+
+c-call c-signal signal CInt CSignalHandler -- CSignalHandler end
+c-value c-sig-dfl SIG_DFL -- CSignalHandler end
+c-value c-sigint SIGINT -- CInt end
+c-value c-sigterm SIGTERM -- CInt end
+c-value c-sigpipe SIGPIPE -- CInt end
+c-value c-sighup SIGHUP -- CInt end
+
+c-call subprocess-tmpfile tmpfile -- CFile end
+c-call subprocess-file-putc fputc CInt CFile -- CInt end
+c-call subprocess-file-getc fgetc CFile -- CInt end
+c-call subprocess-file-rewind rewind CFile -- end
+c-call subprocess-file-flush fflush CFile -- CInt end
+c-call subprocess-file-descriptor fileno CFile -- CInt end
+c-call subprocess-file-close fclose CFile -- CInt end
+
+c-call c-fopen fopen CPath CPath -- CFile end
+c-call c-fseek fseek CFile CLong CInt -- CInt end
+c-call c-ftell ftell CFile -- CLong end
+c-call c-fread fread CPtr CSize CSize CFile -- CSize end
+c-call c-fclose fclose CFile -- CInt end
+c-value c-seek-end SEEK_END -- CInt end
+c-value c-seek-set SEEK_SET -- CInt end
+c-call c-memchr memchr CConstPtr CInt CSize -- CPtr end
+c-call c-memcpy memcpy CPtr CConstPtr CSize -- CPtr end
+
+const libc-status-bytes 8 end
+
+proc null-pointer ptr -- bool do int cast 0 == end
+
+proc exit int -- do c-exit end
+
+proc alloc int -- ptr do
+    let size do
+        if size 0 < do 1 exit end
+        size c-malloc
+        if dup null-pointer size 0 != && do 1 exit end
+    end
+end
+
+proc free ptr -- do c-free end
+proc putc int -- do c-putchar drop end
+proc getc -- int do c-getchar end
+proc eputc int -- do c-stderr c-fputc drop end
+
+proc fork -- int do
+    if 0 ptr cast c-fflush 0 != do 0 1 - else c-fork end
+end
+
+proc create-file ptr -- int do
+    c-o-wronly c-o-creat | c-o-trunc | 0o600 c-open
+end
+
+proc dup2 int int -- int do c-dup2 end
+proc close int -- int do c-close end
+proc chdir ptr -- int do c-chdir end
+proc execv ptr ptr -- int do c-execv end
+proc execvp ptr ptr -- int do c-execvp end
+
+proc ensure-directory ptr -- int do
+    let path do
+        path 0o777 c-mkdir
+        if dup 0 == do
+        elif c-errno c-eexist == do
+            drop
+            path c-opendir
+            if dup null-pointer do
+                drop 0 1 -
+            else
+                c-closedir
+                if dup 0 == do
+                    drop 0
+                else
+                    drop 0 1 -
+                end
+            end
+        else
+            drop 0 1 -
+        end
+    end
+end
+
+proc wait-child int -- int do
+    let child do
+        libc-status-bytes alloc
+        let status do
+            0 status !i64
+            child status 0 c-waitpid
+            while dup 0 < c-errno c-eintr == && do
+                drop
+                child status 0 c-waitpid
+            end
+            if dup 0 < do
+                drop
+                status free
+                0 1 -
+            else
+                drop
+                status @i32
+                status free
+                let value do
+                    if value c-wifexited do
+                        value c-wexitstatus
+                    elif value c-wifsignaled do
+                        value c-wtermsig 128 +
+                    else
+                        1
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc finish-child int -- do
+    let status do
+        if c-stdout c-fflush 0 != do 1 else status end
+        c-_exit
+    end
+end
+
+proc reset-signal int -- do c-sig-dfl c-signal drop end
+
+proc reset-child-signals -- do
+    c-sigint reset-signal
+    c-sigterm reset-signal
+    c-sigpipe reset-signal
+    c-sighup reset-signal
+end
+
+proc read-file-failure -- ptr int bool do 0 ptr cast 0 false end
+
+proc read-file-path ptr int -- ptr bool do
+    let bytes length do
+        if length 0 < do
+            0 ptr cast false
+        elif length 0 > bytes null-pointer && do
+            0 ptr cast false
+        elif length 0 > bytes 0 length c-memchr null-pointer ! && do
+            0 ptr cast false
+        else
+            length 1 + c-malloc
+            if dup null-pointer do
+                drop 0 ptr cast false
+            else
+                let path do
+                    if length 0 > do path bytes length c-memcpy drop end
+                    0 path length + !u8
+                    path true
+                end
+            end
+        end
+    end
+end
+
+proc read-file-close-failure ptr -- ptr int bool do
+    c-fclose drop
+    read-file-failure
+end
+
+proc read-file-data-failure ptr ptr -- ptr int bool do
+    let data file do
+        data c-free
+        file c-fclose drop
+        read-file-failure
+    end
+end
+
+proc read-open-file ptr -- ptr int bool do
+    let file do
+        if file 0 c-seek-end c-fseek 0 != do
+            file read-file-close-failure
+        else
+            file c-ftell
+            if dup 0 < do
+                drop
+                file read-file-close-failure
+            else
+                let length do
+                    if file 0 c-seek-set c-fseek 0 != do
+                        file read-file-close-failure
+                    else
+                        if length 0 == do 1 else length end c-malloc
+                        if dup null-pointer do
+                            drop
+                            file read-file-close-failure
+                        else
+                            let data do
+                                if data 1 length file c-fread length == ! do
+                                    data file read-file-data-failure
+                                elif file c-fclose 0 != do
+                                    data c-free
+                                    read-file-failure
+                                else
+                                    data length true
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc read-file ptr int -- ptr int bool do
+    read-file-path
+    let path valid do
+        if valid ! do
+            path drop
+            read-file-failure
+        else
+            path "rb" String.bytes c-fopen
+            let file do
+                path c-free
+                if file null-pointer do
+                    read-file-failure
+                else
+                    file read-open-file
+                end
+            end
+        end
+    end
+end
