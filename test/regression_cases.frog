@@ -65,6 +65,8 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/standalone/macros.frog" "test/cases/standalone" "1\n2\n3\n3\n2\n1\n1\n2\n1\n6\n7\n9\n7\n" "" 0 "" "" "" "standalone/macros" context frog-run-case
         "test/cases/stdlib/libc/main.frog" "test/cases/stdlib/libc" "A" "E" 0 "" "" "" "stdlib/libc" context frog-run-case
         "test/cases/stdlib/string/main.frog" "test/cases/stdlib/string" "" "" 0 "" "" "" "stdlib/string" context frog-run-case
+        "test/cases/stdlib/containers/main.frog" "test/cases/stdlib/containers" "" "" 0 "" "" "" "stdlib/containers" context frog-run-case
+        "test/cases/stdlib/containers/too_large.frog" "test/cases/stdlib/containers" "" 1 "stdlib/containers_too_large" context frog-run-status-case
         "test/cases/stdlib/subprocess/main.frog" "test/cases/stdlib/subprocess" "" "" 0 "" "" "" "stdlib/subprocess" context frog-run-case
         "test/cases/stdlib/test/pass.frog" "test/cases/stdlib/test" "" "" 0 "" "" "" "stdlib/test_pass" context frog-run-case
         "test/cases/stdlib/test/fail.frog" "test/cases/stdlib/test" "" "FAIL: first failure\nFAIL: second failure\n" 1 "" "" "" "stdlib/test_fail" context frog-run-case

@@ -87,6 +87,65 @@ heap-backed byte buffers:
 record operations. Its byte storage may move after `byte-buffer-push`, so code
 must load `@ByteBuffer.bytes` again after an append.
 
+## Opaque-Pointer Containers
+
+`stdlib/containers.frog` provides containers for borrowed `ptr` values. The
+containers never release stored values. Callers retain ownership of every value
+they insert and of values returned by lookup or removal operations.
+
+- `ptr-array-new`: `capacity -- PtrArray` creates an empty array. A nonpositive
+  requested capacity is normalized to a small positive capacity.
+- `ptr-array-push`: `value PtrArray --` appends a borrowed pointer, growing the
+  array as needed.
+- `ptr-array-get`: `PtrArray index -- value found` returns the stored pointer
+  and `true` for an in-bounds index, or a null pointer and `false` otherwise.
+- `ptr-array-set`: `value PtrArray index -- bool` replaces an in-bounds value
+  and returns `true`; it returns `false` for an out-of-bounds index.
+- `ptr-array-pop`: `PtrArray -- value found` removes and returns the last value,
+  or returns a null pointer and `false` when empty.
+- `ptr-array-free`: `PtrArray --` releases the array's internal storage.
+
+Array construction or growth terminates with status 1 when the required slot
+count cannot be represented safely as an allocation size.
+
+`PtrArray` exposes `items`, `count`, and `capacity`. `PtrList` exposes `head`
+and `count`; its nodes expose `value` and `next`.
+
+- `ptr-list-new`: `-- PtrList` creates an empty list.
+- `ptr-list-push-front`: `value PtrList --` adds a borrowed pointer at the
+  front.
+- `ptr-list-first`: `PtrList -- value found` observes the first pointer, or a
+  null pointer and `false` when empty.
+- `ptr-list-pop-front`: `PtrList -- value found` removes the first pointer, or
+  returns a null pointer and `false` when empty.
+- `ptr-list-free`: `PtrList --` releases list nodes but not their values.
+
+`StringMap` maps byte-string keys to borrowed `ptr` values. It copies and owns
+each inserted key; callers may change or release the source bytes after
+`string-map-set` returns. `StringMap` exposes `buckets`, `count`, and
+`capacity`; entries expose `key`, `key_length`, `value`, and `next`.
+
+- `string-map-new`: `capacity -- StringMap` creates an empty map. A nonpositive
+  requested capacity is normalized to a small positive bucket count.
+- `string-map-get`: `key key_length StringMap -- value found` returns the value
+  for a present key, or a null pointer and `false` when absent.
+- `string-map-set`: `key key_length value StringMap -- previous replaced`
+  inserts or replaces a key. A replacement returns the old borrowed value and
+  `true`; a new key returns a null pointer and `false`.
+- `string-map-remove`: `key key_length StringMap -- value found` removes a key
+  and returns its borrowed value, or a null pointer and `false` when absent.
+- `string-map-free`: `StringMap --` releases map entries, owned key copies, and
+  buckets, but not values.
+
+Key lengths must be nonnegative. A positive key length requires a pointer to at
+least that many readable bytes. Map construction terminates with status 1 when
+the required bucket allocation size cannot be represented safely. Maps use a
+fixed bucket count with chained entries; they do not resize automatically.
+
+`container-count`: `Container -- int` and `container-empty?`: `Container --
+bool` are structural macros that work with `PtrArray`, `PtrList`, and
+`StringMap`.
+
 ## Subprocesses
 
 `stdlib/subprocess.frog` runs a program with captured standard output and

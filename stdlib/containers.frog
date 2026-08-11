@@ -1,0 +1,456 @@
+from "libc.frog" import ( alloc free exit )
+from "string.frog" import ( bytes-copy bytes-equal )
+
+const container-slot-bytes 8 end
+const ptr-array-default-capacity 4 end
+const string-map-default-capacity 8 end
+const string-map-hash-initial 5381 end
+const string-map-hash-multiplier 33 end
+const string-map-hash-mask 0x7fffffff end
+const container-max-int 1 62 << 1 62 << 1 - + end
+const container-max-capacity container-max-int container-slot-bytes / end
+
+record PtrArray
+    items ptr
+    count int
+    capacity int
+end
+
+record PtrListNode
+    value ptr
+    next ptr
+end
+
+record PtrList
+    head ptr
+    count int
+end
+
+record StringMapEntry
+    key ptr
+    key_length int
+    value ptr
+    next ptr
+end
+
+record StringMap
+    buckets ptr
+    count int
+    capacity int
+end
+
+macro container-count @.count end
+macro container-empty? @.count 0 == end
+
+proc container-null? ptr -- bool do
+    int cast 0 ==
+end
+
+proc container-slot-address ptr int -- ptr do
+    container-slot-bytes * +
+end
+
+proc container-require-capacity int -- do
+    if dup container-max-capacity > do
+        drop 1 exit
+    else
+        drop
+    end
+end
+
+proc ptr-array-new int -- PtrArray do
+    let requested-capacity do
+        requested-capacity container-require-capacity
+        if requested-capacity 0 > do
+            requested-capacity
+        else
+            ptr-array-default-capacity
+        end
+        let capacity do
+            capacity container-slot-bytes * alloc
+            let items do
+                PtrArray:alloc
+                let array do
+                    items array !.items
+                    0 array !.count
+                    capacity array !.capacity
+                    array
+                end
+            end
+        end
+    end
+end
+
+proc ptr-array-grow PtrArray -- do
+    let array do
+        if array @.capacity container-max-capacity 2 / > do
+            1 exit
+        end
+        array @.capacity 2 *
+        let capacity do
+            capacity container-slot-bytes * alloc
+            let items do
+                0
+                while dup array @.count < do
+                    let index do
+                        array @.items index container-slot-address @ptr
+                        items index container-slot-address !ptr
+                        index 1 +
+                    end
+                end
+                drop
+                array @.items free
+                items array !.items
+                capacity array !.capacity
+            end
+        end
+    end
+end
+
+proc ptr-array-push ptr PtrArray -- do
+    let value array do
+        if array @.count array @.capacity == do
+            array ptr-array-grow
+        end
+        value array @.items array @.count container-slot-address !ptr
+        array @.count 1 + array !.count
+    end
+end
+
+proc ptr-array-get PtrArray int -- ptr bool do
+    let array index do
+        if index 0 < index array @.count >= || do
+            0 ptr cast false
+        else
+            array @.items index container-slot-address @ptr true
+        end
+    end
+end
+
+proc ptr-array-set ptr PtrArray int -- bool do
+    let value array index do
+        if index 0 < index array @.count >= || do
+            false
+        else
+            value array @.items index container-slot-address !ptr
+            true
+        end
+    end
+end
+
+proc ptr-array-pop PtrArray -- ptr bool do
+    let array do
+        if array @.count 0 == do
+            0 ptr cast false
+        else
+            array @.count 1 -
+            let index do
+                array @.items index container-slot-address @ptr
+                index array !.count
+                true
+            end
+        end
+    end
+end
+
+proc ptr-array-free PtrArray -- do
+    let array do
+        array @.items free
+        array ptr cast free
+    end
+end
+
+proc ptr-list-new -- PtrList do
+    PtrList:alloc
+    let list do
+        0 ptr cast list !.head
+        0 list !.count
+        list
+    end
+end
+
+proc ptr-list-push-front ptr PtrList -- do
+    let value list do
+        PtrListNode:alloc
+        let node do
+            value node !.value
+            list @.head node !.next
+            node ptr cast list !.head
+            list @.count 1 + list !.count
+        end
+    end
+end
+
+proc ptr-list-first PtrList -- ptr bool do
+    let list do
+        list @.head
+        let head do
+            if head container-null? do
+                0 ptr cast false
+            else
+                head PtrListNode cast @.value true
+            end
+        end
+    end
+end
+
+proc ptr-list-pop-front PtrList -- ptr bool do
+    let list do
+        list @.head
+        let head do
+            if head container-null? do
+                0 ptr cast false
+            else
+                head PtrListNode cast
+                let node do
+                    node @.value
+                    let value do
+                        node @.next list !.head
+                        list @.count 1 - list !.count
+                        node ptr cast free
+                        value true
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc ptr-list-free PtrList -- do
+    let list do
+        while list @.count 0 > do
+            list ptr-list-pop-front drop drop
+        end
+        list ptr cast free
+    end
+end
+
+proc string-map-hash ptr int -- int do
+    let bytes length do
+        0 string-map-hash-initial
+        while peek index hash do
+            index length <
+        end
+        do
+            let index hash do
+                index 1 +
+                hash string-map-hash-multiplier *
+                bytes index + @u8 +
+                string-map-hash-mask &
+            end
+        end
+        let index hash do
+            index drop
+            hash
+        end
+    end
+end
+
+proc string-map-new int -- StringMap do
+    let requested-capacity do
+        requested-capacity container-require-capacity
+        if requested-capacity 0 > do
+            requested-capacity
+        else
+            string-map-default-capacity
+        end
+        let capacity do
+            capacity container-slot-bytes * alloc
+            let buckets do
+                0
+                while dup capacity < do
+                    let index do
+                        0 ptr cast buckets index container-slot-address !ptr
+                        index 1 +
+                    end
+                end
+                drop
+                StringMap:alloc
+                let map do
+                    buckets map !.buckets
+                    0 map !.count
+                    capacity map !.capacity
+                    map
+                end
+            end
+        end
+    end
+end
+
+proc string-map-bucket-address ptr int StringMap -- ptr do
+    let key length map do
+        map @.buckets
+        key length string-map-hash map @.capacity %
+        container-slot-address
+    end
+end
+
+proc string-map-find-from ptr int ptr -- ptr do
+    let key length first do
+        first false
+        while peek current found do
+            current container-null? ! found ! &&
+        end
+        do
+            let current found do
+                current StringMapEntry cast
+                let entry do
+                    if entry @.key entry @.key_length key length bytes-equal do
+                        current true
+                    else
+                        entry @.next false
+                    end
+                end
+            end
+        end
+        let current found do
+            if found do
+                current
+            else
+                0 ptr cast
+            end
+        end
+    end
+end
+
+proc string-map-find ptr int StringMap -- ptr do
+    let key length map do
+        key length map string-map-bucket-address @ptr
+        let current do
+            key length current string-map-find-from
+        end
+    end
+end
+
+proc string-map-get ptr int StringMap -- ptr bool do
+    let key length map do
+        if length 0 < do
+            0 ptr cast false
+        else
+            key length map string-map-find
+            let found do
+                if found container-null? do
+                    0 ptr cast false
+                else
+                    found StringMapEntry cast @.value true
+                end
+            end
+        end
+    end
+end
+
+proc string-map-set ptr int ptr StringMap -- ptr bool do
+    let key length value map do
+        if length 0 < do
+            0 ptr cast false
+        else
+            key length map string-map-find
+            let found do
+                if found container-null? do
+                    length alloc
+                    let copy do
+                        key copy length bytes-copy
+                        StringMapEntry:alloc
+                        let entry do
+                            copy entry !.key
+                            length entry !.key_length
+                            value entry !.value
+                            key length map string-map-bucket-address
+                            let bucket do
+                                bucket @ptr entry !.next
+                                entry ptr cast bucket !ptr
+                            end
+                            map @.count 1 + map !.count
+                            0 ptr cast false
+                        end
+                    end
+                else
+                    found StringMapEntry cast
+                    let entry do
+                        entry @.value
+                        value entry !.value
+                        true
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc string-map-remove ptr int StringMap -- ptr bool do
+    let key length map do
+        if length 0 < do
+            0 ptr cast false
+        else
+            key length map string-map-bucket-address
+            let bucket do
+                bucket @ptr 0 ptr cast false
+                while peek current previous found do
+                    current container-null? ! found ! &&
+                end
+                do
+                    let current previous found do
+                        current StringMapEntry cast
+                        let entry do
+                            if entry @.key entry @.key_length key length bytes-equal do
+                                current previous true
+                            else
+                                entry @.next current false
+                            end
+                        end
+                    end
+                end
+                let current previous found do
+                    if found ! do
+                        0 ptr cast false
+                    else
+                        current StringMapEntry cast
+                        let entry do
+                            entry @.value
+                            let value do
+                                if previous container-null? do
+                                    entry @.next bucket !ptr
+                                else
+                                    entry @.next previous StringMapEntry cast !.next
+                                end
+                                entry @.key free
+                                entry ptr cast free
+                                map @.count 1 - map !.count
+                                value true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc string-map-free-chain ptr -- do
+    while dup container-null? ! do
+        let current do
+            current StringMapEntry cast
+            let entry do
+                entry @.next
+                entry @.key free
+                entry ptr cast free
+            end
+        end
+    end
+    drop
+end
+
+proc string-map-free StringMap -- do
+    let map do
+        0
+        while dup map @.capacity < do
+            let index do
+                map @.buckets index container-slot-address @ptr string-map-free-chain
+                index 1 +
+            end
+        end
+        drop
+        map @.buckets free
+        map ptr cast free
+    end
+end

@@ -43,6 +43,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
   through explicit C interop and implement library policy in Frog.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
   manually managed growable `ByteBuffer` record.
+- `stdlib/containers.frog`: Pointer arrays, pointer lists, and fixed-bucket
+  string maps. Containers borrow values; string maps copy and own their keys.
 - `stdlib/subprocess.frog`: Direct child execution with literal argv/input,
   optional child cwd, captured stdout/stderr, and explicit result ownership.
 - `stdlib/test.frog`: Explicit-suite checks for booleans, integers, byte ranges,
@@ -137,6 +139,7 @@ Commands:
 - Imported files contribute procedures, records, unions, function-reference types, and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
+- `container-count` and `container-empty?` are structural container macros over the shared `count` field of `PtrArray`, `PtrList`, and `StringMap`; preserve their record-agnostic behavior.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.

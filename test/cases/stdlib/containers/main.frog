@@ -1,0 +1,117 @@
+from "../../../../stdlib/containers.frog" import (
+    PtrArray PtrList StringMap
+    ptr-array-new ptr-array-push ptr-array-get ptr-array-set ptr-array-pop ptr-array-free
+    ptr-list-new ptr-list-push-front ptr-list-first ptr-list-pop-front ptr-list-free
+    string-map-new string-map-get string-map-set string-map-remove string-map-free
+    container-count container-empty?
+)
+from "../../../../stdlib/libc.frog" import ( alloc free exit )
+
+proc assert bool -- do
+    let condition do
+        if condition do else 1 exit end
+    end
+end
+
+proc assert-null ptr bool -- do
+    let value found do
+        found ! assert
+        value int cast 0 == assert
+    end
+end
+
+proc assert-value ptr bool int -- do
+    let value found expected do
+        found assert
+        value int cast expected == assert
+    end
+end
+
+proc main -- do
+    0 ptr-array-new
+    let empty-array do
+        empty-array container-count 0 == assert
+        empty-array container-empty? assert
+        empty-array 0 ptr-array-get assert-null
+        empty-array ptr-array-free
+    end
+
+    1 ptr-array-new
+    let array do
+        11 ptr cast array ptr-array-push
+        array container-count 1 == assert
+        array container-empty? ! assert
+        array 0 ptr-array-get 11 assert-value
+
+        22 ptr cast array ptr-array-push
+        array container-count 2 == assert
+        array @.capacity 2 >= assert
+        array 1 ptr-array-get 22 assert-value
+
+        33 ptr cast array 0 ptr-array-set assert
+        array 0 ptr-array-get 33 assert-value
+        44 ptr cast array 2 ptr-array-set ! assert
+
+        array ptr-array-pop 22 assert-value
+        array ptr-array-pop 33 assert-value
+        array container-count 0 == assert
+        array container-empty? assert
+        array ptr-array-pop assert-null
+        array ptr-array-free
+    end
+
+    ptr-list-new
+    let list do
+        list container-count 0 == assert
+        list container-empty? assert
+        list ptr-list-first assert-null
+
+        11 ptr cast list ptr-list-push-front
+        22 ptr cast list ptr-list-push-front
+        list container-count 2 == assert
+        list container-empty? ! assert
+        list ptr-list-first 22 assert-value
+        list ptr-list-pop-front 22 assert-value
+        list ptr-list-first 11 assert-value
+        list ptr-list-pop-front 11 assert-value
+        list ptr-list-pop-front assert-null
+        list container-empty? assert
+        list ptr-list-free
+    end
+
+    1 string-map-new
+    let map do
+        map @.capacity 1 == assert
+        map container-count 0 == assert
+        map container-empty? assert
+        "one" String.bytes 3 map string-map-get assert-null
+
+        "one" String.bytes 3 11 ptr cast map string-map-set assert-null
+        "two" String.bytes 3 22 ptr cast map string-map-set assert-null
+        map container-count 2 == assert
+        "one" String.bytes 3 map string-map-get 11 assert-value
+        "two" String.bytes 3 map string-map-get 22 assert-value
+
+        "one" String.bytes 3 33 ptr cast map string-map-set 11 assert-value
+        "one" String.bytes 3 map string-map-get 33 assert-value
+        "two" String.bytes 3 map string-map-remove 22 assert-value
+        "two" String.bytes 3 map string-map-get assert-null
+        "two" String.bytes 3 map string-map-remove assert-null
+        map container-count 1 == assert
+
+        3 alloc
+        let key do
+            107 key !u8
+            101 key 1 + !u8
+            121 key 2 + !u8
+            key 3 44 ptr cast map string-map-set assert-null
+            122 key !u8
+            key free
+        end
+        "key" String.bytes 3 map string-map-get 44 assert-value
+        "one" String.bytes 3 map string-map-remove 33 assert-value
+        map container-count 1 == assert
+        map container-empty? ! assert
+        map string-map-free
+    end
+end
