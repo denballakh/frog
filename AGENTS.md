@@ -41,8 +41,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
   through explicit C interop and implement library policy in Frog.
-- `stdlib/builtins.frog`: Embedded source text for the six standard prelude
-  macros used by the compiler's fallback prelude module.
+- `stdlib/builtins.frog`: Embedded source text for the standard fallback
+  prelude macros and procedures.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
   manually managed growable `ByteBuffer` record.
 - `stdlib/containers.frog`: Pointer arrays, pointer lists, and fixed-bucket
@@ -170,6 +170,7 @@ Commands:
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
+- `assert` is a shadowable prelude procedure with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs.
 - Character literals contain one raw Unicode codepoint; `\'` is the only
   character escape and represents a single quote. Preserve raw `'\'` as the
   backslash character and keep other backslash spellings invalid.
@@ -196,7 +197,7 @@ Commands:
 - String literals lower to one `String` handle backed by a static byte-pointer/length descriptor. `String.bytes` and `String.len` expose its fields; byte storage is writable and shared by equal pooled literals, and generated globals and macro expansion must retain the defining module's pooled literal identity.
 - Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
-- The compiler imports `builtin-prelude-source` from `stdlib/builtins.frog` when it is built, then constructs the fallback prelude module from that embedded string at runtime. Do not replace this with a runtime filesystem dependency; the checked compiler seed must remain standalone.
+- The compiler imports `builtin-prelude-source` from `stdlib/builtins.frog` when it is built, then constructs the fallback prelude module from that embedded string at runtime. Prelude macros and ordinary non-C-bound procedures are fallback words; C-bound procedures remain private. Do not replace this with a runtime filesystem dependency; the checked compiler seed must remain standalone.
 - Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
 - The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
 - Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.

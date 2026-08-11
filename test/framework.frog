@@ -28,7 +28,7 @@ const generated-c-check-constants 1 4 << end
 const generated-c-check-procedure-symbols 1 5 << end
 const generated-c-check-strings 1 6 << end
 const generated-c-required-checks 1 7 << 1 - end
-const expected-test-cases 469 end
+const expected-test-cases 472 end
 
 proc frog-test-context ptr ptr -- FrogTestContext do
     let compiler executable do

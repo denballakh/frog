@@ -1184,8 +1184,10 @@ static uint8_t frog_string_2090424009_bytes[] = "int main(int argc, char **argv)
 static const FrogString frog_string_2090424009 = { frog_string_2090424009_bytes, 74 };
 static uint8_t frog_string_3046211155_bytes[] = "();\n  return 0;\n}\n";
 static const FrogString frog_string_3046211155 = { frog_string_3046211155_bytes, 18 };
-static uint8_t frog_string_2854330299_bytes[] = "internal prelude symbol is not a macro";
-static const FrogString frog_string_2854330299 = { frog_string_2854330299_bytes, 38 };
+static uint8_t frog_string_2979423190_bytes[] = "prelude-assert-fail";
+static const FrogString frog_string_2979423190 = { frog_string_2979423190_bytes, 19 };
+static uint8_t frog_string_2443754326_bytes[] = "; (void)fwrite(value->bytes, 1, (size_t)value->len, stderr); (void)fputc(10, stderr); exit(1); }";
+static const FrogString frog_string_2443754326 = { frog_string_2443754326_bytes, 96 };
 static uint8_t frog_string_722245873_bytes[] = ".";
 static const FrogString frog_string_722245873 = { frog_string_722245873_bytes, 1 };
 static uint8_t frog_string_308796962_bytes[] = "Try `frogc --help`.\n";
@@ -1322,8 +1324,8 @@ static uint8_t frog_string_1737567682_bytes[] = "void (*)(int)";
 static const FrogString frog_string_1737567682 = { frog_string_1737567682_bytes, 13 };
 static uint8_t frog_string_1599373397_bytes[] = "rb";
 static const FrogString frog_string_1599373397 = { frog_string_1599373397_bytes, 2 };
-static uint8_t frog_string_721831238_bytes[] = "macro dup peek a do a end end\nmacro dup2 peek a b do a b end end\nmacro drop let a do end end\nmacro swap let a b do b a end end\nmacro swap2 let a b c d do c d a b end end\nmacro rot let a b c do b c a end end\n";
-static const FrogString frog_string_721831238 = { frog_string_721831238_bytes, 207 };
+static uint8_t frog_string_1074910475_bytes[] = "macro dup peek a do a end end\nmacro dup2 peek a b do a b end end\nmacro drop let a do end end\nmacro swap let a b do b a end end\nmacro swap2 let a b c d do c d a b end end\nmacro rot let a b c do b c a end end\nproc assert bool String -- do\n    let condition message do\n        if condition do\n        else\n            message prelude-assert-fail\n        end\n    end\nend\n";
+static const FrogString frog_string_1074910475 = { frog_string_1074910475_bytes, 367 };
 typedef struct { Cell value_0; Cell value_1; } frog_results_2;
 typedef struct { Cell value_0; Cell value_1; Cell value_2; } frog_results_3;
 Cell frog_proc_0_field_2Dread(Cell frog_arg_0, Cell frog_arg_1);
@@ -1927,7 +1929,7 @@ void frog_proc_597_compile_2Dsource(Cell frog_arg_0, Cell frog_arg_1, Cell frog_
 Cell frog_proc_598__40program_2Dprelude_2Dmodule(Cell frog_arg_0);
 void frog_proc_599__21program_2Dprelude_2Dmodule(Cell frog_arg_0, Cell frog_arg_1);
 void frog_proc_600_initialize_2Dprelude(Cell frog_arg_0);
-Cell frog_proc_601_compile_2Dprelude_2Dmacro(Cell frog_arg_0, Cell frog_arg_1);
+Cell frog_proc_601_compile_2Dprelude_2Dword(Cell frog_arg_0, Cell frog_arg_1);
 Cell frog_proc_602_null_2Dpointer(void);
 Cell frog_proc_603_cstring_2Dlength(Cell frog_arg_0);
 Cell frog_proc_604_cstring_2Dequals(Cell frog_arg_0, Cell frog_arg_1);
@@ -2037,6 +2039,7 @@ frog_results_3 frog_proc_707_read_2Dfile_2Dclose_2Dfailure(Cell frog_arg_0);
 frog_results_3 frog_proc_708_read_2Dfile_2Ddata_2Dfailure(Cell frog_arg_0, Cell frog_arg_1);
 frog_results_3 frog_proc_709_read_2Dopen_2Dfile(Cell frog_arg_0);
 frog_results_3 frog_proc_710_read_2Dfile(Cell frog_arg_0, Cell frog_arg_1);
+void frog_proc_711_assert(Cell frog_arg_0, Cell frog_arg_1);
 Cell frog_proc_0_field_2Dread(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_value_0;
   (void)&frog_value_0;
@@ -16485,6 +16488,10 @@ Cell frog_proc_300_cc_2Ddebug_2Dtracing(Cell frog_arg_0) {
   (void)&frog_value_0;
   Cell frog_value_1;
   (void)&frog_value_1;
+  Cell frog_value_2;
+  (void)&frog_value_2;
+  Cell frog_value_3;
+  (void)&frog_value_3;
   frog_value_0 = frog_arg_0;
   {
     Cell l0 = frog_value_0;
@@ -16501,6 +16508,23 @@ Cell frog_proc_300_cc_2Ddebug_2Dtracing(Cell frog_arg_0) {
       frog_value_1 = frog_proc_264__40cc_2Demitting(frog_value_1);
     }
     frog_value_1 = !frog_value_1;
+    frog_value_0 = frog_value_0 && frog_value_1;
+    frog_value_1 = l0;
+    {
+      frog_value_1 = frog_proc_262__40cc_2Dprocedure_2Dmodule(frog_value_1);
+    }
+    frog_value_2 = 103;
+    frog_value_2 = 101;
+    frog_value_2 = l0;
+    {
+      frog_value_2 = frog_proc_261__40cc_2Dprogram(frog_value_2);
+    }
+    {
+      frog_value_2 = frog_proc_598__40program_2Dprelude_2Dmodule(frog_value_2);
+    }
+    frog_value_3 = 103;
+    frog_value_3 = 101;
+    frog_value_1 = frog_value_1 != frog_value_2;
     frog_value_0 = frog_value_0 && frog_value_1;
   }
   return frog_value_0;
@@ -35994,7 +36018,7 @@ void frog_proc_569_compile_2Dordinary_2Dword(Cell frog_arg_0, Cell frog_arg_1) {
                                 frog_value_0 = l1;
                                 frog_value_1 = l0;
                                 {
-                                  frog_value_0 = frog_proc_601_compile_2Dprelude_2Dmacro(frog_value_0, frog_value_1);
+                                  frog_value_0 = frog_proc_601_compile_2Dprelude_2Dword(frog_value_0, frog_value_1);
                                 }
                                 frog_value_0 = !frog_value_0;
                                 if (frog_value_0 != 0) {
@@ -38501,7 +38525,7 @@ void frog_proc_600_initialize_2Dprelude(Cell frog_arg_0) {
       {
         frog_proc_62_program_2Dadd_2Dmodule(frog_value_0, frog_value_1);
       }
-      frog_value_0 = (Cell)(intptr_t)&frog_string_721831238;
+      frog_value_0 = (Cell)(intptr_t)&frog_string_1074910475;
       {
         Cell l2 = frog_value_0;
         (void)l2;
@@ -38525,7 +38549,7 @@ void frog_proc_600_initialize_2Dprelude(Cell frog_arg_0) {
     }
   }
 }
-Cell frog_proc_601_compile_2Dprelude_2Dmacro(Cell frog_arg_0, Cell frog_arg_1) {
+Cell frog_proc_601_compile_2Dprelude_2Dword(Cell frog_arg_0, Cell frog_arg_1) {
   Cell frog_value_0;
   (void)&frog_value_0;
   Cell frog_value_1;
@@ -38543,63 +38567,158 @@ Cell frog_proc_601_compile_2Dprelude_2Dmacro(Cell frog_arg_0, Cell frog_arg_1) {
     (void)l1;
     frog_value_0 = l1;
     {
-      frog_value_0 = frog_proc_261__40cc_2Dprogram(frog_value_0);
+      frog_value_0 = frog_proc_262__40cc_2Dprocedure_2Dmodule(frog_value_0);
+    }
+    frog_value_1 = 103;
+    frog_value_1 = 101;
+    frog_value_1 = l1;
+    {
+      frog_value_1 = frog_proc_261__40cc_2Dprogram(frog_value_1);
     }
     {
-      frog_value_0 = frog_proc_598__40program_2Dprelude_2Dmodule(frog_value_0);
+      frog_value_1 = frog_proc_598__40program_2Dprelude_2Dmodule(frog_value_1);
     }
+    frog_value_2 = 103;
+    frog_value_2 = 101;
+    frog_value_0 = frog_value_0 == frog_value_1;
+    frog_value_1 = l1;
     {
-      Cell l2 = frog_value_0;
-      (void)l2;
-      frog_value_0 = l2;
-      frog_value_1 = l1;
+      frog_value_1 = frog_proc_251__40cc_2Ddefining_2Dmodule(frog_value_1);
+    }
+    frog_value_2 = l0;
+    frog_value_3 = (Cell)(intptr_t)&frog_string_2979423190;
+    {
+      frog_value_1 = frog_proc_73_token_2Dequals(frog_value_1, frog_value_2, frog_value_3);
+    }
+    frog_value_0 = frog_value_0 && frog_value_1;
+    if (frog_value_0 != 0) {
+      frog_value_0 = l1;
+      frog_value_1 = 5;
       {
-        frog_value_1 = frog_proc_251__40cc_2Ddefining_2Dmodule(frog_value_1);
+        frog_proc_306_type_2Dexpect(frog_value_0, frog_value_1);
       }
-      frog_value_2 = l0;
+      frog_value_0 = l1;
       {
-        frog_value_0 = frog_proc_368_find_2Dscope_2Dsymbol(frog_value_0, frog_value_1, frog_value_2);
+        frog_value_0 = frog_proc_264__40cc_2Demitting(frog_value_0);
+      }
+      if (frog_value_0 != 0) {
+        frog_value_0 = l1;
+        {
+          frog_value_0 = frog_proc_254__40cc_2Dtype_2Dcount(frog_value_0);
+        }
+        {
+          Cell l2 = frog_value_0;
+          (void)l2;
+          frog_value_0 = l1;
+          {
+            frog_proc_321_emit_2Dindent(frog_value_0);
+          }
+          frog_value_0 = (Cell)(intptr_t)&frog_string_3062245094;
+          {
+            frog_proc_8_emit(frog_value_0);
+          }
+          frog_value_0 = l1;
+          frog_value_1 = l2;
+          {
+            frog_proc_468_emit_2Dslot(frog_value_0, frog_value_1);
+          }
+          frog_value_0 = (Cell)(intptr_t)&frog_string_2443754326;
+          {
+            frog_proc_8_emit(frog_value_0);
+          }
+          frog_value_0 = 10;
+          {
+            frog_proc_689_putc(frog_value_0);
+          }
+        }
+      }
+      frog_value_0 = 1;
+    } else {
+      frog_value_0 = l1;
+      {
+        frog_value_0 = frog_proc_261__40cc_2Dprogram(frog_value_0);
+      }
+      {
+        frog_value_0 = frog_proc_598__40program_2Dprelude_2Dmodule(frog_value_0);
       }
       {
         Cell l3 = frog_value_0;
         (void)l3;
         frog_value_0 = l3;
-        frog_value_1 = 0;
-        frog_value_0 = frog_value_0 < frog_value_1;
-        if (frog_value_0 != 0) {
-          frog_value_0 = 0;
-        } else {
-          frog_value_0 = l2;
-          frog_value_1 = l3;
-          {
-            frog_value_0 = frog_proc_242_scope_2Dat(frog_value_0, frog_value_1);
-          }
-          frog_value_0 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_0 + 24);
-          frog_value_1 = 2;
-          frog_value_0 = frog_value_0 != frog_value_1;
+        frog_value_1 = l1;
+        {
+          frog_value_1 = frog_proc_251__40cc_2Ddefining_2Dmodule(frog_value_1);
+        }
+        frog_value_2 = l0;
+        {
+          frog_value_0 = frog_proc_368_find_2Dscope_2Dsymbol(frog_value_0, frog_value_1, frog_value_2);
+        }
+        {
+          Cell l4 = frog_value_0;
+          (void)l4;
+          frog_value_0 = l4;
+          frog_value_1 = 0;
+          frog_value_0 = frog_value_0 < frog_value_1;
           if (frog_value_0 != 0) {
-            frog_value_0 = (Cell)(intptr_t)&frog_string_2854330299;
+            frog_value_0 = 0;
+          } else {
+            frog_value_0 = l3;
+            frog_value_1 = l4;
             {
-              frog_proc_11_fail(frog_value_0);
+              frog_value_0 = frog_proc_242_scope_2Dat(frog_value_0, frog_value_1);
+            }
+            {
+              Cell l5 = frog_value_0;
+              (void)l5;
+              frog_value_0 = l5;
+              frog_value_0 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_0 + 24);
+              frog_value_1 = 2;
+              frog_value_0 = frog_value_0 == frog_value_1;
+              if (frog_value_0 != 0) {
+                frog_value_0 = l1;
+                frog_value_1 = l5;
+                frog_value_1 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_1 + 32);
+                frog_value_2 = l5;
+                frog_value_2 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_2 + 40);
+                {
+                  frog_proc_568_compile_2Dmacro(frog_value_0, frog_value_1, frog_value_2);
+                }
+                frog_value_0 = 1;
+              } else {
+                frog_value_0 = l5;
+                frog_value_0 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_0 + 24);
+                frog_value_1 = 1;
+                frog_value_0 = frog_value_0 == frog_value_1;
+                if (frog_value_0 != 0) {
+                  frog_value_0 = l5;
+                  frog_value_0 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_0 + 32);
+                  frog_value_1 = l5;
+                  frog_value_1 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_1 + 40);
+                  {
+                    frog_value_0 = frog_proc_101_proc_2Dc_2Dbinding_2Dat(frog_value_0, frog_value_1);
+                  }
+                  frog_value_1 = 0;
+                  frog_value_0 = frog_value_0 == frog_value_1;
+                  if (frog_value_0 != 0) {
+                    frog_value_0 = l1;
+                    frog_value_1 = l0;
+                    frog_value_2 = l5;
+                    frog_value_2 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_2 + 32);
+                    frog_value_3 = l5;
+                    frog_value_3 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_3 + 40);
+                    {
+                      frog_proc_534_compile_2Dprocedure_2Dcall(frog_value_0, frog_value_1, frog_value_2, frog_value_3);
+                    }
+                    frog_value_0 = 1;
+                  } else {
+                    frog_value_0 = 0;
+                  }
+                } else {
+                  frog_value_0 = 0;
+                }
+              }
             }
           }
-          frog_value_0 = l1;
-          frog_value_1 = l2;
-          frog_value_2 = l3;
-          {
-            frog_value_1 = frog_proc_242_scope_2Dat(frog_value_1, frog_value_2);
-          }
-          frog_value_1 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_1 + 32);
-          frog_value_2 = l2;
-          frog_value_3 = l3;
-          {
-            frog_value_2 = frog_proc_242_scope_2Dat(frog_value_2, frog_value_3);
-          }
-          frog_value_2 = frog_read_i64((const unsigned char *)(intptr_t)frog_value_2 + 40);
-          {
-            frog_proc_568_compile_2Dmacro(frog_value_0, frog_value_1, frog_value_2);
-          }
-          frog_value_0 = 1;
         }
       }
     }
@@ -41654,6 +41773,26 @@ frog_results_3 frog_proc_710_read_2Dfile(Cell frog_arg_0, Cell frog_arg_1) {
   frog_result.value_0 = frog_value_0;
   return frog_result;
 }
+void frog_proc_711_assert(Cell frog_arg_0, Cell frog_arg_1) {
+  Cell frog_value_0;
+  (void)&frog_value_0;
+  Cell frog_value_1;
+  (void)&frog_value_1;
+  frog_value_0 = frog_arg_0;
+  frog_value_1 = frog_arg_1;
+  {
+    Cell l0 = frog_value_1;
+    (void)l0;
+    Cell l1 = frog_value_0;
+    (void)l1;
+    frog_value_0 = l1;
+    if (frog_value_0 != 0) {
+    } else {
+      frog_value_0 = l0;
+      { const FrogString *value = (const FrogString *)(intptr_t)frog_value_0; (void)fwrite(value->bytes, 1, (size_t)value->len, stderr); (void)fputc(10, stderr); exit(1); }
+    }
+  }
+}
 int main(int argc, char **argv) {
   frog_argc = argc;
   frog_argv = argv;
@@ -42125,7 +42264,8 @@ int main(int argc, char **argv) {
   (void)&frog_string_1455760204;
   (void)&frog_string_2090424009;
   (void)&frog_string_3046211155;
-  (void)&frog_string_2854330299;
+  (void)&frog_string_2979423190;
+  (void)&frog_string_2443754326;
   (void)&frog_string_722245873;
   (void)&frog_string_308796962;
   (void)&frog_string_4257110224;
@@ -42194,7 +42334,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_763978697;
   (void)&frog_string_1737567682;
   (void)&frog_string_1599373397;
-  (void)&frog_string_721831238;
+  (void)&frog_string_1074910475;
   frog_proc_630_main();
   return 0;
 }

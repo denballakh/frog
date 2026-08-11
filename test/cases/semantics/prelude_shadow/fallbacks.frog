@@ -1,4 +1,5 @@
 proc exercise-prelude -- do
+    true "must not fail" assert
     10 20 dup2 print print print print
     30 drop
     40 50 swap print print

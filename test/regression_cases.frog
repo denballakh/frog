@@ -35,7 +35,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/semantics/bool_cast/main.frog" "test/cases/semantics/bool_cast" "1\n0\n1\n" "" 0 "" "" "" "semantics/bool_cast" context frog-run-case
         "test/cases/semantics/integer_max/main.frog" "test/cases/semantics/integer_max" "9223372036854775807\n" "" 0 "" "" "" "semantics/integer_max" context frog-run-case
         "test/cases/semantics/integer_bases/main.frog" "test/cases/semantics/integer_bases" "0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n" "" 0 "" "" "" "semantics/integer_bases" context frog-run-case
-        "test/cases/semantics/prelude_shadow/main.frog" "test/cases/semantics/prelude_shadow" "42\n7\n2\n1\n6\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n" "" 0 "" "" "" "semantics/prelude_shadow" context frog-run-case
+        "test/cases/semantics/prelude_shadow/main.frog" "test/cases/semantics/prelude_shadow" "42\n7\n2\n1\n6\n99\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n" "" 0 "" "" "" "semantics/prelude_shadow" context frog-run-case
         "test/cases/semantics/macro_shadow/main.frog" "test/cases/semantics/macro_shadow" "11\n21\n31\n" "" 0 "" "" "" "semantics/macro_shadow" context frog-run-case
         "test/cases/semantics/characters/main.frog" "test/cases/semantics/characters" "65\n233\n8364\n128512\n92\n39\n" "" 0 "" "" "" "semantics/characters" context frog-run-case
         "test/cases/semantics/args/main.frog" "test/cases/semantics/args" "3\n/\nfrog\npond\n" "" 0 "" "frog" "pond" "semantics/args" context frog-run-case

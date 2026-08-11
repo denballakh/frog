@@ -60,6 +60,11 @@ proc run-inline-cases FrogTestContext -- do
         "1 2 <= print" "true\n" "" 0 "code/comparisons/05" context frog-inline-run-body
         "1 2 >= print" "false\n" "" 0 "code/comparisons/06" context frog-inline-run-body
 
+        // assertions (3)
+        "true \"unused\" assert" "" "" 0 "code/assertions/01" context frog-inline-run-body
+        "false \"something failed\" assert" "" "something failed\n" 1 "code/assertions/02" context frog-inline-run-body
+        "true 1 assert" "frogc: assert: stack contract mismatch: expected [bool String], actual [bool int]\n" 1 "code/assertions/03" context frog-inline-error-body
+
         // stack_intrinsics (14)
         "1 2 ? print print" "2
 1

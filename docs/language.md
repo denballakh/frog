@@ -207,13 +207,13 @@ end
 
 Constant expressions accept literals, visible constant references, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. They do not execute macros, procedures, control flow, local bindings, allocation, memory or I/O operations, casts, or nominal-type operations. Integer overflow, division by zero, and invalid shifts are compile errors. Constant shifts require a non-negative value and a count from 0 through 62.
 
-Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a prelude macro.
+Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a prelude definition.
 
 ## Standard Prelude
 
-The standard prelude provides `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot` in every module. They behave like ordinary macros and may be shadowed.
+The standard prelude provides `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` in every module. The stack operations behave like ordinary macros; `assert` is an ordinary procedure. All prelude definitions may be shadowed.
 
-Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a prelude macro. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
+Prelude names are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a prelude definition. This permits any prelude word to be shadowed explicitly while keeping the standard names available in every module.
 
 - `dup`: `a -- a a`
 - `dup2`: `a b -- a b a b`
@@ -221,6 +221,7 @@ Prelude names are fallback definitions. Resolution prefers a user-defined or imp
 - `swap`: `a b -- b a`
 - `swap2`: `a b x y -- x y a b`
 - `rot`: `a b c -- b c a`
+- `assert`: `bool String --`; a true condition does nothing. A false condition writes the message followed by a newline to standard error and terminates the program with status 1.
 
 ## Imports
 

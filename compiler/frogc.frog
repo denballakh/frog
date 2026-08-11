@@ -3239,7 +3239,12 @@ proc emit-error-type-array ptr ptr int int -- do
 end
 
 proc cc-debug-tracing ptr -- bool do
-    let cc do cc @cc-program @program-debug cc @cc-emitting ! && end
+    let cc do
+        cc @cc-program @program-debug
+        cc @cc-emitting ! &&
+        cc @cc-procedure-module ptr cast int cast
+        cc @cc-program @program-prelude-module ptr cast int cast != &&
+    end
 end
 
 proc emit-debug-word-stack ptr String -- do
@@ -7781,7 +7786,7 @@ proc compile-ordinary-word ptr int -- do
                                         compile-procedure-call
                                     end
                                 else
-                                    if cc token-index compile-prelude-macro ! do
+                                    if cc token-index compile-prelude-word ! do
                                         "unknown word" fail
                                     end
                                 end
@@ -8296,22 +8301,59 @@ proc initialize-prelude ptr -- do
     end
 end
 
-proc compile-prelude-macro ptr int -- bool do
+proc compile-prelude-word ptr int -- bool do
     let cc token-index do
-        cc @cc-program @program-prelude-module
-        peek prelude do cc @cc-defining-module token-index find-scope-symbol
-            let symbol-index do
-                if symbol-index 0 < do
-                    false
-                else
-                    if prelude symbol-index scope-at @ScopeEntry.kind scope-macro != do
-                        "internal prelude symbol is not a macro" fail
+        if
+            cc @cc-procedure-module ptr cast int cast
+            cc @cc-program @program-prelude-module ptr cast int cast ==
+            cc @cc-defining-module token-index "prelude-assert-fail" token-equals &&
+        do
+            cc type-string type-expect
+            if cc @cc-emitting do
+                cc @cc-type-count
+                let value-index do
+                    cc emit-indent
+                    "{ const FrogString *value = (const FrogString *)(intptr_t)" emit
+                    cc value-index emit-slot
+                    "; (void)fwrite(value->bytes, 1, (size_t)value->len, stderr); (void)fputc(10, stderr); exit(1); }" emit
+                    10 putc
+                end
+            end
+            true
+        else
+            cc @cc-program @program-prelude-module
+            peek prelude do cc @cc-defining-module token-index find-scope-symbol
+                let symbol-index do
+                    if symbol-index 0 < do
+                        false
+                    else
+                        prelude symbol-index scope-at
+                        let symbol do
+                            if symbol @ScopeEntry.kind scope-macro == do
+                                cc
+                                symbol @ScopeEntry.definition_module
+                                symbol @ScopeEntry.definition_index
+                                compile-macro
+                                true
+                            elif symbol @ScopeEntry.kind scope-procedure == do
+                                if
+                                    symbol @ScopeEntry.definition_module
+                                    symbol @ScopeEntry.definition_index
+                                    proc-c-binding-at c-binding-none ==
+                                do
+                                    cc token-index
+                                    symbol @ScopeEntry.definition_module
+                                    symbol @ScopeEntry.definition_index
+                                    compile-procedure-call
+                                    true
+                                else
+                                    false
+                                end
+                            else
+                                false
+                            end
+                        end
                     end
-                    cc
-                    prelude symbol-index scope-at @ScopeEntry.definition_module
-                    prelude symbol-index scope-at @ScopeEntry.definition_index
-                    compile-macro
-                    true
                 end
             end
         end
