@@ -55,6 +55,27 @@ signal. The other
 integer-returning operations return a negative value on failure. `finish-child`
 flushes standard output and terminates without running parent cleanup code.
 
+## POSIX Descriptors And Sockets
+
+`stdlib/socket.frog` exposes the descriptor and socket operations used by the
+HTTP module:
+
+- `descriptor-read`: `fd destination capacity -- count` performs one read,
+  retrying interrupted calls. It may return a short count, `0` at EOF, or `-1`
+  on failure.
+- `descriptor-write`: `fd source length -- count` performs one write, retrying
+  interrupted calls. It may return a short count or `-1` on failure.
+- `accept-connection`: `listener -- fd` accepts one connection, retrying
+  interrupted calls, or returns `-1`.
+- `local-socket-pair`: `fds -- status` creates a local stream socket pair in
+  storage for two C `int` values.
+- `shutdown-write`: `fd -- status` closes the writing side of a socket.
+- `ignore-sigpipe`: `-- success` installs the process-wide ignored disposition
+  for `SIGPIPE`.
+
+The module is POSIX-specific. Callers own descriptors returned by
+`accept-connection` and both descriptors written by `local-socket-pair`.
+
 ## Strings And Byte Buffers
 
 `stdlib/string.frog` provides operations for literal `String` values and
@@ -185,6 +206,69 @@ borrowed until their root is freed. On failure, parsing frees partial state and
 returns a null `JsonValue` handle with `false`. Wrong-variant, missing-key, and
 out-of-range helper calls likewise return a neutral value with `false` and do
 not change ownership.
+
+## HTTP
+
+`stdlib/http.frog` implements a blocking, one-request HTTP/1.1 server over
+caller-supplied POSIX descriptors. It handles an already connected stream or
+accepts one connection from an existing listener; address construction,
+binding, listening, routing, concurrency, TLS, and timeouts are outside the
+module.
+
+```frog
+fn HttpHandler HttpRequest -- HttpResponse end
+
+proc handler HttpRequest -- HttpResponse do
+    drop
+    200 "frog" http-response
+end
+
+proc serve-one-connection int -- int do
+    HttpHandler:ref:handler http-serve-connection
+end
+```
+
+`HttpRequest` exposes `head`, `target`, `target_len`, and `storage`. `head` is
+`false` for GET and `true` for HEAD. The target is an undecoded byte slice into
+the request storage. A handler borrows the request and its fields only for the
+duration of the call; it must not free or retain them. A handler returns an
+owned response created by one of the constructors below; allocating an
+uninitialized `HttpResponse` directly is unsupported.
+
+- `http-response`: `status String -- HttpResponse` copies a response body.
+- `http-response-bytes`: `status bytes len -- HttpResponse` copies a byte-range
+  body.
+- `http-response-free`: `HttpResponse --` releases a response created by either
+  constructor.
+- `http-serve-connection`: `fd HttpHandler -- status` owns and closes one
+  connected descriptor after serving at most one request.
+- `http-serve-one`: `listener HttpHandler -- status` borrows the listener,
+  accepts one descriptor, and otherwise behaves like
+  `http-serve-connection`.
+
+Response status must be from 200 through 599. Statuses 204, 205, and 304 require
+an empty body. Body length must otherwise be nonnegative, and a positive
+byte-range body must be readable; violating these constructor preconditions
+terminates with status 1. Constructors copy the body, so its source may be
+changed or freed immediately afterward.
+
+Serve status is `http-serve-ok`, `http-serve-peer-closed`,
+`http-serve-io-error`, or `http-serve-signal-error`. A successfully written
+protocol rejection returns `http-serve-ok`.
+
+The accepted request subset is GET or HEAD with exact `HTTP/1.1`, CRLF line
+endings, exactly one nonempty Host header, and at most `Content-Length: 0`.
+Transfer coding, request bodies, and more than 16 KiB of request headers are
+rejected with an empty 400 response. Pipelined requests after the first are not
+processed; the connection closes after the first response. Other syntactically
+valid headers are ignored. Responses contain an empty reason phrase and
+`Connection: close`. They contain `Content-Length` except for statuses 204 and
+304; HEAD omits body bytes while retaining the GET body length.
+
+Serving installs the process-wide ignored disposition for `SIGPIPE`. Reads and
+writes are blocking, retry interrupted calls, and handle short I/O. The module
+does not impose a deadline, so descriptor owners that need slow-client
+protection must configure it outside this API.
 
 ## Subprocesses
 

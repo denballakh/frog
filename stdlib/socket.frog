@@ -1,0 +1,92 @@
+c-include system "errno.h" end
+c-include system "signal.h" end
+c-include system "sys/socket.h" end
+c-include system "sys/types.h" end
+c-include system "unistd.h" end
+
+c-type CInt int "int" end
+c-type CSize int "size_t" end
+c-type CSSize int "ssize_t" end
+c-type CPtr ptr "void *" end
+c-type CConstPtr ptr "const void *" end
+c-type CIntPtr ptr "int *" end
+c-type CSignalHandler ptr "void (*)(int)" end
+
+c-call c-read read CInt CPtr CSize -- CSSize end
+c-call c-write write CInt CConstPtr CSize -- CSSize end
+c-call c-accept accept CInt CPtr CPtr -- CInt end
+c-call c-socketpair socketpair CInt CInt CInt CIntPtr -- CInt end
+c-call c-shutdown shutdown CInt CInt -- CInt end
+c-call c-signal signal CInt CSignalHandler -- CSignalHandler end
+
+c-value c-errno errno -- CInt end
+c-value c-eintr EINTR -- CInt end
+c-value c-af-unix AF_UNIX -- CInt end
+c-value c-sock-stream SOCK_STREAM -- CInt end
+c-value c-shut-wr SHUT_WR -- CInt end
+c-value c-sigpipe SIGPIPE -- CInt end
+c-value c-sig-ign SIG_IGN -- CSignalHandler end
+c-value c-sig-err SIG_ERR -- CSignalHandler end
+
+proc socket-null-pointer? ptr -- bool do int cast 0 == end
+
+proc descriptor-read int ptr int -- int do
+    let descriptor bytes length do
+        if length 0 < do
+            0 1 -
+        elif length 0 > bytes socket-null-pointer? && do
+            0 1 -
+        else
+            descriptor bytes length c-read
+            while dup 0 < c-errno c-eintr == && do
+                drop
+                descriptor bytes length c-read
+            end
+            if dup 0 < do drop 0 1 - end
+        end
+    end
+end
+
+proc descriptor-write int ptr int -- int do
+    let descriptor bytes length do
+        if length 0 < do
+            0 1 -
+        elif length 0 > bytes socket-null-pointer? && do
+            0 1 -
+        else
+            descriptor bytes length c-write
+            while dup 0 < c-errno c-eintr == && do
+                drop
+                descriptor bytes length c-write
+            end
+            if dup 0 < do drop 0 1 - end
+        end
+    end
+end
+
+proc accept-connection int -- int do
+    let listener do
+        listener 0 ptr cast 0 ptr cast c-accept
+        while dup 0 < c-errno c-eintr == && do
+            drop
+            listener 0 ptr cast 0 ptr cast c-accept
+        end
+        if dup 0 < do drop 0 1 - end
+    end
+end
+
+proc local-socket-pair ptr -- int do
+    let descriptors do
+        c-af-unix c-sock-stream 0 descriptors c-socketpair
+        if dup 0 < do drop 0 1 - else drop 0 end
+    end
+end
+
+proc shutdown-write int -- int do
+    c-shut-wr c-shutdown
+end
+
+proc ignore-sigpipe -- bool do
+    c-sigpipe c-sig-ign c-signal int cast
+    c-sig-err int cast !=
+end

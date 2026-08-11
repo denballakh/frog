@@ -47,6 +47,10 @@ The language and implementation are inspired by Porth. Frog programs use postfix
   string maps. Containers borrow values; string maps copy and own their keys.
 - `stdlib/json.frog`: RFC 8259 value parsing into manually owned tagged-union
   trees, with borrowed scalar and child lookup helpers.
+- `stdlib/socket.frog`: POSIX descriptor I/O, accept, local socket-pair,
+  half-close, and SIGPIPE wrappers implemented over direct C bindings.
+- `stdlib/http.frog`: Blocking one-request HTTP/1.1 handling over
+  caller-supplied POSIX listener or connected descriptors.
 - `stdlib/subprocess.frog`: Direct child execution with literal argv/input,
   optional child cwd, captured stdout/stderr, and explicit result ownership.
 - `stdlib/test.frog`: Explicit-suite checks for booleans, integers, byte ranges,
@@ -143,6 +147,7 @@ Commands:
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
 - `container-count` and `container-empty?` are structural container macros over the shared `count` field of `PtrArray`, `PtrList`, and `StringMap`; preserve their record-agnostic behavior.
 - Parsed `JsonValue` roots exclusively own every descendant. `json-free` recursively releases a root; scalar byte ranges and array/object children returned by lookup helpers are borrowed and must not be freed separately.
+- `http-serve-connection` owns and closes its connected descriptor; `http-serve-one` borrows its listener. HTTP handlers borrow the request only during the call and transfer an owned copied-body response back to the server.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.

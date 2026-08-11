@@ -1,0 +1,636 @@
+from "libc.frog" import (
+    alloc
+    free
+    exit
+    null-pointer
+    close
+)
+from "socket.frog" import (
+    descriptor-read
+    descriptor-write
+    accept-connection
+    ignore-sigpipe
+)
+from "string.frog" import (
+    bytes-copy
+    bytes-equal
+    ByteBuffer
+    byte-buffer-new
+    byte-buffer-push
+    byte-buffer-append-string
+    byte-buffer-free
+)
+
+record HttpRequest
+    head bool
+    target ptr
+    target_len int
+    storage ptr
+end
+
+record HttpResponse
+    status int
+    body ptr
+    body_len int
+end
+
+fn HttpHandler HttpRequest -- HttpResponse end
+
+const http-serve-ok 0 end
+const http-serve-peer-closed 1 end
+const http-serve-io-error 2 end
+const http-serve-signal-error 3 end
+
+const http-request-buffer-size 16384 end
+const http-write-chunk-size 16384 end
+
+const http-read-ready 0 end
+const http-read-closed 1 end
+const http-read-reject 2 end
+const http-read-io-error 3 end
+
+proc http-null-request -- HttpRequest do
+    0 ptr cast HttpRequest cast
+end
+
+proc http-response-forbids-body? int -- bool do
+    let status do
+        status 204 ==
+        status 205 == ||
+        status 304 == ||
+    end
+end
+
+proc http-response-bytes int ptr int -- HttpResponse do
+    let status bytes length do
+        if status 200 < status 599 > || do 1 exit end
+        if length 0 < do 1 exit end
+        if length 0 > bytes null-pointer && do 1 exit end
+        if status http-response-forbids-body? length 0 != && do 1 exit end
+        length alloc
+        let body do
+            bytes body length bytes-copy
+            HttpResponse:alloc
+            let response do
+                status response !HttpResponse.status
+                body response !HttpResponse.body
+                length response !HttpResponse.body_len
+                response
+            end
+        end
+    end
+end
+
+proc http-response int String -- HttpResponse do
+    let status body do
+        status body String.bytes body String.len http-response-bytes
+    end
+end
+
+proc http-response-free HttpResponse -- do
+    let response do
+        response @HttpResponse.body free
+        response ptr cast free
+    end
+end
+
+proc http-byte-space-or-tab? int -- bool do
+    let byte do byte 32 == byte 9 == || end
+end
+
+proc http-token-byte? int -- bool do
+    let byte do
+        byte 48 >= byte 57 <= &&
+        byte 65 >= byte 90 <= && ||
+        byte 97 >= byte 122 <= && ||
+        byte 33 == ||
+        byte 35 == ||
+        byte 36 == ||
+        byte 37 == ||
+        byte 38 == ||
+        byte 39 == ||
+        byte 42 == ||
+        byte 43 == ||
+        byte 45 == ||
+        byte 46 == ||
+        byte 94 == ||
+        byte 95 == ||
+        byte 96 == ||
+        byte 124 == ||
+        byte 126 == ||
+    end
+end
+
+proc http-header-value-byte? int -- bool do
+    let byte do
+        byte 9 ==
+        byte 32 >= byte 127 != && ||
+    end
+end
+
+proc http-target-byte? int -- bool do
+    let byte do byte 33 >= byte 127 != && end
+end
+
+proc http-ascii-lower int -- int do
+    let byte do
+        if byte 65 >= byte 90 <= && do byte 32 + else byte end
+    end
+end
+
+proc http-bytes-case-equal ptr int String -- bool do
+    let bytes length expected do
+        if length expected String.len != do
+            false
+        else
+            0 true
+            while peek index equal do index length < equal && end
+            do
+                let index equal do
+                    index 1 +
+                    equal
+                    bytes index + @u8 http-ascii-lower
+                    expected String.bytes index + @u8 http-ascii-lower == &&
+                end
+            end
+            let index equal do equal end
+        end
+    end
+end
+
+proc http-token-range? ptr int int -- bool do
+    let bytes start finish do
+        start true
+        while peek index valid do index finish < valid && end
+        do
+            let index valid do
+                index 1 +
+                valid bytes index + @u8 http-token-byte? &&
+            end
+        end
+        let index valid do valid end
+    end
+end
+
+proc http-header-value-range? ptr int int -- bool do
+    let bytes start finish do
+        start true
+        while peek index valid do index finish < valid && end
+        do
+            let index valid do
+                index 1 +
+                valid bytes index + @u8 http-header-value-byte? &&
+            end
+        end
+        let index valid do valid end
+    end
+end
+
+proc http-target-range? ptr int -- bool do
+    let bytes length do
+        0 true
+        while peek index valid do index length < valid && end
+        do
+            let index valid do
+                index 1 +
+                valid bytes index + @u8 http-target-byte? &&
+            end
+        end
+        let index valid do length 0 > valid && end
+    end
+end
+
+proc http-find-crlf ptr int int -- int do
+    let bytes start finish do
+        start false
+        while peek index found do index 1 + finish < found ! && end
+        do
+            let index found do
+                if bytes index + @u8 13 ==
+                    bytes index 1 + + @u8 10 == &&
+                do
+                    index true
+                else
+                    index 1 + false
+                end
+            end
+        end
+        let index found do if found do index else 0 1 - end end
+    end
+end
+
+proc http-find-header-end ptr int -- int do
+    let bytes length do
+        0 false
+        while peek index found do index 3 + length < found ! && end
+        do
+            let index found do
+                if bytes index + @u8 13 ==
+                    bytes index 1 + + @u8 10 == &&
+                    bytes index 2 + + @u8 13 == &&
+                    bytes index 3 + + @u8 10 == &&
+                do
+                    index 4 + true
+                else
+                    index 1 + false
+                end
+            end
+        end
+        let index found do if found do index else 0 1 - end end
+    end
+end
+
+proc http-method-target ptr int String -- ptr int bool do
+    let bytes line-end prefix do
+        " HTTP/1.1"
+        let suffix do
+            if line-end prefix String.len suffix String.len + <= do
+                0 ptr cast 0 false
+            elif bytes prefix String.len prefix String.bytes prefix String.len bytes-equal ! do
+                0 ptr cast 0 false
+            elif bytes line-end suffix String.len - + suffix String.len
+                suffix String.bytes suffix String.len bytes-equal !
+            do
+                0 ptr cast 0 false
+            else
+                bytes prefix String.len +
+                line-end prefix String.len - suffix String.len -
+                let target target-length do
+                    if target target-length http-target-range? do
+                        target target-length true
+                    else
+                        0 ptr cast 0 false
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc http-request-line ptr int -- bool ptr int bool do
+    let bytes line-end do
+        bytes line-end "GET " http-method-target
+        let target target-length valid do
+            if valid do
+                false target target-length true
+            else
+                bytes line-end "HEAD " http-method-target
+                let head-target head-target-length head-valid do
+                    if head-valid do
+                        true head-target head-target-length true
+                    else
+                        false 0 ptr cast 0 false
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc http-validate-header ptr int int bool bool -- bool bool bool do
+    let bytes start finish has-host has-content-length do
+        start
+        while peek index do
+            if index finish < do bytes index + @u8 58 != else false end
+        end
+        do
+            1 +
+        end
+        let colon do
+            if colon start == colon finish == || do
+                has-host has-content-length false
+            elif bytes start colon http-token-range? ! do
+                has-host has-content-length false
+            elif bytes colon 1 + finish http-header-value-range? ! do
+                has-host has-content-length false
+            else
+                colon 1 +
+                while peek value-start do
+                    if value-start finish < do
+                        bytes value-start + @u8 http-byte-space-or-tab?
+                    else
+                        false
+                    end
+                end
+                do
+                    1 +
+                end
+                let value-start do
+                    finish
+                    while peek value-end do
+                        if value-end value-start > do
+                            bytes value-end 1 - + @u8 http-byte-space-or-tab?
+                        else
+                            false
+                        end
+                    end
+                    do
+                        1 -
+                    end
+                    let value-end do
+                        if bytes start + colon start - "Host" http-bytes-case-equal do
+                            if has-host value-start value-end == || do
+                                has-host has-content-length false
+                            else
+                                true has-content-length true
+                            end
+                        elif bytes start + colon start - "Content-Length" http-bytes-case-equal do
+                            if has-content-length do
+                                has-host has-content-length false
+                            elif value-end value-start - 1 != do
+                                has-host has-content-length false
+                            elif bytes value-start + @u8 48 != do
+                                has-host has-content-length false
+                            else
+                                has-host true true
+                            end
+                        elif bytes start + colon start - "Transfer-Encoding" http-bytes-case-equal do
+                            has-host has-content-length false
+                        else
+                            has-host has-content-length true
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc http-validate-headers ptr int int -- bool do
+    let bytes length start do
+        start false false true false
+        while peek position has-host has-content-length valid done do
+            done ! valid &&
+        end
+        do
+            let position has-host has-content-length valid done do
+                if position 1 + length >= do
+                    length has-host has-content-length false true
+                elif bytes position + @u8 13 ==
+                    bytes position 1 + + @u8 10 == &&
+                do
+                    if position 2 + length == do
+                        length has-host has-content-length valid true
+                    else
+                        length has-host has-content-length false true
+                    end
+                else
+                    bytes position length http-find-crlf
+                    let line-end do
+                        if line-end 0 < do
+                            length has-host has-content-length false true
+                        else
+                            bytes position line-end has-host has-content-length http-validate-header
+                            let next-host next-content-length header-valid do
+                                line-end 2 +
+                                next-host next-content-length valid header-valid && false
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        let position has-host has-content-length valid done do
+            valid done && has-host &&
+        end
+    end
+end
+
+proc http-parse-request ptr int -- HttpRequest bool do
+    let storage length do
+        storage 0 length http-find-crlf
+        let line-end do
+            if line-end 0 < do
+                http-null-request false
+            else
+                storage line-end http-request-line
+                let head target target-length line-valid do
+                    if line-valid ! do
+                        http-null-request false
+                    elif storage length line-end 2 + http-validate-headers ! do
+                        http-null-request false
+                    else
+                        HttpRequest:alloc
+                        let request do
+                            head request !HttpRequest.head
+                            target request !HttpRequest.target
+                            target-length request !HttpRequest.target_len
+                            storage request !HttpRequest.storage
+                            request true
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc http-read-request int -- HttpRequest int do
+    let descriptor do
+        http-request-buffer-size alloc
+        let storage do
+            0 false http-read-reject
+            while peek length done status do done ! end
+            do
+                let length done status do
+                    if length http-request-buffer-size >= do
+                        length true http-read-reject
+                    else
+                        descriptor storage length + http-request-buffer-size length - descriptor-read
+                        let count do
+                            if count 0 < do
+                                length true http-read-io-error
+                            elif count 0 == do
+                                if length 0 == do
+                                    length true http-read-closed
+                                else
+                                    length true http-read-reject
+                                end
+                            else
+                                length count +
+                                let next-length do
+                                    storage next-length http-find-header-end
+                                    let header-end do
+                                        if header-end 0 >= do
+                                            header-end true http-read-ready
+                                        elif next-length http-request-buffer-size == do
+                                            next-length true http-read-reject
+                                        else
+                                            next-length false status
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            let length done status do
+                if status http-read-ready == do
+                    storage length http-parse-request
+                    let request valid do
+                        if valid do
+                            request http-read-ready
+                        else
+                            storage free
+                            http-null-request http-read-reject
+                        end
+                    end
+                else
+                    storage free
+                    http-null-request status
+                end
+            end
+        end
+    end
+end
+
+proc http-request-free HttpRequest -- do
+    let request do
+        request @HttpRequest.storage free
+        request ptr cast free
+    end
+end
+
+proc http-buffer-append-decimal int ByteBuffer -- do
+    let value buffer do
+        if value 10 >= do value 10 / buffer http-buffer-append-decimal end
+        value 10 % 48 + buffer byte-buffer-push
+    end
+end
+
+proc http-write-all int ptr int -- bool do
+    let descriptor bytes length do
+        0 true
+        while peek offset valid do offset length < valid && end
+        do
+            let offset valid do
+                length offset -
+                if dup http-write-chunk-size > do drop http-write-chunk-size end
+                let chunk do
+                    descriptor bytes offset + chunk descriptor-write
+                    let count do
+                        if count 0 <= do
+                            length false
+                        else
+                            offset count + true
+                        end
+                    end
+                end
+            end
+        end
+        let offset valid do valid end
+    end
+end
+
+proc http-response-header HttpResponse -- ByteBuffer do
+    let response do
+        96 byte-buffer-new
+        let buffer do
+            "HTTP/1.1 " buffer byte-buffer-append-string
+            response @HttpResponse.status buffer http-buffer-append-decimal
+            " \r\n" buffer byte-buffer-append-string
+            if response @HttpResponse.status 204 ==
+                response @HttpResponse.status 304 == ||
+            do
+            else
+                "Content-Length: " buffer byte-buffer-append-string
+                response @HttpResponse.body_len buffer http-buffer-append-decimal
+                "\r\n" buffer byte-buffer-append-string
+            end
+            "Connection: close\r\n\r\n" buffer byte-buffer-append-string
+            buffer
+        end
+    end
+end
+
+proc http-send-response int bool HttpResponse -- bool do
+    let descriptor head response do
+        response http-response-header
+        let header do
+            descriptor header @ByteBuffer.bytes header @ByteBuffer.len http-write-all
+            let header-sent do
+                if header-sent head ! && response @HttpResponse.status http-response-forbids-body? ! && do
+                    descriptor response @HttpResponse.body response @HttpResponse.body_len http-write-all
+                else
+                    header-sent
+                end
+                let sent do
+                    header byte-buffer-free
+                    sent
+                end
+            end
+        end
+    end
+end
+
+proc http-send-rejection int -- bool do
+    let descriptor do
+        400 0 ptr cast 0 http-response-bytes
+        let response do
+            descriptor false response http-send-response
+            let sent do
+                response http-response-free
+                sent
+            end
+        end
+    end
+end
+
+proc http-serve-connected int HttpHandler -- int do
+    let descriptor handler do
+        descriptor http-read-request
+        let request read-status do
+            if read-status http-read-ready == do
+                request @HttpRequest.head
+                request handler HttpHandler:call
+                let head response do
+                    request http-request-free
+                    descriptor head response http-send-response
+                    let sent do
+                        response http-response-free
+                        if sent do http-serve-ok else http-serve-io-error end
+                    end
+                end
+            elif read-status http-read-closed == do
+                http-serve-peer-closed
+            elif read-status http-read-reject == do
+                if descriptor http-send-rejection do http-serve-ok else http-serve-io-error end
+            else
+                http-serve-io-error
+            end
+            let result do
+                descriptor close drop
+                result
+            end
+        end
+    end
+end
+
+proc http-serve-connection int HttpHandler -- int do
+    let descriptor handler do
+        if ignore-sigpipe ! do
+            descriptor close drop
+            http-serve-signal-error
+        else
+            descriptor handler http-serve-connected
+        end
+    end
+end
+
+proc http-serve-one int HttpHandler -- int do
+    let listener handler do
+        if ignore-sigpipe ! do
+            http-serve-signal-error
+        else
+            listener accept-connection
+            let descriptor do
+                if descriptor 0 < do
+                    http-serve-io-error
+                else
+                    descriptor handler http-serve-connected
+                end
+            end
+        end
+    end
+end

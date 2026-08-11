@@ -1,0 +1,356 @@
+from "../../../../stdlib/http.frog" import (
+    HttpRequest HttpResponse HttpHandler
+    http-response-bytes http-response
+    http-serve-ok http-serve-peer-closed
+    http-serve-connection
+)
+from "../../../../stdlib/libc.frog" import (
+    alloc free exit fork close wait-child finish-child
+)
+from "../../../../stdlib/socket.frog" import (
+    descriptor-read descriptor-write local-socket-pair shutdown-write
+)
+from "../../../../stdlib/string.frog" import (
+    bytes-equal ByteBuffer byte-buffer-new byte-buffer-append-bytes byte-buffer-free
+)
+
+const descriptor-pair-bytes 8 end
+const descriptor-byte-offset 4 end
+const read-chunk-bytes 4096 end
+const large-body-length 20000 end
+
+proc assert bool -- do
+    let condition do
+        if condition do else 1 exit end
+    end
+end
+
+proc request-target-equal HttpRequest String -- bool do
+    let request expected do
+        request @HttpRequest.target request @HttpRequest.target_len
+        expected String.bytes expected String.len
+        bytes-equal
+    end
+end
+
+proc large-response -- HttpResponse do
+    large-body-length alloc
+    let source do
+        0
+        while dup large-body-length < do
+            let index do
+                120 source index + !u8
+                index 1 +
+            end
+        end
+        drop
+        200 source large-body-length http-response-bytes
+        let response do
+            source free
+            response
+        end
+    end
+end
+
+proc test-handler HttpRequest -- HttpResponse do
+    let request do
+        if request "/large" request-target-equal do
+            large-response
+        elif request "/no-content" request-target-equal do
+            204 "" http-response
+        elif request "/reset-content" request-target-equal do
+            205 "" http-response
+        elif request "/not-modified" request-target-equal do
+            304 "" http-response
+        elif request "/frog" request-target-equal do
+            200 "frog-body" http-response
+        else
+            404 "" http-response
+        end
+    end
+end
+
+proc write-all-from int ptr int int -- bool do
+    let descriptor bytes length offset do
+        if offset length == do
+            true
+        else
+            descriptor bytes offset + length offset - descriptor-write
+            let written do
+                if written 0 <= do
+                    false
+                else
+                    descriptor bytes length offset written + write-all-from
+                end
+            end
+        end
+    end
+end
+
+proc write-all int ptr int -- bool do
+    0 write-all-from
+end
+
+proc read-to-end int ptr ByteBuffer -- bool do
+    let descriptor scratch buffer do
+        descriptor scratch read-chunk-bytes descriptor-read
+        let count do
+            if count 0 < do
+                false
+            elif count 0 == do
+                true
+            else
+                scratch count buffer byte-buffer-append-bytes
+                descriptor scratch buffer read-to-end
+            end
+        end
+    end
+end
+
+proc read-response int -- ByteBuffer bool do
+    let descriptor do
+        0 byte-buffer-new
+        let buffer do
+            read-chunk-bytes alloc
+            let scratch do
+                descriptor scratch buffer read-to-end
+                let success do
+                    scratch free
+                    buffer success
+                end
+            end
+        end
+    end
+end
+
+proc open-socket-pair -- int int do
+    descriptor-pair-bytes alloc
+    let descriptors do
+        descriptors local-socket-pair 0 == assert
+        descriptors @i32
+        descriptors descriptor-byte-offset + @i32
+        descriptors free
+    end
+end
+
+proc serve-child int int int -- do
+    let server client expected-status do
+        client close
+        let client-close-status do
+            server HttpHandler:ref:test-handler http-serve-connection
+            let serve-status do
+                if
+                    client-close-status 0 ==
+                    serve-status expected-status == &&
+                do 0 else 1 end
+                finish-child
+            end
+        end
+    end
+end
+
+proc start-server int -- int int do
+    let expected-status do
+        open-socket-pair
+        let server client do
+            fork
+            let child do
+                child 0 >= assert
+                if child 0 == do
+                    server client expected-status serve-child
+                end
+                server close 0 == assert
+                client child
+            end
+        end
+    end
+end
+
+proc response-equal ByteBuffer String -- bool do
+    let response expected do
+        response @ByteBuffer.bytes response @ByteBuffer.len
+        expected String.bytes expected String.len
+        bytes-equal
+    end
+end
+
+proc run-request-fragments String String String -- do
+    let first second expected do
+        http-serve-ok start-server
+        let client child do
+            client first String.bytes first String.len write-all
+            client second String.bytes second String.len write-all &&
+            let write-success do
+                client shutdown-write 0 ==
+                let shutdown-success do
+                    client read-response
+                    let response read-success do
+                        child wait-child 0 ==
+                        let child-success do
+                            client close 0 ==
+                            let close-success do
+                                response expected response-equal
+                                let content-equal do
+                                    response byte-buffer-free
+                                    write-success assert
+                                    shutdown-success assert
+                                    read-success assert
+                                    child-success assert
+                                    close-success assert
+                                    content-equal assert
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc run-request String String -- do
+    let request expected do request "" expected run-request-fragments end
+end
+
+proc response-has-large-body ByteBuffer -- bool do
+    let response do
+        "HTTP/1.1 200 \r\nContent-Length: 20000\r\nConnection: close\r\n\r\n"
+        let header do
+            response @ByteBuffer.len header String.len large-body-length + ==
+            if dup do
+                drop
+                response @ByteBuffer.bytes header String.len
+                header String.bytes header String.len bytes-equal
+            end
+            if dup do
+                drop
+                0 true
+                while
+                    peek index equal do index large-body-length < equal && end
+                do
+                    let index equal do
+                        index 1 +
+                        equal response @ByteBuffer.bytes header String.len + index + @u8 120 == &&
+                    end
+                end
+                let index equal do equal end
+            end
+        end
+    end
+end
+
+proc run-large-request -- do
+    http-serve-ok start-server
+    let client child do
+        "GET /large HTTP/1.1\r\nHost: local\r\n\r\n"
+        let request do
+            client request String.bytes request String.len write-all
+            let write-success do
+                client shutdown-write 0 ==
+                let shutdown-success do
+                    client read-response
+                    let response read-success do
+                        child wait-child 0 ==
+                        let child-success do
+                            client close 0 ==
+                            let close-success do
+                                response response-has-large-body
+                                let content-valid do
+                                    response byte-buffer-free
+                                    write-success assert
+                                    shutdown-success assert
+                                    read-success assert
+                                    child-success assert
+                                    close-success assert
+                                    content-valid assert
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc run-peer-closed -- do
+    http-serve-peer-closed start-server
+    let client child do
+        client shutdown-write 0 ==
+        let shutdown-success do
+            client read-response
+            let response read-success do
+                response @ByteBuffer.len 0 ==
+                let empty-response do
+                    child wait-child 0 ==
+                    let child-success do
+                        client close 0 ==
+                        let close-success do
+                            response byte-buffer-free
+                            shutdown-success assert
+                            read-success assert
+                            empty-response assert
+                            child-success assert
+                            close-success assert
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc main -- do
+    "GET /frog HTTP/1.1\r\nHost: exam"
+    "ple.test\r\nX-Ignored: yes\r\n\r\n"
+    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
+    run-request-fragments
+
+    "HEAD /frog HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\n"
+    run-request
+
+    "GET /frog HTTP/1.1\r\nHost: local\r\nContent-Length: 0\r\n\r\n"
+    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
+    run-request
+
+    "GET /missing HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 404 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    run-request
+
+    "GET /no-content HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 204 \r\nConnection: close\r\n\r\n"
+    run-request
+    "GET /reset-content HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 205 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    run-request
+    "GET /not-modified HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 304 \r\nConnection: close\r\n\r\n"
+    run-request
+
+    "GET /frog HTTP/1.1\r\nHost: local\r\n\r\nGET /missing HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
+    run-request
+
+    "GET /frog HTTP/1.1\r\nHost: one\r\nHost: two\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.1\r\nX-Test: yes\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.1\r\nHost:\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "POST /frog HTTP/1.1\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.0\r\nHost: local\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.1\r\nHost: local\r\nContent-Length: 1\r\n\r\nx"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.1\r\nHost: local\r\nTransfer-Encoding: identity\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.1\nHost: local\n\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+    "GET /frog HTTP/1.1\r\nHost: local\r\nBroken\r\n\r\n"
+    "HTTP/1.1 400 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n" run-request
+
+    run-large-request
+    run-peer-closed
+end
