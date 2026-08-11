@@ -247,6 +247,8 @@ void frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; 
 
 static uint8_t frog_string_617966169_bytes[] = "../stdlib/libc.frog";
 static const FrogString frog_string_617966169 = { frog_string_617966169_bytes, 19 };
+static uint8_t frog_string_2419315113_bytes[] = "../stdlib/builtins.frog";
+static const FrogString frog_string_2419315113 = { frog_string_2419315113_bytes, 23 };
 static uint8_t frog_string_1029627206_bytes[] = "frogc: ";
 static const FrogString frog_string_1029627206 = { frog_string_1029627206_bytes, 7 };
 static uint8_t frog_string_1375463515_bytes[] = "INT64_MIN";
@@ -1175,8 +1177,6 @@ static uint8_t frog_string_2090424009_bytes[] = "int main(int argc, char **argv)
 static const FrogString frog_string_2090424009 = { frog_string_2090424009_bytes, 74 };
 static uint8_t frog_string_3046211155_bytes[] = "();\n  return 0;\n}\n";
 static const FrogString frog_string_3046211155 = { frog_string_3046211155_bytes, 18 };
-static uint8_t frog_string_721831238_bytes[] = "macro dup peek a do a end end\nmacro dup2 peek a b do a b end end\nmacro drop let a do end end\nmacro swap let a b do b a end end\nmacro swap2 let a b c d do c d a b end end\nmacro rot let a b c do b c a end end\n";
-static const FrogString frog_string_721831238 = { frog_string_721831238_bytes, 207 };
 static uint8_t frog_string_2854330299_bytes[] = "internal prelude symbol is not a macro";
 static const FrogString frog_string_2854330299 = { frog_string_2854330299_bytes, 38 };
 static uint8_t frog_string_722245873_bytes[] = ".";
@@ -1315,6 +1315,8 @@ static uint8_t frog_string_1737567682_bytes[] = "void (*)(int)";
 static const FrogString frog_string_1737567682 = { frog_string_1737567682_bytes, 13 };
 static uint8_t frog_string_1599373397_bytes[] = "rb";
 static const FrogString frog_string_1599373397 = { frog_string_1599373397_bytes, 2 };
+static uint8_t frog_string_721831238_bytes[] = "macro dup peek a do a end end\nmacro dup2 peek a b do a b end end\nmacro drop let a do end end\nmacro swap let a b do b a end end\nmacro swap2 let a b c d do c d a b end end\nmacro rot let a b c do b c a end end\n";
+static const FrogString frog_string_721831238 = { frog_string_721831238_bytes, 207 };
 typedef struct { Cell value_0; Cell value_1; } frog_results_2;
 typedef struct { Cell value_0; Cell value_1; Cell value_2; } frog_results_3;
 Cell frog_proc_0_field_2Dread(Cell frog_arg_0, Cell frog_arg_1);
@@ -41077,6 +41079,7 @@ int main(int argc, char **argv) {
   frog_argc = argc;
   frog_argv = argv;
   (void)&frog_string_617966169;
+  (void)&frog_string_2419315113;
   (void)&frog_string_1029627206;
   (void)&frog_string_1375463515;
   (void)&frog_string_1024559338;
@@ -41541,7 +41544,6 @@ int main(int argc, char **argv) {
   (void)&frog_string_1455760204;
   (void)&frog_string_2090424009;
   (void)&frog_string_3046211155;
-  (void)&frog_string_721831238;
   (void)&frog_string_2854330299;
   (void)&frog_string_722245873;
   (void)&frog_string_308796962;
@@ -41611,6 +41613,7 @@ int main(int argc, char **argv) {
   (void)&frog_string_763978697;
   (void)&frog_string_1737567682;
   (void)&frog_string_1599373397;
+  (void)&frog_string_721831238;
   frog_proc_623_main();
   return 0;
 }

@@ -8,6 +8,7 @@ from "../stdlib/libc.frog" import (
     fork create-file dup2 close chdir execv execvp
     ensure-directory wait-child finish-child reset-child-signals
 )
+from "../stdlib/builtins.frog" import builtin-prelude-source
 
 const cell-bytes 8 end
 
@@ -8233,13 +8234,7 @@ proc initialize-prelude ptr -- do
             resolve-new prelude !ModuleContext.resolve_state
             false prelude !ModuleContext.is_root
             program prelude program-add-module
-            "macro dup peek a do a end end
-macro dup2 peek a b do a b end end
-macro drop let a do end end
-macro swap let a b do b a end end
-macro swap2 let a b c d do c d a b end end
-macro rot let a b c do b c a end end
-"
+            builtin-prelude-source
             let source do
                 prelude source String.bytes source String.len initialize-module-source
             end

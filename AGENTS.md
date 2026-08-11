@@ -41,6 +41,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
   through explicit C interop and implement library policy in Frog.
+- `stdlib/builtins.frog`: Embedded source text for the six standard prelude
+  macros used by the compiler's fallback prelude module.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
   manually managed growable `ByteBuffer` record.
 - `stdlib/containers.frog`: Pointer arrays, pointer lists, and fixed-bucket
@@ -188,6 +190,7 @@ Commands:
 - String literals lower to one `String` handle backed by a static byte-pointer/length descriptor. `String.bytes` and `String.len` expose its fields; byte storage is writable and shared by equal pooled literals, and generated globals and macro expansion must retain the defining module's pooled literal identity.
 - Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
 - Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
+- The compiler imports `builtin-prelude-source` from `stdlib/builtins.frog` when it is built, then constructs the fallback prelude module from that embedded string at runtime. Do not replace this with a runtime filesystem dependency; the checked compiler seed must remain standalone.
 - Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
 - The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
 - Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.
