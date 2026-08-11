@@ -6902,6 +6902,63 @@ proc visible-record-definition ModuleContext ptr int -- ModuleContext int bool d
     end
 end
 
+proc find-record-type-from ModuleContext int int -- ModuleContext int bool do
+    let module value-type index do
+        if index module @ModuleContext.record_count >= do
+            module @ModuleContext.next_module
+            let next do
+                if next ptr cast int cast 0 == do
+                    0 ptr cast ModuleContext cast 0 1 - false
+                else
+                    next value-type 0 find-record-type-from
+                end
+            end
+        elif module index record-type-at value-type == do
+            module index true
+        else
+            module value-type index 1 + find-record-type-from
+        end
+    end
+end
+
+proc compile-inferred-record-field ptr ptr int bool -- bool do
+    let cc bytes length setter do
+        if length 2 <= do
+            "invalid inferred record field" fail
+            false
+        else
+            if cc @cc-type-count 0 <= do
+                cc "compile-time stack underflow" fail-compile-word
+            end
+            cc cc @cc-type-count 1 - type-at-depth
+            let record-type do
+                cc @cc-program @program-module-head record-type 0 find-record-type-from
+                let module record-index found do
+                    if found ! do
+                        cc "inferred field access requires a record" fail-compile-word
+                        false
+                    else
+                        module record-index bytes 2 + length 2 - find-record-field
+                        let field-index do
+                            if field-index 0 < do cc "unknown record field" fail-compile-word end
+                            if setter do
+                                cc module record-index record-type-at type-expect
+                                cc module field-index record-field-type-at type-expect
+                                cc module field-index record-field-byte-offset-at emit-record-field-write
+                            else
+                                cc module record-index record-type-at type-expect
+                                cc module field-index record-field-type-at type-push
+                                cc module field-index record-field-byte-offset-at emit-record-field-read
+                            end
+                            true
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 proc visible-union-definition ModuleContext ptr int -- ModuleContext int bool do
     peek scope bytes length do 0 find-scope-symbol-from
         let symbol-index do
@@ -7144,7 +7201,13 @@ end
 proc compile-record-word ptr int -- bool do
     let cc token-index do
         cc @cc-defining-module token-index token-slice
-        peek bytes length do 58 first-index-of-byte
+        let bytes length do
+            if length 2 >= bytes 0 byte-read 64 == && bytes 1 byte-read 46 == && do
+                cc bytes length false compile-inferred-record-field
+            elif length 2 >= bytes 0 byte-read 33 == && bytes 1 byte-read 46 == && do
+                cc bytes length true compile-inferred-record-field
+            else
+                bytes length 58 first-index-of-byte
             let colon do
                 if colon 0 >= do
                     cc bytes length colon compile-record-special
@@ -7169,6 +7232,7 @@ proc compile-record-word ptr int -- bool do
                         false
                     end
                 end
+            end
             end
         end
     end

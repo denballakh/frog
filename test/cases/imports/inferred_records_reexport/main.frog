@@ -1,0 +1,9 @@
+from "facade.frog" import Point as P
+
+proc main -- do
+    P:alloc
+    let point do
+        42 point !.value
+        point @.value print
+    end
+end

@@ -84,6 +84,8 @@ def main() -> None:
     assert special_regex.fullmatch('Node:sizeof')
     assert special_regex.fullmatch('@Node.bytes')
     assert special_regex.fullmatch('!Node.bytes')
+    assert special_regex.fullmatch('@.bytes')
+    assert special_regex.fullmatch('!.bytes')
     assert special_regex.fullmatch('Maybe:some')
     assert special_regex.fullmatch('Maybe.some?')
     assert special_regex.fullmatch('Mapper:ref:inc')
@@ -97,6 +99,8 @@ def main() -> None:
         assert special_regex.fullmatch(library_word) is None
     assert special_regex.fullmatch('Node.bytes') is None
     assert special_regex.fullmatch('Node.bytes!') is None
+    assert special_regex.fullmatch('@.') is None
+    assert special_regex.fullmatch('!.') is None
     assert special_regex.fullmatch('Maybe.some') is None
 
     string_patterns = patterns(string['patterns'])

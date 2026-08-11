@@ -1,0 +1,33 @@
+record Point
+    value int
+end
+
+record Count
+    value int
+end
+
+macro read-value @.value end
+macro write-value 9 swap !.value end
+macro @.shadow 77 end
+macro !.shadow drop end
+
+proc main -- do
+    @.shadow print
+    0 !.shadow
+
+    Point:alloc
+    let point do
+        1 point !.value
+        point @.value print
+        point write-value
+        point read-value print
+    end
+
+    Count:alloc
+    let count do
+        2 count !.value
+        count @.value print
+        count write-value
+        count read-value print
+    end
+end

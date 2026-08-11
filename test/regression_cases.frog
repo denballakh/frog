@@ -20,6 +20,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/imports/utf8_path/main.frog" "test/cases/imports/utf8_path" "55\n" "" 0 "" "" "" "imports/utf8_path" context frog-run-case
         "test/cases/imports/records_alias/main.frog" "test/cases/imports/records_alias" "8\n" "" 0 "" "" "" "imports/records_alias" context frog-run-case
         "test/cases/imports/records_reexport/main.frog" "test/cases/imports/records_reexport" "13\n" "" 0 "" "" "" "imports/records_reexport" context frog-run-case
+        "test/cases/imports/inferred_records_reexport/main.frog" "test/cases/imports/inferred_records_reexport" "42\n" "" 0 "" "" "" "imports/inferred_records_reexport" context frog-run-case
         "test/cases/imports/unions_alias/main.frog" "test/cases/imports/unions_alias" "true\n8\n" "" 0 "" "" "" "imports/unions_alias" context frog-run-case
         "test/cases/imports/unions_reexport/main.frog" "test/cases/imports/unions_reexport" "13\n" "" 0 "" "" "" "imports/unions_reexport" context frog-run-case
         "test/cases/imports/unions_macro_private/main.frog" "test/cases/imports/unions_macro_private" "21\n" "" 0 "" "" "" "imports/unions_macro_private" context frog-run-case
@@ -41,6 +42,7 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/semantics/pointer_store/main.frog" "test/cases/semantics/pointer_store" "65\n" "" 0 "" "" "" "semantics/pointer_store" context frog-run-case
         "test/cases/semantics/c_ffi/main.frog" "test/cases/semantics/c_ffi" "42\n42\n9\n711\ntrue\nfalse\n" "" 0 "test/cases/semantics/c_ffi/helper.c" "" "" "semantics/c_ffi" context frog-run-case
         "test/cases/semantics/records_layout/main.frog" "test/cases/semantics/records_layout" "41\ntrue\ntrue\n32\n7\n" "" 0 "" "" "" "semantics/records_layout" context frog-run-case
+        "test/cases/semantics/inferred_record_access/main.frog" "test/cases/semantics/inferred_record_access" "77\n1\n9\n2\n9\n" "" 0 "" "" "" "semantics/inferred_record_access" context frog-run-case
         "test/cases/semantics/unions_layout/main.frog" "test/cases/semantics/unions_layout" "true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n" "" 0 "" "" "" "semantics/unions_layout" context frog-run-case
         "test/cases/semantics/functions_layout/main.frog" "test/cases/semantics/functions_layout" "42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n11\n22\n99\n11\n22\n77\n17\n" "" 0 "test/cases/semantics/functions_layout/helper.c" "" "" "semantics/functions_layout" context frog-run-case
         "test/cases/semantics/functions_macro_shadow/main.frog" "test/cases/semantics/functions_macro_shadow" "99\n" "" 0 "" "" "" "semantics/functions_macro_shadow" context frog-run-case
@@ -177,6 +179,12 @@ proc run-regression-cases FrogTestContext -- do
         "record Point x int end\nrecord Box x int end\nproc main -- do Box:alloc @Point.x drop end\n" "test/cases/semantics" "frogc: @Point.x: compile-time stack type mismatch\n" "semantics-error/record_wrong_owner" context frog-error-source
         "record Point x int end\nproc main -- do Point:alloc let point do true point !Point.x end end\n" "test/cases/semantics" "frogc: !Point.x: compile-time stack type mismatch\n" "semantics-error/record_wrong_value" context frog-error-source
         "record Point x int end\nproc main -- do Point:alloc @Point.y drop end\n" "test/cases/semantics" "frogc: unknown record field\n" "semantics-error/record_unknown_field" context frog-error-source
+        "proc main -- do @. drop end\n" "test/cases/semantics" "frogc: invalid inferred record field\n" "semantics-error/inferred_record_empty_spelling" context frog-error-source
+        "proc main -- do @.x end\n" "test/cases/semantics" "frogc: @.x: compile-time stack underflow\n" "semantics-error/inferred_record_empty_stack" context frog-error-source
+        "proc main -- do 1 @.x end\n" "test/cases/semantics" "frogc: @.x: inferred field access requires a record\n" "semantics-error/inferred_record_non_record" context frog-error-source
+        "record Point x int end\nmacro read-y @.y end\nproc main -- do Point:alloc read-y drop end\n" "test/cases/semantics" "frogc: read-y: unknown record field\n" "semantics-error/inferred_record_unknown_field" context frog-error-source
+        "record Point x int end\nproc main -- do Point:alloc !.x end\n" "test/cases/semantics" "frogc: !.x: compile-time stack underflow\n" "semantics-error/inferred_record_missing_setter_value" context frog-error-source
+        "record Point x int end\nproc main -- do true Point:alloc !.x end\n" "test/cases/semantics" "frogc: !.x: compile-time stack type mismatch\n" "semantics-error/inferred_record_wrong_setter_value" context frog-error-source
         "record Point x int end\nproc main -- do Point:alloc Point.x drop end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/record_legacy_getter" context frog-error-source
         "record Point x int end\nproc main -- do 1 Point:alloc Point.x! end\n" "test/cases/semantics" "frogc: unknown word\n" "semantics-error/record_legacy_setter" context frog-error-source
         "record Point x Missing end\nproc main -- do end\n" "test/cases/semantics" "frogc: unknown type in record field\n" "semantics-error/record_unknown_type" context frog-error-source
