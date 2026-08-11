@@ -1,4 +1,4 @@
-from "../../../../stdlib/libc.frog" import (
+from "stdlib/libc.frog" import (
     alloc free putc getc eputc exit ensure-directory
 )
 

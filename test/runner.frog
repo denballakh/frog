@@ -1,4 +1,4 @@
-from "../stdlib/libc.frog" import exit
+from "stdlib/libc.frog" import exit
 from "framework.frog" import (
     frog-test-context frog-test-finish
 )

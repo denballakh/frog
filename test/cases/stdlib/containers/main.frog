@@ -1,11 +1,11 @@
-from "../../../../stdlib/containers.frog" import (
+from "stdlib/containers.frog" import (
     PtrArray PtrList StringMap
     ptr-array-new ptr-array-push ptr-array-get ptr-array-set ptr-array-pop ptr-array-free
     ptr-list-new ptr-list-push-front ptr-list-first ptr-list-pop-front ptr-list-free
     string-map-new string-map-get string-map-set string-map-remove string-map-free
     container-count container-empty?
 )
-from "../../../../stdlib/libc.frog" import ( alloc free exit )
+from "stdlib/libc.frog" import ( alloc free exit )
 
 proc assert bool -- do
     let condition do

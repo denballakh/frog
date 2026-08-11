@@ -228,7 +228,7 @@ end
         "" "int" "" "frogc: procedure output contract mismatch: expected [], actual [type]\n" 1 "code/procedures/15" context frog-inline-error-source
 
         // c_ffi (10)
-        "from \"../../stdlib/libc.frog\" import alloc
+        "from \"stdlib/libc.frog\" import alloc
 
 c-include system \"stdlib.h\" end
 c-type CInt int \"int\" end
@@ -294,36 +294,36 @@ c-call set-handler signal CInt Handler -- Handler end" "hangup default-handler s
         "false bool cast print" "false\n" "" 0 "code/casts_and_memory/06" context frog-inline-run-body
         "1 ptr cast int cast print" "1\n" "" 0 "code/casts_and_memory/07" context frog-inline-run-body
         "9223372036854775807 print" "9223372036854775807\n" "" 0 "code/casts_and_memory/08" context frog-inline-run-body
-        "from \"../../stdlib/libc.frog\" import alloc" "9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end" "" "4660\n" "" 0 "code/casts_and_memory/09" context frog-inline-run-source
+        "from \"stdlib/libc.frog\" import alloc" "9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end" "" "4660\n" "" 0 "code/casts_and_memory/09" context frog-inline-run-source
         "proc forward -- int do later end
 proc later -- int do 42 end" "forward print" "" "42\n" "" 0 "code/casts_and_memory/10" context frog-inline-run-source
         "proc sink int -- do drop end" "1 sink" "" "" "" 0 "code/casts_and_memory/11" context frog-inline-run-source
         "proc countdown int -- int do
     if dup 0 == do drop 0 else 1 - countdown end
 end" "3 countdown print" "" "0\n" "" 0 "code/casts_and_memory/12" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import alloc" "4 alloc let p do 42 p !i8 p @i8 print end" "" "42\n" "" 0 "code/casts_and_memory/13" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import alloc" "4 alloc let p do 255 p !u8 p @u8 print p @i8 print end" "" "255
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 42 p !i8 p @i8 print end" "" "42\n" "" 0 "code/casts_and_memory/13" context frog-inline-run-source
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 255 p !u8 p @u8 print p @i8 print end" "" "255
 -1
 " "" 0 "code/casts_and_memory/14" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import alloc" "4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end" "" "4660
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end" "" "4660
 18
 " "" 0 "code/casts_and_memory/15" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import alloc" "4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end" "" "127
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end" "" "127
 128
 " "" 0 "code/casts_and_memory/16" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import alloc
+        "from \"stdlib/libc.frog\" import alloc
 
 proc cell ptr int -- int do + @u8 end" "4 alloc let p do 42 p !u8 p 0 cell print end" "" "42\n" "" 0 "code/casts_and_memory/17" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import ( putc read-file )" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end" "" "true
+        "from \"stdlib/libc.frog\" import ( putc read-file )" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end" "" "true
 true
 #
 " "" 0 "code/casts_and_memory/18" context frog-inline-run-source
-        "from \"../../stdlib/libc.frog\" import read-file" "\"frog-read-file-missing\" dup String.bytes swap String.len read-file let data length success do data drop length print success print end" "" "0
+        "from \"stdlib/libc.frog\" import read-file" "\"frog-read-file-missing\" dup String.bytes swap String.len read-file let data length success do data drop length print success print end" "" "0
 false
 " "" 0 "code/casts_and_memory/19" context frog-inline-run-source
 
         // process_arguments (1)
-        "from \"../../stdlib/libc.frog\" import putc" "args let argv argc do argc print argv @ptr @u8 putc 10 putc end" "" "1
+        "from \"stdlib/libc.frog\" import putc" "args let argv argc do argc print argv @ptr @u8 putc 10 putc end" "" "1
 b
 " "" 0 "build/frog-test-case.exe" "code/process_arguments/01" context frog-inline-run-source-program
 

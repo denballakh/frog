@@ -1,5 +1,5 @@
-from "../../../../stdlib/subprocess.frog" import ( CompletedProcess subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free subprocess-run subprocess-run-in subprocess-run-bytes completed-process-free )
-from "../../../../stdlib/libc.frog" import exit
+from "stdlib/subprocess.frog" import ( CompletedProcess subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free subprocess-run subprocess-run-in subprocess-run-bytes completed-process-free )
+from "stdlib/libc.frog" import exit
 
 proc require bool -- do
     let condition do

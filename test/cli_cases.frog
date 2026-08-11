@@ -1,6 +1,6 @@
 from "framework.frog" import ( FrogTestContext frog-check frog-count-case )
-from "../stdlib/string.frog" import bytes-equal
-from "../stdlib/subprocess.frog" import (
+from "stdlib/string.frog" import bytes-equal
+from "stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
     subprocess-run subprocess-run-bytes-in completed-process-free

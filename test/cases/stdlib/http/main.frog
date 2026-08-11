@@ -1,16 +1,16 @@
-from "../../../../stdlib/http.frog" import (
+from "stdlib/http.frog" import (
     HttpRequest HttpResponse HttpHandler
     http-response-bytes http-response
     http-serve-ok http-serve-peer-closed
     http-serve-connection
 )
-from "../../../../stdlib/libc.frog" import (
+from "stdlib/libc.frog" import (
     alloc free exit fork close wait-child finish-child
 )
-from "../../../../stdlib/socket.frog" import (
+from "stdlib/socket.frog" import (
     descriptor-read descriptor-write local-socket-pair shutdown-write
 )
-from "../../../../stdlib/string.frog" import (
+from "stdlib/string.frog" import (
     bytes-equal ByteBuffer byte-buffer-new byte-buffer-append-bytes byte-buffer-free
 )
 

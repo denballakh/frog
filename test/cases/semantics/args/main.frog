@@ -1,4 +1,4 @@
-from "../../../../stdlib/libc.frog" import putc
+from "stdlib/libc.frog" import putc
 
 proc pointer-bytes -- int do 8 end
 

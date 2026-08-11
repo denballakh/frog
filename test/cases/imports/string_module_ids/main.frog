@@ -1,7 +1,7 @@
 from "procedure.frog" import text
 from "direct_macros.frog" import direct_text
 from "facade.frog" import reexport_text
-from "../../../../stdlib/libc.frog" import putc
+from "stdlib/libc.frog" import putc
 
 proc emit_one String -- do
     String.bytes @u8 putc

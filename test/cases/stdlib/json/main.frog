@@ -1,13 +1,13 @@
-from "../../../../stdlib/json.frog" import (
+from "stdlib/json.frog" import (
     JsonValue JsonText JsonArray JsonObject
     json-parse json-parse-bytes json-free
     json-boolean json-string-bytes json-number-bytes json-number-int
     json-array-length json-array-get json-object-get json-object-get-bytes
 )
-from "../../../../stdlib/string.frog" import (
+from "stdlib/string.frog" import (
     bytes-equal ByteBuffer byte-buffer-new byte-buffer-push byte-buffer-free
 )
-from "../../../../stdlib/libc.frog" import ( alloc free exit )
+from "stdlib/libc.frog" import ( alloc free exit )
 
 proc assert bool -- do
     let condition do

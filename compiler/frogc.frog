@@ -3,12 +3,12 @@
 // The bootstrap compiler deliberately uses only the bootstrap-v1 language
 // profile.  It reads one Frog source file from stdin and writes C to stdout.
 
-from "../stdlib/libc.frog" import (
+from "stdlib/libc.frog" import (
     alloc putc getc eputc exit read-file
-    fork create-file dup2 close chdir execv execvp
+    fork create-file dup2 close chdir get-current-directory execv execvp
     ensure-directory wait-child finish-child reset-child-signals
 )
-from "../stdlib/builtins.frog" import builtin-prelude-source
+from "stdlib/builtins.frog" import builtin-prelude-source
 
 const cell-bytes 8 end
 
@@ -67,7 +67,9 @@ const program-string-count-offset 56 end
 const program-next-nominal-type-offset 72 end
 const program-next-function-type-offset 80 end
 const program-debug-offset 88 end
-const program-bytes 96 end
+const program-standard-library-root-offset 96 end
+const program-standard-library-root-length-offset 104 end
+const program-bytes 112 end
 
 const string-bytes-offset 0 end
 const string-length-offset 8 end
@@ -477,6 +479,8 @@ proc @program-string-count ptr -- int do program-string-count-offset field-read 
 proc @program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
 proc @program-next-function-type ptr -- int do program-next-function-type-offset field-read end
 proc @program-debug ptr -- bool do program-debug-offset field-read 0 != end
+proc @program-standard-library-root ptr -- ptr do program-standard-library-root-offset pointer-field-read end
+proc @program-standard-library-root-length ptr -- int do program-standard-library-root-length-offset field-read end
 
 proc !program-root-module ModuleContext ptr -- do let value program do value ptr cast program program-root-module-offset pointer-field-write end end
 proc !program-module-head ModuleContext ptr -- do let value program do value ptr cast program program-module-head-offset pointer-field-write end end
@@ -488,6 +492,8 @@ proc !program-strings ptr ptr -- do program-strings-offset pointer-field-write e
 proc !program-string-count int ptr -- do program-string-count-offset field-write end
 proc !program-next-nominal-type int ptr -- do program-next-nominal-type-offset field-write end
 proc !program-next-function-type int ptr -- do program-next-function-type-offset field-write end
+proc !program-standard-library-root ptr ptr -- do program-standard-library-root-offset pointer-field-write end
+proc !program-standard-library-root-length int ptr -- do program-standard-library-root-length-offset field-write end
 proc !program-debug bool ptr -- do
     let value program do
         if value do 1 else 0 end
@@ -4056,6 +4062,29 @@ proc import-directory-length ModuleContext ptr int -- int do
     end
 end
 
+proc standard-library-import-path ModuleContext ptr int -- ptr int do
+    let ctx decoded decoded-length do
+        ctx @ModuleContext.program @program-standard-library-root
+        let root do
+            if root int cast 0 == do
+                "standard library path is unavailable" fail
+            end
+            ctx @ModuleContext.program @program-standard-library-root-length
+            let root-length do
+                root-length decoded-length + 1 + alloc
+                let bytes do
+                    root bytes root-length memory-copy
+                    bytes root-length append-path-separator
+                    let decoded-start do
+                        decoded bytes decoded-start + decoded-length memory-copy
+                        bytes decoded-start decoded-length +
+                    end
+                end
+            end
+        end
+    end
+end
+
 proc decoded-import-path ModuleContext int -- ptr int do
     peek ctx token do decoded-string-length
         let decoded-length do
@@ -4071,19 +4100,23 @@ proc decoded-import-path ModuleContext int -- ptr int do
                 if decoded decoded-length 0 bytes-contain-byte do
                     "import file not found" fail
                 end
-                ctx decoded decoded-length import-directory-length
-                let directory-length do
-                    directory-length decoded-length + 1 + alloc
-                    let bytes do
-                        if directory-length 0 > do
-                            ctx @ModuleContext.canonical_path bytes directory-length memory-copy
-                            bytes directory-length append-path-separator
-                        else
-                            0
-                        end
-                        let decoded-start do
-                            decoded bytes decoded-start + decoded-length memory-copy
-                            bytes decoded-start decoded-length +
+                if decoded decoded-length "stdlib/" bytes-starts-with-string do
+                    ctx decoded decoded-length standard-library-import-path
+                else
+                    ctx decoded decoded-length import-directory-length
+                    let directory-length do
+                        directory-length decoded-length + 1 + alloc
+                        let bytes do
+                            if directory-length 0 > do
+                                ctx @ModuleContext.canonical_path bytes directory-length memory-copy
+                                bytes directory-length append-path-separator
+                            else
+                                0
+                            end
+                            let decoded-start do
+                                decoded bytes decoded-start + decoded-length memory-copy
+                                bytes decoded-start decoded-length +
+                            end
                         end
                     end
                 end
@@ -8170,8 +8203,8 @@ end
 // END BODY COMPILER
 
 
-proc compile-source ptr int bool -- do
-    let source source-length debug do
+proc compile-source ptr int bool ptr int -- do
+    let source source-length debug standard-library-root standard-library-root-length do
         program-bytes alloc
         let program do
             0 ptr cast ModuleContext cast program !program-root-module
@@ -8185,6 +8218,8 @@ proc compile-source ptr int bool -- do
             0 ptr cast program !program-strings
             0 program !program-string-count
             debug program !program-debug
+            standard-library-root program !program-standard-library-root
+            standard-library-root-length program !program-standard-library-root-length
             0 ptr cast ModuleContext cast program !program-prelude-module
             ModuleContext:alloc
             let ctx do
@@ -8332,6 +8367,52 @@ proc parent-path ptr -- ptr do
     end
 end
 
+proc distribution-root-from-absolute-executable ptr -- ptr int do
+    parent-path parent-path
+    let root do root root cstring-length end
+end
+
+proc compiler-distribution-root ptr -- ptr int do
+    let executable do
+        executable cstring-length
+        let executable-length do
+            if executable-length max-import-path-bytes > do
+                null-pointer 0
+            else
+                executable executable-length 47 last-index-of-byte
+                let slash do
+                    if slash 0 < do
+                        null-pointer 0
+                    elif executable 0 byte-read 47 == do
+                        executable distribution-root-from-absolute-executable
+                    else
+                        max-import-path-bytes 1 + alloc
+                        let cwd do
+                            if cwd max-import-path-bytes 1 + get-current-directory ! do
+                                null-pointer 0
+                            else
+                                cwd cstring-length
+                                let cwd-length do
+                                    cwd-length executable-length + 2 + alloc
+                                    let absolute-executable do
+                                        cwd absolute-executable cwd-length memory-copy
+                                        absolute-executable cwd-length append-path-separator
+                                        let executable-start do
+                                            executable absolute-executable executable-start + executable-length memory-copy
+                                            0 absolute-executable executable-start executable-length + byte-write
+                                            absolute-executable distribution-root-from-absolute-executable
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 proc replace-path-suffix ptr String -- ptr do
     let path suffix do
         suffix String.len
@@ -8445,8 +8526,8 @@ proc wait-for-child int -- int do
     end
 end
 
-proc compile-frog-source ptr int ptr ptr bool -- int do
-    let source source-length directory output debug do
+proc compile-frog-source ptr int ptr ptr bool ptr int -- int do
+    let source source-length directory output debug standard-library-root standard-library-root-length do
         output create-file
         let output-fd do
             if output-fd 0 < do
@@ -8470,7 +8551,7 @@ proc compile-frog-source ptr int ptr ptr bool -- int do
                                 1 finish-child
                                 1
                             else
-                                source source-length debug compile-source
+                                source source-length debug standard-library-root standard-library-root-length compile-source
                                 0 finish-child
                                 0
                             end
@@ -8545,13 +8626,14 @@ proc run-executable ptr -- int do
     end
 end
 
-proc run-source ptr int ptr bool -- int do
-    let source source-length directory debug do
+proc run-source ptr int ptr bool ptr int -- int do
+    let source source-length directory debug standard-library-root standard-library-root-length do
         if "build" String.bytes ensure-directory 0 != do
             "unable to create build directory" cli-error
             1
         else
             source source-length directory "build/frog-run.c" String.bytes debug
+            standard-library-root standard-library-root-length
             compile-frog-source
             let compile-status do
                 if compile-status 0 != do
@@ -8571,19 +8653,19 @@ proc run-source ptr int ptr bool -- int do
     end
 end
 
-proc run-file ptr bool -- int do
-    let path debug do path read-source-path
+proc run-file ptr bool ptr int -- int do
+    let path debug standard-library-root standard-library-root-length do path read-source-path
         let source source-length do
             path parent-path
             let directory do
-                source source-length directory debug run-source
+                source source-length directory debug standard-library-root standard-library-root-length run-source
             end
         end
     end
 end
 
-proc build-file ptr ptr bool bool -- int do
-    let path requested-output should-run debug do
+proc build-file ptr ptr bool bool ptr int -- int do
+    let path requested-output should-run debug standard-library-root standard-library-root-length do
         path ".c" replace-path-suffix
         let c-file do
             if requested-output int cast 0 == do
@@ -8596,7 +8678,8 @@ proc build-file ptr ptr bool bool -- int do
                 let source source-length do
                     path parent-path
                     let directory do
-                        source source-length directory c-file debug compile-frog-source
+                        source source-length directory c-file debug
+                        standard-library-root standard-library-root-length compile-frog-source
                         let frog-status do
                             if frog-status 0 != do
                                 frog-status
@@ -8620,8 +8703,8 @@ proc build-file ptr ptr bool bool -- int do
     end
 end
 
-proc run-command ptr int int bool -- do
-    let argv argc command-index debug do
+proc run-command ptr int int bool ptr int -- do
+    let argv argc command-index debug standard-library-root standard-library-root-length do
         command-index 1 +
         let argument-index do
             if argument-index argc >= do
@@ -8639,14 +8722,16 @@ proc run-command ptr int int bool -- do
                         "run -c requires exactly one CODE argument" cli-usage-error
                     end
                     argv argument-index 1 + argv-at
-                    peek code do code cstring-length "." String.bytes debug run-source exit
+                    peek code do
+                        code cstring-length "." String.bytes debug
+                        standard-library-root standard-library-root-length run-source exit
                     end
                 elif argument @u8 45 == do
                     "unknown run option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "run accepts exactly one source file" cli-usage-error
                 else
-                    argument debug run-file exit
+                    argument debug standard-library-root standard-library-root-length run-file exit
                 end
             end
         end
@@ -8691,10 +8776,11 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
     end
 end
 
-proc build-command ptr int int bool -- do
-    let argv argc command-index debug do
+proc build-command ptr int int bool ptr int -- do
+    let argv argc command-index debug standard-library-root standard-library-root-length do
         argv argc command-index 1 + null-pointer false parse-build-options
-        let source output should-run do source output should-run debug build-file exit
+        let source output should-run do
+            source output should-run debug standard-library-root standard-library-root-length build-file exit
         end
     end
 end
@@ -8702,33 +8788,36 @@ end
 proc main -- do
     args
     let argv argc do
-        if argc 1 > do
-            argv 1 argv-at
-            let first do
-                if first "--debug" cstring-equals do 2 true else 1 false end
-            end
-        else
-            1 false
-        end
-        let command-index debug do
-            if command-index argc >= do
-                read-source debug compile-source
-            else
-                argv command-index argv-at
-            let command do
-                if
-                    command "-h" cstring-equals
-                    command "--help" cstring-equals ||
-                do
-                    cli-usage
-                elif command "run" cstring-equals do
-                    argv argc command-index debug run-command
-                elif command "build" cstring-equals do
-                    argv argc command-index debug build-command
-                else
-                    "unknown command: " command cli-usage-error-value
+        argv 0 argv-at compiler-distribution-root
+        let standard-library-root standard-library-root-length do
+            if argc 1 > do
+                argv 1 argv-at
+                let first do
+                    if first "--debug" cstring-equals do 2 true else 1 false end
                 end
+            else
+                1 false
             end
+            let command-index debug do
+                if command-index argc >= do
+                    read-source debug standard-library-root standard-library-root-length compile-source
+                else
+                    argv command-index argv-at
+                let command do
+                    if
+                        command "-h" cstring-equals
+                        command "--help" cstring-equals ||
+                    do
+                        cli-usage
+                    elif command "run" cstring-equals do
+                        argv argc command-index debug standard-library-root standard-library-root-length run-command
+                    elif command "build" cstring-equals do
+                        argv argc command-index debug standard-library-root standard-library-root-length build-command
+                    else
+                        "unknown command: " command cli-usage-error-value
+                    end
+                end
+                end
             end
         end
     end

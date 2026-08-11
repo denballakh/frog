@@ -1,4 +1,4 @@
-from "../../../stdlib/libc.frog" import ( putc exit read-file )
+from "stdlib/libc.frog" import ( putc exit read-file )
 
 proc main -- do
     "README.md"

@@ -1,4 +1,4 @@
-from "../../../../stdlib/libc.frog" import alloc
+from "stdlib/libc.frog" import alloc
 
 c-include system "stdlib.h" end
 c-include local "test/cases/semantics/c_ffi/helper.h" end

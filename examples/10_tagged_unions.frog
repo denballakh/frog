@@ -1,4 +1,4 @@
-from "../stdlib/libc.frog" import putc
+from "stdlib/libc.frog" import putc
 
 union Division
     case value int

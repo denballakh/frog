@@ -1,4 +1,4 @@
-from "../../../../stdlib/string.frog" import (
+from "stdlib/string.frog" import (
     bytes-copy
     bytes-equal
     bytes-index-of
@@ -15,7 +15,7 @@ from "../../../../stdlib/string.frog" import (
     byte-buffer-equal-string
     byte-buffer-free
 )
-from "../../../../stdlib/libc.frog" import ( alloc free exit )
+from "stdlib/libc.frog" import ( alloc free exit )
 
 proc assert bool -- do
     let condition do

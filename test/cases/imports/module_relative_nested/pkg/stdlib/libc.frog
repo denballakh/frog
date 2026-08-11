@@ -1,0 +1,3 @@
+proc local-only -- int do
+    0
+end

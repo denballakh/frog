@@ -1,16 +1,16 @@
-from "../stdlib/libc.frog" import ( free read-file )
-from "../stdlib/string.frog" import (
+from "stdlib/libc.frog" import ( free read-file )
+from "stdlib/string.frog" import (
     bytes-equal bytes-index-of bytes-contain bytes-count bytes-starts-with string-equal
     ByteBuffer byte-buffer-new byte-buffer-push
     byte-buffer-append-bytes byte-buffer-append-string byte-buffer-free
 )
-from "../stdlib/subprocess.frog" import (
+from "stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
     subprocess-run subprocess-run-bytes subprocess-run-bytes-in
     completed-process-free
 )
-from "../stdlib/test.frog" import ( TestSuite test-suite check test-finish )
+from "stdlib/test.frog" import ( TestSuite test-suite check test-finish )
 
 record FrogTestContext
     compiler ptr

@@ -1,4 +1,4 @@
-from "../../../../stdlib/libc.frog" import alloc
+from "stdlib/libc.frog" import alloc
 
 union Maybe
     case none

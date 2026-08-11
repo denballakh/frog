@@ -141,9 +141,9 @@ Commands:
 ## Compiler Pipeline
 
 - `compiler/frogc.frog` is the sole lexer, parser/declaration scanner, module loader, typechecker, macro expander, and C emitter.
-- The compiler reads root source bytes from stdin and writes generated C to stdout. Root imports are loaded relative to the compiler process's working directory; nested imports are loaded relative to the importing module's lexical path.
+- The compiler reads root source bytes from stdin and writes generated C to stdout. Root imports are loaded relative to the compiler process's working directory; nested imports are loaded relative to the importing module's lexical path. Imports beginning exactly with `stdlib/` instead resolve from the standard-library search root derived from the compiler distribution.
 - The supported import syntax is `from "path.frog" import name`, `from "path.frog" import name as alias`, and grouped whitespace-separated imports such as `from "path.frog" import ( x y z )`. Wildcards, commas, and `import "path.frog" as mod` are rejected for now.
-- Relative import paths are resolved from the directory containing the importing module. Canonicalization is lexical and does not resolve symlinks.
+- Other relative import paths, including `./stdlib/...`, are resolved from the directory containing the importing module. Canonicalization is lexical and does not resolve symlinks. A `stdlib/...` import never falls back to an importer-relative file.
 - Imported files contribute procedures, records, unions, function-reference types, and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
@@ -158,8 +158,11 @@ Commands:
 - Generated C procedure names use `frog_proc_<global-id>_<encoded-source-name>`. ASCII letters and digits remain readable; every other UTF-8 byte, including `_`, is encoded as uppercase `_HH`. Numeric global IDs remain the function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
-- Bootstrap filter invocations run from `compiler/` so the compiler source's
-  `../stdlib/libc.frog` import resolves the same way as a normal file build.
+- The compiler executable is kept under `build/` beside the repository's
+  `stdlib/` directory at the parent level. The search root is captured before
+  file commands change directory, so filter, `run`, and `build` resolve the
+  same `stdlib/...` module identity. A slashless `argv[0]` leaves the search
+  root unavailable; do not add PATH search or an importer-relative fallback.
 
 ## Language Semantics
 

@@ -1,12 +1,15 @@
 # Standard Library
 
-Standard-library modules are ordinary Frog source files under `stdlib/`. Import
-paths are relative to the importing source file, so a file in `examples/` can
-import libc operations with:
+Standard-library modules are ordinary Frog source files imported through the
+`stdlib/` module search path:
 
 ```frog
-from "../stdlib/libc.frog" import ( alloc free putc getc eputc exit )
+from "stdlib/libc.frog" import ( alloc free putc getc eputc exit )
 ```
+
+The compiler locates this search path from its own executable path. Invoke it
+with a path containing `/`, such as `build/frogc`; a name found only through
+the shell's `PATH` does not identify the accompanying standard library.
 
 ## libc
 
@@ -40,6 +43,8 @@ subprocess library:
 - `dup2`: `old_fd new_fd -- int`
 - `close`: `fd -- int`
 - `chdir`: `path -- int`
+- `get-current-directory`: `buffer capacity -- success` writes the
+  NUL-terminated current directory into caller-owned storage.
 - `execv`: `path argv -- int`
 - `execvp`: `file argv -- int`
 - `ensure-directory`: `path -- int`
@@ -276,7 +281,7 @@ protection must configure it outside this API.
 standard error:
 
 ```frog
-from "../stdlib/subprocess.frog" import (
+from "stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv
     subprocess-arg
@@ -337,7 +342,7 @@ without a shell, timeout, or environment rewriting.
 `stdlib/test.frog` provides an explicit `TestSuite` value and four checks:
 
 ```frog
-from "../stdlib/test.frog" import (
+from "stdlib/test.frog" import (
     test-suite
     check-int-equal
     check-string-equal

@@ -45,6 +45,7 @@ c-value c-o-trunc O_TRUNC -- CInt end
 c-call c-dup2 dup2 CInt CInt -- CInt end
 c-call c-close close CInt -- CInt end
 c-call c-chdir chdir CPath -- CInt end
+c-call c-getcwd getcwd CPtr CSize -- CPtr end
 c-call c-execv execv CPath CArgv -- CInt end
 c-call c-execvp execvp CPath CArgv -- CInt end
 
@@ -116,6 +117,7 @@ end
 proc dup2 int int -- int do c-dup2 end
 proc close int -- int do c-close end
 proc chdir ptr -- int do c-chdir end
+proc get-current-directory ptr int -- bool do c-getcwd null-pointer ! end
 proc execv ptr ptr -- int do c-execv end
 proc execvp ptr ptr -- int do c-execvp end
 

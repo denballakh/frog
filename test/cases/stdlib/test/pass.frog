@@ -1,4 +1,4 @@
-from "../../../../stdlib/test.frog" import (
+from "stdlib/test.frog" import (
     TestSuite
     test-suite
     check

@@ -39,7 +39,7 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The language supports strings, nominal records and tagged unions, first-class function references, compile-time constants and macros, C interop declarations, and source-relative imports with aliases, groups, and reexports. See the [language reference](./docs/language.md) for syntax and semantics.
+The language supports strings, nominal records and tagged unions, first-class function references, compile-time constants and macros, C interop declarations, source-relative imports, and `stdlib/...` imports independent of source nesting. Imports support aliases, groups, and reexports. See the [language reference](./docs/language.md) for syntax and semantics.
 
 To bootstrap manually without Python:
 
