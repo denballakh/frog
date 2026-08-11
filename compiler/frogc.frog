@@ -2817,18 +2817,160 @@ proc !cc-diagnostic-active bool ptr -- do
     end
 end
 
-proc fail-compile-word ptr String -- do
-    let cc message do
+proc emit-compile-word-error-prefix ptr -- do
+    let cc do
+        "frogc: " emit-error
         if cc @cc-diagnostic-active do
-            "frogc: " emit-error
             cc @cc-diagnostic-module cc @cc-diagnostic-token token-slice emit-error-bytes
             ": " emit-error
-            message emit-error
-            10 eputc
-            1 exit
-        else
-            message fail
         end
+    end
+end
+
+proc fail-compile-word ptr String -- do
+    let cc message do
+        cc emit-compile-word-error-prefix
+        message emit-error
+        10 eputc
+        1 exit
+    end
+end
+
+proc emit-error-type-module-prefix ModuleContext -- do
+    let module do
+        if module @ModuleContext.canonical_path_length 0 > do
+            module @ModuleContext.canonical_path module @ModuleContext.canonical_path_length
+            emit-error-bytes
+            ":" emit-error
+        end
+    end
+end
+
+proc emit-error-record-type-name ModuleContext int int -- bool do
+    let module value-type record-index do
+        if record-index module @ModuleContext.record_count >= do
+            false
+        elif module record-index record-type-at value-type == do
+            module emit-error-type-module-prefix
+            module @ModuleContext.source module record-index record-name-start-at +
+            module record-index record-name-length-at emit-error-bytes
+            true
+        else
+            module value-type record-index 1 + emit-error-record-type-name
+        end
+    end
+end
+
+proc emit-error-union-type-name ModuleContext int int -- bool do
+    let module value-type union-index do
+        if union-index module @ModuleContext.union_count >= do
+            false
+        elif module union-index union-type-at value-type == do
+            module emit-error-type-module-prefix
+            module @ModuleContext.source module union-index union-name-start-at +
+            module union-index union-name-length-at emit-error-bytes
+            true
+        else
+            module value-type union-index 1 + emit-error-union-type-name
+        end
+    end
+end
+
+proc emit-error-function-type-name ModuleContext int int -- bool do
+    let module value-type function-index do
+        if function-index module @ModuleContext.function_count >= do
+            false
+        elif module function-index function-type-at value-type == do
+            module emit-error-type-module-prefix
+            module @ModuleContext.source module function-index function-name-start-at +
+            module function-index function-name-length-at emit-error-bytes
+            true
+        else
+            module value-type function-index 1 + emit-error-function-type-name
+        end
+    end
+end
+
+proc emit-error-module-type-name ModuleContext int -- bool do
+    let module value-type do
+        module value-type 0 emit-error-record-type-name
+        let found do
+            if found do
+                true
+            else
+                module value-type 0 emit-error-union-type-name
+                let found do
+                    if found do true else module value-type 0 emit-error-function-type-name end
+                end
+            end
+        end
+    end
+end
+
+proc emit-error-nominal-type-name ModuleContext int -- bool do
+    let module value-type do
+        if module ptr cast int cast 0 == do
+            false
+        else
+            module value-type emit-error-module-type-name
+            let found do
+                if found do
+                    true
+                else
+                    module @ModuleContext.next_module value-type emit-error-nominal-type-name
+                end
+            end
+        end
+    end
+end
+
+proc emit-error-type-name ptr int -- do
+    let program value-type do
+        if
+            value-type 0 <
+            value-type type-literal-base > value-type type-nominal-base < && ||
+        do
+            "type" emit-error
+        elif value-type type-int == do
+            "int" emit-error
+        elif value-type type-bool == do
+            "bool" emit-error
+        elif value-type type-ptr == do
+            "ptr" emit-error
+        elif value-type type-type == do
+            "type" emit-error
+        elif value-type type-string == do
+            "String" emit-error
+        elif value-type type-none == do
+            "none" emit-error
+        else
+            if program @program-module-head value-type emit-error-nominal-type-name ! do
+                "unknown" emit-error
+            end
+        end
+    end
+end
+
+proc emit-error-type-array-items ptr ptr int int -- do
+    let program values start count do
+        0
+        while dup count < do
+            dup
+            let index do
+                if index 0 > do " " emit-error end
+                program values start index + cell-bytes * field-read emit-error-type-name
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-error-type-array ptr ptr int int -- do
+    let program values start count do
+        "[" emit-error
+        program values start count emit-error-type-array-items
+        "]" emit-error
     end
 end
 
@@ -4978,6 +5120,64 @@ proc function-proc-contracts-equal ModuleContext int ModuleContext int -- bool d
     end
 end
 
+proc emit-error-c-abi-type-name int -- do
+    let value-type do
+        if value-type type-int == do
+            "c-int" emit-error
+        elif value-type type-bool == do
+            "c-bool" emit-error
+        elif value-type type-ptr == do
+            "c-ptr" emit-error
+        else
+            "unknown" emit-error
+        end
+    end
+end
+
+proc emit-error-c-abi-type-array-items ModuleContext int int -- do
+    let module start count do
+        0
+        while dup count < do
+            dup
+            let index do
+                if index 0 > do " " emit-error end
+                module start index + type-at emit-error-c-abi-type-name
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-error-c-abi-type-array ModuleContext int int -- do
+    let module start count do
+        "[" emit-error
+        module start count emit-error-c-abi-type-array-items
+        "]" emit-error
+    end
+end
+
+proc emit-error-external-contract ModuleContext int -- do
+    let module proc-index do
+        module module proc-index proc-input-start-at module proc-index proc-input-count-at
+        emit-error-c-abi-type-array
+        " -- " emit-error
+        module module proc-index proc-output-start-at module proc-index proc-output-count-at
+        emit-error-c-abi-type-array
+    end
+end
+
+proc fail-external-contract ModuleContext int ModuleContext int -- do
+    let module proc-index expected-module expected-index do
+        "frogc: incompatible declarations for C symbol: expected " emit-error
+        expected-module expected-index emit-error-external-contract
+        ", actual " emit-error
+        module proc-index emit-error-external-contract
+        10 eputc
+        1 exit
+    end
+end
+
 proc require-external-compatible-with-module ModuleContext int ModuleContext int -- do
     let ctx proc-index other limit do
         0
@@ -4987,7 +5187,7 @@ proc require-external-compatible-with-module ModuleContext int ModuleContext int
                 if other other-index proc-external-at do
                     if ctx proc-index other other-index external-symbols-equal do
                         if ctx proc-index other other-index external-contracts-equal ! do
-                            "incompatible declarations for C symbol" fail
+                            ctx proc-index other other-index fail-external-contract
                         end
                     end
                 end
@@ -5645,19 +5845,166 @@ proc emit-top-slot ptr -- do
     peek cc do cc @cc-type-count 1 - emit-slot end
 end
 
-proc check-proc-inputs ptr ModuleContext int int -- do
-    let cc module proc-index remaining do
-        if remaining 0 > do
-            module
-            module proc-index proc-input-start-at
-            remaining 1 - +
-            type-at
-            let expected do
-                cc expected type-expect
-                cc module proc-index remaining 1 - check-proc-inputs
+proc cc-range-matches-type-array-from ptr int ptr int int int -- bool do
+    let cc actual-start expected-values expected-start count index do
+        if index count >= do
+            true
+        elif
+            cc actual-start index + type-at-depth
+            expected-values expected-start index + cell-bytes * field-read
+            !=
+        do
+            false
+        else
+            cc actual-start expected-values expected-start count index 1 +
+            cc-range-matches-type-array-from
+        end
+    end
+end
+
+proc proc-input-contract-matches ptr ModuleContext int -- bool do
+    let cc module proc-index do
+        module proc-index proc-input-count-at
+        let input-count do
+            if cc @cc-type-count input-count < do
+                false
+            else
+                cc
+                cc @cc-type-count input-count -
+                module @ModuleContext.types
+                module proc-index proc-input-start-at
+                input-count 0
+                cc-range-matches-type-array-from
             end
         end
     end
+end
+
+proc function-call-contract-matches ptr ModuleContext int -- bool do
+    let cc module function-index do
+        module function-index function-input-count-at
+        peek input-count do 1 +
+            let expected-count do
+                if cc @cc-type-count expected-count < do
+                    false
+                else
+                    cc @cc-type-count expected-count -
+                    let actual-start do
+                        cc actual-start
+                        module @ModuleContext.function_types
+                        module function-index function-input-start-at
+                        input-count 0
+                        cc-range-matches-type-array-from
+                        cc actual-start input-count + type-at-depth
+                        module function-index function-type-at ==
+                        &&
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc emit-error-cc-suffix ptr int -- do
+    let cc expected-count do
+        cc @cc-type-count expected-count -
+        if dup 0 < do drop 0 end
+        let start do
+            cc @cc-program cc @cc-type-stack start cc @cc-type-count start -
+            emit-error-type-array
+        end
+    end
+end
+
+proc emit-error-proc-inputs ptr ModuleContext int -- do
+    let program module proc-index do
+        program module @ModuleContext.types
+        module proc-index proc-input-start-at
+        module proc-index proc-input-count-at
+        emit-error-type-array
+    end
+end
+
+proc emit-error-proc-outputs ptr ModuleContext int -- do
+    let program module proc-index do
+        program module @ModuleContext.types
+        module proc-index proc-output-start-at
+        module proc-index proc-output-count-at
+        emit-error-type-array
+    end
+end
+
+proc emit-error-proc-contract ptr ModuleContext int -- do
+    peek program module proc-index do emit-error-proc-inputs
+        " -- " emit-error
+        program module proc-index emit-error-proc-outputs
+    end
+end
+
+proc emit-error-function-inputs ptr ModuleContext int -- do
+    let program module function-index do
+        program module @ModuleContext.function_types
+        module function-index function-input-start-at
+        module function-index function-input-count-at
+        emit-error-type-array
+    end
+end
+
+proc emit-error-function-outputs ptr ModuleContext int -- do
+    let program module function-index do
+        program module @ModuleContext.function_types
+        module function-index function-output-start-at
+        module function-index function-output-count-at
+        emit-error-type-array
+    end
+end
+
+proc emit-error-function-contract ptr ModuleContext int -- do
+    peek program module function-index do emit-error-function-inputs
+        " -- " emit-error
+        program module function-index emit-error-function-outputs
+    end
+end
+
+proc emit-error-function-call-suffix ptr ModuleContext int -- do
+    let program module function-index do
+        "[" emit-error
+        program module @ModuleContext.function_types
+        module function-index function-input-start-at
+        module function-index function-input-count-at
+        emit-error-type-array-items
+        if module function-index function-input-count-at 0 > do " " emit-error end
+        program module function-index function-type-at emit-error-type-name
+        "]" emit-error
+    end
+end
+
+proc fail-proc-input-contract ptr ModuleContext int -- do
+    let cc module proc-index do
+        cc emit-compile-word-error-prefix
+        "stack contract mismatch: expected " emit-error
+        cc @cc-program module proc-index emit-error-proc-inputs
+        ", actual " emit-error
+        cc module proc-index proc-input-count-at emit-error-cc-suffix
+        10 eputc
+        1 exit
+    end
+end
+
+proc fail-function-call-contract ptr ModuleContext int -- do
+    let cc module function-index do
+        cc emit-compile-word-error-prefix
+        "stack contract mismatch: expected " emit-error
+        cc @cc-program module function-index emit-error-function-call-suffix
+        ", actual " emit-error
+        cc module function-index function-input-count-at 1 + emit-error-cc-suffix
+        10 eputc
+        1 exit
+    end
+end
+
+proc consume-types ptr int -- do
+    let cc count do cc @cc-type-count count - cc !cc-type-count end
 end
 
 proc push-proc-outputs ptr ModuleContext int int -- do
@@ -5674,20 +6021,12 @@ proc push-proc-outputs ptr ModuleContext int int -- do
 end
 
 proc apply-proc-contract ptr ModuleContext int -- do
-    peek cc module proc-index do module proc-index proc-input-count-at check-proc-inputs
-        cc module proc-index 0 push-proc-outputs
-    end
-end
-
-proc check-function-inputs ptr ModuleContext int int -- do
-    let cc module function-index remaining do
-        if remaining 0 > do
-            module function-index remaining 1 - function-input-type-at
-            let expected do
-                cc expected type-expect
-                cc module function-index remaining 1 - check-function-inputs
-            end
+    peek cc module proc-index do
+        if cc module proc-index proc-input-contract-matches ! do
+            cc module proc-index fail-proc-input-contract
         end
+        proc-input-count-at consume-types
+        cc module proc-index 0 push-proc-outputs
     end
 end
 
@@ -5703,8 +6042,10 @@ end
 
 proc apply-function-contract ptr ModuleContext int -- do
     peek cc module function-index do
-        module function-index function-input-count-at
-        check-function-inputs
+        if cc module function-index function-call-contract-matches ! do
+            cc module function-index fail-function-call-contract
+        end
+        function-input-count-at 1 + consume-types
         cc module function-index 0 push-function-outputs
     end
 end
@@ -7065,6 +7406,17 @@ proc emit-function-call ptr ModuleContext int -- do
     end
 end
 
+proc fail-function-reference-contract ptr ModuleContext int ModuleContext int -- do
+    let cc function-module function-index proc-module proc-index do
+        "frogc: function reference contract mismatch: expected " emit-error
+        cc @cc-program function-module function-index emit-error-function-contract
+        ", actual " emit-error
+        cc @cc-program proc-module proc-index emit-error-proc-contract
+        10 eputc
+        1 exit
+    end
+end
+
 proc compile-function-operation ptr ptr int int -- bool do
     let cc bytes length separator do
         if separator 0 <= separator 1 + length >= || do
@@ -7079,7 +7431,6 @@ proc compile-function-operation ptr ptr int int -- bool do
                     length separator 1 + -
                     let operation operation-length do
                         if operation operation-length "call" bytes-equal-string do
-                            cc function-module function-index function-type-at type-expect
                             cc function-module function-index apply-function-contract
                             cc function-module function-index emit-function-call
                             true
@@ -7108,7 +7459,8 @@ proc compile-function-operation ptr ptr int int -- bool do
                                     function-proc-contracts-equal
                                     !
                                 do
-                                    "function reference contract mismatch" fail
+                                    cc function-module function-index proc-module proc-index
+                                    fail-function-reference-contract
                                 end
                                 cc function-module function-index function-type-at type-push
                                 cc proc-module proc-index proc-global-id-at emit-push-integer
@@ -7436,13 +7788,24 @@ proc outputs-match-from ptr int -- bool do
     end
 end
 
+proc fail-proc-output-contract ptr -- do
+    let cc do
+        "frogc: procedure output contract mismatch: expected " emit-error
+        cc @cc-program cc @cc-procedure-module cc @cc-proc emit-error-proc-outputs
+        ", actual " emit-error
+        cc @cc-program cc @cc-type-stack 0 cc @cc-type-count emit-error-type-array
+        10 eputc
+        1 exit
+    end
+end
+
 proc require-proc-outputs ptr -- do
     let cc do
         if cc @cc-type-count cc @cc-procedure-module cc @cc-proc proc-output-count-at != do
-            "procedure output stack depth mismatch" fail
+            cc fail-proc-output-contract
         end
         if cc 0 outputs-match-from ! do
-            "procedure output stack type mismatch" fail
+            cc fail-proc-output-contract
         end
     end
 end

@@ -11,7 +11,7 @@ proc run-inline-cases FrogTestContext -- do
         // basics (7)
         "1 2 + print" "3\n" "" 0 "code/basics/01" context frog-inline-run-body
         "1 + print" "frogc: +: compile-time stack underflow\n" 1 "code/basics/02" context frog-inline-error-body
-        "1 2 +" "frogc: procedure output stack depth mismatch\n" 1 "code/basics/03" context frog-inline-error-body
+        "1 2 +" "frogc: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/basics/03" context frog-inline-error-body
         "? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?" "10\n" "" 0 "code/basics/04" context frog-inline-run-body
         "+" "frogc: +: compile-time stack underflow\n" 1 "code/basics/05" context frog-inline-error-body
         "~" "frogc: ~: compile-time stack underflow\n" 1 "code/basics/06" context frog-inline-error-body
@@ -101,7 +101,7 @@ proc run-inline-cases FrogTestContext -- do
         "if 1 2 == do 5 else 7 end print" "7\n" "" 0 "code/if_blocks/02" context frog-inline-run-body
         "if 1 2 != do 5 else 7 end print" "5\n" "" 0 "code/if_blocks/03" context frog-inline-run-body
         "if 1 2 != do 5 else 7 8 end print" "frogc: if branches leave different stack shapes\n" 1 "code/if_blocks/04" context frog-inline-error-body
-        "if 1 2 != do 5 else 7 end" "frogc: procedure output stack depth mismatch\n" 1 "code/if_blocks/05" context frog-inline-error-body
+        "if 1 2 != do 5 else 7 end" "frogc: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/if_blocks/05" context frog-inline-error-body
         "if 1 2 != do 5 else end" "frogc: if branches leave different stack shapes\n" 1 "code/if_blocks/06" context frog-inline-error-body
         "if 1 2 != do 5 end" "frogc: control-flow stack shape mismatch\n" 1 "code/if_blocks/07" context frog-inline-error-body
         "if 1 2 != do 5 print end" "5\n" "" 0 "code/if_blocks/08" context frog-inline-run-body
@@ -210,19 +210,22 @@ end
         "proc" "frogc: expected procedure name\n" 1 "code/words/01" context frog-inline-error-raw
         "somerandomword" "frogc: unknown word\n" 1 "code/words/02" context frog-inline-error-body
 
-        // procedures (12)
+        // procedures (15)
         "proc a int -- int do 2 * end" "5 a print" "" "10\n" "" 0 "code/procedures/01" context frog-inline-run-source
         "proc a do 2 * end" "" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/02" context frog-inline-error-source
         "proc a int do 2 * end" "" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/03" context frog-inline-error-source
         "proc a -- do 2 * end" "" "" "frogc: *: compile-time stack underflow\n" 1 "code/procedures/04" context frog-inline-error-source
-        "proc a int -- do 2 * end" "" "" "frogc: procedure output stack depth mismatch\n" 1 "code/procedures/05" context frog-inline-error-source
-        "proc a int -- int int do 2 * end" "" "" "frogc: procedure output stack depth mismatch\n" 1 "code/procedures/06" context frog-inline-error-source
+        "proc a int -- do 2 * end" "" "" "frogc: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/procedures/05" context frog-inline-error-source
+        "proc a int -- int int do 2 * end" "" "" "frogc: procedure output contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/06" context frog-inline-error-source
         "proc a int -- int do drop 5 end" "5 a print" "" "5\n" "" 0 "code/procedures/07" context frog-inline-run-source
-        "proc a bool -- int do drop 5 end" "5 a print" "" "frogc: a: compile-time stack type mismatch\n" 1 "code/procedures/08" context frog-inline-error-source
-        "proc a int int -- int do + end" "5 a print" "" "frogc: a: compile-time stack underflow\n" 1 "code/procedures/09" context frog-inline-error-source
+        "proc a bool -- int do drop 5 end" "5 a print" "" "frogc: a: stack contract mismatch: expected [bool], actual [int]\n" 1 "code/procedures/08" context frog-inline-error-source
+        "proc a int int -- int do + end" "5 a print" "" "frogc: a: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/09" context frog-inline-error-source
         "proc a x -- y do + end" "5 a print" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/10" context frog-inline-error-source
         "proc a int int -- int do + end" "5 7 a print" "" "12\n" "" 0 "code/procedures/11" context frog-inline-run-source
         "proc ++ int -- int do 1 + end" "5 ++ print" "" "6\n" "" 0 "code/procedures/12" context frog-inline-run-source
+        "proc a -- int bool do true 1 end" "" "" "frogc: procedure output contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/procedures/13" context frog-inline-error-source
+        "proc take int bool -- do drop drop end" "\"keep\" true 1 take drop" "" "frogc: take: stack contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/procedures/14" context frog-inline-error-source
+        "" "int" "" "frogc: procedure output contract mismatch: expected [], actual [type]\n" 1 "code/procedures/15" context frog-inline-error-source
 
         // c_ffi (1)
         "from \"../../stdlib/libc.frog\" import alloc

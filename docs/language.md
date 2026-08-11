@@ -4,6 +4,8 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 
 Compiler errors are written to standard error and start with `frogc:`. When an ordinary source word fails static stack or operand checks, the diagnostic includes that word's source spelling, for example `frogc: +: compile-time stack underflow`. A failure inside macro expansion is attributed to the outer source word that invoked the expansion.
 
+Contract mismatch diagnostics show expected and actual types in brackets. Types are ordered from the lower stack position to the top, matching their order in source signatures. For a failed call, the actual list contains only the relevant top-of-stack suffix; unrelated values below it are omitted. Nominal types defined in imported modules use `<module-path>:<declaration-name>` so distinct same-named types remain distinguishable. Full function-reference and external C contracts show their input and output lists separated by `--`.
+
 ## Values And Literals
 
 - Supported runtime value classes are `int`, `bool`, `ptr`, `String`, nominal record and union handles, nominal function references, and `type`.
