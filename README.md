@@ -21,6 +21,8 @@ Every root program must define exactly one `proc main -- do ... end` with no inp
 
 `build/frogc -h` shows CLI help. With no arguments, `build/frogc` is a compiler filter: it reads Frog source from standard input and writes generated C to standard output. `run` writes reusable scratch artifacts under `build/`, compiles them, and executes the binary. `build` writes the source-adjacent `.c` and executable directly; `build -r` runs the resulting executable.
 
+Prefix a filter, `run`, or `build` invocation with `--debug` to trace compile-time type stacks to standard error. Debug tracing does not change generated C or program output.
+
 # Compiler and bootstrap
 
 The checked fixed-point C bootstrap seed is `compiler/frogc.c`, so a C compiler is sufficient to bootstrap Frog:

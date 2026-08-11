@@ -61,7 +61,8 @@ const program-strings-offset 48 end
 const program-string-count-offset 56 end
 const program-next-nominal-type-offset 72 end
 const program-next-function-type-offset 80 end
-const program-bytes 88 end
+const program-debug-offset 88 end
+const program-bytes 96 end
 
 const string-bytes-offset 0 end
 const string-length-offset 8 end
@@ -442,6 +443,7 @@ proc @program-strings ptr -- ptr do program-strings-offset pointer-field-read en
 proc @program-string-count ptr -- int do program-string-count-offset field-read end
 proc @program-next-nominal-type ptr -- int do program-next-nominal-type-offset field-read end
 proc @program-next-function-type ptr -- int do program-next-function-type-offset field-read end
+proc @program-debug ptr -- bool do program-debug-offset field-read 0 != end
 
 proc !program-root-module ModuleContext ptr -- do let value program do value ptr cast program program-root-module-offset pointer-field-write end end
 proc !program-module-head ModuleContext ptr -- do let value program do value ptr cast program program-module-head-offset pointer-field-write end end
@@ -453,6 +455,12 @@ proc !program-strings ptr ptr -- do program-strings-offset pointer-field-write e
 proc !program-string-count int ptr -- do program-string-count-offset field-write end
 proc !program-next-nominal-type int ptr -- do program-next-nominal-type-offset field-write end
 proc !program-next-function-type int ptr -- do program-next-function-type-offset field-write end
+proc !program-debug bool ptr -- do
+    let value program do
+        if value do 1 else 0 end
+        program program-debug-offset field-write
+    end
+end
 
 proc string-address ptr int -- ptr do
     let program index do program @program-strings index string-bytes * + end
@@ -2971,6 +2979,22 @@ proc emit-error-type-array ptr ptr int int -- do
         "[" emit-error
         program values start count emit-error-type-array-items
         "]" emit-error
+    end
+end
+
+proc cc-debug-tracing ptr -- bool do
+    let cc do cc @cc-program @program-debug cc @cc-emitting ! && end
+end
+
+proc emit-debug-word-stack ptr String -- do
+    let cc phase do
+        "frogc: debug: " emit-error
+        cc @cc-diagnostic-module cc @cc-diagnostic-token token-slice emit-error-bytes
+        ": " emit-error
+        phase emit-error
+        " " emit-error
+        cc @cc-program cc @cc-type-stack 0 cc @cc-type-count emit-error-type-array
+        10 eputc
     end
 end
 
@@ -7601,58 +7625,63 @@ proc compile-ordinary-word ptr int -- do
     let cc token-index do
         cc @cc-diagnostic-active
         let diagnostic-active do
-            if diagnostic-active ! do
-                cc @cc-defining-module cc !cc-diagnostic-module
-                token-index cc !cc-diagnostic-token
-                true cc !cc-diagnostic-active
-            end
-            cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
-            let symbol-index do
-                cc token-index token-resolves-to-macro
-                let is-macro do
-                if is-macro do
-                    cc
-                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
-                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
-                    compile-macro
-                elif cc token-index compile-type-word do
-                elif cc token-index compile-string-word do
-                elif cc token-index compile-record-word do
-                elif cc token-index compile-union-word do
-                elif cc token-index compile-function-word do
-                elif cc token-index compile-intrinsic do
-                else
-                    cc token-index find-local
-                    let local-index do
-                        if local-index 0 >= do
-                            cc token-index local-index compile-local-reference
-                        else
-                            if symbol-index 0 >= do
-                                if cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-constant == do
-                                    cc
-                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
-                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
-                                    compile-constant
-                                elif cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
-                                    "unknown word" fail
-                                else
-                                    cc
-                                    token-index
-                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
-                                    cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
-                                    compile-procedure-call
-                                end
+            diagnostic-active ! cc cc-debug-tracing &&
+            let trace do
+                if diagnostic-active ! do
+                    cc @cc-defining-module cc !cc-diagnostic-module
+                    token-index cc !cc-diagnostic-token
+                    true cc !cc-diagnostic-active
+                end
+                if trace do cc "before" emit-debug-word-stack end
+                cc @cc-scope-module cc @cc-defining-module token-index find-scope-symbol
+                let symbol-index do
+                    cc token-index token-resolves-to-macro
+                    let is-macro do
+                    if is-macro do
+                        cc
+                        cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                        cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
+                        compile-macro
+                    elif cc token-index compile-type-word do
+                    elif cc token-index compile-string-word do
+                    elif cc token-index compile-record-word do
+                    elif cc token-index compile-union-word do
+                    elif cc token-index compile-function-word do
+                    elif cc token-index compile-intrinsic do
+                    else
+                        cc token-index find-local
+                        let local-index do
+                            if local-index 0 >= do
+                                cc token-index local-index compile-local-reference
                             else
-                                if cc token-index compile-prelude-macro ! do
-                                    "unknown word" fail
+                                if symbol-index 0 >= do
+                                    if cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-constant == do
+                                        cc
+                                        cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                                        cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
+                                        compile-constant
+                                    elif cc @cc-scope-module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
+                                        "unknown word" fail
+                                    else
+                                        cc
+                                        token-index
+                                        cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_module
+                                        cc @cc-scope-module symbol-index scope-at @ScopeEntry.definition_index
+                                        compile-procedure-call
+                                    end
+                                else
+                                    if cc token-index compile-prelude-macro ! do
+                                        "unknown word" fail
+                                    end
                                 end
                             end
                         end
                     end
+                    end
                 end
-                end
+                if trace do cc "after" emit-debug-word-stack end
+                if diagnostic-active ! do false cc !cc-diagnostic-active end
             end
-            if diagnostic-active ! do false cc !cc-diagnostic-active end
         end
     end
 end
@@ -7740,8 +7769,23 @@ proc try-compile-constant-add ptr int int -- bool do
             cc @cc-defining-module token-index 1 + token-value-at
             let left right do
                 if left max-int right - <= do
-                    cc type-int type-push
-                    cc left right + emit-push-integer
+                    if cc cc-debug-tracing do
+                        cc @cc-max-type-count
+                        let previous-maximum do
+                            cc token-index compile-token drop
+                            cc token-index 1 + compile-token drop
+                            cc token-index 2 + compile-token drop
+                            if cc @cc-type-count previous-maximum > do
+                                cc @cc-type-count
+                            else
+                                previous-maximum
+                            end
+                            cc !cc-max-type-count
+                        end
+                    else
+                        cc type-int type-push
+                        cc left right + emit-push-integer
+                    end
                     true
                 else
                     false
@@ -8061,8 +8105,8 @@ end
 // END BODY COMPILER
 
 
-proc compile-source ptr int -- do
-    let source source-length do
+proc compile-source ptr int bool -- do
+    let source source-length debug do
         program-bytes alloc
         let program do
             0 ptr cast ModuleContext cast program !program-root-module
@@ -8075,6 +8119,7 @@ proc compile-source ptr int -- do
             0 program !program-token-count
             0 ptr cast program !program-strings
             0 program !program-string-count
+            debug program !program-debug
             0 ptr cast ModuleContext cast program !program-prelude-module
             ModuleContext:alloc
             let ctx do
@@ -8304,12 +8349,15 @@ end
 
 proc cli-usage -- do
     "Usage:
-  frogc < source.frog > source.c
-  frogc <command> [options]
+  frogc [--debug] < source.frog > source.c
+  frogc [--debug] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
+
+Options:
+  --debug  trace compile-time type stacks to standard error
 " emit
 end
 
@@ -8339,8 +8387,8 @@ proc wait-for-child int -- int do
     end
 end
 
-proc compile-frog-source ptr int ptr ptr -- int do
-    let source source-length directory output do
+proc compile-frog-source ptr int ptr ptr bool -- int do
+    let source source-length directory output debug do
         output create-file
         let output-fd do
             if output-fd 0 < do
@@ -8364,7 +8412,7 @@ proc compile-frog-source ptr int ptr ptr -- int do
                                 1 finish-child
                                 1
                             else
-                                source source-length compile-source
+                                source source-length debug compile-source
                                 0 finish-child
                                 0
                             end
@@ -8439,13 +8487,14 @@ proc run-executable ptr -- int do
     end
 end
 
-proc run-source ptr int ptr -- int do
-    let source source-length directory do
+proc run-source ptr int ptr bool -- int do
+    let source source-length directory debug do
         if "build" String.bytes ensure-directory 0 != do
             "unable to create build directory" cli-error
             1
         else
-            source source-length directory "build/frog-run.c" String.bytes compile-frog-source
+            source source-length directory "build/frog-run.c" String.bytes debug
+            compile-frog-source
             let compile-status do
                 if compile-status 0 != do
                     compile-status
@@ -8464,19 +8513,19 @@ proc run-source ptr int ptr -- int do
     end
 end
 
-proc run-file ptr -- int do
-    peek path do read-source-path
+proc run-file ptr bool -- int do
+    let path debug do path read-source-path
         let source source-length do
             path parent-path
             let directory do
-                source source-length directory run-source
+                source source-length directory debug run-source
             end
         end
     end
 end
 
-proc build-file ptr ptr bool -- int do
-    let path requested-output should-run do
+proc build-file ptr ptr bool bool -- int do
+    let path requested-output should-run debug do
         path ".c" replace-path-suffix
         let c-file do
             if requested-output int cast 0 == do
@@ -8489,7 +8538,7 @@ proc build-file ptr ptr bool -- int do
                 let source source-length do
                     path parent-path
                     let directory do
-                        source source-length directory c-file compile-frog-source
+                        source source-length directory c-file debug compile-frog-source
                         let frog-status do
                             if frog-status 0 != do
                                 frog-status
@@ -8513,31 +8562,34 @@ proc build-file ptr ptr bool -- int do
     end
 end
 
-proc run-command ptr int -- do
-    let argv argc do
-        if argc 2 <= do
-            "run requires a source file or -c CODE" cli-usage-error
-        end
-        argv 2 argv-at
-        let argument do
-            if
-                argc 3 ==
-                argument "-h" cstring-equals argument "--help" cstring-equals || &&
-            do
-                "Usage: frogc run [-c CODE | FILE]\n" emit
-            elif argument "-c" cstring-equals do
-                if argc 4 != do
-                    "run -c requires exactly one CODE argument" cli-usage-error
+proc run-command ptr int int bool -- do
+    let argv argc command-index debug do
+        command-index 1 +
+        let argument-index do
+            if argument-index argc >= do
+                "run requires a source file or -c CODE" cli-usage-error
+            end
+            argv argument-index argv-at
+            let argument do
+                if
+                    argc argument-index 1 + ==
+                    argument "-h" cstring-equals argument "--help" cstring-equals || &&
+                do
+                    "Usage: frogc [--debug] run [-c CODE | FILE]\n" emit
+                elif argument "-c" cstring-equals do
+                    if argc argument-index 2 + != do
+                        "run -c requires exactly one CODE argument" cli-usage-error
+                    end
+                    argv argument-index 1 + argv-at
+                    peek code do code cstring-length "." String.bytes debug run-source exit
+                    end
+                elif argument @u8 45 == do
+                    "unknown run option: " argument cli-usage-error-value
+                elif argc argument-index 1 + != do
+                    "run accepts exactly one source file" cli-usage-error
+                else
+                    argument debug run-file exit
                 end
-                argv 3 argv-at
-                peek code do code cstring-length "." String.bytes run-source exit
-                end
-            elif argument @u8 45 == do
-                "unknown run option: " argument cli-usage-error-value
-            elif argc 3 != do
-                "run accepts exactly one source file" cli-usage-error
-            else
-                argument run-file exit
             end
         end
     end
@@ -8556,7 +8608,7 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
                         argument "-h" cstring-equals
                         argument "--help" cstring-equals ||
                     do
-                        "Usage: frogc build [-o FILE] [-r] FILE\n" emit
+                        "Usage: frogc [--debug] build [-o FILE] [-r] FILE\n" emit
                         0 exit
                         null-pointer null-pointer false
                     elif argument "-r" cstring-equals do
@@ -8581,9 +8633,10 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
     end
 end
 
-proc build-command ptr int -- do
-    peek argv argc do 2 null-pointer false parse-build-options
-        peek source output should-run do build-file exit
+proc build-command ptr int int bool -- do
+    let argv argc command-index debug do
+        argv argc command-index 1 + null-pointer false parse-build-options
+        let source output should-run do source output should-run debug build-file exit
         end
     end
 end
@@ -8591,10 +8644,19 @@ end
 proc main -- do
     args
     let argv argc do
-        if argc 1 == do
-            read-source compile-source
-        else
+        if argc 1 > do
             argv 1 argv-at
+            let first do
+                if first "--debug" cstring-equals do 2 true else 1 false end
+            end
+        else
+            1 false
+        end
+        let command-index debug do
+            if command-index argc >= do
+                read-source debug compile-source
+            else
+                argv command-index argv-at
             let command do
                 if
                     command "-h" cstring-equals
@@ -8602,12 +8664,13 @@ proc main -- do
                 do
                     cli-usage
                 elif command "run" cstring-equals do
-                    argv argc run-command
+                    argv argc command-index debug run-command
                 elif command "build" cstring-equals do
-                    argv argc build-command
+                    argv argc command-index debug build-command
                 else
                     "unknown command: " command cli-usage-error-value
                 end
+            end
             end
         end
     end

@@ -3,7 +3,7 @@ from "../stdlib/string.frog" import bytes-equal
 from "../stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
-    subprocess-run completed-process-free
+    subprocess-run subprocess-run-bytes-in completed-process-free
 )
 
 proc frog-cli-argv-1 String FrogTestContext -- ptr do
@@ -37,6 +37,20 @@ proc frog-cli-argv-3 String String String FrogTestContext -- ptr do
             first arguments 1 subprocess-arg
             second arguments 2 subprocess-arg
             third arguments 3 subprocess-arg
+            arguments
+        end
+    end
+end
+
+proc frog-cli-argv-4 String String String String FrogTestContext -- ptr do
+    let first second third fourth context do
+        5 subprocess-argv
+        let arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+            first arguments 1 subprocess-arg
+            second arguments 2 subprocess-arg
+            third arguments 3 subprocess-arg
+            fourth arguments 4 subprocess-arg
             arguments
         end
     end
@@ -88,24 +102,78 @@ proc frog-cli-case-3 String String String String String int String FrogTestConte
     end
 end
 
+proc frog-cli-case-4 String String String String String String int String FrogTestContext -- do
+    let first second third fourth expected-stdout expected-stderr expected-status name context do
+        context frog-count-case
+        first second third fourth context frog-cli-argv-4
+        expected-stdout expected-stderr expected-status name context frog-run-cli
+    end
+end
+
+proc frog-cli-filter-debug-invariant FrogTestContext -- do
+    let context do
+        "proc main -- do 1 2 + print end
+"
+        "frogc: debug: +: before [int int]
+frogc: debug: +: after [int]
+frogc: debug: print: before [int]
+frogc: debug: print: after []
+"
+        let source expected-debug do
+            context frog-count-case
+            1 subprocess-argv
+            let normal-arguments do
+                context @FrogTestContext.compiler normal-arguments 0 subprocess-arg-pointer
+                2 subprocess-argv
+                let debug-arguments do
+                    context @FrogTestContext.compiler debug-arguments 0 subprocess-arg-pointer
+                    "--debug" debug-arguments 1 subprocess-arg
+                    normal-arguments source String.bytes source String.len "" subprocess-run-bytes-in
+                    debug-arguments source String.bytes source String.len "" subprocess-run-bytes-in
+                    let normal-result debug-result do
+                        normal-result @CompletedProcess.returncode 0 ==
+                        normal-result @CompletedProcess.stderr_len 0 == &&
+                        debug-result @CompletedProcess.returncode 0 == &&
+                        normal-result @CompletedProcess.stdout normal-result @CompletedProcess.stdout_len
+                        debug-result @CompletedProcess.stdout debug-result @CompletedProcess.stdout_len bytes-equal &&
+                        debug-result @CompletedProcess.stderr debug-result @CompletedProcess.stderr_len
+                        expected-debug String.bytes expected-debug String.len bytes-equal &&
+                        "cli/debug-filter-invariant" context frog-check
+                        normal-result completed-process-free
+                        debug-result completed-process-free
+                    end
+                    debug-arguments subprocess-argv-free
+                end
+                normal-arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
 proc run-cli-cases FrogTestContext -- do
     let context do
         "-h" "Usage:
-  frogc < source.frog > source.c
-  frogc <command> [options]
+  frogc [--debug] < source.frog > source.c
+  frogc [--debug] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
+
+Options:
+  --debug  trace compile-time type stacks to standard error
 " "" 0 "cli/help-short" context frog-cli-case-1
 
         "--help" "Usage:
-  frogc < source.frog > source.c
-  frogc <command> [options]
+  frogc [--debug] < source.frog > source.c
+  frogc [--debug] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
+
+Options:
+  --debug  trace compile-time type stacks to standard error
 " "" 0 "cli/help-long" context frog-cli-case-1
 
         "run" "test/cases/cli/missing.frog" ""
@@ -125,5 +193,36 @@ Try `frogc --help`.
 
         "build" "-r" "test/cases/cli/build_run.frog" "42
 " "" 0 "cli/build-run" context frog-cli-case-3
+
+        "--debug" "run" "-c" "proc main -- do 1 2 + print end" "3
+" "frogc: debug: +: before [int int]
+frogc: debug: +: after [int]
+frogc: debug: print: before [int]
+frogc: debug: print: after []
+" 0 "cli/debug-run-optimized" context frog-cli-case-4
+
+        "--debug" "run" "-c" "proc main -- do 1 dup ? + print end" "2
+" "frogc: debug: dup: before [int]
+frogc: debug: dup: after [int int]
+frogc: debug: ?: before [int int]
+frogc: debug: ?: after [int int]
+frogc: debug: +: before [int int]
+frogc: debug: +: after [int]
+frogc: debug: print: before [int]
+frogc: debug: print: after []
+" 0 "cli/debug-run-macro" context frog-cli-case-4
+
+        "--debug" "run" "-c" "proc main -- do true 1 + end" "" "frogc: debug: +: before [bool int]
+frogc: +: invalid operand types for pointer/integer arithmetic
+" 1 "cli/debug-run-error" context frog-cli-case-4
+
+        "--debug" "build" "-r" "test/cases/cli/build_run.frog" "42
+" "frogc: debug: +: before [int int]
+frogc: debug: +: after [int]
+frogc: debug: print: before [int]
+frogc: debug: print: after []
+" 0 "cli/debug-build-run" context frog-cli-case-4
+
+        context frog-cli-filter-debug-invariant
     end
 end

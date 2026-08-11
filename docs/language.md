@@ -25,6 +25,8 @@ Stack effects are written with inputs before `--` and outputs after it. For exam
 
 The rightmost stack item is the top of the stack. For example, after `1 2 3`, the stack is `1 2 3`, with `3` on top.
 
+`frogc --debug` traces the complete compile-time type stack immediately before and after each outer source word. The trace is written to standard error, lists types from the bottom of the stack to the top, and does not change generated C or program output. Procedure calls, intrinsics, macros, local and constant references, type words, and nominal operations are traced. Literals, declarations, control keywords, `let`, and `peek` are not separate trace entries. A macro reports its aggregate effect under the caller's spelling; its expansion details are not exposed. If a word fails, its `before` entry precedes the normal diagnostic and there is no `after` entry.
+
 ## Procedures
 
 Procedures use explicit stack-effect signatures:
