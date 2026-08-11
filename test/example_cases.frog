@@ -186,6 +186,8 @@ false
         "examples/10_tagged_unions.frog" "examples" "5
 E
 " "" 0 "" "" "" "examples/10_tagged_unions" context frog-run-case
-        "examples/11_c_ffi.frog" "examples" "42\n" "" 0 "" "" "" "examples/11_c_ffi" context frog-run-case
+        "examples/11_c_ffi.frog" "examples" "42
+4
+" "" 0 "" "" "" "examples/11_c_ffi" context frog-run-case
     end
 end

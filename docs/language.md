@@ -139,21 +139,25 @@ External C functions use an explicit Frog name, C linker symbol, and scalar ABI 
 from "stdlib/libc.frog" import alloc
 
 extern magnitude abs c-int -- c-int end
+extern length strlen c-ptr -- c-size end
 extern release free c-ptr -- end
 
 proc main -- do
     0 9 - magnitude print
+    "frog" String.bytes length print
     8 alloc release
 end
 ```
 
-The supported ABI types are `c-int` (Frog `int`, C `int`), `c-bool` (Frog `bool`, C `int` normalized to zero or one), and `c-ptr` (Frog `ptr`, C `void *`). An external function may consume any number of values and return zero or one value. It cannot be variadic.
+The supported ABI types are `c-int` (Frog `int`, C `int`), `c-bool` (Frog `bool`, C `int` normalized to zero or one), `c-ptr` (Frog `ptr`, C `void *`), `c-size` (Frog `int`, C `size_t`), and `c-ssize` (Frog `int`, C `ssize_t`). An external function may consume any number of values and return zero or one value.
 
-The C symbol must be an ASCII C identifier that is not a C11 keyword or a Frog-reserved name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. The symbol must be available when the program is linked. Frog does not load libraries dynamically or process C headers.
+An `extern` reuses a declaration already available from the generated C preamble and emits no competing prototype. Its Frog contract has a fixed arity, but the existing C declaration may be variadic. This form is intended for functions and function-like macros declared by the standard C and POSIX headers included in generated C. `extern prototype` instead emits a matching non-variadic C prototype for a symbol supplied by another translation unit without an included declaration. Frog does not load libraries dynamically or include arbitrary user headers.
 
-External functions use normal Frog name resolution and static stack-contract checking. They can be imported, aliased, and reexported like Frog procedures. Multiple Frog names may bind the same C symbol only when every declaration has the same ABI contract.
+The C symbol must be an ASCII C identifier that is not a C11 keyword or a Frog-reserved name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. The symbol must be available when the program is linked.
 
-The [C FFI example](../examples/11_c_ffi.frog) uses symbols from the C standard library. To provide symbols from another C source file, generate C and link both sources:
+External functions use normal Frog name resolution and static stack-contract checking. They can be imported, aliased, and reexported like Frog procedures. Multiple Frog names may bind the same C symbol only when every declaration has the same ABI contract and declaration mode.
+
+The [C FFI example](../examples/11_c_ffi.frog) uses symbols from the C standard library. A symbol supplied by another C source file without an included declaration must use `extern prototype`. Generate C and link both sources:
 
 ```sh
 build/frogc < program.frog > program.c
@@ -291,7 +295,7 @@ end
 ## Language Constructs
 
 - `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
-- `extern frog-name c-symbol <c-inputs> -- [c-output] end` declares a non-variadic C function with zero or one output.
+- `extern [prototype] frog-name c-symbol <c-inputs> -- [c-output] end` declares a C function with zero or one output. The optional modifier emits a non-variadic C prototype; plain `extern` reuses an existing declaration.
 - `record Name field Type ... end` defines a nominal record.
 - `union Name case Variant [PayloadType] ... end` defines a nominal tagged union.
 - `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract.

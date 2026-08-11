@@ -227,12 +227,25 @@ end
         "proc take int bool -- do drop drop end" "\"keep\" true 1 take drop" "" "frogc: take: stack contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/procedures/14" context frog-inline-error-source
         "" "int" "" "frogc: procedure output contract mismatch: expected [], actual [type]\n" 1 "code/procedures/15" context frog-inline-error-source
 
-        // c_ffi (1)
+        // c_ffi (6)
         "from \"../../stdlib/libc.frog\" import alloc
 
 extern magnitude abs c-int -- c-int end
 extern release free c-ptr -- end" "0 9 - magnitude print
 8 alloc release" "" "9\n" "" 0 "code/c_ffi/01" context frog-inline-run-source
+        "extern magnitude abs c-int -- c-int end" "0 9 - magnitude print" "" "9\n" "" 0 "code/c_ffi/02_header_backed_abs" context frog-inline-run-source
+        "extern allocate malloc c-size -- c-ptr end
+extern release free c-ptr -- end" "8 allocate release" "" "" "" 0 "code/c_ffi/03_c_size_input" context frog-inline-run-source
+        "extern length strlen c-ptr -- c-size end" "\"frog\" String.bytes length print" "" "4\n" "" 0 "code/c_ffi/04_c_size_output" context frog-inline-run-source
+        "extern write-fd write c-int c-ptr c-size -- c-ssize end" "1 \"ok\\n\" dup String.bytes swap String.len write-fd print" "" "ok\n3\n" "" 0 "code/c_ffi/05_c_ssize_output" context frog-inline-run-source
+        "extern open-file open c-ptr c-int c-int -- c-int end
+extern close-file close c-int -- end" "\"/dev/null\" String.bytes 1 0 open-file
+if dup 0 >= do
+    close-file true
+else
+    drop false
+end
+print" "" "true\n" "" 0 "code/c_ffi/06_variadic_open" context frog-inline-run-source
 
         // casts_and_memory (19)
         "5 int ? cast ? print" "5\n" "" 0 "code/casts_and_memory/01" context frog-inline-run-body

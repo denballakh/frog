@@ -20,6 +20,12 @@ const type-none 0 end
 const type-nominal-base 1000 end
 const type-function-base 1 32 << end
 
+const c-abi-int 1 end
+const c-abi-bool 2 end
+const c-abi-ptr 3 end
+const c-abi-size 4 end
+const c-abi-ssize 5 end
+
 const max-int 1 62 << 1 62 << 1 - + end
 const min-int 0 max-int - 1 - end
 
@@ -49,7 +55,8 @@ const proc-index-offset 64 end
 const proc-global-id-offset 72 end
 const proc-external-offset 80 end
 const proc-c-symbol-token-offset 88 end
-const proc-bytes 96 end
+const proc-prototype-offset 96 end
+const proc-bytes 104 end
 
 const program-root-module-offset 0 end
 const program-module-head-offset 8 end
@@ -144,6 +151,7 @@ record ModuleContext
     procs ptr
     proc_count int
     types ptr
+    c_abi_types ptr
     type_count int
     lex_index int
     lex_line int
@@ -870,11 +878,19 @@ proc proc-index-at ModuleContext int -- int do proc-index-offset proc-field end
 proc proc-global-id-at ModuleContext int -- int do proc-global-id-offset proc-field end
 proc proc-external-at ModuleContext int -- bool do proc-external-offset proc-field 0 != end
 proc proc-c-symbol-token-at ModuleContext int -- int do proc-c-symbol-token-offset proc-field end
+proc proc-prototype-at ModuleContext int -- bool do proc-prototype-offset proc-field 0 != end
 
 proc set-proc-external bool ModuleContext int -- do
     let value ctx index do
         if value do 1 else 0 end
         ctx index proc-external-offset set-proc-field
+    end
+end
+
+proc set-proc-prototype bool ModuleContext int -- do
+    let value ctx index do
+        if value do 1 else 0 end
+        ctx index proc-prototype-offset set-proc-field
     end
 end
 
@@ -1131,6 +1147,18 @@ proc add-type ModuleContext int -- do
     end
 end
 
+proc c-abi-type-at ModuleContext int -- int do
+    let ctx index do
+        ctx @ModuleContext.c_abi_types index cell-bytes * field-read
+    end
+end
+
+proc add-c-abi-type ModuleContext int -- do
+    let ctx value do
+        value ctx @ModuleContext.c_abi_types ctx @ModuleContext.type_count cell-bytes * field-write
+    end
+end
+
 proc require-word ModuleContext int -- do
     let ctx token-index do
         if ctx token-index token-kind-at token-word != do
@@ -1155,6 +1183,7 @@ proc reserved-name ModuleContext int -- bool do
         ctx token-index "import" token-equals ||
         ctx token-index "as" token-equals ||
         ctx token-index "extern" token-equals ||
+        ctx token-index "prototype" token-equals ||
         ctx token-index "record" token-equals ||
         ctx token-index "union" token-equals ||
         ctx token-index "case" token-equals ||
@@ -1166,15 +1195,35 @@ end
 proc parse-c-abi-type-token ModuleContext int -- int do
     peek ctx token-index do require-word
         if ctx token-index "c-int" token-equals do
-            type-int
+            c-abi-int
         elif ctx token-index "c-bool" token-equals do
-            type-bool
+            c-abi-bool
         elif ctx token-index "c-ptr" token-equals do
-            type-ptr
+            c-abi-ptr
+        elif ctx token-index "c-size" token-equals do
+            c-abi-size
+        elif ctx token-index "c-ssize" token-equals do
+            c-abi-ssize
         else
             "unknown C ABI type" fail
             0
         end
+    end
+end
+
+proc c-abi-semantic-type int -- int do
+    let abi-type do
+        if abi-type c-abi-bool == do type-bool
+        elif abi-type c-abi-ptr == do type-ptr
+        else type-int
+        end
+    end
+end
+
+proc add-external-type ModuleContext int -- do
+    let ctx abi-type do
+        ctx abi-type add-c-abi-type
+        abi-type c-abi-semantic-type ctx swap add-type
     end
 end
 
@@ -2339,6 +2388,7 @@ proc allocate-proc ModuleContext int bool -- int do
             proc-index ctx proc-index proc-index-offset set-proc-field
             ctx @ModuleContext.program program-allocate-proc-id ctx proc-index proc-global-id-offset set-proc-field
             external ctx proc-index set-proc-external
+            false ctx proc-index set-proc-prototype
             proc-index
         end
     end
@@ -2423,9 +2473,14 @@ end
 proc scan-one-extern ModuleContext int -- int do
     let ctx extern-token do
         extern-token 1 +
-        let name-token do
+        let first-token do
+            if first-token ctx @ModuleContext.token_count >= do "expected procedure name" fail end
+            if ctx first-token "prototype" token-equals do true first-token 1 + else false first-token end
+        end
+        let prototype name-token do
             ctx name-token true allocate-proc
             let proc-index do
+                prototype ctx proc-index set-proc-prototype
                 if ctx name-token "main" token-equals do
                     "main cannot be external" fail
                 end
@@ -2451,7 +2506,7 @@ proc scan-one-extern ModuleContext int -- int do
                         end
                     do
                         let token-index count do
-                            ctx token-index parse-c-abi-type-token ctx swap add-type
+                            ctx token-index parse-c-abi-type-token ctx swap add-external-type
                             token-index 1 + count 1 +
                         end
                     end
@@ -2474,7 +2529,7 @@ proc scan-one-extern ModuleContext int -- int do
                         end
                     do
                         let token-index count do
-                            ctx token-index parse-c-abi-type-token ctx swap add-type
+                            ctx token-index parse-c-abi-type-token ctx swap add-external-type
                             token-index 1 + count 1 +
                         end
                     end
@@ -3926,6 +3981,7 @@ proc initialize-module-source ModuleContext ptr int -- do
         ctx @ModuleContext.token_count 1 + macro-bytes * alloc ctx !ModuleContext.macros
         ctx @ModuleContext.token_count 1 + constant-bytes * alloc ctx !ModuleContext.constants
         ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.types
+        ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.c_abi_types
         ctx @ModuleContext.token_count 1 + ImportEntry:sizeof * alloc ctx !ModuleContext.imports
         ctx @ModuleContext.token_count 1 + ScopeEntry:sizeof * alloc ctx !ModuleContext.scope
         ctx @ModuleContext.token_count 1 + record-bytes * alloc ctx !ModuleContext.records
@@ -5040,8 +5096,8 @@ proc external-inputs-equal ModuleContext int ModuleContext int -- bool do
                 let input-index equal do
                     input-index 1 +
                     equal
-                    first first first-index proc-input-start-at input-index + type-at
-                    second second second-index proc-input-start-at input-index + type-at
+                    first first first-index proc-input-start-at input-index + c-abi-type-at
+                    second second second-index proc-input-start-at input-index + c-abi-type-at
                     == &&
                 end
             end
@@ -5057,8 +5113,8 @@ proc external-outputs-equal ModuleContext int ModuleContext int -- bool do
         elif first first-index proc-output-count-at 0 == do
             true
         else
-            first first first-index proc-output-start-at type-at
-            second second second-index proc-output-start-at type-at
+            first first first-index proc-output-start-at c-abi-type-at
+            second second second-index proc-output-start-at c-abi-type-at
             ==
         end
     end
@@ -5067,6 +5123,16 @@ end
 proc external-contracts-equal ModuleContext int ModuleContext int -- bool do
     peek first first-index second second-index do external-inputs-equal
         first first-index second second-index external-outputs-equal &&
+    end
+end
+
+proc external-declaration-modes-match ModuleContext int ModuleContext int -- bool do
+    let first first-index second second-index do
+        if first first-index proc-prototype-at do
+            second second-index proc-prototype-at
+        else
+            second second-index proc-prototype-at !
+        end
     end
 end
 
@@ -5146,12 +5212,16 @@ end
 
 proc emit-error-c-abi-type-name int -- do
     let value-type do
-        if value-type type-int == do
+        if value-type c-abi-int == do
             "c-int" emit-error
-        elif value-type type-bool == do
+        elif value-type c-abi-bool == do
             "c-bool" emit-error
-        elif value-type type-ptr == do
+        elif value-type c-abi-ptr == do
             "c-ptr" emit-error
+        elif value-type c-abi-size == do
+            "c-size" emit-error
+        elif value-type c-abi-ssize == do
+            "c-ssize" emit-error
         else
             "unknown" emit-error
         end
@@ -5165,7 +5235,7 @@ proc emit-error-c-abi-type-array-items ModuleContext int int -- do
             dup
             let index do
                 if index 0 > do " " emit-error end
-                module start index + type-at emit-error-c-abi-type-name
+                module start index + c-abi-type-at emit-error-c-abi-type-name
             end
             1 +
         end
@@ -5210,7 +5280,10 @@ proc require-external-compatible-with-module ModuleContext int ModuleContext int
             let other-index do
                 if other other-index proc-external-at do
                     if ctx proc-index other other-index external-symbols-equal do
-                        if ctx proc-index other other-index external-contracts-equal ! do
+                        if ctx proc-index other other-index external-declaration-modes-match ! do
+                            "frogc: incompatible declaration modes for C symbol\n" emit-error
+                            1 exit
+                        elif ctx proc-index other other-index external-contracts-equal ! do
                             ctx proc-index other other-index fail-external-contract
                         end
                     end
@@ -5523,12 +5596,16 @@ end
 
 proc emit-c-abi-type int -- do
     let value-type do
-        if value-type type-int == do
+        if value-type c-abi-int == do
             "int" emit
-        elif value-type type-bool == do
+        elif value-type c-abi-bool == do
             "int" emit
-        elif value-type type-ptr == do
+        elif value-type c-abi-ptr == do
             "void *" emit
+        elif value-type c-abi-size == do
+            "size_t" emit
+        elif value-type c-abi-ssize == do
+            "ssize_t" emit
         else
             "internal unknown C ABI type" fail
         end
@@ -5547,7 +5624,7 @@ proc emit-c-parameter-types ModuleContext int int -- do
             if input-index 0 != do ", " emit end
             ctx
             ctx proc-index proc-input-start-at input-index +
-            type-at emit-c-abi-type
+            c-abi-type-at emit-c-abi-type
             ctx proc-index input-index 1 + emit-c-parameter-types
         end
     end
@@ -5559,7 +5636,7 @@ proc emit-external-c-prototype ModuleContext int -- do
         if ctx proc-index proc-output-count-at 0 == do
             "void" emit
         else
-            ctx ctx proc-index proc-output-start-at type-at emit-c-abi-type
+            ctx ctx proc-index proc-output-start-at c-abi-type-at emit-c-abi-type
         end
         " " emit ctx proc-index emit-c-symbol "(" emit
         if ctx proc-index proc-input-count-at 0 == do
@@ -5769,7 +5846,7 @@ end
 
 proc emit-c-prototype ModuleContext int -- do
     let ctx proc-index do
-        if ctx proc-index proc-external-at do
+        if ctx proc-index proc-external-at ctx proc-index proc-prototype-at && do
             ctx proc-index emit-external-c-prototype
         end
         ctx proc-index emit-proc-signature ";\n" emit
@@ -7900,7 +7977,7 @@ end
 
 proc proc-input-type-at ModuleContext int int -- int do
     let ctx proc-index input-index do
-        ctx ctx proc-index proc-input-start-at input-index + type-at
+        ctx ctx proc-index proc-input-start-at input-index + c-abi-type-at
     end
 end
 
@@ -7911,12 +7988,16 @@ end
 proc emit-external-argument ModuleContext int int -- do
     peek ctx proc-index input-index do proc-input-type-at
         let input-type do
-            if input-type type-int == do
+            if input-type c-abi-int == do
                 "(int)" emit input-index emit-ffi-argument-name
-            elif input-type type-bool == do
+            elif input-type c-abi-bool == do
                 "(int)(" emit input-index emit-ffi-argument-name " != 0)" emit
-            elif input-type type-ptr == do
+            elif input-type c-abi-ptr == do
                 "(void *)(intptr_t)" emit input-index emit-ffi-argument-name
+            elif input-type c-abi-size == do
+                "(size_t)" emit input-index emit-ffi-argument-name
+            elif input-type c-abi-ssize == do
+                "(ssize_t)" emit input-index emit-ffi-argument-name
             else
                 "internal unknown C ABI argument type" fail
             end
@@ -7946,18 +8027,26 @@ proc compile-external-procedure ModuleContext int -- do
         if ctx proc-index proc-output-count-at 0 == do
             "  " emit ctx proc-index emit-external-call-expression ";\n" emit
         else
-            ctx ctx proc-index proc-output-start-at type-at
+            ctx ctx proc-index proc-output-start-at c-abi-type-at
             let output-type do
-                if output-type type-int == do
+                if output-type c-abi-int == do
                     "  return (Cell)" emit
                     ctx proc-index emit-external-call-expression
                     ";\n" emit
-                elif output-type type-bool == do
+                elif output-type c-abi-bool == do
                     "  return (Cell)(" emit
                     ctx proc-index emit-external-call-expression
                     " != 0);\n" emit
-                elif output-type type-ptr == do
+                elif output-type c-abi-ptr == do
                     "  return (Cell)(intptr_t)" emit
+                    ctx proc-index emit-external-call-expression
+                    ";\n" emit
+                elif output-type c-abi-size == do
+                    "  return (Cell)" emit
+                    ctx proc-index emit-external-call-expression
+                    ";\n" emit
+                elif output-type c-abi-ssize == do
+                    "  return (Cell)" emit
                     ctx proc-index emit-external-call-expression
                     ";\n" emit
                 else

@@ -1,12 +1,12 @@
 from "../../../../stdlib/libc.frog" import alloc
 
-extern ffi-answer ffi_test_answer -- c-int end
-extern ffi-mix ffi_test_mix c-int c-bool c-ptr -- c-int end
-extern ffi-truth ffi_test_truth c-int -- c-bool end
-extern ffi-identity ffi_test_identity c-ptr -- c-ptr end
+extern prototype ffi-answer ffi_test_answer -- c-int end
+extern prototype ffi-mix ffi_test_mix c-int c-bool c-ptr -- c-int end
+extern prototype ffi-truth ffi_test_truth c-int -- c-bool end
+extern prototype ffi-identity ffi_test_identity c-ptr -- c-ptr end
 extern ffi-free free c-ptr -- end
-extern ffi-answer-again ffi_test_answer -- c-int end
-extern legacy-p0 p0 -- c-int end
+extern prototype ffi-answer-again ffi_test_answer -- c-int end
+extern prototype legacy-p0 p0 -- c-int end
 
 proc main -- do
     ffi-answer print

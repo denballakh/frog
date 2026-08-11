@@ -22,7 +22,7 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\b(proc|extern|record|union|case|fn|macro|const|from|import|as|if|elif|else|while|do|end|let|peek)\\b",
+          "match": "\\b(proc|extern|prototype|record|union|case|fn|macro|const|from|import|as|if|elif|else|while|do|end|let|peek)\\b",
           "name": "keyword.control.frog"
         }
       ]
@@ -30,7 +30,7 @@
     "types": {
       "patterns": [
         {
-          "match": "\\b(String|int|bool|ptr|c-int|c-bool|c-ptr)\\b",
+          "match": "\\b(String|int|bool|ptr|c-int|c-bool|c-ptr|c-size|c-ssize)\\b",
           "name": "storage.type.frog"
         }
       ]

@@ -1,9 +1,11 @@
 from "../stdlib/libc.frog" import alloc
 
 extern magnitude abs c-int -- c-int end
+extern length strlen c-ptr -- c-size end
 extern release free c-ptr -- end
 
 proc main -- do
     0 42 - magnitude print
+    "frog" String.bytes length print
     32 alloc release
 end

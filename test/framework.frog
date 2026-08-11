@@ -28,7 +28,7 @@ const generated-c-check-constants 1 4 << end
 const generated-c-check-procedure-symbols 1 5 << end
 const generated-c-check-strings 1 6 << end
 const generated-c-required-checks 1 7 << 1 - end
-const expected-test-cases 442 end
+const expected-test-cases 448 end
 
 proc frog-test-context ptr ptr -- FrogTestContext do
     let compiler executable do
@@ -348,6 +348,10 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
             "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n"
             "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n  return (Cell)ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(intptr_t)frog_arg_2);\n}\n"
             "generated-c/c-ffi exact body" context frog-check-exact-function
+            generated-c-check-c-ffi context frog-mark-generated-check
+        elif name "code/c_ffi/02_header_backed_abs" string-equal do
+            bytes length "int abs(int);" String.bytes "int abs(int);" String.len bytes-contain !
+            "generated-c/c-ffi header-backed abs has no prototype" context frog-check
             generated-c-check-c-ffi context frog-mark-generated-check
         elif name "semantics/functions_layout" string-equal do
             bytes length "Cell frog_proc_0_before_2Dinc(void);"

@@ -37,7 +37,7 @@ proc inc int -- int do 1 + end
 proc unit -- do end
 proc add int int -- int do + end
 proc duplicate int -- int int do dup end
-extern ffi-answer ffi_test_answer -- c-int end
+extern prototype ffi-answer ffi_test_answer -- c-int end
 proc box-value Box -- int do @Box.value end
 proc maybe-value Maybe -- int do Maybe.some end
 proc apply Mapper int -- int do
