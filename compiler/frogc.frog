@@ -5915,10 +5915,18 @@ end
 
 proc emit-proc-name-byte int -- do
     let byte do
-        if byte is-ascii-letter byte is-digit || do
+        if byte is-ascii-letter byte is-digit || byte '_' == || do
             byte putc
+        elif byte '-' == byte ':' == || do
+            '_' putc
+        elif
+            byte '!' ==
+            byte '@' == ||
+            byte '?' == ||
+            byte '~' == ||
+        do
         else
-            95 putc
+            '_' putc
             byte 16 / emit-uppercase-hex-digit
             byte 16 % emit-uppercase-hex-digit
         end

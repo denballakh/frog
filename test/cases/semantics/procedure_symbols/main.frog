@@ -1,5 +1,10 @@
 proc alpha9 -- do end
 proc with_under -- do end
+proc same-name -- do end
+proc same:name -- do end
+proc @getter? -- do end
+proc !setter~ -- do end
+proc !@?~ -- do end
 proc ++ -- do end
 proc café -- do end
 

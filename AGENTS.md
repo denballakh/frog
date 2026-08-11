@@ -156,7 +156,10 @@ Commands:
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
 - Generated procedures use normal C parameters and return values. A measurement pass determines maximum operand depth, then emission uses scalar `Cell frog_value_N` locals for those positions; generated code has no runtime operand-stack object or per-procedure operand-stack array.
 - Generated C emits source-requested headers, C-type assertions, and mechanical C-binding wrappers before compiler-private runtime headers. This ordering ensures a `c-call` or `c-value` cannot rely on declarations leaked by the runtime implementation.
-- Generated C procedure names use `frog_proc_<global-id>_<encoded-source-name>`. ASCII letters and digits remain readable; every other UTF-8 byte, including `_`, is encoded as uppercase `_HH`. Numeric global IDs remain the function-reference dispatch identity.
+- Generated C procedure names use `frog_proc_<global-id>_<source-name>`. ASCII
+  letters, digits, and `_` remain readable; `-` and `:` become `_`; `!`, `@`,
+  `?`, and `~` are omitted; every other UTF-8 byte is encoded as uppercase
+  `_HH`. Numeric global IDs remain the function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
 - The compiler executable is kept under `build/` beside the repository's

@@ -355,8 +355,8 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
             bytes length "frog_c_type_" String.bytes "frog_c_type_" String.len bytes-contain !
             "generated-c/c-ffi no generated C type typedef" context frog-check
             bytes length
-            "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n"
-            "Cell frog_proc_1_ffi_2Dmix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n  return (Cell)(int)(ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(intptr_t)frog_arg_2));\n}\n"
+            "Cell frog_proc_1_ffi_mix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n"
+            "Cell frog_proc_1_ffi_mix(Cell frog_arg_0, Cell frog_arg_1, Cell frog_arg_2) {\n  return (Cell)(int)(ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(intptr_t)frog_arg_2));\n}\n"
             "generated-c/c-ffi raw type wrapper" context frog-check-exact-function
             bytes length "int ffi_test_answer(void);" String.bytes "int ffi_test_answer(void);" String.len bytes-contain !
             "generated-c/c-ffi helper API comes from header" context frog-check
@@ -366,7 +366,7 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
             "generated-c/c-ffi abs has no redundant declaration" context frog-check
             generated-c-check-c-ffi context frog-mark-generated-check
         elif name "semantics/functions_layout" string-equal do
-            bytes length "Cell frog_proc_0_before_2Dinc(void);"
+            bytes length "Cell frog_proc_0_before_inc(void);"
             "generated-c/functions before-inc signature" context frog-check-contains
             bytes length "void frog_proc_2_unit(void);"
             "generated-c/functions unit signature" context frog-check-contains
@@ -465,13 +465,23 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
         elif name "semantics/procedure_symbols" string-equal do
             bytes length "void frog_proc_0_alpha9(void);"
             "generated-c/procedure-symbol alpha9" context frog-check-contains
-            bytes length "void frog_proc_1_with_5Funder(void);"
+            bytes length "void frog_proc_1_with_under(void);"
             "generated-c/procedure-symbol underscore" context frog-check-contains
-            bytes length "void frog_proc_2__2B_2B(void);"
+            bytes length "void frog_proc_2_same_name(void);"
+            "generated-c/procedure-symbol dash" context frog-check-contains
+            bytes length "void frog_proc_3_same_name(void);"
+            "generated-c/procedure-symbol colon" context frog-check-contains
+            bytes length "void frog_proc_4_getter(void);"
+            "generated-c/procedure-symbol getter sigils dropped" context frog-check-contains
+            bytes length "void frog_proc_5_setter(void);"
+            "generated-c/procedure-symbol setter sigils dropped" context frog-check-contains
+            bytes length "void frog_proc_6_(void);"
+            "generated-c/procedure-symbol empty readable suffix" context frog-check-contains
+            bytes length "void frog_proc_7__2B_2B(void);"
             "generated-c/procedure-symbol operators" context frog-check-contains
-            bytes length "void frog_proc_3_caf_C3_A9(void);"
+            bytes length "void frog_proc_8_caf_C3_A9(void);"
             "generated-c/procedure-symbol utf8" context frog-check-contains
-            bytes length "void frog_proc_4_main(void);"
+            bytes length "void frog_proc_9_main(void);"
             "generated-c/procedure-symbol main" context frog-check-contains
             generated-c-check-procedure-symbols context frog-mark-generated-check
         end
