@@ -98,7 +98,7 @@ Useful direct commands:
 - Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
 - `just test` runs the Frog-owned corpus and then the small Python host-policy runner. Do not run its components concurrently because they share generated build files.
 - Successful Frog cases compile through stdin-to-stdout mode with strict C11 warnings before execution. Cases check exact stdout, stderr, and status; compiler failures ignore partial C on stdout but require the exact diagnostic and status 1.
-- The Frog runner checks that all 429 registered case helpers execute. Update `expected-test-cases` only when intentionally adding or removing a case.
+- The Frog runner checks that all 442 registered case helpers execute. Update `expected-test-cases` only when intentionally adding or removing a case.
 - `test/inline_cases.frog` materializes concise bodies inside an explicit `proc main -- do ... end`; declaration-order and malformed structural cases use the corresponding whole-source helper.
 - Multi-file import cases are checked-in fixtures under `test/cases/import_cases/`; their manifest is `test/import_cases.frog`.
 - `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, and lexical symlink-root policy. `just frog-regressions` invokes it with `--frog-only`, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
