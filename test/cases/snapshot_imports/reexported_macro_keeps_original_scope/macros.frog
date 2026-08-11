@@ -1,0 +1,3 @@
+
+            proc helper int -- int do 10 + end
+            macro bump helper end

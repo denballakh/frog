@@ -1,0 +1,6 @@
+proc main -- do
+    // imports are collected before bodies are compiled
+    10 inc print
+end
+
+from "math.frog" import inc

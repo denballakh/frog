@@ -1,0 +1,4 @@
+
+            99 print
+
+            proc value -- int do 7 end

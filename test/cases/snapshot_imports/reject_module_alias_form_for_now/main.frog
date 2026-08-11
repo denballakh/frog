@@ -1,0 +1,4 @@
+import "math.frog" as math
+
+proc main -- do
+end

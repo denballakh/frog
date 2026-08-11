@@ -1,0 +1,5 @@
+from "pkg/use.frog" import value
+
+proc main -- do
+    value print
+end

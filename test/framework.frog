@@ -667,7 +667,7 @@ end
 
 proc frog-check-compile-error CompletedProcess String String FrogTestContext -- do
     let result expected-stderr name context do
-        result @CompletedProcess.returncode 0 !=
+        result @CompletedProcess.returncode 1 ==
         result @CompletedProcess.stderr result @CompletedProcess.stderr_len
         expected-stderr String.bytes expected-stderr String.len bytes-equal &&
         name context @FrogTestContext.suite check
@@ -724,6 +724,172 @@ proc frog-stable-string-symbol FrogTestContext -- do
             before completed-process-free
             after completed-process-free
         end
+    end
+end
+
+proc frog-inline-append-body String ByteBuffer -- do
+    let body source do
+        0
+        while peek offset do offset body String.len < end do
+            let offset do
+                body String.bytes offset + body String.len offset - frog-line-length
+                let line-length do
+                    if line-length 0 > do
+                        "    " source byte-buffer-append-string
+                        body String.bytes offset + line-length source byte-buffer-append-bytes
+                    end
+                    "\n" source byte-buffer-append-string
+                    offset line-length 1 + +
+                end
+            end
+        end
+        drop
+    end
+end
+
+proc frog-inline-materialize String String String -- ByteBuffer do
+    let before body after do
+        0 byte-buffer-new
+        let source do
+            if before String.len 0 > do
+                before source byte-buffer-append-string
+                "\n\n" source byte-buffer-append-string
+            end
+            "proc main -- do\n" source byte-buffer-append-string
+            body source frog-inline-append-body
+            "end\n" source byte-buffer-append-string
+            if after String.len 0 > do
+                "\n" source byte-buffer-append-string
+                after source byte-buffer-append-string
+                "\n" source byte-buffer-append-string
+            end
+            source
+        end
+    end
+end
+
+proc frog-run-generated-program String -- CompletedProcess do
+    let program do
+        1 subprocess-argv
+        let arguments do
+            program arguments 0 subprocess-arg
+            arguments "" subprocess-run
+            arguments subprocess-argv-free
+        end
+    end
+end
+
+proc frog-inline-run-bytes ptr int String String int String String FrogTestContext -- do
+    let source source-length expected-stdout expected-stderr expected-status program name context do
+        source source-length "test/cases" context frog-compile-bytes
+        let compiler-result do
+            if compiler-result name context frog-check-compiler do
+                compiler-result "" context frog-build-generated
+                let build-result do
+                    build-result frog-build-succeeded
+                    let build-succeeded do
+                        build-succeeded name context frog-check
+                        if build-succeeded do
+                            if program String.len 0 > do
+                                program frog-run-generated-program
+                            else
+                                "" "" context frog-run-generated
+                            end
+                            let run-result do
+                                run-result expected-stdout expected-stderr expected-status frog-process-equals
+                                name context frog-check
+                                run-result completed-process-free
+                            end
+                        end
+                    end
+                    build-result completed-process-free
+                end
+            end
+            compiler-result completed-process-free
+        end
+    end
+end
+
+proc frog-inline-error-bytes ptr int String int String FrogTestContext -- do
+    let source source-length expected-stderr expected-status name context do
+        source source-length "test/cases" context frog-compile-bytes
+        let result do
+            result expected-stderr expected-status frog-process-status-equals
+            name context frog-check
+            result completed-process-free
+        end
+    end
+end
+
+proc frog-inline-run-body String String String int String FrogTestContext -- do
+    let body expected-stdout expected-stderr expected-status name context do
+        "" body "" frog-inline-materialize
+        let source do
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            expected-stdout expected-stderr expected-status "" name context frog-inline-run-bytes
+            source byte-buffer-free
+        end
+    end
+end
+
+proc frog-inline-run-body-program String String String int String String FrogTestContext -- do
+    let body expected-stdout expected-stderr expected-status program name context do
+        "" body "" frog-inline-materialize
+        let source do
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            expected-stdout expected-stderr expected-status program name context frog-inline-run-bytes
+            source byte-buffer-free
+        end
+    end
+end
+
+proc frog-inline-error-body String String int String FrogTestContext -- do
+    let body expected-stderr expected-status name context do
+        "" body "" frog-inline-materialize
+        let source do
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            expected-stderr expected-status name context frog-inline-error-bytes
+            source byte-buffer-free
+        end
+    end
+end
+
+proc frog-inline-run-source String String String String String int String FrogTestContext -- do
+    let before body after expected-stdout expected-stderr expected-status name context do
+        before body after frog-inline-materialize
+        let source do
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            expected-stdout expected-stderr expected-status "" name context frog-inline-run-bytes
+            source byte-buffer-free
+        end
+    end
+end
+
+proc frog-inline-run-source-program String String String String String int String String FrogTestContext -- do
+    let before body after expected-stdout expected-stderr expected-status program name context do
+        before body after frog-inline-materialize
+        let source do
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            expected-stdout expected-stderr expected-status program name context frog-inline-run-bytes
+            source byte-buffer-free
+        end
+    end
+end
+
+proc frog-inline-error-source String String String String int String FrogTestContext -- do
+    let before body after expected-stderr expected-status name context do
+        before body after frog-inline-materialize
+        let source do
+            source @ByteBuffer.bytes source @ByteBuffer.len
+            expected-stderr expected-status name context frog-inline-error-bytes
+            source byte-buffer-free
+        end
+    end
+end
+
+proc frog-inline-error-raw String String int String FrogTestContext -- do
+    let source expected-stderr expected-status name context do
+        source String.bytes source String.len expected-stderr expected-status name context frog-inline-error-bytes
     end
 end
 

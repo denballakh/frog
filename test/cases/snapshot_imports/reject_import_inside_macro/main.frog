@@ -1,0 +1,5 @@
+macro bad from "math.frog" import inc end
+
+proc main -- do
+    bad
+end

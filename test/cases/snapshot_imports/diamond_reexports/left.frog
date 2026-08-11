@@ -1,0 +1,4 @@
+
+            from "base.frog" import inc
+
+            proc value -- int do 10 inc end

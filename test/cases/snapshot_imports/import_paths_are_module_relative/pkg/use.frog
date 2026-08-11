@@ -1,0 +1,5 @@
+
+            // "math.frog" resolves beside this importing module, under pkg/
+            from "math.frog" import value as module_value
+
+            proc value -- int do module_value end

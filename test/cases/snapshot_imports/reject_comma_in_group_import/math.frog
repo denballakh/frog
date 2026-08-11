@@ -1,0 +1,3 @@
+
+            proc inc int -- int do 1 + end
+            proc dec int -- int do 1 - end

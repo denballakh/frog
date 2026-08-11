@@ -1,0 +1,46 @@
+from "framework.frog" import ( FrogTestContext frog-run-case frog-error-fixture )
+
+proc run-snapshot-import-cases FrogTestContext -- do
+    let context do
+        "test/cases/snapshot_imports/import_proc/main.frog" "test/cases/snapshot_imports/import_proc" "42\n" "" 0 "" "" "" "imports/import_proc" context frog-run-case
+        "test/cases/snapshot_imports/import_group/main.frog" "test/cases/snapshot_imports/import_group" "6\n4\n7\n" "" 0 "" "" "" "imports/import_group" context frog-run-case
+        "test/cases/snapshot_imports/import_alias/main.frog" "test/cases/snapshot_imports/import_alias" "2\n" "" 0 "" "" "" "imports/import_alias" context frog-run-case
+        "test/cases/snapshot_imports/same_import_twice_is_ok/main.frog" "test/cases/snapshot_imports/same_import_twice_is_ok" "2\n" "" 0 "" "" "" "imports/same_import_twice_is_ok" context frog-run-case
+        "test/cases/snapshot_imports/same_import_two_aliases/main.frog" "test/cases/snapshot_imports/same_import_two_aliases" "2\n2\n" "" 0 "" "" "" "imports/same_import_two_aliases" context frog-run-case
+        "test/cases/snapshot_imports/use_before_import_declaration_should_work/main.frog" "test/cases/snapshot_imports/use_before_import_declaration_should_work" "11\n" "" 0 "" "" "" "imports/use_before_import_declaration_should_work" context frog-run-case
+        "test/cases/snapshot_imports/import_paths_are_module_relative/main.frog" "test/cases/snapshot_imports/import_paths_are_module_relative" "7\n" "" 0 "" "" "" "imports/import_paths_are_module_relative" context frog-run-case
+        "test/cases/snapshot_imports/explicit_parent_import_path/main.frog" "test/cases/snapshot_imports/explicit_parent_import_path" "999\n" "" 0 "" "" "" "imports/explicit_parent_import_path" context frog-run-case
+        "test/cases/snapshot_imports/canonical_import_paths_share_module/main.frog" "test/cases/snapshot_imports/canonical_import_paths_share_module" "42\n" "" 0 "" "" "" "imports/canonical_import_paths_share_module" context frog-run-case
+        "test/cases/snapshot_imports/imported_top_level_code_does_not_run/main.frog" "test/cases/snapshot_imports/imported_top_level_code_does_not_run" "7\n" "" 0 "" "" "" "imports/imported_top_level_code_does_not_run" context frog-run-case
+        "test/cases/snapshot_imports/imported_proc_uses_own_module_scope/main.frog" "test/cases/snapshot_imports/imported_proc_uses_own_module_scope" "7\n99\n" "" 0 "" "" "" "imports/imported_proc_uses_own_module_scope" context frog-run-case
+        "test/cases/snapshot_imports/same_private_name_in_two_imported_modules/main.frog" "test/cases/snapshot_imports/same_private_name_in_two_imported_modules" "10\n20\n" "" 0 "" "" "" "imports/same_private_name_in_two_imported_modules" context frog-run-case
+        "test/cases/snapshot_imports/local_proc_uses_imported_proc/main.frog" "test/cases/snapshot_imports/local_proc_uses_imported_proc" "5\n" "" 0 "" "" "" "imports/local_proc_uses_imported_proc" context frog-run-case
+        "test/cases/snapshot_imports/local_macro_uses_imported_proc/main.frog" "test/cases/snapshot_imports/local_macro_uses_imported_proc" "5\n" "" 0 "" "" "" "imports/local_macro_uses_imported_proc" context frog-run-case
+        "test/cases/snapshot_imports/reexport_proc/main.frog" "test/cases/snapshot_imports/reexport_proc" "5\n" "" 0 "" "" "" "imports/reexport_proc" context frog-run-case
+        "test/cases/snapshot_imports/reexport_alias/main.frog" "test/cases/snapshot_imports/reexport_alias" "5\n" "" 0 "" "" "" "imports/reexport_alias" context frog-run-case
+        "test/cases/snapshot_imports/module_uses_imported_proc/main.frog" "test/cases/snapshot_imports/module_uses_imported_proc" "6\n" "" 0 "" "" "" "imports/module_uses_imported_proc" context frog-run-case
+        "test/cases/snapshot_imports/diamond_reexports/main.frog" "test/cases/snapshot_imports/diamond_reexports" "11\n21\n" "" 0 "" "" "" "imports/diamond_reexports" context frog-run-case
+        "test/cases/snapshot_imports/import_macro/main.frog" "test/cases/snapshot_imports/import_macro" "42\n" "" 0 "" "" "" "imports/import_macro" context frog-run-case
+        "test/cases/snapshot_imports/imported_macro_uses_defining_module_proc/main.frog" "test/cases/snapshot_imports/imported_macro_uses_defining_module_proc" "105\n6\n" "" 0 "" "" "" "imports/imported_macro_uses_defining_module_proc" context frog-run-case
+        "test/cases/snapshot_imports/imported_macro_uses_defining_module_macro/main.frog" "test/cases/snapshot_imports/imported_macro_uses_defining_module_macro" "7\n" "" 0 "" "" "" "imports/imported_macro_uses_defining_module_macro" context frog-run-case
+        "test/cases/snapshot_imports/imported_macro_uses_defining_module_import/main.frog" "test/cases/snapshot_imports/imported_macro_uses_defining_module_import" "6\n" "" 0 "" "" "" "imports/imported_macro_uses_defining_module_import" context frog-run-case
+        "test/cases/snapshot_imports/reexported_macro_keeps_original_scope/main.frog" "test/cases/snapshot_imports/reexported_macro_keeps_original_scope" "15\n6\n" "" 0 "" "" "" "imports/reexported_macro_keeps_original_scope" context frog-run-case
+        "test/cases/snapshot_imports/imported_macro_with_blocks/main.frog" "test/cases/snapshot_imports/imported_macro_with_blocks" "6\n-1\n" "" 0 "" "" "" "imports/imported_macro_with_blocks" context frog-run-case
+        "test/cases/snapshot_imports/imported_macro_with_let/main.frog" "test/cases/snapshot_imports/imported_macro_with_let" "1\n2\n1\n" "" 0 "" "" "" "imports/imported_macro_with_let" context frog-run-case
+        "test/cases/snapshot_imports/missing_imported_file/main.frog" "test/cases/snapshot_imports/missing_imported_file" "frogc: import file not found\n" "imports/missing_imported_file" context frog-error-fixture
+        "test/cases/snapshot_imports/missing_imported_name/main.frog" "test/cases/snapshot_imports/missing_imported_name" "frogc: imported name not found\n" "imports/missing_imported_name" context frog-error-fixture
+        "test/cases/snapshot_imports/alias_does_not_bind_original_name/main.frog" "test/cases/snapshot_imports/alias_does_not_bind_original_name" "frogc: unknown word\n" "imports/alias_does_not_bind_original_name" context frog-error-fixture
+        "test/cases/snapshot_imports/conflict_import_then_local_proc/main.frog" "test/cases/snapshot_imports/conflict_import_then_local_proc" "frogc: import alias conflict\n" "imports/conflict_import_then_local_proc" context frog-error-fixture
+        "test/cases/snapshot_imports/conflict_local_proc_then_import/main.frog" "test/cases/snapshot_imports/conflict_local_proc_then_import" "frogc: import alias conflict\n" "imports/conflict_local_proc_then_import" context frog-error-fixture
+        "test/cases/snapshot_imports/conflict_import_then_local_macro/main.frog" "test/cases/snapshot_imports/conflict_import_then_local_macro" "frogc: import alias conflict\n" "imports/conflict_import_then_local_macro" context frog-error-fixture
+        "test/cases/snapshot_imports/conflict_two_imports_same_name/main.frog" "test/cases/snapshot_imports/conflict_two_imports_same_name" "frogc: import alias conflict\n" "imports/conflict_two_imports_same_name" context frog-error-fixture
+        "test/cases/snapshot_imports/conflict_two_imports_same_alias/main.frog" "test/cases/snapshot_imports/conflict_two_imports_same_alias" "frogc: import alias conflict\n" "imports/conflict_two_imports_same_alias" context frog-error-fixture
+        "test/cases/snapshot_imports/direct_import_cycle/main.frog" "test/cases/snapshot_imports/direct_import_cycle" "frogc: cyclic import\n" "imports/direct_import_cycle" context frog-error-fixture
+        "test/cases/snapshot_imports/self_import_cycle/main.frog" "test/cases/snapshot_imports/self_import_cycle" "frogc: cyclic import\n" "imports/self_import_cycle" context frog-error-fixture
+        "test/cases/snapshot_imports/reject_wildcard_import/main.frog" "test/cases/snapshot_imports/reject_wildcard_import" "frogc: wildcard imports are not supported\n" "imports/reject_wildcard_import" context frog-error-fixture
+        "test/cases/snapshot_imports/reject_comma_in_group_import/main.frog" "test/cases/snapshot_imports/reject_comma_in_group_import" "frogc: commas are not valid in import lists\n" "imports/reject_comma_in_group_import" context frog-error-fixture
+        "test/cases/snapshot_imports/reject_module_alias_form_for_now/main.frog" "test/cases/snapshot_imports/reject_module_alias_form_for_now" "frogc: module aliases are not supported\n" "imports/reject_module_alias_form_for_now" context frog-error-fixture
+        "test/cases/snapshot_imports/reject_import_inside_proc/main.frog" "test/cases/snapshot_imports/reject_import_inside_proc" "frogc: imports are only allowed at top level\n" "imports/reject_import_inside_proc" context frog-error-fixture
+        "test/cases/snapshot_imports/reject_import_inside_macro/main.frog" "test/cases/snapshot_imports/reject_import_inside_macro" "frogc: imports are only allowed at top level\n" "imports/reject_import_inside_macro" context frog-error-fixture
+    end
+end

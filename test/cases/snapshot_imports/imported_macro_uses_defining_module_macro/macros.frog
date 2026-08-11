@@ -1,0 +1,3 @@
+
+            macro inc 1 + end
+            macro add_two inc inc end

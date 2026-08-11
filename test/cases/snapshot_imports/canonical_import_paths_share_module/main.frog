@@ -1,0 +1,6 @@
+from "lib/math.frog" import value
+from "lib/../lib/math.frog" import value
+
+proc main -- do
+    value print
+end

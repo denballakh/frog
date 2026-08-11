@@ -1,0 +1,5 @@
+from "math.frog" import inc as bump
+
+proc main -- do
+    1 inc print
+end

@@ -1,0 +1,8 @@
+from "macros.frog" import use_secret
+
+proc secret int -- int do 1 + end
+
+proc main -- do
+    5 use_secret print
+    5 secret print
+end

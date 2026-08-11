@@ -1,0 +1,5 @@
+from "macros.frog" import add_two
+
+proc main -- do
+    5 add_two print
+end

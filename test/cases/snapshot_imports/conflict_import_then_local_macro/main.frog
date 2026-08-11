@@ -1,0 +1,6 @@
+from "math.frog" import inc
+
+macro inc 2 + end
+
+proc main -- do
+end

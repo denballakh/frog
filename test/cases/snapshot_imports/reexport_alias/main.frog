@@ -1,0 +1,5 @@
+from "facade.frog" import bump
+
+proc main -- do
+    4 bump print
+end

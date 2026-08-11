@@ -1,0 +1,3 @@
+
+            proc secret int -- int do 100 + end
+            macro use_secret secret end

@@ -3,6 +3,10 @@ from "framework.frog" import (
     frog-test-context frog-test-finish
 )
 from "regression_cases.frog" import run-regression-cases
+from "inline_cases.frog" import run-inline-cases
+from "import_snapshot_cases.frog" import run-snapshot-import-cases
+from "cli_cases.frog" import run-cli-cases
+from "example_cases.frog" import run-example-cases
 
 const pointer-bytes 8 end
 
@@ -15,6 +19,10 @@ proc main -- do
         frog-test-context
         let context do
             context run-regression-cases
+            context run-inline-cases
+            context run-snapshot-import-cases
+            context run-cli-cases
+            context run-example-cases
             context frog-test-finish
         end
     end
