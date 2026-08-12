@@ -20224,18 +20224,14 @@ bool frog_proc_171__3D_3D(frog_union_1027 frog_arg_0, frog_union_1027 frog_arg_1
   (void)&frog_value_0_1027;
   frog_union_1027 frog_value_1_1027;
   (void)&frog_value_1_1027;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1027 frog_value_2_1027;
   (void)&frog_value_2_1027;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1027 frog_value_3_1027;
-  (void)&frog_value_3_1027;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1027 = frog_arg_0;
   frog_value_1_1027 = frog_arg_1;
   {
@@ -20244,64 +20240,16 @@ bool frog_proc_171__3D_3D(frog_union_1027 frog_arg_0, frog_union_1027 frog_arg_1
     frog_union_1027 l1 = frog_value_0_1027;
     (void)l1;
     frog_value_0_1027 = l1;
-    { frog_union_1027 union_value = frog_value_0_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1027 l3 = frog_value_0_1027;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1027 = l3;
-    }
-    {
-      frog_union_1027 l4 = frog_value_1_1027;
-      (void)l4;
-    }
+    { frog_union_1027 union_value = frog_value_0_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1027 = l0;
-    { frog_union_1027 union_value = frog_value_1_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1027 l6 = frog_value_1_1027;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1027 = l6;
-    }
-    {
-      frog_union_1027 l7 = frog_value_2_1027;
-      (void)l7;
-    }
+    { frog_union_1027 union_value = frog_value_1_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1027 = l1;
-    { frog_union_1027 union_value = frog_value_1_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1027 l9 = frog_value_1_1027;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1027 = l9;
-    }
-    {
-      frog_union_1027 l10 = frog_value_2_1027;
-      (void)l10;
-    }
+    { frog_union_1027 union_value = frog_value_1_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1027 = l0;
-    { frog_union_1027 union_value = frog_value_2_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1027 l12 = frog_value_2_1027;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1027 = l12;
-    }
-    {
-      frog_union_1027 l13 = frog_value_3_1027;
-      (void)l13;
-    }
+    { frog_union_1027 union_value = frog_value_2_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20309,33 +20257,9 @@ bool frog_proc_171__3D_3D(frog_union_1027 frog_arg_0, frog_union_1027 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1027 = l1;
-    { frog_union_1027 union_value = frog_value_1_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1027 l15 = frog_value_1_1027;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1027 = l15;
-    }
-    {
-      frog_union_1027 l16 = frog_value_2_1027;
-      (void)l16;
-    }
+    { frog_union_1027 union_value = frog_value_1_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1027 = l0;
-    { frog_union_1027 union_value = frog_value_2_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1027 l18 = frog_value_2_1027;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1027 = l18;
-    }
-    {
-      frog_union_1027 l19 = frog_value_3_1027;
-      (void)l19;
-    }
+    { frog_union_1027 union_value = frog_value_2_1027; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20367,18 +20291,14 @@ bool frog_proc_173__3D_3D(frog_union_1028 frog_arg_0, frog_union_1028 frog_arg_1
   (void)&frog_value_0_1028;
   frog_union_1028 frog_value_1_1028;
   (void)&frog_value_1_1028;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1028 frog_value_2_1028;
   (void)&frog_value_2_1028;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1028 frog_value_3_1028;
-  (void)&frog_value_3_1028;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1028 = frog_arg_0;
   frog_value_1_1028 = frog_arg_1;
   {
@@ -20387,64 +20307,16 @@ bool frog_proc_173__3D_3D(frog_union_1028 frog_arg_0, frog_union_1028 frog_arg_1
     frog_union_1028 l1 = frog_value_0_1028;
     (void)l1;
     frog_value_0_1028 = l1;
-    { frog_union_1028 union_value = frog_value_0_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1028 l3 = frog_value_0_1028;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1028 = l3;
-    }
-    {
-      frog_union_1028 l4 = frog_value_1_1028;
-      (void)l4;
-    }
+    { frog_union_1028 union_value = frog_value_0_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1028 = l0;
-    { frog_union_1028 union_value = frog_value_1_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1028 l6 = frog_value_1_1028;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1028 = l6;
-    }
-    {
-      frog_union_1028 l7 = frog_value_2_1028;
-      (void)l7;
-    }
+    { frog_union_1028 union_value = frog_value_1_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1028 = l1;
-    { frog_union_1028 union_value = frog_value_1_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1028 l9 = frog_value_1_1028;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1028 = l9;
-    }
-    {
-      frog_union_1028 l10 = frog_value_2_1028;
-      (void)l10;
-    }
+    { frog_union_1028 union_value = frog_value_1_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1028 = l0;
-    { frog_union_1028 union_value = frog_value_2_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1028 l12 = frog_value_2_1028;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1028 = l12;
-    }
-    {
-      frog_union_1028 l13 = frog_value_3_1028;
-      (void)l13;
-    }
+    { frog_union_1028 union_value = frog_value_2_1028; if (union_value.tag < 0 || union_value.tag >= 2) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20476,18 +20348,14 @@ bool frog_proc_175__3D_3D(frog_union_1029 frog_arg_0, frog_union_1029 frog_arg_1
   (void)&frog_value_0_1029;
   frog_union_1029 frog_value_1_1029;
   (void)&frog_value_1_1029;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1029 frog_value_2_1029;
   (void)&frog_value_2_1029;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1029 frog_value_3_1029;
-  (void)&frog_value_3_1029;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1029 = frog_arg_0;
   frog_value_1_1029 = frog_arg_1;
   {
@@ -20496,64 +20364,16 @@ bool frog_proc_175__3D_3D(frog_union_1029 frog_arg_0, frog_union_1029 frog_arg_1
     frog_union_1029 l1 = frog_value_0_1029;
     (void)l1;
     frog_value_0_1029 = l1;
-    { frog_union_1029 union_value = frog_value_0_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1029 l3 = frog_value_0_1029;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1029 = l3;
-    }
-    {
-      frog_union_1029 l4 = frog_value_1_1029;
-      (void)l4;
-    }
+    { frog_union_1029 union_value = frog_value_0_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1029 = l0;
-    { frog_union_1029 union_value = frog_value_1_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1029 l6 = frog_value_1_1029;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1029 = l6;
-    }
-    {
-      frog_union_1029 l7 = frog_value_2_1029;
-      (void)l7;
-    }
+    { frog_union_1029 union_value = frog_value_1_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1029 = l1;
-    { frog_union_1029 union_value = frog_value_1_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1029 l9 = frog_value_1_1029;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1029 = l9;
-    }
-    {
-      frog_union_1029 l10 = frog_value_2_1029;
-      (void)l10;
-    }
+    { frog_union_1029 union_value = frog_value_1_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1029 = l0;
-    { frog_union_1029 union_value = frog_value_2_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1029 l12 = frog_value_2_1029;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1029 = l12;
-    }
-    {
-      frog_union_1029 l13 = frog_value_3_1029;
-      (void)l13;
-    }
+    { frog_union_1029 union_value = frog_value_2_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20561,33 +20381,9 @@ bool frog_proc_175__3D_3D(frog_union_1029 frog_arg_0, frog_union_1029 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1029 = l1;
-    { frog_union_1029 union_value = frog_value_1_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1029 l15 = frog_value_1_1029;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1029 = l15;
-    }
-    {
-      frog_union_1029 l16 = frog_value_2_1029;
-      (void)l16;
-    }
+    { frog_union_1029 union_value = frog_value_1_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1029 = l0;
-    { frog_union_1029 union_value = frog_value_2_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1029 l18 = frog_value_2_1029;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1029 = l18;
-    }
-    {
-      frog_union_1029 l19 = frog_value_3_1029;
-      (void)l19;
-    }
+    { frog_union_1029 union_value = frog_value_2_1029; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20619,18 +20415,14 @@ bool frog_proc_177__3D_3D(frog_union_1030 frog_arg_0, frog_union_1030 frog_arg_1
   (void)&frog_value_0_1030;
   frog_union_1030 frog_value_1_1030;
   (void)&frog_value_1_1030;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1030 frog_value_2_1030;
   (void)&frog_value_2_1030;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1030 frog_value_3_1030;
-  (void)&frog_value_3_1030;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1030 = frog_arg_0;
   frog_value_1_1030 = frog_arg_1;
   {
@@ -20639,64 +20431,16 @@ bool frog_proc_177__3D_3D(frog_union_1030 frog_arg_0, frog_union_1030 frog_arg_1
     frog_union_1030 l1 = frog_value_0_1030;
     (void)l1;
     frog_value_0_1030 = l1;
-    { frog_union_1030 union_value = frog_value_0_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1030 l3 = frog_value_0_1030;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1030 = l3;
-    }
-    {
-      frog_union_1030 l4 = frog_value_1_1030;
-      (void)l4;
-    }
+    { frog_union_1030 union_value = frog_value_0_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1030 = l0;
-    { frog_union_1030 union_value = frog_value_1_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1030 l6 = frog_value_1_1030;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1030 = l6;
-    }
-    {
-      frog_union_1030 l7 = frog_value_2_1030;
-      (void)l7;
-    }
+    { frog_union_1030 union_value = frog_value_1_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1030 = l1;
-    { frog_union_1030 union_value = frog_value_1_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1030 l9 = frog_value_1_1030;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1030 = l9;
-    }
-    {
-      frog_union_1030 l10 = frog_value_2_1030;
-      (void)l10;
-    }
+    { frog_union_1030 union_value = frog_value_1_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1030 = l0;
-    { frog_union_1030 union_value = frog_value_2_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1030 l12 = frog_value_2_1030;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1030 = l12;
-    }
-    {
-      frog_union_1030 l13 = frog_value_3_1030;
-      (void)l13;
-    }
+    { frog_union_1030 union_value = frog_value_2_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20704,33 +20448,9 @@ bool frog_proc_177__3D_3D(frog_union_1030 frog_arg_0, frog_union_1030 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1030 = l1;
-    { frog_union_1030 union_value = frog_value_1_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1030 l15 = frog_value_1_1030;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1030 = l15;
-    }
-    {
-      frog_union_1030 l16 = frog_value_2_1030;
-      (void)l16;
-    }
+    { frog_union_1030 union_value = frog_value_1_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1030 = l0;
-    { frog_union_1030 union_value = frog_value_2_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1030 l18 = frog_value_2_1030;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1030 = l18;
-    }
-    {
-      frog_union_1030 l19 = frog_value_3_1030;
-      (void)l19;
-    }
+    { frog_union_1030 union_value = frog_value_2_1030; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20762,18 +20482,14 @@ bool frog_proc_179__3D_3D(frog_union_1031 frog_arg_0, frog_union_1031 frog_arg_1
   (void)&frog_value_0_1031;
   frog_union_1031 frog_value_1_1031;
   (void)&frog_value_1_1031;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1031 frog_value_2_1031;
   (void)&frog_value_2_1031;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1031 frog_value_3_1031;
-  (void)&frog_value_3_1031;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1031 = frog_arg_0;
   frog_value_1_1031 = frog_arg_1;
   {
@@ -20782,64 +20498,16 @@ bool frog_proc_179__3D_3D(frog_union_1031 frog_arg_0, frog_union_1031 frog_arg_1
     frog_union_1031 l1 = frog_value_0_1031;
     (void)l1;
     frog_value_0_1031 = l1;
-    { frog_union_1031 union_value = frog_value_0_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1031 l3 = frog_value_0_1031;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1031 = l3;
-    }
-    {
-      frog_union_1031 l4 = frog_value_1_1031;
-      (void)l4;
-    }
+    { frog_union_1031 union_value = frog_value_0_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1031 = l0;
-    { frog_union_1031 union_value = frog_value_1_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1031 l6 = frog_value_1_1031;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1031 = l6;
-    }
-    {
-      frog_union_1031 l7 = frog_value_2_1031;
-      (void)l7;
-    }
+    { frog_union_1031 union_value = frog_value_1_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1031 = l1;
-    { frog_union_1031 union_value = frog_value_1_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1031 l9 = frog_value_1_1031;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1031 = l9;
-    }
-    {
-      frog_union_1031 l10 = frog_value_2_1031;
-      (void)l10;
-    }
+    { frog_union_1031 union_value = frog_value_1_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1031 = l0;
-    { frog_union_1031 union_value = frog_value_2_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1031 l12 = frog_value_2_1031;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1031 = l12;
-    }
-    {
-      frog_union_1031 l13 = frog_value_3_1031;
-      (void)l13;
-    }
+    { frog_union_1031 union_value = frog_value_2_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20847,33 +20515,9 @@ bool frog_proc_179__3D_3D(frog_union_1031 frog_arg_0, frog_union_1031 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1031 = l1;
-    { frog_union_1031 union_value = frog_value_1_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1031 l15 = frog_value_1_1031;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1031 = l15;
-    }
-    {
-      frog_union_1031 l16 = frog_value_2_1031;
-      (void)l16;
-    }
+    { frog_union_1031 union_value = frog_value_1_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1031 = l0;
-    { frog_union_1031 union_value = frog_value_2_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1031 l18 = frog_value_2_1031;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1031 = l18;
-    }
-    {
-      frog_union_1031 l19 = frog_value_3_1031;
-      (void)l19;
-    }
+    { frog_union_1031 union_value = frog_value_2_1031; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20905,18 +20549,14 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
   (void)&frog_value_0_1032;
   frog_union_1032 frog_value_1_1032;
   (void)&frog_value_1_1032;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1032 frog_value_2_1032;
   (void)&frog_value_2_1032;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1032 frog_value_3_1032;
-  (void)&frog_value_3_1032;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1032 = frog_arg_0;
   frog_value_1_1032 = frog_arg_1;
   {
@@ -20925,64 +20565,16 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
     frog_union_1032 l1 = frog_value_0_1032;
     (void)l1;
     frog_value_0_1032 = l1;
-    { frog_union_1032 union_value = frog_value_0_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1032 l3 = frog_value_0_1032;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1032 = l3;
-    }
-    {
-      frog_union_1032 l4 = frog_value_1_1032;
-      (void)l4;
-    }
+    { frog_union_1032 union_value = frog_value_0_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1032 = l0;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1032 l6 = frog_value_1_1032;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1032 = l6;
-    }
-    {
-      frog_union_1032 l7 = frog_value_2_1032;
-      (void)l7;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1032 = l1;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1032 l9 = frog_value_1_1032;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1032 = l9;
-    }
-    {
-      frog_union_1032 l10 = frog_value_2_1032;
-      (void)l10;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1032 = l0;
-    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1032 l12 = frog_value_2_1032;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1032 = l12;
-    }
-    {
-      frog_union_1032 l13 = frog_value_3_1032;
-      (void)l13;
-    }
+    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -20990,33 +20582,9 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1032 = l1;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1032 l15 = frog_value_1_1032;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1032 = l15;
-    }
-    {
-      frog_union_1032 l16 = frog_value_2_1032;
-      (void)l16;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1032 = l0;
-    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1032 l18 = frog_value_2_1032;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1032 = l18;
-    }
-    {
-      frog_union_1032 l19 = frog_value_3_1032;
-      (void)l19;
-    }
+    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21024,33 +20592,9 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1032 = l1;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 3; }
-    {
-      bool l20 = frog_value_2_2;
-      (void)l20;
-      frog_union_1032 l21 = frog_value_1_1032;
-      (void)l21;
-      frog_value_1_2 = l20;
-      frog_value_2_1032 = l21;
-    }
-    {
-      frog_union_1032 l22 = frog_value_2_1032;
-      (void)l22;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 3; }
     frog_value_2_1032 = l0;
-    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 3; }
-    {
-      bool l23 = frog_value_3_2;
-      (void)l23;
-      frog_union_1032 l24 = frog_value_2_1032;
-      (void)l24;
-      frog_value_2_2 = l23;
-      frog_value_3_1032 = l24;
-    }
-    {
-      frog_union_1032 l25 = frog_value_3_1032;
-      (void)l25;
-    }
+    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 3; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21058,33 +20602,9 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1032 = l1;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 4; }
-    {
-      bool l26 = frog_value_2_2;
-      (void)l26;
-      frog_union_1032 l27 = frog_value_1_1032;
-      (void)l27;
-      frog_value_1_2 = l26;
-      frog_value_2_1032 = l27;
-    }
-    {
-      frog_union_1032 l28 = frog_value_2_1032;
-      (void)l28;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 4; }
     frog_value_2_1032 = l0;
-    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 4; }
-    {
-      bool l29 = frog_value_3_2;
-      (void)l29;
-      frog_union_1032 l30 = frog_value_2_1032;
-      (void)l30;
-      frog_value_2_2 = l29;
-      frog_value_3_1032 = l30;
-    }
-    {
-      frog_union_1032 l31 = frog_value_3_1032;
-      (void)l31;
-    }
+    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 4; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21092,33 +20612,9 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1032 = l1;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 5; }
-    {
-      bool l32 = frog_value_2_2;
-      (void)l32;
-      frog_union_1032 l33 = frog_value_1_1032;
-      (void)l33;
-      frog_value_1_2 = l32;
-      frog_value_2_1032 = l33;
-    }
-    {
-      frog_union_1032 l34 = frog_value_2_1032;
-      (void)l34;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 5; }
     frog_value_2_1032 = l0;
-    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 5; }
-    {
-      bool l35 = frog_value_3_2;
-      (void)l35;
-      frog_union_1032 l36 = frog_value_2_1032;
-      (void)l36;
-      frog_value_2_2 = l35;
-      frog_value_3_1032 = l36;
-    }
-    {
-      frog_union_1032 l37 = frog_value_3_1032;
-      (void)l37;
-    }
+    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 5; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21126,33 +20622,9 @@ bool frog_proc_181__3D_3D(frog_union_1032 frog_arg_0, frog_union_1032 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1032 = l1;
-    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 6; }
-    {
-      bool l38 = frog_value_2_2;
-      (void)l38;
-      frog_union_1032 l39 = frog_value_1_1032;
-      (void)l39;
-      frog_value_1_2 = l38;
-      frog_value_2_1032 = l39;
-    }
-    {
-      frog_union_1032 l40 = frog_value_2_1032;
-      (void)l40;
-    }
+    { frog_union_1032 union_value = frog_value_1_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 6; }
     frog_value_2_1032 = l0;
-    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 6; }
-    {
-      bool l41 = frog_value_3_2;
-      (void)l41;
-      frog_union_1032 l42 = frog_value_2_1032;
-      (void)l42;
-      frog_value_2_2 = l41;
-      frog_value_3_1032 = l42;
-    }
-    {
-      frog_union_1032 l43 = frog_value_3_1032;
-      (void)l43;
-    }
+    { frog_union_1032 union_value = frog_value_2_1032; if (union_value.tag < 0 || union_value.tag >= 7) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 6; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21184,18 +20656,14 @@ bool frog_proc_183__3D_3D(frog_union_1033 frog_arg_0, frog_union_1033 frog_arg_1
   (void)&frog_value_0_1033;
   frog_union_1033 frog_value_1_1033;
   (void)&frog_value_1_1033;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1033 frog_value_2_1033;
   (void)&frog_value_2_1033;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1033 frog_value_3_1033;
-  (void)&frog_value_3_1033;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1033 = frog_arg_0;
   frog_value_1_1033 = frog_arg_1;
   {
@@ -21204,64 +20672,16 @@ bool frog_proc_183__3D_3D(frog_union_1033 frog_arg_0, frog_union_1033 frog_arg_1
     frog_union_1033 l1 = frog_value_0_1033;
     (void)l1;
     frog_value_0_1033 = l1;
-    { frog_union_1033 union_value = frog_value_0_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1033 l3 = frog_value_0_1033;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1033 = l3;
-    }
-    {
-      frog_union_1033 l4 = frog_value_1_1033;
-      (void)l4;
-    }
+    { frog_union_1033 union_value = frog_value_0_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1033 = l0;
-    { frog_union_1033 union_value = frog_value_1_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1033 l6 = frog_value_1_1033;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1033 = l6;
-    }
-    {
-      frog_union_1033 l7 = frog_value_2_1033;
-      (void)l7;
-    }
+    { frog_union_1033 union_value = frog_value_1_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1033 = l1;
-    { frog_union_1033 union_value = frog_value_1_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1033 l9 = frog_value_1_1033;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1033 = l9;
-    }
-    {
-      frog_union_1033 l10 = frog_value_2_1033;
-      (void)l10;
-    }
+    { frog_union_1033 union_value = frog_value_1_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1033 = l0;
-    { frog_union_1033 union_value = frog_value_2_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1033 l12 = frog_value_2_1033;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1033 = l12;
-    }
-    {
-      frog_union_1033 l13 = frog_value_3_1033;
-      (void)l13;
-    }
+    { frog_union_1033 union_value = frog_value_2_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21269,33 +20689,9 @@ bool frog_proc_183__3D_3D(frog_union_1033 frog_arg_0, frog_union_1033 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1033 = l1;
-    { frog_union_1033 union_value = frog_value_1_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1033 l15 = frog_value_1_1033;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1033 = l15;
-    }
-    {
-      frog_union_1033 l16 = frog_value_2_1033;
-      (void)l16;
-    }
+    { frog_union_1033 union_value = frog_value_1_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1033 = l0;
-    { frog_union_1033 union_value = frog_value_2_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1033 l18 = frog_value_2_1033;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1033 = l18;
-    }
-    {
-      frog_union_1033 l19 = frog_value_3_1033;
-      (void)l19;
-    }
+    { frog_union_1033 union_value = frog_value_2_1033; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21327,18 +20723,14 @@ bool frog_proc_185__3D_3D(frog_union_1034 frog_arg_0, frog_union_1034 frog_arg_1
   (void)&frog_value_0_1034;
   frog_union_1034 frog_value_1_1034;
   (void)&frog_value_1_1034;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1034 frog_value_2_1034;
   (void)&frog_value_2_1034;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1034 frog_value_3_1034;
-  (void)&frog_value_3_1034;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1034 = frog_arg_0;
   frog_value_1_1034 = frog_arg_1;
   {
@@ -21347,64 +20739,16 @@ bool frog_proc_185__3D_3D(frog_union_1034 frog_arg_0, frog_union_1034 frog_arg_1
     frog_union_1034 l1 = frog_value_0_1034;
     (void)l1;
     frog_value_0_1034 = l1;
-    { frog_union_1034 union_value = frog_value_0_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1034 l3 = frog_value_0_1034;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1034 = l3;
-    }
-    {
-      frog_union_1034 l4 = frog_value_1_1034;
-      (void)l4;
-    }
+    { frog_union_1034 union_value = frog_value_0_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1034 = l0;
-    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1034 l6 = frog_value_1_1034;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1034 = l6;
-    }
-    {
-      frog_union_1034 l7 = frog_value_2_1034;
-      (void)l7;
-    }
+    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1034 = l1;
-    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1034 l9 = frog_value_1_1034;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1034 = l9;
-    }
-    {
-      frog_union_1034 l10 = frog_value_2_1034;
-      (void)l10;
-    }
+    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1034 = l0;
-    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1034 l12 = frog_value_2_1034;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1034 = l12;
-    }
-    {
-      frog_union_1034 l13 = frog_value_3_1034;
-      (void)l13;
-    }
+    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21412,33 +20756,9 @@ bool frog_proc_185__3D_3D(frog_union_1034 frog_arg_0, frog_union_1034 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1034 = l1;
-    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1034 l15 = frog_value_1_1034;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1034 = l15;
-    }
-    {
-      frog_union_1034 l16 = frog_value_2_1034;
-      (void)l16;
-    }
+    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1034 = l0;
-    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1034 l18 = frog_value_2_1034;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1034 = l18;
-    }
-    {
-      frog_union_1034 l19 = frog_value_3_1034;
-      (void)l19;
-    }
+    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21446,33 +20766,9 @@ bool frog_proc_185__3D_3D(frog_union_1034 frog_arg_0, frog_union_1034 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1034 = l1;
-    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 3; }
-    {
-      bool l20 = frog_value_2_2;
-      (void)l20;
-      frog_union_1034 l21 = frog_value_1_1034;
-      (void)l21;
-      frog_value_1_2 = l20;
-      frog_value_2_1034 = l21;
-    }
-    {
-      frog_union_1034 l22 = frog_value_2_1034;
-      (void)l22;
-    }
+    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 3; }
     frog_value_2_1034 = l0;
-    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 3; }
-    {
-      bool l23 = frog_value_3_2;
-      (void)l23;
-      frog_union_1034 l24 = frog_value_2_1034;
-      (void)l24;
-      frog_value_2_2 = l23;
-      frog_value_3_1034 = l24;
-    }
-    {
-      frog_union_1034 l25 = frog_value_3_1034;
-      (void)l25;
-    }
+    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 3; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21480,33 +20776,9 @@ bool frog_proc_185__3D_3D(frog_union_1034 frog_arg_0, frog_union_1034 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1034 = l1;
-    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 4; }
-    {
-      bool l26 = frog_value_2_2;
-      (void)l26;
-      frog_union_1034 l27 = frog_value_1_1034;
-      (void)l27;
-      frog_value_1_2 = l26;
-      frog_value_2_1034 = l27;
-    }
-    {
-      frog_union_1034 l28 = frog_value_2_1034;
-      (void)l28;
-    }
+    { frog_union_1034 union_value = frog_value_1_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 4; }
     frog_value_2_1034 = l0;
-    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 4; }
-    {
-      bool l29 = frog_value_3_2;
-      (void)l29;
-      frog_union_1034 l30 = frog_value_2_1034;
-      (void)l30;
-      frog_value_2_2 = l29;
-      frog_value_3_1034 = l30;
-    }
-    {
-      frog_union_1034 l31 = frog_value_3_1034;
-      (void)l31;
-    }
+    { frog_union_1034 union_value = frog_value_2_1034; if (union_value.tag < 0 || union_value.tag >= 5) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 4; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21538,18 +20810,14 @@ bool frog_proc_187__3D_3D(frog_union_1035 frog_arg_0, frog_union_1035 frog_arg_1
   (void)&frog_value_0_1035;
   frog_union_1035 frog_value_1_1035;
   (void)&frog_value_1_1035;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1035 frog_value_2_1035;
   (void)&frog_value_2_1035;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1035 frog_value_3_1035;
-  (void)&frog_value_3_1035;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1035 = frog_arg_0;
   frog_value_1_1035 = frog_arg_1;
   {
@@ -21558,64 +20826,16 @@ bool frog_proc_187__3D_3D(frog_union_1035 frog_arg_0, frog_union_1035 frog_arg_1
     frog_union_1035 l1 = frog_value_0_1035;
     (void)l1;
     frog_value_0_1035 = l1;
-    { frog_union_1035 union_value = frog_value_0_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1035 l3 = frog_value_0_1035;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1035 = l3;
-    }
-    {
-      frog_union_1035 l4 = frog_value_1_1035;
-      (void)l4;
-    }
+    { frog_union_1035 union_value = frog_value_0_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1035 = l0;
-    { frog_union_1035 union_value = frog_value_1_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1035 l6 = frog_value_1_1035;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1035 = l6;
-    }
-    {
-      frog_union_1035 l7 = frog_value_2_1035;
-      (void)l7;
-    }
+    { frog_union_1035 union_value = frog_value_1_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1035 = l1;
-    { frog_union_1035 union_value = frog_value_1_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1035 l9 = frog_value_1_1035;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1035 = l9;
-    }
-    {
-      frog_union_1035 l10 = frog_value_2_1035;
-      (void)l10;
-    }
+    { frog_union_1035 union_value = frog_value_1_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1035 = l0;
-    { frog_union_1035 union_value = frog_value_2_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1035 l12 = frog_value_2_1035;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1035 = l12;
-    }
-    {
-      frog_union_1035 l13 = frog_value_3_1035;
-      (void)l13;
-    }
+    { frog_union_1035 union_value = frog_value_2_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -21623,33 +20843,9 @@ bool frog_proc_187__3D_3D(frog_union_1035 frog_arg_0, frog_union_1035 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1035 = l1;
-    { frog_union_1035 union_value = frog_value_1_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1035 l15 = frog_value_1_1035;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1035 = l15;
-    }
-    {
-      frog_union_1035 l16 = frog_value_2_1035;
-      (void)l16;
-    }
+    { frog_union_1035 union_value = frog_value_1_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1035 = l0;
-    { frog_union_1035 union_value = frog_value_2_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1035 l18 = frog_value_2_1035;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1035 = l18;
-    }
-    {
-      frog_union_1035 l19 = frog_value_3_1035;
-      (void)l19;
-    }
+    { frog_union_1035 union_value = frog_value_2_1035; if (union_value.tag < 0 || union_value.tag >= 3) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -46777,18 +45973,14 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
   (void)&frog_value_0_1036;
   frog_union_1036 frog_value_1_1036;
   (void)&frog_value_1_1036;
-  bool frog_value_1_2;
-  (void)&frog_value_1_2;
   bool frog_value_0_2;
   (void)&frog_value_0_2;
-  bool frog_value_2_2;
-  (void)&frog_value_2_2;
+  bool frog_value_1_2;
+  (void)&frog_value_1_2;
   frog_union_1036 frog_value_2_1036;
   (void)&frog_value_2_1036;
-  bool frog_value_3_2;
-  (void)&frog_value_3_2;
-  frog_union_1036 frog_value_3_1036;
-  (void)&frog_value_3_1036;
+  bool frog_value_2_2;
+  (void)&frog_value_2_2;
   frog_value_0_1036 = frog_arg_0;
   frog_value_1_1036 = frog_arg_1;
   {
@@ -46797,64 +45989,16 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
     frog_union_1036 l1 = frog_value_0_1036;
     (void)l1;
     frog_value_0_1036 = l1;
-    { frog_union_1036 union_value = frog_value_0_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
-    {
-      bool l2 = frog_value_1_2;
-      (void)l2;
-      frog_union_1036 l3 = frog_value_0_1036;
-      (void)l3;
-      frog_value_0_2 = l2;
-      frog_value_1_1036 = l3;
-    }
-    {
-      frog_union_1036 l4 = frog_value_1_1036;
-      (void)l4;
-    }
+    { frog_union_1036 union_value = frog_value_0_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_0_2 = union_value.tag == 0; }
     frog_value_1_1036 = l0;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 0; }
-    {
-      bool l5 = frog_value_2_2;
-      (void)l5;
-      frog_union_1036 l6 = frog_value_1_1036;
-      (void)l6;
-      frog_value_1_2 = l5;
-      frog_value_2_1036 = l6;
-    }
-    {
-      frog_union_1036 l7 = frog_value_2_1036;
-      (void)l7;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 0; }
     {
       frog_value_0_2 = frog_proc_888__26_26(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
-    {
-      bool l8 = frog_value_2_2;
-      (void)l8;
-      frog_union_1036 l9 = frog_value_1_1036;
-      (void)l9;
-      frog_value_1_2 = l8;
-      frog_value_2_1036 = l9;
-    }
-    {
-      frog_union_1036 l10 = frog_value_2_1036;
-      (void)l10;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 1; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 1; }
-    {
-      bool l11 = frog_value_3_2;
-      (void)l11;
-      frog_union_1036 l12 = frog_value_2_1036;
-      (void)l12;
-      frog_value_2_2 = l11;
-      frog_value_3_1036 = l12;
-    }
-    {
-      frog_union_1036 l13 = frog_value_3_1036;
-      (void)l13;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 1; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -46862,33 +46006,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
-    {
-      bool l14 = frog_value_2_2;
-      (void)l14;
-      frog_union_1036 l15 = frog_value_1_1036;
-      (void)l15;
-      frog_value_1_2 = l14;
-      frog_value_2_1036 = l15;
-    }
-    {
-      frog_union_1036 l16 = frog_value_2_1036;
-      (void)l16;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 2; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 2; }
-    {
-      bool l17 = frog_value_3_2;
-      (void)l17;
-      frog_union_1036 l18 = frog_value_2_1036;
-      (void)l18;
-      frog_value_2_2 = l17;
-      frog_value_3_1036 = l18;
-    }
-    {
-      frog_union_1036 l19 = frog_value_3_1036;
-      (void)l19;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 2; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -46896,33 +46016,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 3; }
-    {
-      bool l20 = frog_value_2_2;
-      (void)l20;
-      frog_union_1036 l21 = frog_value_1_1036;
-      (void)l21;
-      frog_value_1_2 = l20;
-      frog_value_2_1036 = l21;
-    }
-    {
-      frog_union_1036 l22 = frog_value_2_1036;
-      (void)l22;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 3; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 3; }
-    {
-      bool l23 = frog_value_3_2;
-      (void)l23;
-      frog_union_1036 l24 = frog_value_2_1036;
-      (void)l24;
-      frog_value_2_2 = l23;
-      frog_value_3_1036 = l24;
-    }
-    {
-      frog_union_1036 l25 = frog_value_3_1036;
-      (void)l25;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 3; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -46930,33 +46026,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 4; }
-    {
-      bool l26 = frog_value_2_2;
-      (void)l26;
-      frog_union_1036 l27 = frog_value_1_1036;
-      (void)l27;
-      frog_value_1_2 = l26;
-      frog_value_2_1036 = l27;
-    }
-    {
-      frog_union_1036 l28 = frog_value_2_1036;
-      (void)l28;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 4; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 4; }
-    {
-      bool l29 = frog_value_3_2;
-      (void)l29;
-      frog_union_1036 l30 = frog_value_2_1036;
-      (void)l30;
-      frog_value_2_2 = l29;
-      frog_value_3_1036 = l30;
-    }
-    {
-      frog_union_1036 l31 = frog_value_3_1036;
-      (void)l31;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 4; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -46964,33 +46036,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 5; }
-    {
-      bool l32 = frog_value_2_2;
-      (void)l32;
-      frog_union_1036 l33 = frog_value_1_1036;
-      (void)l33;
-      frog_value_1_2 = l32;
-      frog_value_2_1036 = l33;
-    }
-    {
-      frog_union_1036 l34 = frog_value_2_1036;
-      (void)l34;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 5; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 5; }
-    {
-      bool l35 = frog_value_3_2;
-      (void)l35;
-      frog_union_1036 l36 = frog_value_2_1036;
-      (void)l36;
-      frog_value_2_2 = l35;
-      frog_value_3_1036 = l36;
-    }
-    {
-      frog_union_1036 l37 = frog_value_3_1036;
-      (void)l37;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 5; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -46998,33 +46046,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 6; }
-    {
-      bool l38 = frog_value_2_2;
-      (void)l38;
-      frog_union_1036 l39 = frog_value_1_1036;
-      (void)l39;
-      frog_value_1_2 = l38;
-      frog_value_2_1036 = l39;
-    }
-    {
-      frog_union_1036 l40 = frog_value_2_1036;
-      (void)l40;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 6; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 6; }
-    {
-      bool l41 = frog_value_3_2;
-      (void)l41;
-      frog_union_1036 l42 = frog_value_2_1036;
-      (void)l42;
-      frog_value_2_2 = l41;
-      frog_value_3_1036 = l42;
-    }
-    {
-      frog_union_1036 l43 = frog_value_3_1036;
-      (void)l43;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 6; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47032,33 +46056,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 7; }
-    {
-      bool l44 = frog_value_2_2;
-      (void)l44;
-      frog_union_1036 l45 = frog_value_1_1036;
-      (void)l45;
-      frog_value_1_2 = l44;
-      frog_value_2_1036 = l45;
-    }
-    {
-      frog_union_1036 l46 = frog_value_2_1036;
-      (void)l46;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 7; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 7; }
-    {
-      bool l47 = frog_value_3_2;
-      (void)l47;
-      frog_union_1036 l48 = frog_value_2_1036;
-      (void)l48;
-      frog_value_2_2 = l47;
-      frog_value_3_1036 = l48;
-    }
-    {
-      frog_union_1036 l49 = frog_value_3_1036;
-      (void)l49;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 7; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47066,33 +46066,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 8; }
-    {
-      bool l50 = frog_value_2_2;
-      (void)l50;
-      frog_union_1036 l51 = frog_value_1_1036;
-      (void)l51;
-      frog_value_1_2 = l50;
-      frog_value_2_1036 = l51;
-    }
-    {
-      frog_union_1036 l52 = frog_value_2_1036;
-      (void)l52;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 8; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 8; }
-    {
-      bool l53 = frog_value_3_2;
-      (void)l53;
-      frog_union_1036 l54 = frog_value_2_1036;
-      (void)l54;
-      frog_value_2_2 = l53;
-      frog_value_3_1036 = l54;
-    }
-    {
-      frog_union_1036 l55 = frog_value_3_1036;
-      (void)l55;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 8; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47100,33 +46076,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 9; }
-    {
-      bool l56 = frog_value_2_2;
-      (void)l56;
-      frog_union_1036 l57 = frog_value_1_1036;
-      (void)l57;
-      frog_value_1_2 = l56;
-      frog_value_2_1036 = l57;
-    }
-    {
-      frog_union_1036 l58 = frog_value_2_1036;
-      (void)l58;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 9; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 9; }
-    {
-      bool l59 = frog_value_3_2;
-      (void)l59;
-      frog_union_1036 l60 = frog_value_2_1036;
-      (void)l60;
-      frog_value_2_2 = l59;
-      frog_value_3_1036 = l60;
-    }
-    {
-      frog_union_1036 l61 = frog_value_3_1036;
-      (void)l61;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 9; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47134,33 +46086,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 10; }
-    {
-      bool l62 = frog_value_2_2;
-      (void)l62;
-      frog_union_1036 l63 = frog_value_1_1036;
-      (void)l63;
-      frog_value_1_2 = l62;
-      frog_value_2_1036 = l63;
-    }
-    {
-      frog_union_1036 l64 = frog_value_2_1036;
-      (void)l64;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 10; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 10; }
-    {
-      bool l65 = frog_value_3_2;
-      (void)l65;
-      frog_union_1036 l66 = frog_value_2_1036;
-      (void)l66;
-      frog_value_2_2 = l65;
-      frog_value_3_1036 = l66;
-    }
-    {
-      frog_union_1036 l67 = frog_value_3_1036;
-      (void)l67;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 10; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47168,33 +46096,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 11; }
-    {
-      bool l68 = frog_value_2_2;
-      (void)l68;
-      frog_union_1036 l69 = frog_value_1_1036;
-      (void)l69;
-      frog_value_1_2 = l68;
-      frog_value_2_1036 = l69;
-    }
-    {
-      frog_union_1036 l70 = frog_value_2_1036;
-      (void)l70;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 11; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 11; }
-    {
-      bool l71 = frog_value_3_2;
-      (void)l71;
-      frog_union_1036 l72 = frog_value_2_1036;
-      (void)l72;
-      frog_value_2_2 = l71;
-      frog_value_3_1036 = l72;
-    }
-    {
-      frog_union_1036 l73 = frog_value_3_1036;
-      (void)l73;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 11; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47202,33 +46106,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 12; }
-    {
-      bool l74 = frog_value_2_2;
-      (void)l74;
-      frog_union_1036 l75 = frog_value_1_1036;
-      (void)l75;
-      frog_value_1_2 = l74;
-      frog_value_2_1036 = l75;
-    }
-    {
-      frog_union_1036 l76 = frog_value_2_1036;
-      (void)l76;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 12; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 12; }
-    {
-      bool l77 = frog_value_3_2;
-      (void)l77;
-      frog_union_1036 l78 = frog_value_2_1036;
-      (void)l78;
-      frog_value_2_2 = l77;
-      frog_value_3_1036 = l78;
-    }
-    {
-      frog_union_1036 l79 = frog_value_3_1036;
-      (void)l79;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 12; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47236,33 +46116,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 13; }
-    {
-      bool l80 = frog_value_2_2;
-      (void)l80;
-      frog_union_1036 l81 = frog_value_1_1036;
-      (void)l81;
-      frog_value_1_2 = l80;
-      frog_value_2_1036 = l81;
-    }
-    {
-      frog_union_1036 l82 = frog_value_2_1036;
-      (void)l82;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 13; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 13; }
-    {
-      bool l83 = frog_value_3_2;
-      (void)l83;
-      frog_union_1036 l84 = frog_value_2_1036;
-      (void)l84;
-      frog_value_2_2 = l83;
-      frog_value_3_1036 = l84;
-    }
-    {
-      frog_union_1036 l85 = frog_value_3_1036;
-      (void)l85;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 13; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47270,33 +46126,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 14; }
-    {
-      bool l86 = frog_value_2_2;
-      (void)l86;
-      frog_union_1036 l87 = frog_value_1_1036;
-      (void)l87;
-      frog_value_1_2 = l86;
-      frog_value_2_1036 = l87;
-    }
-    {
-      frog_union_1036 l88 = frog_value_2_1036;
-      (void)l88;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 14; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 14; }
-    {
-      bool l89 = frog_value_3_2;
-      (void)l89;
-      frog_union_1036 l90 = frog_value_2_1036;
-      (void)l90;
-      frog_value_2_2 = l89;
-      frog_value_3_1036 = l90;
-    }
-    {
-      frog_union_1036 l91 = frog_value_3_1036;
-      (void)l91;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 14; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47304,33 +46136,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 15; }
-    {
-      bool l92 = frog_value_2_2;
-      (void)l92;
-      frog_union_1036 l93 = frog_value_1_1036;
-      (void)l93;
-      frog_value_1_2 = l92;
-      frog_value_2_1036 = l93;
-    }
-    {
-      frog_union_1036 l94 = frog_value_2_1036;
-      (void)l94;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 15; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 15; }
-    {
-      bool l95 = frog_value_3_2;
-      (void)l95;
-      frog_union_1036 l96 = frog_value_2_1036;
-      (void)l96;
-      frog_value_2_2 = l95;
-      frog_value_3_1036 = l96;
-    }
-    {
-      frog_union_1036 l97 = frog_value_3_1036;
-      (void)l97;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 15; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47338,33 +46146,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 16; }
-    {
-      bool l98 = frog_value_2_2;
-      (void)l98;
-      frog_union_1036 l99 = frog_value_1_1036;
-      (void)l99;
-      frog_value_1_2 = l98;
-      frog_value_2_1036 = l99;
-    }
-    {
-      frog_union_1036 l100 = frog_value_2_1036;
-      (void)l100;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 16; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 16; }
-    {
-      bool l101 = frog_value_3_2;
-      (void)l101;
-      frog_union_1036 l102 = frog_value_2_1036;
-      (void)l102;
-      frog_value_2_2 = l101;
-      frog_value_3_1036 = l102;
-    }
-    {
-      frog_union_1036 l103 = frog_value_3_1036;
-      (void)l103;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 16; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47372,33 +46156,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 17; }
-    {
-      bool l104 = frog_value_2_2;
-      (void)l104;
-      frog_union_1036 l105 = frog_value_1_1036;
-      (void)l105;
-      frog_value_1_2 = l104;
-      frog_value_2_1036 = l105;
-    }
-    {
-      frog_union_1036 l106 = frog_value_2_1036;
-      (void)l106;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 17; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 17; }
-    {
-      bool l107 = frog_value_3_2;
-      (void)l107;
-      frog_union_1036 l108 = frog_value_2_1036;
-      (void)l108;
-      frog_value_2_2 = l107;
-      frog_value_3_1036 = l108;
-    }
-    {
-      frog_union_1036 l109 = frog_value_3_1036;
-      (void)l109;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 17; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47406,33 +46166,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 18; }
-    {
-      bool l110 = frog_value_2_2;
-      (void)l110;
-      frog_union_1036 l111 = frog_value_1_1036;
-      (void)l111;
-      frog_value_1_2 = l110;
-      frog_value_2_1036 = l111;
-    }
-    {
-      frog_union_1036 l112 = frog_value_2_1036;
-      (void)l112;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 18; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 18; }
-    {
-      bool l113 = frog_value_3_2;
-      (void)l113;
-      frog_union_1036 l114 = frog_value_2_1036;
-      (void)l114;
-      frog_value_2_2 = l113;
-      frog_value_3_1036 = l114;
-    }
-    {
-      frog_union_1036 l115 = frog_value_3_1036;
-      (void)l115;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 18; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47440,33 +46176,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 19; }
-    {
-      bool l116 = frog_value_2_2;
-      (void)l116;
-      frog_union_1036 l117 = frog_value_1_1036;
-      (void)l117;
-      frog_value_1_2 = l116;
-      frog_value_2_1036 = l117;
-    }
-    {
-      frog_union_1036 l118 = frog_value_2_1036;
-      (void)l118;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 19; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 19; }
-    {
-      bool l119 = frog_value_3_2;
-      (void)l119;
-      frog_union_1036 l120 = frog_value_2_1036;
-      (void)l120;
-      frog_value_2_2 = l119;
-      frog_value_3_1036 = l120;
-    }
-    {
-      frog_union_1036 l121 = frog_value_3_1036;
-      (void)l121;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 19; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -47474,33 +46186,9 @@ bool frog_proc_477__3D_3D(frog_union_1036 frog_arg_0, frog_union_1036 frog_arg_1
       frog_value_0_2 = frog_proc_889__7C_7C(frog_value_0_2, frog_value_1_2);
     }
     frog_value_1_1036 = l1;
-    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 20; }
-    {
-      bool l122 = frog_value_2_2;
-      (void)l122;
-      frog_union_1036 l123 = frog_value_1_1036;
-      (void)l123;
-      frog_value_1_2 = l122;
-      frog_value_2_1036 = l123;
-    }
-    {
-      frog_union_1036 l124 = frog_value_2_1036;
-      (void)l124;
-    }
+    { frog_union_1036 union_value = frog_value_1_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_1_2 = union_value.tag == 20; }
     frog_value_2_1036 = l0;
-    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_3_2 = union_value.tag == 20; }
-    {
-      bool l125 = frog_value_3_2;
-      (void)l125;
-      frog_union_1036 l126 = frog_value_2_1036;
-      (void)l126;
-      frog_value_2_2 = l125;
-      frog_value_3_1036 = l126;
-    }
-    {
-      frog_union_1036 l127 = frog_value_3_1036;
-      (void)l127;
-    }
+    { frog_union_1036 union_value = frog_value_2_1036; if (union_value.tag < 0 || union_value.tag >= 21) frog_runtime_fail(); frog_value_2_2 = union_value.tag == 20; }
     {
       frog_value_1_2 = frog_proc_888__26_26(frog_value_1_2, frog_value_2_2);
     }
@@ -57061,77 +55749,68 @@ void frog_proc_565_emit_union_predicate(frog_record_1020 * frog_arg_0, intptr_t 
     if (frog_value_0_2 != 0) {
       frog_value_0_1099511627808 = l3;
       frog_value_0_1 = frog_value_0_1099511627808->field_3;
-      frog_value_1_1 = 2;
+      frog_value_1_1 = 1;
       {
         frog_value_0_1 = frog_proc_727__(frog_value_0_1, frog_value_1_1);
       }
       {
         intptr_t l4 = frog_value_0_1;
         (void)l4;
-        frog_value_0_1 = l4;
-        frog_value_1_1 = 1;
+        frog_value_0_1099511627808 = l3;
         {
-          frog_value_0_1 = frog_proc_726__2B(frog_value_0_1, frog_value_1_1);
+          frog_proc_230_emit_indent(frog_value_0_1099511627808);
         }
+        frog_value_0_5 = frog_string_660959566;
         {
-          intptr_t l5 = frog_value_0_1;
-          (void)l5;
-          frog_value_0_1099511627808 = l3;
-          {
-            frog_proc_230_emit_indent(frog_value_0_1099511627808);
-          }
-          frog_value_0_5 = frog_string_660959566;
-          {
-            frog_proc_6_emit(frog_value_0_5);
-          }
-          frog_value_0_1 = l2;
-          {
-            frog_proc_395_emit_c_union_type_name(frog_value_0_1);
-          }
-          frog_value_0_5 = frog_string_2359566445;
-          {
-            frog_proc_6_emit(frog_value_0_5);
-          }
-          frog_value_0_1099511627808 = l3;
-          frog_value_1_1 = l4;
-          frog_value_2_1 = l2;
-          {
-            frog_proc_452_emit_slot_as(frog_value_0_1099511627808, frog_value_1_1, frog_value_2_1);
-          }
-          frog_value_0_5 = frog_string_3560636856;
-          {
-            frog_proc_6_emit(frog_value_0_5);
-          }
-          frog_value_0_1 = l0;
-          {
-            frog_proc_10_emit_unsigned(frog_value_0_1);
-          }
-          frog_value_0_5 = frog_string_887917998;
-          {
-            frog_proc_6_emit(frog_value_0_5);
-          }
-          frog_value_0_1099511627808 = l3;
-          frog_value_1_1 = l5;
-          frog_value_2_1 = 2;
-          {
-            frog_proc_452_emit_slot_as(frog_value_0_1099511627808, frog_value_1_1, frog_value_2_1);
-          }
-          frog_value_0_5 = frog_string_1429681499;
-          {
-            frog_proc_6_emit(frog_value_0_5);
-          }
-          frog_value_0_1 = l1;
-          {
-            frog_proc_10_emit_unsigned(frog_value_0_1);
-          }
-          frog_value_0_5 = frog_string_1902038921;
-          {
-            frog_proc_6_emit(frog_value_0_5);
-          }
-          frog_value_0_1 = 10;
-          {
-            frog_proc_703_putc(frog_value_0_1);
-          }
+          frog_proc_6_emit(frog_value_0_5);
+        }
+        frog_value_0_1 = l2;
+        {
+          frog_proc_395_emit_c_union_type_name(frog_value_0_1);
+        }
+        frog_value_0_5 = frog_string_2359566445;
+        {
+          frog_proc_6_emit(frog_value_0_5);
+        }
+        frog_value_0_1099511627808 = l3;
+        frog_value_1_1 = l4;
+        frog_value_2_1 = l2;
+        {
+          frog_proc_452_emit_slot_as(frog_value_0_1099511627808, frog_value_1_1, frog_value_2_1);
+        }
+        frog_value_0_5 = frog_string_3560636856;
+        {
+          frog_proc_6_emit(frog_value_0_5);
+        }
+        frog_value_0_1 = l0;
+        {
+          frog_proc_10_emit_unsigned(frog_value_0_1);
+        }
+        frog_value_0_5 = frog_string_887917998;
+        {
+          frog_proc_6_emit(frog_value_0_5);
+        }
+        frog_value_0_1099511627808 = l3;
+        frog_value_1_1 = l4;
+        frog_value_2_1 = 2;
+        {
+          frog_proc_452_emit_slot_as(frog_value_0_1099511627808, frog_value_1_1, frog_value_2_1);
+        }
+        frog_value_0_5 = frog_string_1429681499;
+        {
+          frog_proc_6_emit(frog_value_0_5);
+        }
+        frog_value_0_1 = l1;
+        {
+          frog_proc_10_emit_unsigned(frog_value_0_1);
+        }
+        frog_value_0_5 = frog_string_1902038921;
+        {
+          frog_proc_6_emit(frog_value_0_5);
+        }
+        frog_value_0_1 = 10;
+        {
+          frog_proc_703_putc(frog_value_0_1);
         }
       }
     }
@@ -57681,11 +56360,6 @@ bool frog_proc_568_compile_union_instance(frog_record_1020 * frog_arg_0, void * 
                     }
                     frog_value_0_2 = l8;
                     if (frog_value_0_2 != 0) {
-                      frog_value_0_1099511627808 = l3;
-                      frog_value_1_1 = l11;
-                      {
-                        frog_proc_213_type_push(frog_value_0_1099511627808, frog_value_1_1);
-                      }
                       frog_value_0_1099511627808 = l3;
                       frog_value_1_1 = 2;
                       {

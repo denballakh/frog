@@ -39,7 +39,7 @@ proc main -- do
     true local-reuse
     false local-reuse
 
-    true NativeValue:flag NativeValue.flag? print drop
+    true NativeValue:flag NativeValue.flag? print
     true NativeValue:flag NativeValue.flag print
     11 i8 cast NativeValue:byte NativeValue.byte int cast print
     0 ptr cast NativeValue:address NativeValue.address int cast 0 == print

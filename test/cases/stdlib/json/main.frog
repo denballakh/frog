@@ -18,7 +18,7 @@ end
 proc assert-null-result JsonValue bool -- do
     let value found do
         found ! assert
-        value JsonValue.null? assert drop
+        value JsonValue.null? assert
     end
 end
 
@@ -101,7 +101,7 @@ proc assert-int-number String String int -- do
     let source lexeme expected do
         source parse
         let value do
-            value JsonValue.number? assert drop
+            value JsonValue.number? assert
             value lexeme assert-number-bytes
             value expected assert-number-int-value
             value json-free
@@ -113,7 +113,7 @@ proc assert-non-int-number String String -- do
     let source lexeme do
         source parse
         let value do
-            value JsonValue.number? assert drop
+            value JsonValue.number? assert
             value lexeme assert-number-bytes
             value assert-number-not-int
             value json-free
@@ -156,25 +156,25 @@ end
 proc main -- do
     "null" parse
     let value do
-        value JsonValue.null? assert drop
+        value JsonValue.null? assert
         value json-free
     end
     "true" parse
     let value do
-        value JsonValue.boolean? assert drop
+        value JsonValue.boolean? assert
         value true assert-boolean
         value json-free
     end
     "false" parse
     let value do
-        value JsonValue.boolean? assert drop
+        value JsonValue.boolean? assert
         value false assert-boolean
         value json-free
     end
 
     "\"\"" parse
     let value do
-        value JsonValue.string? assert drop
+        value JsonValue.string? assert
         value "" assert-string
         value json-free
     end
@@ -208,12 +208,12 @@ proc main -- do
 
     "[null,true,\"x\",3]" parse
     let array do
-        array JsonValue.array? assert drop
+        array JsonValue.array? assert
         array 4 assert-array-length
         array 0 json-array-get
         let child found do
             found assert
-            child JsonValue.null? assert drop
+            child JsonValue.null? assert
         end
         array 1 json-array-get
         let child found do
@@ -237,11 +237,11 @@ proc main -- do
 
     "{\"n\":null,\"a\":[{\"b\":\"ok\"}]}" parse
     let object do
-        object JsonValue.object? assert drop
+        object JsonValue.object? assert
         object "n" json-object-get
         let child found do
             found assert
-            child JsonValue.null? assert drop
+            child JsonValue.null? assert
         end
         object "missing" json-object-get assert-null-result
         object "a" json-object-get
@@ -312,7 +312,7 @@ proc main -- do
         buffer @ByteBuffer.bytes buffer @ByteBuffer.len json-parse-bytes
         let value success do
             success assert
-            value JsonValue.array? assert drop
+            value JsonValue.array? assert
             value json-free
         end
         buffer byte-buffer-free

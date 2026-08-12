@@ -99,27 +99,22 @@ end
 
 proc json-value-null? JsonValue -- bool do
     JsonValue.null?
-    let value matches do matches end
 end
 
 proc json-value-boolean? JsonValue -- bool do
     JsonValue.boolean?
-    let value matches do matches end
 end
 
 proc json-value-number? JsonValue -- bool do
     JsonValue.number?
-    let value matches do matches end
 end
 
 proc json-value-string? JsonValue -- bool do
     JsonValue.string?
-    let value matches do matches end
 end
 
 proc json-value-array? JsonValue -- bool do
     JsonValue.array?
-    let value matches do matches end
 end
 
 proc json-value-box JsonValue -- JsonArrayItem* do
@@ -791,37 +786,28 @@ end
 
 proc json-boolean JsonValue -- bool bool do
     let value do
-        value JsonValue.boolean?
-        let candidate matches do
-            if matches do candidate JsonValue.boolean true else false false end
-        end
+        if value JsonValue.boolean? do value JsonValue.boolean true else false false end
     end
 end
 
 proc json-string-bytes JsonValue -- ptr int bool do
     let value do
-        value JsonValue.string?
-        let candidate matches do
-            if matches do
-                candidate JsonValue.string
-                let text do text @JsonText.bytes text @JsonText.len true end
-            else
-                0 ptr cast 0 false
-            end
+        if value JsonValue.string? do
+            value JsonValue.string
+            let text do text @JsonText.bytes text @JsonText.len true end
+        else
+            0 ptr cast 0 false
         end
     end
 end
 
 proc json-number-bytes JsonValue -- ptr int bool do
     let value do
-        value JsonValue.number?
-        let candidate matches do
-            if matches do
-                candidate JsonValue.number
-                let text do text @JsonText.bytes text @JsonText.len true end
-            else
-                0 ptr cast 0 false
-            end
+        if value JsonValue.number? do
+            value JsonValue.number
+            let text do text @JsonText.bytes text @JsonText.len true end
+        else
+            0 ptr cast 0 false
         end
     end
 end
@@ -892,29 +878,23 @@ end
 
 proc json-array-length JsonValue -- int bool do
     let value do
-        value JsonValue.array?
-        let candidate matches do
-            if matches do
-                candidate JsonValue.array @JsonArray.values @PtrArray.count true
-            else
-                0 false
-            end
+        if value JsonValue.array? do
+            value JsonValue.array @JsonArray.values @PtrArray.count true
+        else
+            0 false
         end
     end
 end
 
 proc json-array-get JsonValue int -- JsonValue bool do
     let value index do
-        value JsonValue.array?
-        let candidate matches do
-            if matches do
-                candidate JsonValue.array @JsonArray.values index ptr-array-get
-                let item found do
-                    if found do item JsonArrayItem* cast @JsonArrayItem.value true else json-parse-failure end
-                end
-            else
-                json-parse-failure
+        if value JsonValue.array? do
+            value JsonValue.array @JsonArray.values index ptr-array-get
+            let item found do
+                if found do item JsonArrayItem* cast @JsonArrayItem.value true else json-parse-failure end
             end
+        else
+            json-parse-failure
         end
     end
 end
@@ -926,35 +906,32 @@ proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
         elif key-length 0 > key json-null-pointer? && do
             json-parse-failure
         else
-            value JsonValue.object?
-            let candidate matches do
-                if matches ! do
-                    json-parse-failure
-                else
-                    candidate JsonValue.object @JsonObject.head json-null-value false
-                    while peek current result found do
-                        current ptr cast json-null-pointer? ! found ! &&
-                    end
-                    do
-                        let current result found do
-                            current JsonObjectEntry* cast
-                            let entry do
-                                if entry @JsonObjectEntry.key
-                                    let entry-key do
-                                        entry-key @JsonText.bytes entry-key @JsonText.len
-                                        key key-length bytes-equal
-                                    end
-                                do
-                                    0 ptr cast JsonObjectEntry* cast entry @JsonObjectEntry.value true
-                                else
-                                    entry @JsonObjectEntry.next result false
+            if value JsonValue.object? ! do
+                json-parse-failure
+            else
+                value JsonValue.object @JsonObject.head json-null-value false
+                while peek current result found do
+                    current ptr cast json-null-pointer? ! found ! &&
+                end
+                do
+                    let current result found do
+                        current JsonObjectEntry* cast
+                        let entry do
+                            if entry @JsonObjectEntry.key
+                                let entry-key do
+                                    entry-key @JsonText.bytes entry-key @JsonText.len
+                                    key key-length bytes-equal
                                 end
+                            do
+                                0 ptr cast JsonObjectEntry* cast entry @JsonObjectEntry.value true
+                            else
+                                entry @JsonObjectEntry.next result false
                             end
                         end
                     end
-                    let current result found do
-                        if found do result true else json-parse-failure end
-                    end
+                end
+                let current result found do
+                    if found do result true else json-parse-failure end
                 end
             end
         end

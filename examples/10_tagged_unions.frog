@@ -16,7 +16,7 @@ proc safe-divide int int -- Division do
 end
 
 proc show-result Division -- do
-    if Division.value? do
+    if dup Division.value? do
         Division.value print
     else
         Division.divide_by_zero

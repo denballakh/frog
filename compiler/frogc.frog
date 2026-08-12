@@ -3245,9 +3245,9 @@ end
 
 proc == CBinding CBinding -- bool do
     let first second do
-        first CBinding.none? swap drop second CBinding.none? swap drop &&
-        first CBinding.call? swap drop second CBinding.call? swap drop && ||
-        first CBinding.value? swap drop second CBinding.value? swap drop && ||
+        first CBinding.none? second CBinding.none? &&
+        first CBinding.call? second CBinding.call? && ||
+        first CBinding.value? second CBinding.value? && ||
     end
 end
 
@@ -3260,8 +3260,8 @@ end
 
 proc == CIncludeKind CIncludeKind -- bool do
     let first second do
-        first CIncludeKind.system? swap drop second CIncludeKind.system? swap drop &&
-        first CIncludeKind.local? swap drop second CIncludeKind.local? swap drop && ||
+        first CIncludeKind.system? second CIncludeKind.system? &&
+        first CIncludeKind.local? second CIncludeKind.local? && ||
     end
 end
 
@@ -3275,9 +3275,9 @@ end
 
 proc == ConstantState ConstantState -- bool do
     let first second do
-        first ConstantState.new? swap drop second ConstantState.new? swap drop &&
-        first ConstantState.evaluating? swap drop second ConstantState.evaluating? swap drop && ||
-        first ConstantState.evaluated? swap drop second ConstantState.evaluated? swap drop && ||
+        first ConstantState.new? second ConstantState.new? &&
+        first ConstantState.evaluating? second ConstantState.evaluating? && ||
+        first ConstantState.evaluated? second ConstantState.evaluated? && ||
     end
 end
 
@@ -3291,9 +3291,9 @@ end
 
 proc == LoadState LoadState -- bool do
     let first second do
-        first LoadState.new? swap drop second LoadState.new? swap drop &&
-        first LoadState.loading? swap drop second LoadState.loading? swap drop && ||
-        first LoadState.loaded? swap drop second LoadState.loaded? swap drop && ||
+        first LoadState.new? second LoadState.new? &&
+        first LoadState.loading? second LoadState.loading? && ||
+        first LoadState.loaded? second LoadState.loaded? && ||
     end
 end
 
@@ -3307,9 +3307,9 @@ end
 
 proc == ResolveState ResolveState -- bool do
     let first second do
-        first ResolveState.new? swap drop second ResolveState.new? swap drop &&
-        first ResolveState.resolving? swap drop second ResolveState.resolving? swap drop && ||
-        first ResolveState.resolved? swap drop second ResolveState.resolved? swap drop && ||
+        first ResolveState.new? second ResolveState.new? &&
+        first ResolveState.resolving? second ResolveState.resolving? && ||
+        first ResolveState.resolved? second ResolveState.resolved? && ||
     end
 end
 
@@ -3327,13 +3327,13 @@ end
 
 proc == ScopeKind ScopeKind -- bool do
     let first second do
-        first ScopeKind.procedure? swap drop second ScopeKind.procedure? swap drop &&
-        first ScopeKind.macro_symbol? swap drop second ScopeKind.macro_symbol? swap drop && ||
-        first ScopeKind.record_type? swap drop second ScopeKind.record_type? swap drop && ||
-        first ScopeKind.union_type? swap drop second ScopeKind.union_type? swap drop && ||
-        first ScopeKind.function_type? swap drop second ScopeKind.function_type? swap drop && ||
-        first ScopeKind.constant? swap drop second ScopeKind.constant? swap drop && ||
-        first ScopeKind.c_type? swap drop second ScopeKind.c_type? swap drop && ||
+        first ScopeKind.procedure? second ScopeKind.procedure? &&
+        first ScopeKind.macro_symbol? second ScopeKind.macro_symbol? && ||
+        first ScopeKind.record_type? second ScopeKind.record_type? && ||
+        first ScopeKind.union_type? second ScopeKind.union_type? && ||
+        first ScopeKind.function_type? second ScopeKind.function_type? && ||
+        first ScopeKind.constant? second ScopeKind.constant? && ||
+        first ScopeKind.c_type? second ScopeKind.c_type? && ||
     end
 end
 
@@ -3347,9 +3347,9 @@ end
 
 proc == AggregateCycleState AggregateCycleState -- bool do
     let first second do
-        first AggregateCycleState.unvisited? swap drop second AggregateCycleState.unvisited? swap drop &&
-        first AggregateCycleState.visiting? swap drop second AggregateCycleState.visiting? swap drop && ||
-        first AggregateCycleState.visited? swap drop second AggregateCycleState.visited? swap drop && ||
+        first AggregateCycleState.unvisited? second AggregateCycleState.unvisited? &&
+        first AggregateCycleState.visiting? second AggregateCycleState.visiting? && ||
+        first AggregateCycleState.visited? second AggregateCycleState.visited? && ||
     end
 end
 
@@ -3365,11 +3365,11 @@ end
 
 proc == TokenKind TokenKind -- bool do
     let first second do
-        first TokenKind.int? swap drop second TokenKind.int? swap drop &&
-        first TokenKind.bool? swap drop second TokenKind.bool? swap drop && ||
-        first TokenKind.char? swap drop second TokenKind.char? swap drop && ||
-        first TokenKind.string? swap drop second TokenKind.string? swap drop && ||
-        first TokenKind.word? swap drop second TokenKind.word? swap drop && ||
+        first TokenKind.int? second TokenKind.int? &&
+        first TokenKind.bool? second TokenKind.bool? && ||
+        first TokenKind.char? second TokenKind.char? && ||
+        first TokenKind.string? second TokenKind.string? && ||
+        first TokenKind.word? second TokenKind.word? && ||
     end
 end
 
@@ -3383,9 +3383,9 @@ end
 
 proc == BlockKind BlockKind -- bool do
     let first second do
-        first BlockKind.conditional? swap drop second BlockKind.conditional? swap drop &&
-        first BlockKind.loop? swap drop second BlockKind.loop? swap drop && ||
-        first BlockKind.local_scope? swap drop second BlockKind.local_scope? swap drop && ||
+        first BlockKind.conditional? second BlockKind.conditional? &&
+        first BlockKind.loop? second BlockKind.loop? && ||
+        first BlockKind.local_scope? second BlockKind.local_scope? && ||
     end
 end
 
@@ -7918,27 +7918,27 @@ end
 
 proc == PrivateOperation PrivateOperation -- bool do
     let first second do
-        first PrivateOperation.none? swap drop second PrivateOperation.none? swap drop &&
-        first PrivateOperation.add? swap drop second PrivateOperation.add? swap drop && ||
-        first PrivateOperation.sub? swap drop second PrivateOperation.sub? swap drop && ||
-        first PrivateOperation.mul? swap drop second PrivateOperation.mul? swap drop && ||
-        first PrivateOperation.div? swap drop second PrivateOperation.div? swap drop && ||
-        first PrivateOperation.mod? swap drop second PrivateOperation.mod? swap drop && ||
-        first PrivateOperation.divmod? swap drop second PrivateOperation.divmod? swap drop && ||
-        first PrivateOperation.or? swap drop second PrivateOperation.or? swap drop && ||
-        first PrivateOperation.and? swap drop second PrivateOperation.and? swap drop && ||
-        first PrivateOperation.xor? swap drop second PrivateOperation.xor? swap drop && ||
-        first PrivateOperation.not? swap drop second PrivateOperation.not? swap drop && ||
-        first PrivateOperation.shl? swap drop second PrivateOperation.shl? swap drop && ||
-        first PrivateOperation.shr? swap drop second PrivateOperation.shr? swap drop && ||
-        first PrivateOperation.eq? swap drop second PrivateOperation.eq? swap drop && ||
-        first PrivateOperation.ne? swap drop second PrivateOperation.ne? swap drop && ||
-        first PrivateOperation.lt? swap drop second PrivateOperation.lt? swap drop && ||
-        first PrivateOperation.gt? swap drop second PrivateOperation.gt? swap drop && ||
-        first PrivateOperation.le? swap drop second PrivateOperation.le? swap drop && ||
-        first PrivateOperation.ge? swap drop second PrivateOperation.ge? swap drop && ||
-        first PrivateOperation.load? swap drop second PrivateOperation.load? swap drop && ||
-        first PrivateOperation.store? swap drop second PrivateOperation.store? swap drop && ||
+        first PrivateOperation.none? second PrivateOperation.none? &&
+        first PrivateOperation.add? second PrivateOperation.add? && ||
+        first PrivateOperation.sub? second PrivateOperation.sub? && ||
+        first PrivateOperation.mul? second PrivateOperation.mul? && ||
+        first PrivateOperation.div? second PrivateOperation.div? && ||
+        first PrivateOperation.mod? second PrivateOperation.mod? && ||
+        first PrivateOperation.divmod? second PrivateOperation.divmod? && ||
+        first PrivateOperation.or? second PrivateOperation.or? && ||
+        first PrivateOperation.and? second PrivateOperation.and? && ||
+        first PrivateOperation.xor? second PrivateOperation.xor? && ||
+        first PrivateOperation.not? second PrivateOperation.not? && ||
+        first PrivateOperation.shl? second PrivateOperation.shl? && ||
+        first PrivateOperation.shr? second PrivateOperation.shr? && ||
+        first PrivateOperation.eq? second PrivateOperation.eq? && ||
+        first PrivateOperation.ne? second PrivateOperation.ne? && ||
+        first PrivateOperation.lt? second PrivateOperation.lt? && ||
+        first PrivateOperation.gt? second PrivateOperation.gt? && ||
+        first PrivateOperation.le? second PrivateOperation.le? && ||
+        first PrivateOperation.ge? second PrivateOperation.ge? && ||
+        first PrivateOperation.load? second PrivateOperation.load? && ||
+        first PrivateOperation.store? second PrivateOperation.store? && ||
     end
 end
 
@@ -9482,15 +9482,13 @@ end
 proc emit-union-predicate CompileContext* int int int -- do
     let cc union-type tag case-count do
         if cc @CompileContext.emitting do
-            cc @CompileContext.type_count 2 -
-            peek union-index do 1 +
-                let result-index do
-                    cc emit-indent "{ " emit union-type emit-c-union-type-name " union_value = " emit
-                    cc union-index union-type emit-slot-as "; if (union_value.tag < 0 || union_value.tag >= " emit
-                    case-count emit-unsigned ") frog_runtime_fail(); " emit
-                    cc result-index type-bool emit-slot-as " = union_value.tag == " emit
-                    tag emit-unsigned "; }" emit 10 putc
-                end
+            cc @CompileContext.type_count 1 -
+            let value-index do
+                cc emit-indent "{ " emit union-type emit-c-union-type-name " union_value = " emit
+                cc value-index union-type emit-slot-as "; if (union_value.tag < 0 || union_value.tag >= " emit
+                case-count emit-unsigned ") frog_runtime_fail(); " emit
+                cc value-index type-bool emit-slot-as " = union_value.tag == " emit
+                tag emit-unsigned "; }" emit 10 putc
             end
         end
     end
@@ -9584,7 +9582,6 @@ proc compile-union-instance CompileContext* ptr int int -- bool do
                                     let union-type do
                                         cc union-type type-expect
                                         if predicate do
-                                            cc union-type type-push
                                             cc type-bool type-push
                                             cc
                                             union-type

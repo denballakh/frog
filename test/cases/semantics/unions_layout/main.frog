@@ -10,6 +10,8 @@ union Maybe
     case some int
 end
 
+proc is-none Maybe -- bool do Maybe.none? end
+
 record Payload
     value int
     maybe Maybe
@@ -31,29 +33,20 @@ union Scalar
 end
 
 proc main -- do
-    EnumOnly:first EnumOnly.first?
-    let value matches do
-        matches print
+    EnumOnly:first
+    let value do
+        value EnumOnly.first? print
         value EnumOnly.first
     end
 
-    Maybe:none Maybe.none?
-    let value matches do
-        matches print
-    end
-    Maybe:none Maybe.some?
-    let value matches do
-        matches print
-    end
+    Maybe:none is-none print
+    Maybe:none Maybe.some? print
     Maybe:none Maybe.none
     Maybe:none Maybe cast Maybe.none
     9 Maybe:some
     let value do
-        value Maybe.some?
-        let maybe matches do
-            matches print
-            maybe maybe-value print
-        end
+        value Maybe.some? print
+        value maybe-value print
     end
 
     Payload:alloc
@@ -63,18 +56,12 @@ proc main -- do
         payload @Payload.maybe Maybe.none
         payload Box:full
         let boxed do
-            boxed Box.full?
-            let box matches do
-                matches print
-                box Box.full @Payload.value print
-            end
+            boxed Box.full? print
+            boxed Box.full @Payload.value print
         end
     end
 
-    0 ptr cast Chain* cast Chain:next Chain.next?
-    let chain matches do
-        matches print
-    end
+    0 ptr cast Chain* cast Chain:next Chain.next? print
 
 
     true Scalar:flag Scalar.flag print

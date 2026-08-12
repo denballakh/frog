@@ -101,7 +101,7 @@ end
 
 proc main -- do
     42 Result:ok
-    if Result.ok? do
+    if dup Result.ok? do
         Result.ok print
     else
         Result.error drop
@@ -111,7 +111,7 @@ end
 
 `union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be primitive, typed-pointer, or visible nominal types.
 
-`Name:variant` constructs a value, copying the declared payload when present. `Name.variant?` validates the stored tag and has stack effect `Name -- Name bool`, preserving the value so an immediately following `if` can project it. `Name.variant` validates that the value has exactly that variant, consumes the value, and produces its payload; for a payloadless variant it only validates and consumes the value. Invalid tags and wrong-variant projections terminate the program with status 1.
+`Name:variant` constructs a value, copying the declared payload when present. `Name.variant?` validates the stored tag, consumes the value, and produces a boolean (`Name -- bool`). Use `dup Name.variant?` when both the value and the predicate result are needed. `Name.variant` validates that the value has exactly that variant, consumes the value, and produces its payload; for a payloadless variant it only validates and consumes the value. Invalid tags and wrong-variant projections terminate the program with status 1.
 
 Union values and their payloads pass and copy by value. There is no allocation, ownership tracking, or size operation for unions.
 

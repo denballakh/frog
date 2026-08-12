@@ -35,9 +35,9 @@ proc main -- do
         pair @Pair.label @.text String.len print
     end
 
-    11 Pair:new !Pair.x Packet:pair Packet.pair?
-    let packet matches do
-        matches print
+    11 Pair:new !Pair.x Packet:pair
+    let packet do
+        packet Packet.pair? print
         packet Packet.pair @.x print
     end
     "union" Packet:text Packet.text String.len print
