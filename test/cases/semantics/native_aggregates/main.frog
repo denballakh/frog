@@ -1,0 +1,52 @@
+record Label
+    text String
+end
+
+record Pair
+    x int
+    label Label
+end
+
+record Node
+    next Node*
+end
+
+union Packet
+    case pair Pair
+    case text String
+end
+
+proc copy-pair Pair -- Pair do end
+
+proc main -- do
+    Pair:new @Pair.x print
+    Pair:new @.label @Label.text String.len print
+
+    7 Pair:new !Pair.x
+    "field" Label:new !Label.text swap !Pair.label
+    copy-pair @Pair.label @.text String.len print
+
+    Pair:alloc
+    let pair do
+        pair @Pair.x print
+        9 pair !Pair.x
+        pair @.x print
+        "pointer" Label:new !Label.text pair !.label
+        pair @Pair.label @.text String.len print
+    end
+
+    11 Pair:new !Pair.x Packet:pair Packet.pair?
+    let packet matches do
+        matches print
+        packet Packet.pair @.x print
+    end
+    "union" Packet:text Packet.text String.len print
+
+    Pair:alloc
+    let pair do
+        41 Pair:new !Pair.x pair !
+        pair @ @Pair.x print
+    end
+
+    Pair:sizeof 0 > print
+end

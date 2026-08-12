@@ -181,10 +181,12 @@ false
 ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##\x20\x20
 " "" 0 "" "" "" "examples/08_gcd_grid" context frog-run-case
         "examples/09_records.frog" "examples" "25
-16
+3
+4
 " "" 0 "" "" "" "examples/09_records" context frog-run-case
         "examples/10_tagged_unions.frog" "examples" "5
 E
+12
 " "" 0 "" "" "" "examples/10_tagged_unions" context frog-run-case
         "examples/11_c_ffi.frog" "examples" "42
 4

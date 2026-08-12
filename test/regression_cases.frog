@@ -49,6 +49,7 @@ proc run-regression-cases FrogTestContext* -- do
         "test/cases/semantics/args/main.frog" "test/cases/semantics/args" "3\n/\nfrog\npond\n" "" 0 "" "frog" "pond" "semantics/args" context frog-run-case
         "test/cases/semantics/pointer_store/main.frog" "test/cases/semantics/pointer_store" "65\n" "" 0 "" "" "" "semantics/pointer_store" context frog-run-case
         "test/cases/semantics/c_ffi/main.frog" "test/cases/semantics/c_ffi" "42\n42\n9\n711\ntrue\nfalse\n" "" 0 "test/cases/semantics/c_ffi/helper.c" "" "" "semantics/c_ffi" context frog-run-case
+        "test/cases/semantics/native_aggregates/main.frog" "test/cases/semantics/native_aggregates" "0\n0\n5\n0\n9\n7\ntrue\n11\n5\n41\ntrue\n" "" 0 "" "" "" "semantics/native_aggregates" context frog-run-case
         "test/cases/semantics/records_layout/main.frog" "test/cases/semantics/records_layout" "41\ntrue\ntrue\n32\n7\n" "" 0 "" "" "" "semantics/records_layout" context frog-run-case
         "test/cases/semantics/inferred_record_access/main.frog" "test/cases/semantics/inferred_record_access" "77\n1\n9\n2\n9\n" "" 0 "" "" "" "semantics/inferred_record_access" context frog-run-case
         "test/cases/semantics/unions_layout/main.frog" "test/cases/semantics/unions_layout" "true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n" "" 0 "" "" "" "semantics/unions_layout" context frog-run-case
@@ -82,10 +83,11 @@ proc run-regression-cases FrogTestContext* -- do
         "test/cases/semantics/operator_store_mismatch/main.frog" "test/cases/semantics/operator_store_mismatch" "frogc: !: stack contract mismatch: expected [bool], actual [ptr]\n" "semantics-error/operator_store_mismatch" context frog-error-fixture
         "proc take i8* -- do drop end\nproc main -- do 0 ptr cast u8* cast take end\n" "test/cases/semantics" "frogc: take: stack contract mismatch: expected [i8*], actual [u8*]\n" "semantics-error/typed_pointer_identity" context frog-error-source
         "proc main -- do end\nrecord Broken value * end\n" "test/cases/semantics" "frogc: malformed pointer type\n" "semantics-error/malformed_pointer_type" context frog-error-source
+        "record Node next Node end\nproc main -- do end\n" "test/cases/semantics" "frogc: recursive aggregate value requires a pointer\n" "semantics-error/recursive_record_value" context frog-error-source
+        "record A b B end\nrecord B a A end\nproc main -- do end\n" "test/cases/semantics" "frogc: recursive aggregate value requires a pointer\n" "semantics-error/recursive_record_value_indirect" context frog-error-source
+        "union Node case next Node end\nproc main -- do end\n" "test/cases/semantics" "frogc: recursive aggregate value requires a pointer\n" "semantics-error/recursive_union_value" context frog-error-source
+        "record A b B end\nunion B case a A end\nproc main -- do end\n" "test/cases/semantics" "frogc: recursive aggregate value requires a pointer\n" "semantics-error/recursive_aggregate_value_indirect" context frog-error-source
         "test/cases/semantics/unions_wrong_variant/main.frog" "test/cases/semantics/unions_wrong_variant" "" 1 "semantics/unions_wrong_variant" context frog-run-status-case
-        "test/cases/semantics/unions_invalid_tag/main.frog" "test/cases/semantics/unions_invalid_tag" "" 1 "semantics/unions_invalid_tag" context frog-run-status-case
-        "test/cases/semantics/unions_negative_tag/main.frog" "test/cases/semantics/unions_negative_tag" "" 1 "semantics/unions_negative_tag" context frog-run-status-case
-        "test/cases/semantics/unions_null/main.frog" "test/cases/semantics/unions_null" "" 1 "semantics/unions_null" context frog-run-status-case
         "test/cases/semantics/functions_unknown_proc/main.frog" "test/cases/semantics/functions_unknown_proc" "" 1 "semantics/functions_unknown_proc" context frog-run-status-case
         "test/cases/semantics/functions_incompatible_proc/main.frog" "test/cases/semantics/functions_incompatible_proc" "" 1 "semantics/functions_incompatible_proc" context frog-run-status-case
         "test/cases/strings/main.frog" "test/cases/strings" "true\ntrue\ntrue\ntrue\ntrue\ntrue\n98\ntrue\ntrue\n178\n239\n9\n65\n34\n92\n10\n0\n255\n63\n63\n47\n33\n10\n47\n34\n34\n" "" 0 "" "" "" "strings/strings" context frog-run-case

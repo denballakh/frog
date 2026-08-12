@@ -29,7 +29,7 @@ const generated-c-check-procedure-symbols 1 5 u32 cast << end
 const generated-c-check-strings 1 6 u32 cast << end
 const generated-c-check-native-scalar-abi 1 7 u32 cast << end
 const generated-c-required-checks 1 8 u32 cast << 1 - end
-const expected-test-cases 505 end
+const expected-test-cases 507 end
 
 proc frog-test-context ptr ptr -- FrogTestContext* do
     let compiler executable do
@@ -536,13 +536,13 @@ proc frog-string-symbol-at ptr int int String -- ptr int bool do
     let bytes length suffix-index suffix do
         bytes suffix-index frog-line-start-before
         let line-start do
-            suffix-index line-start - "static uint8_t " String.len -
+            suffix-index line-start - "static char " String.len -
             let symbol-length do
                 if symbol-length 0 < do
                     0 ptr cast 0 false
                 else
-                    bytes line-start + "static uint8_t " String.len
-                    "static uint8_t " String.bytes "static uint8_t " String.len bytes-equal
+                    bytes line-start + "static char " String.len
+                    "static char " String.bytes "static char " String.len bytes-equal
                     suffix-index suffix String.len +
                     let prefix-matches line-end do
                         if line-end length == do
@@ -553,10 +553,10 @@ proc frog-string-symbol-at ptr int int String -- ptr int bool do
                             false
                         end
                         prefix-matches &&
-                        bytes line-start + "static uint8_t " String.len + symbol-length frog-string-symbol-valid &&
+                        bytes line-start + "static char " String.len + symbol-length frog-string-symbol-valid &&
                         let valid do
                             if valid do
-                                bytes line-start + "static uint8_t " String.len + symbol-length true
+                                bytes line-start + "static char " String.len + symbol-length true
                             else
                                 0 ptr cast 0 false
                             end
@@ -606,9 +606,9 @@ proc frog-check-string-c ptr int FrogTestContext* -- do
         "generated-c/strings FrogString typedef start" context frog-check
         bytes length "} FrogString;" frog-bytes-contain-line
         "generated-c/strings FrogString typedef end" context frog-check
-        bytes length "  uint8_t *bytes;" frog-bytes-contain-line
+        bytes length "  char *bytes;" frog-bytes-contain-line
         "generated-c/strings bytes field" context frog-check
-        bytes length "  Cell len;" frog-bytes-contain-line
+        bytes length "  intptr_t len;" frog-bytes-contain-line
         "generated-c/strings length field" context frog-check
         bytes length
         "static const FrogString frog_string_2771466528 = { frog_string_2771466528_bytes, 8 };"
@@ -619,14 +619,14 @@ proc frog-check-string-c ptr int FrogTestContext* -- do
         frog-bytes-contain-line
         "generated-c/strings second collision object" context frog-check
 
-        bytes length "static uint8_t frog_string_2771466528_bytes[] = " frog-count-lines-starting-with 0 >
+        bytes length "static char frog_string_2771466528_bytes[] = " frog-count-lines-starting-with 0 >
         "generated-c/strings first collision bytes" context frog-check
-        bytes length "static uint8_t frog_string_2771466528_1_bytes[] = " frog-count-lines-starting-with 0 >
+        bytes length "static char frog_string_2771466528_1_bytes[] = " frog-count-lines-starting-with 0 >
         "generated-c/strings second collision bytes" context frog-check
 
         bytes length "static const FrogString frog_string_" frog-count-lines-starting-with 7 ==
         "generated-c/strings seven object declarations" context frog-check
-        bytes length "static uint8_t frog_string_" frog-count-lines-starting-with 7 ==
+        bytes length "static char frog_string_" frog-count-lines-starting-with 7 ==
         "generated-c/strings seven byte declarations" context frog-check
         bytes length "= \"same\";" String.bytes "= \"same\";" String.len bytes-count 1 ==
         "generated-c/strings one same literal" context frog-check
@@ -635,17 +635,17 @@ proc frog-check-string-c ptr int FrogTestContext* -- do
         let symbol symbol-length found do
             found "generated-c/strings same symbol extracted" context frog-check
             if found do
-                "= (Cell)(intptr_t)&" String.len symbol-length + 1 + byte-buffer-new
+                "= " String.len symbol-length + 1 + byte-buffer-new
                 let needle do
-                    "= (Cell)(intptr_t)&" needle byte-buffer-append-string
+                    "= " needle byte-buffer-append-string
                     symbol symbol-length needle byte-buffer-append-bytes
                     ";" needle byte-buffer-append-string
                     bytes length needle @ByteBuffer.bytes needle @ByteBuffer.len bytes-count 3 ==
-                    "generated-c/strings three same references" context frog-check
+                    "generated-c/strings three direct same assignments" context frog-check
                     needle byte-buffer-free
                 end
             else
-                false "generated-c/strings three same references" context frog-check
+                false "generated-c/strings three direct same assignments" context frog-check
             end
         end
 

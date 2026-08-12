@@ -8,7 +8,7 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 
 ## Values And Literals
 
-- Supported runtime value classes are `int`, the exact-width integer types, `bool`, `ptr`, typed pointers, `String`, nominal record and union handles, nominal function references, and `type`.
+- Supported runtime value classes are `int`, the exact-width integer types, `bool`, `ptr`, typed pointers, `String`, nominal record and union values, nominal function references, and `type`.
 - Procedure, record-field, union-payload, and function-reference signatures can name `int`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `bool`, `ptr`, `String`, and visible nominal types.
 - `int` is a target-sized signed integer. Integer literals are decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks with an optional leading `+` or `-`. Literals outside the target `int` range are unsupported. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. A standalone `+` or `-` remains an arithmetic word.
 - `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, and `u64` are distinct static integer types. Integer literals are still `int`, so conversion to or between exact-width types requires `cast`; no implicit integer conversion is performed.
@@ -17,8 +17,8 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw Unicode codepoint. `\'` represents
   a single quote; a raw backslash remains written as `'\'`.
-- String literals push one `String` value. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
-- Equal decoded string literals share writable byte storage, so writes through `String.bytes` are visible through every equal literal in the program. The storage has a trailing NUL byte, while `String.len` excludes that terminator and includes embedded NUL bytes.
+- String literals push a `String` value, a copied descriptor containing a byte pointer and length. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
+- Copying a `String` copies its descriptor, not its bytes. Equal decoded string literals share writable byte storage, so writes through `String.bytes` are visible through every equal literal in the program. The storage has a trailing NUL byte, while `String.len` excludes that terminator and includes embedded NUL bytes.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 
@@ -44,7 +44,7 @@ Procedure calls are statically checked against declared stack contracts.
 
 ## Records
 
-Records define nominal pointer types with typed fields:
+Records define nominal value types with typed fields; `Name*` is the corresponding typed pointer type:
 
 ```frog
 record Node
@@ -53,25 +53,20 @@ record Node
     ready bool
 end
 
-proc value-of Node* -- int do @Node.value end
+proc value-of Node -- int do @Node.value end
 
 proc main -- do
-    Node:alloc
-    let node do
-        41 node !Node.value
-        true node !Node.ready
-        node value-of print
-    end
+    true 41 Node:new !Node.value !Node.ready value-of print
 end
 ```
 
-`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Use `Name*` for a field that stores a reference to an allocated `Name`. Union and function-reference fields store their values directly rather than inline copies of another value.
+`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Record, union, and function-reference fields store their values directly. A recursive inline record or union field is rejected; use a typed pointer such as `Name*` to make a recursive edge.
 
-Record instances use manual memory management. `Name:alloc` has stack effect `-- Name*` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
+`Name:new` has stack effect `-- Name` and produces a zero-initialized value. `Name:alloc` has stack effect `-- Name*` and allocates a zero-initialized pointed-to value. `Name:sizeof` has stack effect `-- int` and pushes the size of the value without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no default field values, implicit allocation, ownership tracking, or garbage collection.
 
-`@Name.field` reads a field with stack effect `Name* -- FieldType`; `!Name.field` writes it with stack effect `FieldType Name* --`. `@.field` and `!.field` infer `Name` from the record pointer on top of the static stack after macro expansion, with the same respective stack effects. Exact macros named `@.field` or `!.field` take precedence over inferred access. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
+`@Name.field` reads a field with stack effects `Name -- FieldType` and `Name* -- FieldType`. `!Name.field` is a functional setter for a value (`FieldType Name -- Name`) and a mutating setter for a pointer (`FieldType Name* --`). `@.field` and `!.field` infer `Name` from the value or pointer on top of the static stack after macro expansion, with the same respective stack effects. Exact macros named `@.field` or `!.field` take precedence over inferred access. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
 
-Record pointer types are nominal. Two declarations with identical fields are different types, and field access requires a pointer to the declared owner type. Explicit `ptr` to record-pointer and record-pointer to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different record pointer types are rejected.
+Record value and pointer types are nominal. Two declarations with identical fields are different types, and field access requires a value or pointer to the declared owner type. Explicit `ptr` to record-pointer and record-pointer to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different record pointer types are rejected.
 
 See the runnable [records example](../examples/09_records.frog).
 
@@ -98,9 +93,9 @@ end
 
 `union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be primitive, typed-pointer, or visible nominal types.
 
-`Name:variant` constructs a value, consuming the declared payload when present. `Name.variant?` validates the stored tag and has stack effect `Name -- Name bool`, preserving the handle so an immediately following `if` can project it. `Name.variant` validates that the value has exactly that variant, consumes the handle, and produces its payload; for a payloadless variant it only validates and consumes the handle. Invalid tags and wrong-variant projections terminate the program with status 1.
+`Name:variant` constructs a value, copying the declared payload when present. `Name.variant?` validates the stored tag and has stack effect `Name -- Name bool`, preserving the value so an immediately following `if` can project it. `Name.variant` validates that the value has exactly that variant, consumes the value, and produces its payload; for a payloadless variant it only validates and consumes the value. Invalid tags and wrong-variant projections terminate the program with status 1.
 
-Union constructors allocate values; predicates and projections do not free them. Payload handles are borrowed, and unions do not own or recursively free their payloads. There is no uninitialized allocation or size operation for unions. Explicit `ptr`/union casts are available for manual lifetime and FFI boundaries; a pointer cast to a union must refer to a live value created by the matching union constructor.
+Union values and their payloads pass and copy by value. There is no allocation, ownership tracking, or size operation for unions.
 
 Union types are nominal. Structurally identical declarations remain distinct, including through casts. Imported aliases and reexports retain the defining union's identity. Branching uses the existing `if`/`elif` constructs; matching is not exhaustiveness-checked.
 
@@ -377,7 +372,7 @@ Operators are overloaded implicit builtins. They have no special source-level na
 ### Casts
 
 - `cast`: `x type -- y`
-- Casts allow same-type, conversions among `int` and the exact-width integer types, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, `ptr`/typed-pointer, and the existing `ptr`/record-or-union-handle conversions. `String` and function-reference types support only same-type casts.
+- Casts allow same-type, conversions among `int` and the exact-width integer types, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/typed-pointer. `String`, record and union values, and function-reference types support only same-type casts.
 - Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
 - The destination type is pushed with a primitive, typed-pointer, or visible nominal type word.
 

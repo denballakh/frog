@@ -108,15 +108,15 @@ heap-backed byte buffers:
   non-overlapping occurrences; an empty needle counts as `0`.
 - `string-equal`: `String String -- bool` compares decoded string bytes.
 - `string-starts-with`: `String String -- bool` tests a string prefix.
-- `byte-buffer-new`: `capacity -- ByteBuffer` creates an empty buffer.
-- `byte-buffer-push`: `byte ByteBuffer --` appends one byte and grows the
+- `byte-buffer-new`: `capacity -- ByteBuffer*` creates an empty buffer.
+- `byte-buffer-push`: `byte ByteBuffer* --` appends one byte and grows the
   buffer when necessary.
-- `byte-buffer-append-bytes`: `bytes len ByteBuffer --` appends a byte range.
-- `byte-buffer-append-string`: `String ByteBuffer --` appends a string's
+- `byte-buffer-append-bytes`: `bytes len ByteBuffer* --` appends a byte range.
+- `byte-buffer-append-string`: `String ByteBuffer* --` appends a string's
   bytes.
-- `byte-buffer-equal-string`: `ByteBuffer String -- bool` compares a buffer to
+- `byte-buffer-equal-string`: `ByteBuffer* String -- bool` compares a buffer to
   a string.
-- `byte-buffer-free`: `ByteBuffer --` releases a buffer and its storage.
+- `byte-buffer-free`: `ByteBuffer* --` releases a buffer and its storage.
 
 `ByteBuffer` exposes `bytes`, `len`, and `capacity` fields through the normal
 record operations. Its byte storage may move after `byte-buffer-push`, so code
@@ -128,17 +128,17 @@ must load `@ByteBuffer.bytes` again after an append.
 containers never release stored values. Callers retain ownership of every value
 they insert and of values returned by lookup or removal operations.
 
-- `ptr-array-new`: `capacity -- PtrArray` creates an empty array. A nonpositive
+- `ptr-array-new`: `capacity -- PtrArray*` creates an empty array. A nonpositive
   requested capacity is normalized to a small positive capacity.
-- `ptr-array-push`: `value PtrArray --` appends a borrowed pointer, growing the
+- `ptr-array-push`: `value PtrArray* --` appends a borrowed pointer, growing the
   array as needed.
-- `ptr-array-get`: `PtrArray index -- value found` returns the stored pointer
+- `ptr-array-get`: `PtrArray* index -- value found` returns the stored pointer
   and `true` for an in-bounds index, or a null pointer and `false` otherwise.
-- `ptr-array-set`: `value PtrArray index -- bool` replaces an in-bounds value
+- `ptr-array-set`: `value PtrArray* index -- bool` replaces an in-bounds value
   and returns `true`; it returns `false` for an out-of-bounds index.
-- `ptr-array-pop`: `PtrArray -- value found` removes and returns the last value,
+- `ptr-array-pop`: `PtrArray* -- value found` removes and returns the last value,
   or returns a null pointer and `false` when empty.
-- `ptr-array-free`: `PtrArray --` releases the array's internal storage.
+- `ptr-array-free`: `PtrArray* --` releases the array's internal storage.
 
 Array construction or growth terminates with status 1 when the required slot
 count cannot be represented safely as an allocation size.
@@ -146,30 +146,30 @@ count cannot be represented safely as an allocation size.
 `PtrArray` exposes `items`, `count`, and `capacity`. `PtrList` exposes `head`
 and `count`; its nodes expose `value` and `next`.
 
-- `ptr-list-new`: `-- PtrList` creates an empty list.
-- `ptr-list-push-front`: `value PtrList --` adds a borrowed pointer at the
+- `ptr-list-new`: `-- PtrList*` creates an empty list.
+- `ptr-list-push-front`: `value PtrList* --` adds a borrowed pointer at the
   front.
-- `ptr-list-first`: `PtrList -- value found` observes the first pointer, or a
+- `ptr-list-first`: `PtrList* -- value found` observes the first pointer, or a
   null pointer and `false` when empty.
-- `ptr-list-pop-front`: `PtrList -- value found` removes the first pointer, or
+- `ptr-list-pop-front`: `PtrList* -- value found` removes the first pointer, or
   returns a null pointer and `false` when empty.
-- `ptr-list-free`: `PtrList --` releases list nodes but not their values.
+- `ptr-list-free`: `PtrList* --` releases list nodes but not their values.
 
 `StringMap` maps byte-string keys to borrowed `ptr` values. It copies and owns
 each inserted key; callers may change or release the source bytes after
 `string-map-set` returns. `StringMap` exposes `buckets`, `count`, and
 `capacity`; entries expose `key`, `key_length`, `value`, and `next`.
 
-- `string-map-new`: `capacity -- StringMap` creates an empty map. A nonpositive
+- `string-map-new`: `capacity -- StringMap*` creates an empty map. A nonpositive
   requested capacity is normalized to a small positive bucket count.
-- `string-map-get`: `key key_length StringMap -- value found` returns the value
+- `string-map-get`: `key key_length StringMap* -- value found` returns the value
   for a present key, or a null pointer and `false` when absent.
-- `string-map-set`: `key key_length value StringMap -- previous replaced`
+- `string-map-set`: `key key_length value StringMap* -- previous replaced`
   inserts or replaces a key. A replacement returns the old borrowed value and
   `true`; a new key returns a null pointer and `false`.
-- `string-map-remove`: `key key_length StringMap -- value found` removes a key
+- `string-map-remove`: `key key_length StringMap* -- value found` removes a key
   and returns its borrowed value, or a null pointer and `false` when absent.
-- `string-map-free`: `StringMap --` releases map entries, owned key copies, and
+- `string-map-free`: `StringMap* --` releases map entries, owned key copies, and
   buckets, but not values.
 
 Key lengths must be nonnegative. A positive key length requires a pointer to at
@@ -177,34 +177,34 @@ least that many readable bytes. Map construction terminates with status 1 when
 the required bucket allocation size cannot be represented safely. Maps use a
 fixed bucket count with chained entries; they do not resize automatically.
 
-`container-count`: `Container -- int` and `container-empty?`: `Container --
-bool` are structural macros that work with `PtrArray`, `PtrList`, and
-`StringMap`.
+`container-count`: `Container* -- int` and `container-empty?`: `Container* --
+bool` are structural macros that work with `PtrArray*`, `PtrList*`, and
+`StringMap*`.
 
 ## JSON
 
 `stdlib/json.frog` parses one complete JSON value into an exclusively owned
-tree. `JsonValue` is a tagged union with `null`, `boolean`, `number`, `string`,
-`array`, and `object` variants. Number payloads preserve their source lexemes;
-string payloads contain decoded bytes.
+tree. `JsonValue` is a by-value tagged union with `null`, `boolean`, `number`,
+`string`, `array`, and `object` variants. Number payloads preserve their source
+lexemes; string payloads contain decoded bytes.
 
-- `json-parse`: `String -- value success` parses a literal string.
-- `json-parse-bytes`: `bytes len -- value success` parses a byte range.
-- `json-boolean`: `value -- boolean success` reads a boolean payload.
-- `json-string-bytes`: `value -- bytes len success` borrows decoded string
+- `json-parse`: `String -- JsonValue bool` parses a literal string.
+- `json-parse-bytes`: `bytes len -- JsonValue bool` parses a byte range.
+- `json-boolean`: `JsonValue -- bool bool` reads a boolean payload.
+- `json-string-bytes`: `JsonValue -- bytes len bool` borrows decoded string
   bytes.
-- `json-number-bytes`: `value -- bytes len success` borrows the original
+- `json-number-bytes`: `JsonValue -- bytes len bool` borrows the original
   number lexeme.
-- `json-number-int`: `value -- integer success` converts an integer-form number
-  lexeme when it fits Frog's signed 64-bit `int`. Fraction and exponent forms
-  return `false`, even when their mathematical value is integral.
-- `json-array-length`: `value -- length success` reads an array length.
-- `json-array-get`: `value index -- child found` borrows an indexed child.
-- `json-object-get`: `value key -- child found` borrows the last member with a
-  literal `String` key.
-- `json-object-get-bytes`: `value key key_len -- child found` performs the same
-  lookup with a byte-range key.
-- `json-free`: `value --` recursively releases a parsed tree.
+- `json-number-int`: `JsonValue -- int bool` converts an integer-form number
+  lexeme when it fits Frog's `int`. Fraction and exponent forms return `false`,
+  even when their mathematical value is integral.
+- `json-array-length`: `JsonValue -- int bool` reads an array length.
+- `json-array-get`: `JsonValue int -- JsonValue bool` borrows an indexed child.
+- `json-object-get`: `JsonValue String -- JsonValue bool` borrows the last
+  member with a literal `String` key.
+- `json-object-get-bytes`: `JsonValue key key_len -- JsonValue bool` performs
+  the same lookup with a byte-range key.
+- `json-free`: `JsonValue --` recursively releases a parsed tree.
 
 Parsing accepts RFC 8259 structure, literals, number syntax, JSON whitespace,
 escaped Unicode, and valid UTF-16 surrogate pairs in `\u` escapes. Raw
@@ -217,9 +217,9 @@ appears more than once.
 On success, the caller owns the returned root and must call `json-free` exactly
 once. Array/object children and scalar byte ranges returned by helpers are
 borrowed until their root is freed. On failure, parsing frees partial state and
-returns a null `JsonValue` handle with `false`. Wrong-variant, missing-key, and
-out-of-range helper calls likewise return a neutral value with `false` and do
-not change ownership.
+returns `JsonValue:null` with `false`. Wrong-variant, missing-key, and
+out-of-range helper calls likewise return a neutral `JsonValue` with `false`
+and do not change ownership.
 
 ## HTTP
 
@@ -249,10 +249,10 @@ duration of the call; it must not free or retain them. A handler returns an
 owned response created by one of the constructors below; allocating an
 uninitialized `HttpResponse` directly is unsupported.
 
-- `http-response`: `status String -- HttpResponse` copies a response body.
-- `http-response-bytes`: `status bytes len -- HttpResponse` copies a byte-range
+- `http-response`: `status String -- HttpResponse*` copies a response body.
+- `http-response-bytes`: `status bytes len -- HttpResponse*` copies a byte-range
   body.
-- `http-response-free`: `HttpResponse --` releases a response created by either
+- `http-response-free`: `HttpResponse* --` releases a response created by either
   constructor.
 - `http-serve-connection`: `fd HttpHandler -- status` owns and closes one
   connected descriptor after serving at most one request.
@@ -327,17 +327,17 @@ end
   NUL-terminated C-string pointer as a borrowed argument.
 - `subprocess-argv-free`: `ptr --` releases the array. It does not release the
   string literals referenced by the array.
-- `subprocess-run`: `argv input -- CompletedProcess` inherits the current
+- `subprocess-run`: `argv input -- CompletedProcess*` inherits the current
   directory and environment, supplies the `String` as standard input, waits for
   completion, and captures standard output and standard error separately.
-- `subprocess-run-in`: `argv input cwd -- CompletedProcess` behaves the same way
+- `subprocess-run-in`: `argv input cwd -- CompletedProcess*` behaves the same way
   after changing the child to `cwd`. An empty `cwd` inherits the current
   directory.
-- `subprocess-run-bytes`: `argv input input_len -- CompletedProcess` supplies a
+- `subprocess-run-bytes`: `argv input input_len -- CompletedProcess*` supplies a
   raw byte range as standard input, including embedded NUL and non-UTF-8 bytes.
-- `subprocess-run-bytes-in`: `argv input input_len cwd -- CompletedProcess`
+- `subprocess-run-bytes-in`: `argv input input_len cwd -- CompletedProcess*`
   combines raw-byte input with a child working directory.
-- `completed-process-free`: `CompletedProcess --` releases both captured buffers
+- `completed-process-free`: `CompletedProcess* --` releases both captured buffers
   and the result record.
 
 `CompletedProcess.stdout` and `CompletedProcess.stderr` are byte pointers whose
@@ -348,7 +348,7 @@ without a shell, timeout, or environment rewriting.
 
 ## Testing
 
-`stdlib/test.frog` provides an explicit `TestSuite` value and four checks:
+`stdlib/test.frog` provides an explicitly owned `TestSuite*` and four checks:
 
 ```frog
 from "stdlib/test.frog" import (
@@ -368,13 +368,13 @@ proc main -- do
 end
 ```
 
-- `check`: `condition name suite --`
-- `check-int-equal`: `actual expected name suite --`
+- `check`: `condition name TestSuite* --`
+- `check-int-equal`: `actual expected name TestSuite* --`
 - `check-bytes-equal`:
-  `actual actual_len expected expected_len name suite --`
-- `check-string-equal`: `actual expected name suite --`
-- `test-suite`: `-- TestSuite`
-- `test-finish`: `TestSuite --`
+  `actual actual_len expected expected_len name TestSuite* --`
+- `check-string-equal`: `actual expected name TestSuite* --`
+- `test-suite`: `-- TestSuite*`
+- `test-finish`: `TestSuite* --`
 
 Each check increments `TestSuite.checks`. A failed check also increments
 `TestSuite.failures` and writes `FAIL: <name>\n` to standard error. Checks keep

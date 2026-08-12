@@ -28,4 +28,6 @@ end
 proc main -- do
     20 4 safe-divide show-result
     20 0 safe-divide show-result
+
+    12 Division:value show-result
 end

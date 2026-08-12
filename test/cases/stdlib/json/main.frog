@@ -18,7 +18,7 @@ end
 proc assert-null-result JsonValue bool -- do
     let value found do
         found ! assert
-        value ptr cast int cast 0 == assert
+        value JsonValue.null? assert drop
     end
 end
 

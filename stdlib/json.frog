@@ -49,6 +49,10 @@ union JsonValue
     case object JsonObject*
 end
 
+record JsonArrayItem
+    value JsonValue
+end
+
 record JsonParser
     bytes ptr
     len int
@@ -60,7 +64,7 @@ proc json-null-pointer? ptr -- bool do
 end
 
 proc json-null-value -- JsonValue do
-    0 ptr cast JsonValue cast
+    JsonValue:null
 end
 
 proc json-parse-failure -- JsonValue bool do
@@ -118,6 +122,16 @@ proc json-value-array? JsonValue -- bool do
     let value matches do matches end
 end
 
+proc json-value-box JsonValue -- JsonArrayItem* do
+    let value do
+        JsonArrayItem:alloc
+        let box do
+            value box !JsonArrayItem.value
+            box
+        end
+    end
+end
+
 proc json-ptr-array-free-values PtrArray* -- do
     let values do
         0
@@ -125,7 +139,13 @@ proc json-ptr-array-free-values PtrArray* -- do
             let index do
                 values index ptr-array-get
                 let child found do
-                    if found do child JsonValue cast json-free end
+                    if found do
+                        child JsonArrayItem* cast
+                        let box do
+                            box @JsonArrayItem.value json-free
+                            box ptr cast free
+                        end
+                    end
                     index 1 +
                 end
             end
@@ -161,23 +181,16 @@ end
 
 proc json-free JsonValue -- do
     let value do
-        if value ptr cast json-null-pointer? do
-        elif value json-value-null? do
-            value ptr cast free
+        if value json-value-null? do
         elif value json-value-boolean? do
-            value ptr cast free
         elif value json-value-number? do
             value JsonValue.number json-text-free
-            value ptr cast free
         elif value json-value-string? do
             value JsonValue.string json-text-free
-            value ptr cast free
         elif value json-value-array? do
             value JsonValue.array json-array-free
-            value ptr cast free
         else
             value JsonValue.object json-object-free
-            value ptr cast free
         end
     end
 end
@@ -614,7 +627,7 @@ proc json-parser-array JsonParser* int -- JsonValue bool do
                         parser depth json-parser-value
                         let child child-valid do
                             if child-valid do
-                                child ptr cast values ptr-array-push
+                                child json-value-box ptr cast values ptr-array-push
                                 parser json-parser-skip-whitespace
                                 if parser json-parser-at-end? do
                                     true false
@@ -778,30 +791,22 @@ end
 
 proc json-boolean JsonValue -- bool bool do
     let value do
-        if value ptr cast json-null-pointer? do
-            false false
-        else
-            value JsonValue.boolean?
-            let candidate matches do
-                if matches do candidate JsonValue.boolean true else false false end
-            end
+        value JsonValue.boolean?
+        let candidate matches do
+            if matches do candidate JsonValue.boolean true else false false end
         end
     end
 end
 
 proc json-string-bytes JsonValue -- ptr int bool do
     let value do
-        if value ptr cast json-null-pointer? do
-            0 ptr cast 0 false
-        else
-            value JsonValue.string?
-            let candidate matches do
-                if matches do
-                    candidate JsonValue.string
-                    let text do text @JsonText.bytes text @JsonText.len true end
-                else
-                    0 ptr cast 0 false
-                end
+        value JsonValue.string?
+        let candidate matches do
+            if matches do
+                candidate JsonValue.string
+                let text do text @JsonText.bytes text @JsonText.len true end
+            else
+                0 ptr cast 0 false
             end
         end
     end
@@ -809,17 +814,13 @@ end
 
 proc json-number-bytes JsonValue -- ptr int bool do
     let value do
-        if value ptr cast json-null-pointer? do
-            0 ptr cast 0 false
-        else
-            value JsonValue.number?
-            let candidate matches do
-                if matches do
-                    candidate JsonValue.number
-                    let text do text @JsonText.bytes text @JsonText.len true end
-                else
-                    0 ptr cast 0 false
-                end
+        value JsonValue.number?
+        let candidate matches do
+            if matches do
+                candidate JsonValue.number
+                let text do text @JsonText.bytes text @JsonText.len true end
+            else
+                0 ptr cast 0 false
             end
         end
     end
@@ -891,16 +892,12 @@ end
 
 proc json-array-length JsonValue -- int bool do
     let value do
-        if value ptr cast json-null-pointer? do
-            0 false
-        else
-            value JsonValue.array?
-            let candidate matches do
-                if matches do
-                    candidate JsonValue.array @JsonArray.values @PtrArray.count true
-                else
-                    0 false
-                end
+        value JsonValue.array?
+        let candidate matches do
+            if matches do
+                candidate JsonValue.array @JsonArray.values @PtrArray.count true
+            else
+                0 false
             end
         end
     end
@@ -908,19 +905,15 @@ end
 
 proc json-array-get JsonValue int -- JsonValue bool do
     let value index do
-        if value ptr cast json-null-pointer? do
-            json-parse-failure
-        else
-            value JsonValue.array?
-            let candidate matches do
-                if matches do
-                    candidate JsonValue.array @JsonArray.values index ptr-array-get
-                    let item found do
-                        if found do item JsonValue cast true else json-parse-failure end
-                    end
-                else
-                    json-parse-failure
+        value JsonValue.array?
+        let candidate matches do
+            if matches do
+                candidate JsonValue.array @JsonArray.values index ptr-array-get
+                let item found do
+                    if found do item JsonArrayItem* cast @JsonArrayItem.value true else json-parse-failure end
                 end
+            else
+                json-parse-failure
             end
         end
     end
@@ -931,8 +924,6 @@ proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
         if key-length 0 < do
             json-parse-failure
         elif key-length 0 > key json-null-pointer? && do
-            json-parse-failure
-        elif value ptr cast json-null-pointer? do
             json-parse-failure
         else
             value JsonValue.object?

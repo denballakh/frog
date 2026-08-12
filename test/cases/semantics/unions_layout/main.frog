@@ -17,7 +17,7 @@ end
 
 union Chain
     case stop
-    case next Chain
+    case next Chain*
 end
 
 union Scalar
@@ -35,7 +35,7 @@ proc main -- do
         matches print
     end
     Maybe:none Maybe.none
-    Maybe:none ptr cast Maybe cast Maybe.none
+    Maybe:none Maybe cast Maybe.none
     9 Maybe:some
     let value do
         value Maybe.some?
@@ -60,7 +60,7 @@ proc main -- do
         end
     end
 
-    Chain:stop Chain:next Chain.next?
+    0 ptr cast Chain* cast Chain:next Chain.next?
     let chain matches do
         matches print
     end
