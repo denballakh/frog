@@ -29,7 +29,7 @@ const generated-c-check-procedure-symbols 1 5 u32 cast << end
 const generated-c-check-strings 1 6 u32 cast << end
 const generated-c-check-native-scalar-abi 1 7 u32 cast << end
 const generated-c-required-checks 1 8 u32 cast << 1 - end
-const expected-test-cases 516 end
+const expected-test-cases 528 end
 
 proc frog-test-context ptr ptr -- FrogTestContext* do
     let compiler executable do

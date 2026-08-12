@@ -46,6 +46,8 @@ The rightmost stack item is the top of the stack. For example, after `1 2 3`, th
 
 `frogc --debug` traces the complete compile-time type stack immediately before and after each outer source word. The trace is written to standard error, lists types from the bottom of the stack to the top, and does not change generated C or program output. Procedure calls, intrinsics, macros, local and constant references, type words, and nominal operations are traced. Literals, declarations, control keywords, `let`, and `peek` are not separate trace entries. A macro reports its aggregate effect under the caller's spelling; its expansion details are not exposed. If a word fails, its `before` entry precedes the normal diagnostic and there is no `after` entry.
 
+`frogc --release` enables release-mode compilation. Global `--debug` and `--release` options may appear in either order before a subcommand or before filter input.
+
 ## Procedures
 
 Procedures use explicit stack-effect signatures:
@@ -237,6 +239,8 @@ Builtins are fallback definitions. Resolution prefers a user-defined or imported
 - `swap2`: `a b x y -- x y a b`
 - `rot`: `a b c -- b c a`
 - `assert`: `bool String --`; a true condition does nothing. A false condition writes the message followed by a newline to standard error and terminates the program with status 1.
+
+In release mode, calls resolved implicitly to this builtin `assert` consume their operands without invoking the assertion procedure. Operand expressions are still evaluated in source order. User-defined assertions, explicit imports or aliases of the builtin procedure, and function-reference calls retain their normal behavior.
 
 ## Imports
 

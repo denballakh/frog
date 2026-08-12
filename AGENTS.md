@@ -91,6 +91,7 @@ Useful direct commands:
 - Compile and run inline source: `build/frogc run -c 'proc main -- do 1 2 + print end'`
 - Build a file: `build/frogc build examples/01_simple.frog`
 - Build and run: `build/frogc build -r examples/01_simple.frog`
+- Release-mode run: `build/frogc --release run examples/01_simple.frog`
 - Use the compiler as a stdin-to-stdout filter: `build/frogc < source.frog > source.c`
 
 ## Formatting And Typechecking
@@ -130,12 +131,16 @@ Current CLI help output:
 ```text
 $ build/frogc -h
 Usage:
-  frogc < source.frog > source.c
-  frogc <command> [options]
+  frogc [--debug] [--release] < source.frog > source.c
+  frogc [--debug] [--release] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
+
+Options:
+  --debug    trace compile-time type stacks to standard error
+  --release  omit implicit builtin assertion calls
 ```
 
 ## Compiler Pipeline
@@ -153,7 +158,7 @@ Commands:
 - `http-serve-connection` owns and closes its connected descriptor; `http-serve-one` borrows its listener. HTTP handlers borrow the request only during the call and transfer an owned copied-body response back to the server.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
-- Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
+- Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Global `--release` may be combined with it in either order and omits only implicitly resolved builtin assertion calls while preserving operand evaluation. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
 - Generated procedures use normal C parameters and return values. `int`, `bool`,
   exact-width integers, `ptr`, and typed pointers use their corresponding
   native C types. A measurement pass registers each `(stack depth, static type
@@ -181,7 +186,7 @@ Commands:
 - `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
-- `assert` is a shadowable procedure in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs.
+- `assert` is a shadowable procedure in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs. Release mode suppresses only implicit calls to that builtin identity; explicit imports, function references, and shadowing procedures retain normal behavior.
 - Character literals contain one raw Unicode codepoint; `\'` is the only
   character escape and represents a single quote. Preserve raw `'\'` as the
   backslash character and keep other backslash spellings invalid.

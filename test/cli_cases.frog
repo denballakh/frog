@@ -56,6 +56,21 @@ proc frog-cli-argv-4 String String String String FrogTestContext* -- ptr do
     end
 end
 
+proc frog-cli-argv-5 String String String String String FrogTestContext* -- ptr do
+    let first second third fourth fifth context do
+        6 subprocess-argv
+        let arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+            first arguments 1 subprocess-arg
+            second arguments 2 subprocess-arg
+            third arguments 3 subprocess-arg
+            fourth arguments 4 subprocess-arg
+            fifth arguments 5 subprocess-arg
+            arguments
+        end
+    end
+end
+
 proc frog-check-cli-process CompletedProcess* String String int String FrogTestContext* -- do
     let result expected-stdout expected-stderr expected-status name context do
         result @CompletedProcess.returncode expected-status ==
@@ -110,6 +125,14 @@ proc frog-cli-case-4 String String String String String String int String FrogTe
     end
 end
 
+proc frog-cli-case-5 String String String String String String String int String FrogTestContext* -- do
+    let first second third fourth fifth expected-stdout expected-stderr expected-status name context do
+        context frog-count-case
+        first second third fourth fifth context frog-cli-argv-5
+        expected-stdout expected-stderr expected-status name context frog-run-cli
+    end
+end
+
 proc frog-cli-filter-debug-invariant FrogTestContext* -- do
     let context do
         "proc main -- do 1 2 + print end
@@ -153,28 +176,36 @@ end
 proc run-cli-cases FrogTestContext* -- do
     let context do
         "-h" "Usage:
-  frogc [--debug] < source.frog > source.c
-  frogc [--debug] <command> [options]
+  frogc [--debug] [--release] < source.frog > source.c
+  frogc [--debug] [--release] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
 Options:
-  --debug  trace compile-time type stacks to standard error
+  --debug    trace compile-time type stacks to standard error
+  --release  omit implicit builtin assertion calls
 " "" 0 "cli/help-short" context frog-cli-case-1
 
         "--help" "Usage:
-  frogc [--debug] < source.frog > source.c
-  frogc [--debug] <command> [options]
+  frogc [--debug] [--release] < source.frog > source.c
+  frogc [--debug] [--release] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
 Options:
-  --debug  trace compile-time type stacks to standard error
+  --debug    trace compile-time type stacks to standard error
+  --release  omit implicit builtin assertion calls
 " "" 0 "cli/help-long" context frog-cli-case-1
+
+        "run" "-h" "Usage: frogc [--debug] [--release] run [-c CODE | FILE]
+" "" 0 "cli/run-help" context frog-cli-case-2
+
+        "build" "-h" "Usage: frogc [--debug] [--release] build [-o FILE] [-r] FILE
+" "" 0 "cli/build-help" context frog-cli-case-2
 
         "run" "test/cases/cli/missing.frog" ""
         "frogc: unable to read source: test/cases/cli/missing.frog
@@ -190,6 +221,43 @@ Try `frogc --help`.
 
         "run" "-c" "proc main -- do 42 print end" "42
 " "" 0 "cli/run-code" context frog-cli-case-3
+
+        "run" "-c" "proc main -- do false \"normal failure\" assert end" "" "normal failure
+" 1 "cli/assert-normal" context frog-cli-case-3
+
+        "--release" "run" "-c" "proc main -- do false \"ignored\" assert 42 print end" "42
+" "" 0 "cli/release-implicit-assert" context frog-cli-case-4
+
+        "--release" "run" "-c" "proc condition -- bool do 1 print false end proc message -- String do 2 print \"ignored\" end proc main -- do condition message assert 3 print end" "1
+2
+3
+" "" 0 "cli/release-assert-operands" context frog-cli-case-4
+
+        "--release" "run" "-c" "proc assert bool String -- do drop drop 7 print end proc main -- do false \"user\" assert end" "7
+" "" 0 "cli/release-shadowed-assert" context frog-cli-case-4
+
+        "--release" "run" "-c" "from \"stdlib/builtins.frog\" import assert as builtin-assert proc main -- do false \"explicit failure\" builtin-assert end" "" "explicit failure
+" 1 "cli/release-explicit-assert" context frog-cli-case-4
+
+        "--release" "run" "-c" "fn Check bool String -- end from \"stdlib/builtins.frog\" import assert as builtin-assert proc main -- do false \"reference failure\" Check:ref:builtin-assert Check:call end" "" "reference failure
+" 1 "cli/release-assert-reference" context frog-cli-case-4
+
+        "--release" "run" "-c" "proc assert int -- do drop end proc main -- do false \"ignored\" assert 8 print end" "8
+" "" 0 "cli/release-unmatched-assert-overload" context frog-cli-case-4
+
+        "--release" "run" "-c" "proc main -- do false 1 assert end" "" "<command>:1:25:
+  proc main -- do false 1 assert end
+                          ^^^^^^
+error: assert: stack contract mismatch: expected [bool String], actual [bool int]
+" 1 "cli/release-assert-contract" context frog-cli-case-4
+
+        "--release" "--debug" "run" "-c" "proc main -- do false \"ignored\" assert end" "" "frogc: debug: assert: before [bool String]
+frogc: debug: assert: after []
+" 0 "cli/release-debug-order" context frog-cli-case-5
+
+        "--debug" "--release" "run" "-c" "proc main -- do false \"ignored\" assert end" "" "frogc: debug: assert: before [bool String]
+frogc: debug: assert: after []
+" 0 "cli/debug-release-order" context frog-cli-case-5
 
         "run" "-c" "proc main -- do nope end" "" "<command>:1:17:
   proc main -- do nope end

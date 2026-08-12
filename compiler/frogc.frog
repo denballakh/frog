@@ -3097,6 +3097,8 @@ record Program
     result_type_count int
     result_type_capacity int
     debug bool
+    release bool
+    builtins_assert_proc int
     standard_library_root ptr
     standard_library_root_length int
 end
@@ -9634,7 +9636,7 @@ proc compile-ordinary-word CompileContext* int -- do
                                                             if count 1 == do
                                                                 cc token-index proc-module proc-index compile-procedure-call
                                                             else
-                                                                cc token-index builtin-module builtin-index compile-procedure-call
+                                                                cc token-index builtin-module builtin-index compile-implicit-builtin-call
                                                             end
                                                         elif total-count 1 > do
                                                             cc fail-ambiguous-procedure-call
@@ -10134,8 +10136,8 @@ end
 // END BODY COMPILER
 
 
-proc compile-source ptr int ptr int bool ptr int -- do
-    let source source-length diagnostic-path diagnostic-path-length debug standard-library-root standard-library-root-length do
+proc compile-source ptr int ptr int bool bool ptr int -- do
+    let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
         Program:alloc
         let program do
             0 ptr cast ModuleContext* cast program !Program.root_module
@@ -10158,6 +10160,8 @@ proc compile-source ptr int ptr int bool ptr int -- do
             0 ptr cast program !Program.strings
             0 program !Program.string_count
             debug program !Program.debug
+            release program !Program.release
+            0 1 - program !Program.builtins_assert_proc
             standard-library-root program !Program.standard_library_root
             standard-library-root-length program !Program.standard_library_root_length
             0 ptr cast ModuleContext* cast program !Program.builtins_module
@@ -10182,6 +10186,7 @@ proc compile-source ptr int ptr int bool ptr int -- do
                 program initialize-builtins
                 program initialize-string-pool
                 program resolve-all-module-scopes
+                program find-builtins-assert-procedure program !Program.builtins_assert_proc
                 program evaluate-all-constants
                 program resolve-all-types
 
@@ -10189,6 +10194,46 @@ proc compile-source ptr int ptr int bool ptr int -- do
                 program compile-all-procedures
                 program emit-main-wrapper
             end
+        end
+    end
+end
+
+proc find-builtins-assert-procedure Program* -- int do
+    let program do
+        program @Program.builtins_module
+        let builtins do
+            builtins "assert" String.bytes "assert" String.len 0 find-scope-symbol-from
+            let symbol-index do
+                if symbol-index 0 < do "missing builtin assert" fail end
+                builtins symbol-index scope-at
+                let symbol do
+                    if
+                        symbol @ScopeEntry.kind scope-procedure !=
+                        symbol @ScopeEntry.definition_module ptr cast int cast builtins ptr cast int cast != ||
+                        symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                        type-bool type-string procedure-inputs-are-2 ! ||
+                        symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                        procedure-at @ProcedureEntry.output_count 0 != ||
+                    do
+                        "invalid builtin assert" fail
+                    end
+                    symbol @ScopeEntry.definition_index
+                end
+            end
+        end
+    end
+end
+
+proc compile-implicit-builtin-call CompileContext* int ModuleContext* int -- do
+    let cc token-index module proc-index do
+        if
+            cc @CompileContext.program @Program.release
+            module ptr cast int cast cc @CompileContext.program @Program.builtins_module ptr cast int cast == &&
+            proc-index cc @CompileContext.program @Program.builtins_assert_proc == &&
+        do
+            cc module proc-index apply-proc-contract
+        else
+            cc token-index module proc-index compile-procedure-call
         end
     end
 end
@@ -10256,7 +10301,7 @@ proc compile-builtins-word CompileContext* int -- bool do
                                                 cc builtins bytes length visible-procedure-matches
                                                 let proc-module proc-index count found do
                                                     if count 1 == do
-                                                        cc token-index proc-module proc-index compile-procedure-call
+                                                        cc token-index proc-module proc-index compile-implicit-builtin-call
                                                         true
                                                     elif count 1 > do
                                                         cc fail-ambiguous-procedure-call
@@ -10268,7 +10313,7 @@ proc compile-builtins-word CompileContext* int -- bool do
                                                             cc token-index
                                                             symbol @ScopeEntry.definition_module
                                                             symbol @ScopeEntry.definition_index
-                                                            compile-procedure-call
+                                                            compile-implicit-builtin-call
                                                             true
                                                         end
                                                     end
@@ -10473,15 +10518,16 @@ end
 
 proc cli-usage -- do
     "Usage:
-  frogc [--debug] < source.frog > source.c
-  frogc [--debug] <command> [options]
+  frogc [--debug] [--release] < source.frog > source.c
+  frogc [--debug] [--release] <command> [options]
 
 Commands:
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
 Options:
-  --debug  trace compile-time type stacks to standard error
+  --debug    trace compile-time type stacks to standard error
+  --release  omit implicit builtin assertion calls
 " emit
 end
 
@@ -10511,8 +10557,8 @@ proc wait-for-child int -- int do
     end
 end
 
-proc compile-frog-source ptr int ptr int ptr ptr bool ptr int -- int do
-    let source source-length diagnostic-path diagnostic-path-length directory output debug standard-library-root standard-library-root-length do
+proc compile-frog-source ptr int ptr int ptr ptr bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory output debug release standard-library-root standard-library-root-length do
         output create-file
         let output-fd do
             if output-fd 0 < do
@@ -10536,7 +10582,7 @@ proc compile-frog-source ptr int ptr int ptr ptr bool ptr int -- int do
                                 1 finish-child
                                 1
                             else
-                                source source-length diagnostic-path diagnostic-path-length debug standard-library-root standard-library-root-length compile-source
+                                source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length compile-source
                                 0 finish-child
                                 0
                             end
@@ -10611,13 +10657,13 @@ proc run-executable ptr -- int do
     end
 end
 
-proc run-source ptr int ptr int ptr bool ptr int -- int do
-    let source source-length diagnostic-path diagnostic-path-length directory debug standard-library-root standard-library-root-length do
+proc run-source ptr int ptr int ptr bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory debug release standard-library-root standard-library-root-length do
         if "build" String.bytes ensure-directory 0 != do
             "unable to create build directory" cli-error
             1
         else
-            source source-length diagnostic-path diagnostic-path-length directory "build/frog-run.c" String.bytes debug
+            source source-length diagnostic-path diagnostic-path-length directory "build/frog-run.c" String.bytes debug release
             standard-library-root standard-library-root-length
             compile-frog-source
             let compile-status do
@@ -10638,19 +10684,19 @@ proc run-source ptr int ptr int ptr bool ptr int -- int do
     end
 end
 
-proc run-file ptr bool ptr int -- int do
-    let path debug standard-library-root standard-library-root-length do path read-source-path
+proc run-file ptr bool bool ptr int -- int do
+    let path debug release standard-library-root standard-library-root-length do path read-source-path
         let source source-length do
             path parent-path
             let directory do
-                source source-length path path cstring-length directory debug standard-library-root standard-library-root-length run-source
+                source source-length path path cstring-length directory debug release standard-library-root standard-library-root-length run-source
             end
         end
     end
 end
 
-proc build-file ptr ptr bool bool ptr int -- int do
-    let path requested-output should-run debug standard-library-root standard-library-root-length do
+proc build-file ptr ptr bool bool bool ptr int -- int do
+    let path requested-output should-run debug release standard-library-root standard-library-root-length do
         path ".c" replace-path-suffix
         let c-file do
             if requested-output int cast 0 == do
@@ -10663,7 +10709,7 @@ proc build-file ptr ptr bool bool ptr int -- int do
                 let source source-length do
                     path parent-path
                     let directory do
-                        source source-length path path cstring-length directory c-file debug
+                        source source-length path path cstring-length directory c-file debug release
                         standard-library-root standard-library-root-length compile-frog-source
                         let frog-status do
                             if frog-status 0 != do
@@ -10688,8 +10734,8 @@ proc build-file ptr ptr bool bool ptr int -- int do
     end
 end
 
-proc run-command ptr int int bool ptr int -- do
-    let argv argc command-index debug standard-library-root standard-library-root-length do
+proc run-command ptr int int bool bool ptr int -- do
+    let argv argc command-index debug release standard-library-root standard-library-root-length do
         command-index 1 +
         let argument-index do
             if argument-index argc >= do
@@ -10701,14 +10747,14 @@ proc run-command ptr int int bool ptr int -- do
                     argc argument-index 1 + ==
                     argument "-h" cstring-equals argument "--help" cstring-equals || &&
                 do
-                    "Usage: frogc [--debug] run [-c CODE | FILE]\n" emit
+                    "Usage: frogc [--debug] [--release] run [-c CODE | FILE]\n" emit
                 elif argument "-c" cstring-equals do
                     if argc argument-index 2 + != do
                         "run -c requires exactly one CODE argument" cli-usage-error
                     end
                     argv argument-index 1 + argv-at
                     peek code do
-                        code cstring-length "<command>" String.bytes "<command>" String.len "." String.bytes debug
+                        code cstring-length "<command>" String.bytes "<command>" String.len "." String.bytes debug release
                         standard-library-root standard-library-root-length run-source exit
                     end
                 elif argument u8* cast @ int cast 45 == do
@@ -10716,7 +10762,7 @@ proc run-command ptr int int bool ptr int -- do
                 elif argc argument-index 1 + != do
                     "run accepts exactly one source file" cli-usage-error
                 else
-                    argument debug standard-library-root standard-library-root-length run-file exit
+                    argument debug release standard-library-root standard-library-root-length run-file exit
                 end
             end
         end
@@ -10736,7 +10782,7 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
                         argument "-h" cstring-equals
                         argument "--help" cstring-equals ||
                     do
-                        "Usage: frogc [--debug] build [-o FILE] [-r] FILE\n" emit
+                        "Usage: frogc [--debug] [--release] build [-o FILE] [-r] FILE\n" emit
                         0 exit
                         null-pointer null-pointer false
                     elif argument "-r" cstring-equals do
@@ -10761,11 +10807,30 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
     end
 end
 
-proc build-command ptr int int bool ptr int -- do
-    let argv argc command-index debug standard-library-root standard-library-root-length do
+proc build-command ptr int int bool bool ptr int -- do
+    let argv argc command-index debug release standard-library-root standard-library-root-length do
         argv argc command-index 1 + null-pointer false parse-build-options
         let source output should-run do
-            source output should-run debug standard-library-root standard-library-root-length build-file exit
+            source output should-run debug release standard-library-root standard-library-root-length build-file exit
+        end
+    end
+end
+
+proc parse-global-options ptr int int bool bool -- int bool bool do
+    let argv argc index debug release do
+        if index argc >= do
+            index debug release
+        else
+            argv index argv-at
+            let argument do
+                if argument "--debug" cstring-equals do
+                    argv argc index 1 + true release parse-global-options
+                elif argument "--release" cstring-equals do
+                    argv argc index 1 + debug true parse-global-options
+                else
+                    index debug release
+                end
+            end
         end
     end
 end
@@ -10775,17 +10840,10 @@ proc main -- do
     let argv argc do
         argv 0 argv-at compiler-distribution-root
         let standard-library-root standard-library-root-length do
-            if argc 1 > do
-                argv 1 argv-at
-                let first do
-                    if first "--debug" cstring-equals do 2 true else 1 false end
-                end
-            else
-                1 false
-            end
-            let command-index debug do
+            argv argc 1 false false parse-global-options
+            let command-index debug release do
                 if command-index argc >= do
-                    read-source "<stdin>" String.bytes "<stdin>" String.len debug standard-library-root standard-library-root-length compile-source
+                    read-source "<stdin>" String.bytes "<stdin>" String.len debug release standard-library-root standard-library-root-length compile-source
                 else
                     argv command-index argv-at
                 let command do
@@ -10795,9 +10853,9 @@ proc main -- do
                     do
                         cli-usage
                     elif command "run" cstring-equals do
-                        argv argc command-index debug standard-library-root standard-library-root-length run-command
+                        argv argc command-index debug release standard-library-root standard-library-root-length run-command
                     elif command "build" cstring-equals do
-                        argv argc command-index debug standard-library-root standard-library-root-length build-command
+                        argv argc command-index debug release standard-library-root standard-library-root-length build-command
                     else
                         "unknown command: " command cli-usage-error-value
                     end
