@@ -11,7 +11,8 @@ FrogLang is a programming language that is:
 
 Building FrogLang requires a POSIX environment, [just](https://just.systems/),
 and a C11-capable GCC installation. The repository's devenv configuration
-provides the Python formatting and type-checking tools used by the test suite.
+provides these tools together with the Python formatting and type-checking
+tools used by the test suite.
 
 ## Quick start
 

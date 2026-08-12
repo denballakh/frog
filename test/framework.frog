@@ -81,7 +81,7 @@ proc frog-compile-fixture String String FrogTestContext* -- CompletedProcess* do
     let source-path cwd context do
         source-path String.bytes source-path String.len read-file
         let source source-length success do
-            success drop
+            success source-path assert
             source source-length cwd context frog-compile-bytes
             source free
         end
@@ -202,14 +202,6 @@ proc frog-process-equals CompletedProcess* String String int -- bool do
         result @CompletedProcess.returncode expected-status ==
         result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         expected-stdout String.bytes expected-stdout String.len bytes-equal &&
-        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
-        expected-stderr String.bytes expected-stderr String.len bytes-equal &&
-    end
-end
-
-proc frog-process-status-equals CompletedProcess* String int -- bool do
-    let result expected-stderr expected-status do
-        result @CompletedProcess.returncode expected-status ==
         result @CompletedProcess.stderr result @CompletedProcess.stderr_len
         expected-stderr String.bytes expected-stderr String.len bytes-equal &&
     end
@@ -667,55 +659,39 @@ proc frog-check-generated-c CompletedProcess* String FrogTestContext* -- do
     end
 end
 
+proc frog-build-and-run CompletedProcess* String String int String String String String String FrogTestContext* -- do
+    let compiler-result expected-stdout expected-stderr expected-status helper first second program name context do
+        compiler-result helper context frog-build-generated
+        let build-result do
+            build-result frog-build-succeeded
+            let build-succeeded do
+                build-succeeded name context frog-check
+                if build-succeeded do
+                    if program String.len 0 > do
+                        program frog-run-generated-program
+                    else
+                        first second context frog-run-generated
+                    end
+                    let run-result do
+                        run-result expected-stdout expected-stderr expected-status frog-process-equals
+                        name context frog-check
+                        run-result completed-process-free
+                    end
+                end
+            end
+            build-result completed-process-free
+        end
+    end
+end
+
 proc frog-run-case String String String String int String String String String FrogTestContext* -- do
     let source-path cwd expected-stdout expected-stderr expected-status helper first second name context do
         source-path cwd context frog-compile-fixture
         let compiler-result do
             if compiler-result name context frog-check-compiler do
                 compiler-result name context frog-check-generated-c
-                compiler-result helper context frog-build-generated
-                let build-result do
-                    build-result frog-build-succeeded
-                    let build-succeeded do
-                        build-succeeded name context @FrogTestContext.suite check
-                        if build-succeeded do
-                            first second context frog-run-generated
-                            let run-result do
-                                run-result expected-stdout expected-stderr expected-status frog-process-equals
-                                name context @FrogTestContext.suite check
-                                run-result completed-process-free
-                            end
-                        end
-                    end
-                    build-result completed-process-free
-                end
-            end
-            compiler-result completed-process-free
-        end
-    end
-end
-
-proc frog-run-status-case String String String int String FrogTestContext* -- do
-    let source-path cwd expected-stderr expected-status name context do
-        source-path cwd context frog-compile-fixture
-        let compiler-result do
-            if compiler-result name context frog-check-compiler do
-                compiler-result "" context frog-build-generated
-                let build-result do
-                    build-result frog-build-succeeded
-                    let build-succeeded do
-                        build-succeeded name context @FrogTestContext.suite check
-                        if build-succeeded do
-                            "" "" context frog-run-generated
-                            let run-result do
-                                run-result expected-stderr expected-status frog-process-status-equals
-                                name context @FrogTestContext.suite check
-                                run-result completed-process-free
-                            end
-                        end
-                    end
-                    build-result completed-process-free
-                end
+                compiler-result expected-stdout expected-stderr expected-status
+                helper first second "" name context frog-build-and-run
             end
             compiler-result completed-process-free
         end
@@ -905,26 +881,8 @@ proc frog-inline-run-bytes ptr int String String int String String FrogTestConte
         source source-length "test/cases" context frog-compile-bytes
         let compiler-result do
             if compiler-result name context frog-check-compiler do
-                compiler-result "" context frog-build-generated
-                let build-result do
-                    build-result frog-build-succeeded
-                    let build-succeeded do
-                        build-succeeded name context frog-check
-                        if build-succeeded do
-                            if program String.len 0 > do
-                                program frog-run-generated-program
-                            else
-                                "" "" context frog-run-generated
-                            end
-                            let run-result do
-                                run-result expected-stdout expected-stderr expected-status frog-process-equals
-                                name context frog-check
-                                run-result completed-process-free
-                            end
-                        end
-                    end
-                    build-result completed-process-free
-                end
+                compiler-result expected-stdout expected-stderr expected-status
+                "" "" "" program name context frog-build-and-run
             end
             compiler-result completed-process-free
         end

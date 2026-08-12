@@ -1,4 +1,0 @@
-from "a.frog" import value
-
-proc main -- do
-end

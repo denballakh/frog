@@ -1,5 +1,0 @@
-from "math.frog" import inc
-
-proc main -- do
-    41 inc print
-end

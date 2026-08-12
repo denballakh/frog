@@ -1,9 +1,10 @@
-# Documentation cleanup
+# Build and test infrastructure cleanup
 
-- [x] Remove external inspiration references.
-- [x] Audit user-facing documentation for accuracy, structure, duplication, and implementation details.
-- [x] Improve documentation navigation and make commands and examples consistent with the repository.
-- [x] Verify documentation links, documented commands, tests, and bootstrap consistency.
-- [x] Commit and push the completed cleanup on `master`.
+- [x] Inventory build recipes, test entry points, manifests, fixtures, helpers, and generated artifacts.
+- [x] Identify duplicated or unjustified tests and prove dead code before removal.
+- [x] Simplify confusing or unnecessarily complicated build/test logic.
+- [x] Update documentation and maintenance guidance for changed workflows.
+- [x] Pass focused checks, `just bootstrap-check`, and `just test`.
+- [x] Review the completed cleanup and prepare it for commit on `master`.
 
 Preserve the pre-existing uncommitted change in `stdlib/json.frog`.

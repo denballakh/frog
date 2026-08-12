@@ -1,6 +1,5 @@
 { pkgs, lib, config, inputs, ... }:
 let
-  pkgs-unstable = import inputs.nixpkgs-unstable { system = pkgs.stdenv.system; };
   py_base = pkgs.python313;
   py = py_base.override {
     enableOptimizations = true;
@@ -15,6 +14,8 @@ in
   # https://devenv.sh/packages/
   packages = [
     pkgs.git
+    pkgs.gcc
+    pkgs.just
     pkgs.basedpyright
     (py.withPackages (python-pkgs: [
       python-pkgs.mypy

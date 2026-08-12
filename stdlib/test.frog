@@ -27,10 +27,6 @@ end
 
 proc test-suite -- TestSuite* do
     TestSuite:alloc
-    peek suite do
-        0 suite !TestSuite.checks
-        0 suite !TestSuite.failures
-    end
 end
 
 proc check bool String TestSuite* -- do

@@ -15,8 +15,8 @@ proc main -- do
         42 42 "integer" suite check-int-equal
         "frog" String.bytes 4 "frog" String.bytes 4 "bytes" suite check-bytes-equal
         "frog" "frog" "string" suite check-string-equal
-        suite @TestSuite.checks 4 == "check count" suite check
-        suite @TestSuite.failures 0 == "failure count" suite check
+        suite @TestSuite.checks 4 == "check count" assert
+        suite @TestSuite.failures 0 == "failure count" assert
         suite test-finish
     end
 end

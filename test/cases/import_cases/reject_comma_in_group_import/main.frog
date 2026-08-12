@@ -1,4 +1,0 @@
-from "math.frog" import ( inc , dec )
-
-proc main -- do
-end

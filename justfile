@@ -32,7 +32,7 @@ test: check bootstrap-check frog-regressions
 [group("test")]
 frog-regressions: frogc-seed
     build/frogc build -o build/frog-tests test/runner.frog
-    python -m test --frog-only
+    python -m test --supervise-frog-runner
 
 _compile-frogc source output:
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"
@@ -74,9 +74,4 @@ vscode-install:
 
 [group("misc")]
 clean:
-    rm *.c || true
-    rm *.exe || true
-    rm examples/*.c || true
-    rm examples/*.exe || true
-    rm test/*.c || true
-    rm test/*.exe || true
+    git clean -fdX build examples test

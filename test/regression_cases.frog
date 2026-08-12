@@ -1,5 +1,5 @@
 from "framework.frog" import (
-    FrogTestContext frog-run-case frog-run-status-case frog-error-fixture
+    FrogTestContext frog-run-case frog-error-fixture
     frog-error-source frog-c-build-error-source frog-large-path-error
     frog-stable-string-symbol
 )
@@ -87,9 +87,9 @@ proc run-regression-cases FrogTestContext* -- do
         "record A b B end\nrecord B a A end\nproc main -- do end\n" "test/cases/semantics" "<stdin>:2:12:\n  record B a A end\n             ^\nerror: recursive aggregate value requires a pointer: A\n" "semantics-error/recursive_record_value_indirect" context frog-error-source
         "union Node case next Node end\nproc main -- do end\n" "test/cases/semantics" "<stdin>:1:22:\n  union Node case next Node end\n                       ^^^^\nerror: recursive aggregate value requires a pointer: Node\n" "semantics-error/recursive_union_value" context frog-error-source
         "record A b B end\nunion B case a A end\nproc main -- do end\n" "test/cases/semantics" "<stdin>:2:16:\n  union B case a A end\n                 ^\nerror: recursive aggregate value requires a pointer: A\n" "semantics-error/recursive_aggregate_value_indirect" context frog-error-source
-        "test/cases/semantics/unions_wrong_variant/main.frog" "test/cases/semantics/unions_wrong_variant" "" 1 "semantics/unions_wrong_variant" context frog-run-status-case
-        "test/cases/semantics/functions_unknown_proc/main.frog" "test/cases/semantics/functions_unknown_proc" "" 1 "semantics/functions_unknown_proc" context frog-run-status-case
-        "test/cases/semantics/functions_incompatible_proc/main.frog" "test/cases/semantics/functions_incompatible_proc" "" 1 "semantics/functions_incompatible_proc" context frog-run-status-case
+        "test/cases/semantics/unions_wrong_variant/main.frog" "test/cases/semantics/unions_wrong_variant" "" "" 1 "" "" "" "semantics/unions_wrong_variant" context frog-run-case
+        "test/cases/semantics/functions_unknown_proc/main.frog" "test/cases/semantics/functions_unknown_proc" "" "" 1 "" "" "" "semantics/functions_unknown_proc" context frog-run-case
+        "test/cases/semantics/functions_incompatible_proc/main.frog" "test/cases/semantics/functions_incompatible_proc" "" "" 1 "" "" "" "semantics/functions_incompatible_proc" context frog-run-case
         "test/cases/strings/main.frog" "test/cases/strings" "true\ntrue\ntrue\ntrue\ntrue\ntrue\n98\ntrue\ntrue\n178\n239\n9\n65\n34\n92\n10\n0\n255\n63\n63\n47\n33\n10\n47\n34\n34\n" "" 0 "" "" "" "strings/strings" context frog-run-case
         "test/cases/strings/types.frog" "test/cases/strings" "5\n5\n5\n4\n" "" 0 "" "" "" "strings/string_types" context frog-run-case
         "test/cases/standalone/read_file.frog" "test/cases/standalone" "#\ntrue\n0\nfalse\n" "" 0 "" "" "" "standalone/read_file" context frog-run-case
@@ -97,7 +97,7 @@ proc run-regression-cases FrogTestContext* -- do
         "test/cases/stdlib/libc/main.frog" "test/cases/stdlib/libc" "A" "E" 0 "" "" "" "stdlib/libc" context frog-run-case
         "test/cases/stdlib/string/main.frog" "test/cases/stdlib/string" "" "" 0 "" "" "" "stdlib/string" context frog-run-case
         "test/cases/stdlib/containers/main.frog" "test/cases/stdlib/containers" "" "" 0 "" "" "" "stdlib/containers" context frog-run-case
-        "test/cases/stdlib/containers/too_large.frog" "test/cases/stdlib/containers" "" 1 "stdlib/containers_too_large" context frog-run-status-case
+        "test/cases/stdlib/containers/too_large.frog" "test/cases/stdlib/containers" "" "" 1 "" "" "" "stdlib/containers_too_large" context frog-run-case
         "test/cases/stdlib/json/main.frog" "test/cases/stdlib/json" "" "" 0 "" "" "" "stdlib/json" context frog-run-case
         "test/cases/stdlib/http/main.frog" "test/cases/stdlib/http" "" "" 0 "" "" "" "stdlib/http" context frog-run-case
         "test/cases/stdlib/subprocess/main.frog" "test/cases/stdlib/subprocess" "" "" 0 "" "" "" "stdlib/subprocess" context frog-run-case

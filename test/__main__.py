@@ -25,30 +25,47 @@ def capture_command(*args: str | Path, env: Mapping[str, str] | None = None) -> 
         command_args,
         cwd=ROOT,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.PIPE,
         encoding='utf-8',
         env=env,
         start_new_session=True,
     )
     try:
-        body, _ = process.communicate(timeout=COMMAND_TIMEOUT_SECONDS)
+        stdout, stderr = process.communicate(timeout=COMMAND_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         try:
             os.killpg(process.pid, signal.SIGINT)
         except ProcessLookupError:
             pass
         try:
-            body, _ = process.communicate(timeout=COMMAND_TERMINATION_GRACE_SECONDS)
+            stdout, stderr = process.communicate(timeout=COMMAND_TERMINATION_GRACE_SECONDS)
         except subprocess.TimeoutExpired:
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-            body, _ = process.communicate()
-        details = f'\n{body}' if body else ''
+            stdout, stderr = process.communicate()
+        details = format_streams(stdout, stderr)
         raise TimeoutError(f'{command} exceeded {COMMAND_TIMEOUT_SECONDS} seconds{details}') from None
     assert process.returncode is not None
-    return subprocess.CompletedProcess(command_args, process.returncode, stdout=body)
+    return subprocess.CompletedProcess(command_args, process.returncode, stdout=stdout, stderr=stderr)
+
+
+def format_streams(stdout: str, stderr: str) -> str:
+    details = ''
+    if stdout:
+        details += f'\nstdout:\n{stdout}'
+    if stderr:
+        details += f'\nstderr:\n{stderr}'
+    return details
+
+
+def assert_result(result: subprocess.CompletedProcess[str], returncode: int, stdout: str, stderr: str) -> None:
+    assert result.returncode == returncode and result.stdout == stdout and result.stderr == stderr, (
+        f'{shlex.join(result.args)} returned {result.returncode}, expected {returncode}\n'
+        f'expected stdout: {stdout!r}\nexpected stderr: {stderr!r}'
+        f'\nactual stdout: {result.stdout!r}\nactual stderr: {result.stderr!r}'
+    )
 
 
 def capture_frog(*args: str | Path, env: Mapping[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -60,8 +77,7 @@ def check_frog_regressions() -> None:
         artifact.unlink(missing_ok=True)
     try:
         result = capture_command(FROG_TESTS, FROGC, FROG_TEST_EXECUTABLE)
-        assert result.returncode == 0, result.stdout
-        assert result.stdout == '', result.stdout
+        assert_result(result, 0, '', '')
     finally:
         for artifact in CLI_BUILD_ARTIFACTS:
             artifact.unlink(missing_ok=True)
@@ -75,8 +91,7 @@ def check_failed_build_policy() -> None:
     build_main_relative = build_main.relative_to(ROOT)
 
     initial_build = capture_frog('build', build_main_relative)
-    assert initial_build.returncode == 0
-    assert initial_build.stdout == ''
+    assert_result(initial_build, 0, '', '')
 
     built_c = build_main.with_suffix('.c')
     built_executable = build_main.with_suffix('.exe')
@@ -94,14 +109,15 @@ def check_failed_build_policy() -> None:
     failing_environment['PATH'] = f'{fake_bin}{os.pathsep}{failing_environment["PATH"]}'
 
     failed_build = capture_frog('build', build_main_relative, env=failing_environment)
-    assert failed_build.returncode != 0
+    assert (
+        failed_build.returncode != 0
+    ), f'expected build failure{format_streams(failed_build.stdout, failed_build.stderr)}'
     failed_c = built_c.read_bytes()
     assert failed_c != original_c
     assert built_executable.read_bytes() == original_executable
 
     updated_build = capture_frog('build', build_main_relative)
-    assert updated_build.returncode == 0
-    assert updated_build.stdout == ''
+    assert_result(updated_build, 0, '', '')
     assert built_c.read_bytes() == failed_c
     assert built_executable.read_bytes() != original_executable
 
@@ -114,8 +130,7 @@ def check_lexical_symlink_import() -> None:
     lexical_main.symlink_to(real_main)
 
     result = capture_frog('run', lexical_main.relative_to(ROOT))
-    assert result.returncode == 0
-    assert result.stdout == '42\n'
+    assert_result(result, 0, '42\n', '')
 
 
 def check_slashless_compiler_policy() -> None:
@@ -124,21 +139,21 @@ def check_slashless_compiler_policy() -> None:
     environment['PATH'] = f'{FROGC.parent}{os.pathsep}{environment["PATH"]}'
 
     help_result = capture_command('frogc', '--help', env=environment)
-    assert help_result.returncode == 0
-    assert help_result.stdout.startswith('Usage:\n')
+    assert (
+        help_result.returncode == 0 and help_result.stdout.startswith('Usage:\n') and help_result.stderr == ''
+    ), f'unexpected slashless help result{format_streams(help_result.stdout, help_result.stderr)}'
 
     compile_result = capture_command('frogc', 'run', '-c', 'proc main -- do end', env=environment)
-    assert compile_result.returncode == 1
-    assert compile_result.stdout == 'frogc: standard library path is unavailable\n'
+    assert_result(compile_result, 1, '', 'frogc: standard library path is unavailable\n')
 
 
 def main() -> None:
     arguments = sys.argv[1:]
     if arguments:
-        if arguments == ['--frog-only']:
+        if arguments == ['--supervise-frog-runner']:
             check_frog_regressions()
             return
-        raise SystemExit('usage: python -m test [--frog-only]')
+        raise SystemExit('usage: python -m test')
 
     shutil.rmtree(TMP_FS, ignore_errors=True)
     TMP_FS.mkdir()

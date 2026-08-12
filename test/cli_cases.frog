@@ -1,4 +1,4 @@
-from "framework.frog" import ( FrogTestContext frog-check )
+from "framework.frog" import ( FrogTestContext frog-check frog-process-equals )
 from "stdlib/string.frog" import bytes-equal
 from "stdlib/subprocess.frog" import (
     CompletedProcess
@@ -6,79 +6,12 @@ from "stdlib/subprocess.frog" import (
     subprocess-run subprocess-run-bytes-in completed-process-free
 )
 
-proc frog-cli-argv-1 String FrogTestContext* -- ptr do
-    let first context do
-        2 subprocess-argv
-        let arguments do
+proc frog-cli-argv int FrogTestContext* -- ptr do
+    let argument-count context do
+        argument-count 1 + subprocess-argv
+        peek arguments do
             context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
-            first arguments 1 subprocess-arg
-            arguments
         end
-    end
-end
-
-proc frog-cli-argv-2 String String FrogTestContext* -- ptr do
-    let first second context do
-        3 subprocess-argv
-        let arguments do
-            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
-            first arguments 1 subprocess-arg
-            second arguments 2 subprocess-arg
-            arguments
-        end
-    end
-end
-
-proc frog-cli-argv-3 String String String FrogTestContext* -- ptr do
-    let first second third context do
-        4 subprocess-argv
-        let arguments do
-            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
-            first arguments 1 subprocess-arg
-            second arguments 2 subprocess-arg
-            third arguments 3 subprocess-arg
-            arguments
-        end
-    end
-end
-
-proc frog-cli-argv-4 String String String String FrogTestContext* -- ptr do
-    let first second third fourth context do
-        5 subprocess-argv
-        let arguments do
-            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
-            first arguments 1 subprocess-arg
-            second arguments 2 subprocess-arg
-            third arguments 3 subprocess-arg
-            fourth arguments 4 subprocess-arg
-            arguments
-        end
-    end
-end
-
-proc frog-cli-argv-5 String String String String String FrogTestContext* -- ptr do
-    let first second third fourth fifth context do
-        6 subprocess-argv
-        let arguments do
-            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
-            first arguments 1 subprocess-arg
-            second arguments 2 subprocess-arg
-            third arguments 3 subprocess-arg
-            fourth arguments 4 subprocess-arg
-            fifth arguments 5 subprocess-arg
-            arguments
-        end
-    end
-end
-
-proc frog-check-cli-process CompletedProcess* String String int String FrogTestContext* -- do
-    let result expected-stdout expected-stderr expected-status name context do
-        result @CompletedProcess.returncode expected-status ==
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-        expected-stdout String.bytes expected-stdout String.len bytes-equal &&
-        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
-        expected-stderr String.bytes expected-stderr String.len bytes-equal &&
-        name context frog-check
     end
 end
 
@@ -86,7 +19,8 @@ proc frog-run-cli ptr String String int String FrogTestContext* -- do
     let arguments expected-stdout expected-stderr expected-status name context do
         arguments "" subprocess-run
         let result do
-            result expected-stdout expected-stderr expected-status name context frog-check-cli-process
+            result expected-stdout expected-stderr expected-status frog-process-equals
+            name context frog-check
             result completed-process-free
             arguments subprocess-argv-free
         end
@@ -95,36 +29,61 @@ end
 
 proc frog-cli-case-1 String String String int String FrogTestContext* -- do
     let first expected-stdout expected-stderr expected-status name context do
-        first context frog-cli-argv-1
-        expected-stdout expected-stderr expected-status name context frog-run-cli
+        1 context frog-cli-argv
+        let arguments do
+            first arguments 1 subprocess-arg
+            arguments expected-stdout expected-stderr expected-status name context frog-run-cli
+        end
     end
 end
 
 proc frog-cli-case-2 String String String String int String FrogTestContext* -- do
     let first second expected-stdout expected-stderr expected-status name context do
-        first second context frog-cli-argv-2
-        expected-stdout expected-stderr expected-status name context frog-run-cli
+        2 context frog-cli-argv
+        let arguments do
+            first arguments 1 subprocess-arg
+            second arguments 2 subprocess-arg
+            arguments expected-stdout expected-stderr expected-status name context frog-run-cli
+        end
     end
 end
 
 proc frog-cli-case-3 String String String String String int String FrogTestContext* -- do
     let first second third expected-stdout expected-stderr expected-status name context do
-        first second third context frog-cli-argv-3
-        expected-stdout expected-stderr expected-status name context frog-run-cli
+        3 context frog-cli-argv
+        let arguments do
+            first arguments 1 subprocess-arg
+            second arguments 2 subprocess-arg
+            third arguments 3 subprocess-arg
+            arguments expected-stdout expected-stderr expected-status name context frog-run-cli
+        end
     end
 end
 
 proc frog-cli-case-4 String String String String String String int String FrogTestContext* -- do
     let first second third fourth expected-stdout expected-stderr expected-status name context do
-        first second third fourth context frog-cli-argv-4
-        expected-stdout expected-stderr expected-status name context frog-run-cli
+        4 context frog-cli-argv
+        let arguments do
+            first arguments 1 subprocess-arg
+            second arguments 2 subprocess-arg
+            third arguments 3 subprocess-arg
+            fourth arguments 4 subprocess-arg
+            arguments expected-stdout expected-stderr expected-status name context frog-run-cli
+        end
     end
 end
 
 proc frog-cli-case-5 String String String String String String String int String FrogTestContext* -- do
     let first second third fourth fifth expected-stdout expected-stderr expected-status name context do
-        first second third fourth fifth context frog-cli-argv-5
-        expected-stdout expected-stderr expected-status name context frog-run-cli
+        5 context frog-cli-argv
+        let arguments do
+            first arguments 1 subprocess-arg
+            second arguments 2 subprocess-arg
+            third arguments 3 subprocess-arg
+            fourth arguments 4 subprocess-arg
+            fifth arguments 5 subprocess-arg
+            arguments expected-stdout expected-stderr expected-status name context frog-run-cli
+        end
     end
 end
 

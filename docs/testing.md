@@ -53,11 +53,13 @@ compiler or interpreter.
 Run only the host policy checks after building `build/frogc` with:
 
 ```sh
+just frogc-seed
 python -m test
 ```
 
-`test/tmp_fs/` is recreated for the host checks and removed afterward. Other
-generated `.c` and `.exe` files are disposable build artifacts.
+`test/tmp_fs/` is recreated for the host checks and removed afterward. Run
+`just clean` to remove ignored build and test artifacts under `build/`,
+`examples/`, and `test/`. Tracked fixtures and `compiler/frogc.c` are kept.
 
 ## Bootstrap check
 

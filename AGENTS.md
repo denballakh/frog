@@ -71,7 +71,7 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
 - Verify the checked seed, source, and next two generations are byte-identical: `just bootstrap-check`
 - Regenerate the checked seed after a verified compiler-source change: `just bootstrap-update`
 - Run Frog CLI through just: `just cli <args>`
-- Remove generated root, direct `test/`, and `examples/` C/exe artifacts: `just clean`
+- Remove ignored artifacts under `build/`, `examples/`, and `test/`: `just clean`
 
 Useful direct commands:
 
@@ -99,10 +99,10 @@ Useful direct commands:
 - Successful Frog cases compile through stdin-to-stdout mode with strict C11 warnings before execution. Cases check exact stdout, stderr, and status; compiler failures ignore partial C on stdout but require the exact diagnostic and status 1.
 - `test/inline_cases.frog` materializes concise bodies inside an explicit `proc main -- do ... end`; declaration-order and malformed structural cases use the corresponding whole-source helper.
 - Multi-file import cases are checked-in fixtures under `test/cases/import_cases/`; their manifest is `test/import_cases.frog`.
-- `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, lexical symlink-root policy, and slashless compiler-path policy. `just frog-regressions` invokes it with `--frog-only`, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
+- `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, lexical symlink-root policy, and slashless compiler-path policy. `just frog-regressions` invokes it with the private `--supervise-frog-runner` mode, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
 - Python host-policy artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
 - `just bootstrap-check` checks only compiler fixed-point equality. The Frog regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `just frog-regressions` / `just test`.
-- `just clean` removes only generated root, direct `test/`, and `examples/` C/exe artifacts; it does not remove `build/` or nested test-case artifacts.
+- `just clean` uses Git's ignore rules within `build/`, `examples/`, and `test/`; tracked fixtures and `compiler/frogc.c` are preserved regardless of filename.
 
 ## CLI Behavior
 
