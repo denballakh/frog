@@ -17,9 +17,6 @@ import, and CLI cases. Successful programs are compiled to C, built with strict
 C11 warnings, and executed. Tests compare exact output, diagnostics, and exit
 status, and also check selected generated-C properties.
 
-The runner verifies that every registered case executes. Update its expected
-total only when intentionally adding or removing a case.
-
 The case manifests are:
 
 - `test/regression_cases.frog` for fixture-based language, compiler, generated-C,

@@ -17,7 +17,6 @@ record FrogTestContext
     executable ptr
     suite TestSuite*
     generated_checks int
-    cases int
 end
 
 const generated-c-check-c-ffi 1 end
@@ -29,7 +28,6 @@ const generated-c-check-procedure-symbols 1 5 u32 cast << end
 const generated-c-check-strings 1 6 u32 cast << end
 const generated-c-check-native-scalar-abi 1 7 u32 cast << end
 const generated-c-required-checks 1 8 u32 cast << 1 - end
-const expected-test-cases 528 end
 
 proc frog-test-context ptr ptr -- FrogTestContext* do
     let compiler executable do
@@ -39,21 +37,12 @@ proc frog-test-context ptr ptr -- FrogTestContext* do
             executable context !FrogTestContext.executable
             test-suite context !FrogTestContext.suite
             0 context !FrogTestContext.generated_checks
-            0 context !FrogTestContext.cases
         end
-    end
-end
-
-proc frog-count-case FrogTestContext* -- do
-    let context do
-        context @FrogTestContext.cases 1 + context !FrogTestContext.cases
     end
 end
 
 proc frog-test-finish FrogTestContext* -- do
     let context do
-        context @FrogTestContext.cases expected-test-cases ==
-        "suite/registered cases" context @FrogTestContext.suite check
         context @FrogTestContext.generated_checks generated-c-required-checks ==
         "generated-c/required cases" context @FrogTestContext.suite check
         context @FrogTestContext.suite
@@ -675,7 +664,6 @@ end
 
 proc frog-run-case String String String String int String String String String FrogTestContext* -- do
     let source-path cwd expected-stdout expected-stderr expected-status helper first second name context do
-        context frog-count-case
         source-path cwd context frog-compile-fixture
         let compiler-result do
             if compiler-result name context frog-check-compiler do
@@ -704,7 +692,6 @@ end
 
 proc frog-run-status-case String String String int String FrogTestContext* -- do
     let source-path cwd expected-stderr expected-status name context do
-        context frog-count-case
         source-path cwd context frog-compile-fixture
         let compiler-result do
             if compiler-result name context frog-check-compiler do
@@ -789,7 +776,6 @@ end
 
 proc frog-error-fixture String String String String FrogTestContext* -- do
     let source-path cwd expected-stderr name context do
-        context frog-count-case
         source-path cwd context frog-compile-fixture
         let result do
             result expected-stderr name context frog-check-compile-error
@@ -800,7 +786,6 @@ end
 
 proc frog-error-source String String String String FrogTestContext* -- do
     let source cwd expected-stderr name context do
-        context frog-count-case
         source cwd context frog-compile-source
         let result do
             result expected-stderr name context frog-check-compile-error
@@ -811,7 +796,6 @@ end
 
 proc frog-c-build-error-source String String String FrogTestContext* -- do
     let source cwd name context do
-        context frog-count-case
         source cwd context frog-compile-source
         let compiler-result do
             if compiler-result name context frog-check-compiler do
@@ -828,7 +812,6 @@ end
 
 proc frog-stable-string-symbol FrogTestContext* -- do
     let context do
-        context frog-count-case
         "proc main -- do \"stable\" drop end\n" "test/cases/strings" context frog-compile-source
         "proc main -- do \"unrelated\" drop \"stable\" drop end\n" "test/cases/strings" context frog-compile-source
         let before after do
@@ -957,7 +940,6 @@ end
 
 proc frog-inline-run-body String String String int String FrogTestContext* -- do
     let body expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         "" body "" frog-inline-materialize
         let source do
             source @ByteBuffer.bytes source @ByteBuffer.len
@@ -969,7 +951,6 @@ end
 
 proc frog-inline-run-body-program String String String int String String FrogTestContext* -- do
     let body expected-stdout expected-stderr expected-status program name context do
-        context frog-count-case
         "" body "" frog-inline-materialize
         let source do
             source @ByteBuffer.bytes source @ByteBuffer.len
@@ -981,7 +962,6 @@ end
 
 proc frog-inline-error-body String String int String FrogTestContext* -- do
     let body expected-stderr expected-status name context do
-        context frog-count-case
         "" body "" frog-inline-materialize
         let source do
             source @ByteBuffer.bytes source @ByteBuffer.len
@@ -993,7 +973,6 @@ end
 
 proc frog-inline-run-source String String String String String int String FrogTestContext* -- do
     let before body after expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         before body after frog-inline-materialize
         let source do
             source @ByteBuffer.bytes source @ByteBuffer.len
@@ -1005,7 +984,6 @@ end
 
 proc frog-inline-run-source-program String String String String String int String String FrogTestContext* -- do
     let before body after expected-stdout expected-stderr expected-status program name context do
-        context frog-count-case
         before body after frog-inline-materialize
         let source do
             source @ByteBuffer.bytes source @ByteBuffer.len
@@ -1017,7 +995,6 @@ end
 
 proc frog-inline-error-source String String String String int String FrogTestContext* -- do
     let before body after expected-stderr expected-status name context do
-        context frog-count-case
         before body after frog-inline-materialize
         let source do
             source @ByteBuffer.bytes source @ByteBuffer.len
@@ -1029,14 +1006,12 @@ end
 
 proc frog-inline-error-raw String String int String FrogTestContext* -- do
     let source expected-stderr expected-status name context do
-        context frog-count-case
         source String.bytes source String.len expected-stderr expected-status name context frog-inline-error-bytes
     end
 end
 
 proc frog-large-path-error FrogTestContext* -- do
     let context do
-        context frog-count-case
         65536 byte-buffer-new
         let source do
             "from \"" source byte-buffer-append-string

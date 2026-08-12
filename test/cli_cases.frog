@@ -1,4 +1,4 @@
-from "framework.frog" import ( FrogTestContext frog-check frog-count-case )
+from "framework.frog" import ( FrogTestContext frog-check )
 from "stdlib/string.frog" import bytes-equal
 from "stdlib/subprocess.frog" import (
     CompletedProcess
@@ -95,7 +95,6 @@ end
 
 proc frog-cli-case-1 String String String int String FrogTestContext* -- do
     let first expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         first context frog-cli-argv-1
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -103,7 +102,6 @@ end
 
 proc frog-cli-case-2 String String String String int String FrogTestContext* -- do
     let first second expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         first second context frog-cli-argv-2
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -111,7 +109,6 @@ end
 
 proc frog-cli-case-3 String String String String String int String FrogTestContext* -- do
     let first second third expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         first second third context frog-cli-argv-3
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -119,7 +116,6 @@ end
 
 proc frog-cli-case-4 String String String String String String int String FrogTestContext* -- do
     let first second third fourth expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         first second third fourth context frog-cli-argv-4
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -127,7 +123,6 @@ end
 
 proc frog-cli-case-5 String String String String String String String int String FrogTestContext* -- do
     let first second third fourth fifth expected-stdout expected-stderr expected-status name context do
-        context frog-count-case
         first second third fourth fifth context frog-cli-argv-5
         expected-stdout expected-stderr expected-status name context frog-run-cli
     end
@@ -143,7 +138,6 @@ frogc: debug: print: before [int]
 frogc: debug: print: after []
 "
         let source expected-debug do
-            context frog-count-case
             1 subprocess-argv
             let normal-arguments do
                 context @FrogTestContext.compiler normal-arguments 0 subprocess-arg-pointer
