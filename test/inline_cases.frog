@@ -213,7 +213,7 @@ end
 
         // words (2)
         "proc" "frogc: expected procedure name\n" 1 "code/words/01" context frog-inline-error-raw
-        "somerandomword" "frogc: unknown word\n" 1 "code/words/02" context frog-inline-error-body
+        "somerandomword" "frogc: unknown word: somerandomword\n" 1 "code/words/02" context frog-inline-error-body
 
         // procedures (15)
         "proc a int -- int do 2 * end" "5 a print" "" "10\n" "" 0 "code/procedures/01" context frog-inline-run-source

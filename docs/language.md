@@ -2,7 +2,23 @@
 
 FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, C interop declarations, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
-Compiler errors are written to standard error and start with `frogc:`. When an ordinary source word fails static stack or operand checks, the diagnostic includes that word's source spelling, for example `frogc: +: compile-time stack underflow`. A failure inside macro expansion is attributed to the outer source word that invoked the expansion.
+Compiler errors are written to standard error. Source-located errors use this
+format:
+
+```text
+PATH:LINE:COLUMN:
+  SOURCE-LINE
+  CARETS
+error: MESSAGE
+```
+
+`PATH` is `<stdin>` for filter input, `<command>` for `run -c`, and the loaded
+module path for files. Columns are visual columns from one; tabs are expanded
+to 8-column stops when the source line and carets are displayed. A
+multi-line token highlights its first source line. When an ordinary source word
+fails static stack or operand checks, the message identifies that word, for
+example `error: +: compile-time stack underflow`. A failure inside macro
+expansion is attributed to the outer source word that invoked the expansion.
 
 Contract mismatch diagnostics show expected and actual types in brackets. Types are ordered from the lower stack position to the top, matching their order in source signatures. For a failed call, the actual list contains only the relevant top-of-stack suffix; unrelated values below it are omitted. Nominal types defined in imported modules use `<module-path>:<declaration-name>` so distinct same-named types remain distinguishable. Full function-reference and C-call contracts show their input and output lists separated by `--`.
 

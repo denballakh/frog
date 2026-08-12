@@ -191,6 +191,12 @@ Try `frogc --help`.
         "run" "-c" "proc main -- do 42 print end" "42
 " "" 0 "cli/run-code" context frog-cli-case-3
 
+        "run" "-c" "proc main -- do nope end" "" "<command>:1:17:
+  proc main -- do nope end
+                  ^^^^
+error: unknown word: nope
+" 1 "cli/run-code-diagnostic-path" context frog-cli-case-3
+
         "build" "-r" "test/cases/cli/build_run.frog" "42
 " "" 0 "cli/build-run" context frog-cli-case-3
 
@@ -213,7 +219,10 @@ frogc: debug: print: after []
 " 0 "cli/debug-run-macro" context frog-cli-case-4
 
         "--debug" "run" "-c" "proc main -- do true 1 + end" "" "frogc: debug: +: before [bool int]
-frogc: +: stack contract mismatch: expected [int int], actual [bool int]
+<command>:1:24:
+  proc main -- do true 1 + end
+                         ^
+error: +: stack contract mismatch: expected [int int], actual [bool int]
 " 1 "cli/debug-run-error" context frog-cli-case-4
 
         "--debug" "build" "-r" "test/cases/cli/build_run.frog" "42

@@ -60,6 +60,8 @@ const c-include-local 2 end
 record ModuleContext
     source ptr
     source_length int
+    diagnostic_path ptr
+    diagnostic_path_length int
     tokens ptr
     token_count int
     procs ptr
@@ -644,6 +646,168 @@ proc source-byte ModuleContext* int -- int do
     end
 end
 
+proc source-line-start ModuleContext* int -- int do
+    let ctx initial do
+        initial
+        while
+            peek offset do
+                offset 0 >
+                if dup do drop ctx offset 1 - source-byte 10 != end
+            end
+        do
+            1 -
+        end
+    end
+end
+
+proc source-line-end ModuleContext* int -- int do
+    let ctx initial do
+        initial
+        while
+            peek offset do
+                offset ctx @ModuleContext.source_length <
+                if dup do
+                    drop
+                    ctx offset source-byte 10 !=
+                    ctx offset source-byte 13 != &&
+                end
+            end
+        do
+            1 +
+        end
+    end
+end
+
+proc emit-error-spaces int -- do
+    let count do 0 while dup count < do 32 eputc 1 + end drop end
+end
+
+proc emit-error-carets int -- do
+    let count do 0 while dup count < do 94 eputc 1 + end drop end
+end
+
+proc tab-display-width int -- int do
+    let column do 8 column 1 - 8 % - end
+end
+
+proc source-display-column-from ModuleContext* int int int -- int do
+    let ctx start finish start-column do
+        start start-column
+        while peek index column do index finish < end do
+            let index column do
+                if ctx index source-byte 9 == do
+                    index 1 + column column tab-display-width +
+                else
+                    ctx @ModuleContext.source ctx @ModuleContext.source_length index utf8-sequence-width
+                    let width do
+                        if width 0 == do 1 else width end
+                        let advance do index advance + column 1 + end
+                    end
+                end
+            end
+        end
+        let index column do column end
+    end
+end
+
+proc emit-source-display-from ModuleContext* int int int -- do
+    let ctx start finish start-column do
+        start start-column
+        while peek index column do index finish < end do
+            let index column do
+                if ctx index source-byte 9 == do
+                    column tab-display-width
+                    let width do
+                        width emit-error-spaces
+                        index 1 + column width +
+                    end
+                else
+                    ctx @ModuleContext.source ctx @ModuleContext.source_length index utf8-sequence-width
+                    let width do
+                        if width 0 == do 1 else width end
+                        let advance do
+                            ctx @ModuleContext.source index + advance emit-error-bytes
+                            index advance + column 1 +
+                        end
+                    end
+                end
+            end
+        end
+        let index column do end
+    end
+end
+
+proc source-display-width ModuleContext* int int -- int do
+    let ctx start finish do ctx start finish 1 source-display-column-from 1 - end
+end
+
+proc smaller-int int int -- int do
+    let left right do if left right < do left else right end end
+end
+
+proc emit-unsigned-error int -- do
+    let value do
+        if value 10 >= do value 10 / emit-unsigned-error end
+        value 10 % 48 + eputc
+    end
+end
+
+proc emit-integer-error int -- do
+    let value do
+        if value min-int == do "INT64_MIN" emit-error
+        elif value 0 < do 45 eputc 0 value - emit-unsigned-error
+        else value emit-unsigned-error end
+    end
+end
+
+proc emit-diagnostic-prefix ModuleContext* int -- do
+    let ctx token do
+        ctx @ModuleContext.diagnostic_path ctx @ModuleContext.diagnostic_path_length emit-error-bytes
+        ":" emit-error ctx token token-at @TokenEntry.line emit-integer-error ":" emit-error
+        ctx ctx token token-at @TokenEntry.start source-line-start
+        let line-start do
+            ctx line-start ctx token token-at @TokenEntry.start 1 source-display-column-from emit-integer-error
+            ":\n  " emit-error
+            ctx ctx token token-at @TokenEntry.start source-line-end
+            let line-end do
+                ctx line-start line-end 1 emit-source-display-from
+                "\n  " emit-error
+                ctx line-start ctx token token-at @TokenEntry.start 1 source-display-column-from 1 - emit-error-spaces
+                ctx token token-at @TokenEntry.start
+                ctx token token-at @TokenEntry.length + line-end smaller-int
+                let span-end do
+                    ctx ctx token token-at @TokenEntry.start span-end source-display-width
+                end
+                let width do if width 0 <= do 1 else width end emit-error-carets end
+                "\nerror: " emit-error
+            end
+        end
+    end
+end
+
+proc fail-span-at ModuleContext* int int int String -- do
+    let ctx start length line message do
+        ctx @ModuleContext.diagnostic_path ctx @ModuleContext.diagnostic_path_length emit-error-bytes
+        ":" emit-error line emit-integer-error ":" emit-error
+        ctx start source-line-start
+        let line-start do
+            ctx line-start start 1 source-display-column-from emit-integer-error
+            ":\n  " emit-error
+            ctx start source-line-end
+            let line-end do
+                ctx line-start line-end 1 emit-source-display-from
+                "\n  " emit-error
+                ctx line-start start 1 source-display-column-from 1 - emit-error-spaces
+                start length + line-end smaller-int
+                let span-end do ctx start span-end source-display-width end
+                let width do if width 0 <= do 1 else width end emit-error-carets end
+                "\nerror: " emit-error message emit-error 10 eputc
+                1 exit
+            end
+        end
+    end
+end
+
 proc lex-advance ModuleContext* -- do
     peek ctx do @ModuleContext.lex_index
         let index do
@@ -654,7 +818,9 @@ proc lex-advance ModuleContext* -- do
                     ctx @ModuleContext.lex_line 1 + ctx !ModuleContext.lex_line
                     1 ctx !ModuleContext.lex_column
                 else
-                    ctx @ModuleContext.lex_column 1 + ctx !ModuleContext.lex_column
+                    if byte 192 & 128 != do
+                        ctx @ModuleContext.lex_column 1 + ctx !ModuleContext.lex_column
+                    end
                 end
             end
         end
@@ -811,7 +977,7 @@ proc lex-string ModuleContext* int int int -- do
                             if byte 92 == do
                                 ctx lex-advance
                                 if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
-                                    "unterminated string escape" fail
+                                    ctx start ctx @ModuleContext.lex_index start - line "unterminated string escape" fail-span-at
                                 end
                             end
                             ctx lex-advance
@@ -822,7 +988,7 @@ proc lex-string ModuleContext* int int int -- do
             end
             drop
             if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
-                "unterminated string literal" fail
+                ctx start ctx @ModuleContext.lex_index start - line "unterminated string literal" fail-span-at
             end
             ctx @ModuleContext.lex_index content-start -
             let content-length do
@@ -2958,6 +3124,7 @@ record CompileContext
     diagnostic_module ModuleContext*
     diagnostic_token int
     diagnostic_active bool
+    diagnostic_word bool
 end
 
 record TokenEntry
@@ -3014,10 +3181,20 @@ record ConstantValue
     payload int
 end
 
+proc emit-source-error-prefix CompileContext* -- do
+    let cc do
+        if cc @CompileContext.diagnostic_active do
+            cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token emit-diagnostic-prefix
+        else
+            "frogc: " emit-error
+        end
+    end
+end
+
 proc emit-compile-word-error-prefix CompileContext* -- do
     let cc do
-        "frogc: " emit-error
-        if cc @CompileContext.diagnostic_active do
+        cc emit-source-error-prefix
+        if cc @CompileContext.diagnostic_word do
             cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-slice emit-error-bytes
             ": " emit-error
         end
@@ -3028,6 +3205,16 @@ proc fail-compile-word CompileContext* String -- do
     let cc message do
         cc emit-compile-word-error-prefix
         message emit-error
+        10 eputc
+        1 exit
+    end
+end
+
+proc fail-unknown-word CompileContext* int -- do
+    let cc token do
+        cc emit-source-error-prefix
+        "unknown word: " emit-error
+        cc @CompileContext.defining_module token token-slice emit-error-bytes
         10 eputc
         1 exit
     end
@@ -3188,6 +3375,14 @@ proc cc-debug-tracing CompileContext* -- bool do
         cc @CompileContext.emitting ! &&
         cc @CompileContext.procedure_module ptr cast int cast
         cc @CompileContext.program @Program.builtins_module ptr cast int cast != &&
+    end
+end
+
+proc cc-diagnostic-is-token CompileContext* int -- bool do
+    let cc token-index do
+        cc @CompileContext.diagnostic_module ptr cast int cast
+        cc @CompileContext.defining_module ptr cast int cast ==
+        cc @CompileContext.diagnostic_token token-index == &&
     end
 end
 
@@ -4310,6 +4505,8 @@ proc load-module-path Program* ptr int -- ModuleContext* do
                     let module do
                         canonical module !ModuleContext.canonical_path
                         canonical-length module !ModuleContext.canonical_path_length
+                        canonical module !ModuleContext.diagnostic_path
+                        canonical-length module !ModuleContext.diagnostic_path_length
                         0 ptr cast module !ModuleContext.imports
                         0 module !ModuleContext.import_count
                         0 ptr cast module !ModuleContext.scope
@@ -9376,17 +9573,12 @@ end
 
 proc compile-ordinary-word CompileContext* int -- do
     let cc token-index do
-        cc @CompileContext.diagnostic_active
-        let diagnostic-active do
-            diagnostic-active ! cc cc-debug-tracing &&
-            let trace do
-                if diagnostic-active ! do
-                    cc @CompileContext.defining_module cc !CompileContext.diagnostic_module
-                    token-index cc !CompileContext.diagnostic_token
-                    true cc !CompileContext.diagnostic_active
-                end
-                if trace do cc "before" emit-debug-word-stack end
-                cc @CompileContext.scope_module cc @CompileContext.defining_module token-index find-scope-symbol
+        if cc token-index cc-diagnostic-is-token do true cc !CompileContext.diagnostic_word end
+        cc cc-debug-tracing
+        cc token-index cc-diagnostic-is-token &&
+        let trace do
+            if trace do cc "before" emit-debug-word-stack end
+            cc @CompileContext.scope_module cc @CompileContext.defining_module token-index find-scope-symbol
                 let symbol-index do
                     cc token-index token-resolves-to-macro
                     let is-macro do
@@ -9416,7 +9608,7 @@ proc compile-ordinary-word CompileContext* int -- do
                                         cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_index
                                         compile-constant
                                     elif cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
-                                        "unknown word" fail
+                                        cc token-index fail-unknown-word
                                     else
                                         cc @CompileContext.defining_module token-index token-slice
                                         let bytes length do
@@ -9464,7 +9656,7 @@ proc compile-ordinary-word CompileContext* int -- do
                                     if cc token-index compile-builtins-word ! do
                                         if cc token-index compile-generic-pointer-memory ! do
                                             if cc token-index compile-memory-io-intrinsic ! do
-                                                "unknown word" fail
+                                                cc token-index fail-unknown-word
                                             end
                                         end
                                     end
@@ -9474,9 +9666,7 @@ proc compile-ordinary-word CompileContext* int -- do
                     end
                     end
                 end
-                if trace do cc "after" emit-debug-word-stack end
-                if diagnostic-active ! do false cc !CompileContext.diagnostic_active end
-            end
+            if trace do cc "after" emit-debug-word-stack end
         end
     end
 end
@@ -9506,7 +9696,7 @@ proc compile-word-token CompileContext* int -- int do
     end
 end
 
-proc compile-token CompileContext* int -- int do
+proc compile-token-inner CompileContext* int -- int do
     let cc token-index do
         cc @CompileContext.defining_module token-index token-at @TokenEntry.kind
         let kind do
@@ -9531,6 +9721,25 @@ proc compile-token CompileContext* int -- int do
             else
                 "unknown token kind" fail
                 token-index 1 +
+            end
+        end
+    end
+end
+
+proc compile-token CompileContext* int -- int do
+    let cc token-index do
+        cc @CompileContext.diagnostic_active
+        let was-active do
+            if was-active ! do
+                cc @CompileContext.defining_module cc !CompileContext.diagnostic_module
+                token-index cc !CompileContext.diagnostic_token
+                true cc !CompileContext.diagnostic_active
+                false cc !CompileContext.diagnostic_word
+            end
+            cc token-index compile-token-inner
+            let next-token do
+                if was-active ! do false cc !CompileContext.diagnostic_active end
+                next-token
             end
         end
     end
@@ -9692,6 +9901,7 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             0 cc !CompileContext.stack_slot_count
             16 cc !CompileContext.stack_slot_capacity
             false cc !CompileContext.diagnostic_active
+            false cc !CompileContext.diagnostic_word
             cc
         end
     end
@@ -9924,8 +10134,8 @@ end
 // END BODY COMPILER
 
 
-proc compile-source ptr int bool ptr int -- do
-    let source source-length debug standard-library-root standard-library-root-length do
+proc compile-source ptr int ptr int bool ptr int -- do
+    let source source-length diagnostic-path diagnostic-path-length debug standard-library-root standard-library-root-length do
         Program:alloc
         let program do
             0 ptr cast ModuleContext* cast program !Program.root_module
@@ -9955,6 +10165,8 @@ proc compile-source ptr int bool ptr int -- do
             let ctx do
                 0 ptr cast ctx !ModuleContext.canonical_path
                 0 ctx !ModuleContext.canonical_path_length
+                diagnostic-path ctx !ModuleContext.diagnostic_path
+                diagnostic-path-length ctx !ModuleContext.diagnostic_path_length
                 0 ptr cast ctx !ModuleContext.imports
                 0 ctx !ModuleContext.import_count
                 0 ptr cast ctx !ModuleContext.scope
@@ -10299,8 +10511,8 @@ proc wait-for-child int -- int do
     end
 end
 
-proc compile-frog-source ptr int ptr ptr bool ptr int -- int do
-    let source source-length directory output debug standard-library-root standard-library-root-length do
+proc compile-frog-source ptr int ptr int ptr ptr bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory output debug standard-library-root standard-library-root-length do
         output create-file
         let output-fd do
             if output-fd 0 < do
@@ -10324,7 +10536,7 @@ proc compile-frog-source ptr int ptr ptr bool ptr int -- int do
                                 1 finish-child
                                 1
                             else
-                                source source-length debug standard-library-root standard-library-root-length compile-source
+                                source source-length diagnostic-path diagnostic-path-length debug standard-library-root standard-library-root-length compile-source
                                 0 finish-child
                                 0
                             end
@@ -10399,13 +10611,13 @@ proc run-executable ptr -- int do
     end
 end
 
-proc run-source ptr int ptr bool ptr int -- int do
-    let source source-length directory debug standard-library-root standard-library-root-length do
+proc run-source ptr int ptr int ptr bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory debug standard-library-root standard-library-root-length do
         if "build" String.bytes ensure-directory 0 != do
             "unable to create build directory" cli-error
             1
         else
-            source source-length directory "build/frog-run.c" String.bytes debug
+            source source-length diagnostic-path diagnostic-path-length directory "build/frog-run.c" String.bytes debug
             standard-library-root standard-library-root-length
             compile-frog-source
             let compile-status do
@@ -10431,7 +10643,7 @@ proc run-file ptr bool ptr int -- int do
         let source source-length do
             path parent-path
             let directory do
-                source source-length directory debug standard-library-root standard-library-root-length run-source
+                source source-length path path cstring-length directory debug standard-library-root standard-library-root-length run-source
             end
         end
     end
@@ -10451,7 +10663,7 @@ proc build-file ptr ptr bool bool ptr int -- int do
                 let source source-length do
                     path parent-path
                     let directory do
-                        source source-length directory c-file debug
+                        source source-length path path cstring-length directory c-file debug
                         standard-library-root standard-library-root-length compile-frog-source
                         let frog-status do
                             if frog-status 0 != do
@@ -10496,7 +10708,7 @@ proc run-command ptr int int bool ptr int -- do
                     end
                     argv argument-index 1 + argv-at
                     peek code do
-                        code cstring-length "." String.bytes debug
+                        code cstring-length "<command>" String.bytes "<command>" String.len "." String.bytes debug
                         standard-library-root standard-library-root-length run-source exit
                     end
                 elif argument u8* cast @ int cast 45 == do
@@ -10573,7 +10785,7 @@ proc main -- do
             end
             let command-index debug do
                 if command-index argc >= do
-                    read-source debug standard-library-root standard-library-root-length compile-source
+                    read-source "<stdin>" String.bytes "<stdin>" String.len debug standard-library-root standard-library-root-length compile-source
                 else
                     argv command-index argv-at
                 let command do

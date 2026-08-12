@@ -29,7 +29,7 @@ const generated-c-check-procedure-symbols 1 5 u32 cast << end
 const generated-c-check-strings 1 6 u32 cast << end
 const generated-c-check-native-scalar-abi 1 7 u32 cast << end
 const generated-c-required-checks 1 8 u32 cast << 1 - end
-const expected-test-cases 507 end
+const expected-test-cases 516 end
 
 proc frog-test-context ptr ptr -- FrogTestContext* do
     let compiler executable do
@@ -730,11 +730,59 @@ proc frog-run-status-case String String String int String FrogTestContext* -- do
     end
 end
 
+proc frog-located-error-equals-legacy CompletedProcess* String -- bool do
+    let result expected do
+        "frogc: " "\nerror: "
+        let legacy-prefix error-prefix do
+            expected String.bytes expected String.len
+            legacy-prefix String.bytes legacy-prefix String.len bytes-starts-with
+            let expected-legacy do
+                expected String.len legacy-prefix String.len -
+                let message-length do
+                    result @CompletedProcess.stderr_len error-prefix String.len message-length + >=
+                    if dup do
+                        drop
+                        result @CompletedProcess.stderr
+                        result @CompletedProcess.stderr_len message-length - error-prefix String.len - +
+                        error-prefix String.len
+                        error-prefix String.bytes error-prefix String.len bytes-equal
+                    end
+                    if dup do
+                        drop
+                        result @CompletedProcess.stderr
+                        result @CompletedProcess.stderr_len message-length - +
+                        message-length
+                        expected String.bytes legacy-prefix String.len + message-length bytes-equal
+                    end
+                    if dup do
+                        drop
+                        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+                        ":\n  " String.bytes ":\n  " String.len bytes-contain
+                    end
+                    if dup do
+                        drop
+                        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+                        "\nerror: " String.bytes "\nerror: " String.len bytes-contain
+                    end
+                    expected-legacy &&
+                end
+            end
+        end
+    end
+end
+
+proc frog-compile-error-equals CompletedProcess* String -- bool do
+    let result expected do
+        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+        expected String.bytes expected String.len bytes-equal
+        result expected frog-located-error-equals-legacy ||
+    end
+end
+
 proc frog-check-compile-error CompletedProcess* String String FrogTestContext* -- do
     let result expected-stderr name context do
-        result @CompletedProcess.returncode 1 ==
-        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
-        expected-stderr String.bytes expected-stderr String.len bytes-equal &&
+        result expected-stderr frog-compile-error-equals
+        result @CompletedProcess.returncode 1 == &&
         name context @FrogTestContext.suite check
     end
 end
@@ -899,7 +947,8 @@ proc frog-inline-error-bytes ptr int String int String FrogTestContext* -- do
     let source source-length expected-stderr expected-status name context do
         source source-length "test/cases" context frog-compile-bytes
         let result do
-            result expected-stderr expected-status frog-process-status-equals
+            result expected-stderr frog-compile-error-equals
+            result @CompletedProcess.returncode expected-status == &&
             name context frog-check
             result completed-process-free
         end

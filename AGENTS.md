@@ -225,8 +225,8 @@ Commands:
 - Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.
 - Frog `int` is `intptr_t` in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
-- User-facing compiler failures use stable `frogc: ...` diagnostics on standard error. Keep exact diagnostics covered by focused fixtures when practical.
-- Static stack and operand failures caused by ordinary words use `frogc: <source-word>: <message>`. Preserve the outer source spelling across nested macro expansion.
+- User-facing compiler failures use stable source-located diagnostics on standard error when a token is available: `PATH:LINE:COLUMN:\n  SOURCE-LINE\n  CARETS\nerror: MESSAGE\n`. Use `<stdin>` for filter input and `<command>` for `run -c`; preserve imported modules' paths. Columns are visual columns: UTF-8 codepoints advance one column and tabs expand to 8-column stops. Attribute macro-expansion errors to the outer call token, and keep focused exact-output coverage for root, CLI, imported-module, tab, UTF-8, and macro cases.
+- Static stack and operand failures caused by ordinary words use the source-located diagnostic's `error: <source-word>: <message>` line. Preserve the outer source spelling across nested macro expansion.
 - Contract mismatch diagnostics render expected and actual types in source order. Call failures render only the relevant actual stack suffix; function-reference failures render both full contracts. Qualify nominal types from imported modules with their defining canonical path.
 - Keep ordinary language and compiler test declarations in Frog manifests. Python tests are reserved for host policies that Frog cannot conveniently control itself.
 - Do not treat generated `.c` or `.exe` files as authoritative source, except for the intentional bootstrap seed `compiler/frogc.c`. Other generated files remain disposable build/test artifacts.
