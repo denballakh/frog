@@ -58,7 +58,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - `stdlib/test.frog`: Explicit-suite checks for booleans, integers, byte ranges,
   and strings, with failure aggregation and status-based completion.
 - `test/runner.frog` and `test/framework.frog`: Frog-owned test entrypoint and assertions. The manifests in `test/*_cases.frog` cover regressions, inline snippets, imports, CLI behavior, and examples. They compile successful output with strict C11 warnings, link fixture-local helper C where required, run executables, check exact diagnostics/output/status, and enforce selected generated-C properties.
-- `test/__main__.py`: Minimal Python host-policy runner. It supplies bounded process-group supervision, a forced-GCC-failure environment, and a symlinked root path; it contains no Frog language cases or implementation.
+- `test/__main__.py`: Minimal Python host-policy runner. It supplies bounded process-group supervision, a forced-GCC-failure environment, a symlinked root path, and a slashless compiler invocation; it contains no Frog language cases or implementation.
 - `test/cases/`: Language, compiler, standard-library, import, and host-policy fixtures used by the test runners.
 - `test/tmp_fs/`: Temporary filesystem tree created and removed by the Python host-policy checks.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
@@ -76,8 +76,8 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Show available recipes: `just`
 - Typecheck with mypy and basedpyright: `just typecheck`
 - Format Python with Black: `just fmt`
-- Run typecheck and format: `just check`
-- Run the full test suite, including typecheck/format first: `just test`
+- Run typechecks and check formatting: `just check`
+- Run the full test suite, including typechecks and a formatting check first: `just test`
 - Build the checked bootstrap seed: `just frogc-seed`
 - Verify the checked seed, source, and next two generations are byte-identical: `just bootstrap-check`
 - Regenerate the checked seed after a verified compiler-source change: `just bootstrap-update`
@@ -110,7 +110,7 @@ Useful direct commands:
 - Successful Frog cases compile through stdin-to-stdout mode with strict C11 warnings before execution. Cases check exact stdout, stderr, and status; compiler failures ignore partial C on stdout but require the exact diagnostic and status 1.
 - `test/inline_cases.frog` materializes concise bodies inside an explicit `proc main -- do ... end`; declaration-order and malformed structural cases use the corresponding whole-source helper.
 - Multi-file import cases are checked-in fixtures under `test/cases/import_cases/`; their manifest is `test/import_cases.frog`.
-- `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, and lexical symlink-root policy. `just frog-regressions` invokes it with `--frog-only`, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
+- `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, lexical symlink-root policy, and slashless compiler-path policy. `just frog-regressions` invokes it with `--frog-only`, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
 - Python host-policy artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
 - `just bootstrap-check` checks only compiler fixed-point equality. The Frog regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `just frog-regressions` / `just test`.
 - Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.

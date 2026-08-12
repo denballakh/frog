@@ -1,4 +1,5 @@
 from "libc.frog" import ( alloc free eputc fork dup2 chdir execvp wait-child finish-child subprocess-tmpfile subprocess-file-putc subprocess-file-getc subprocess-file-rewind subprocess-file-flush subprocess-file-descriptor subprocess-file-close )
+from "string.frog" import bytes-copy
 
 const subprocess-pointer-bytes 8 end
 const subprocess-capture-initial-capacity 256 end
@@ -32,19 +33,6 @@ proc subprocess-fail -- do
     1 finish-child
 end
 
-proc subprocess-bytes-copy ptr ptr int -- do
-    let source destination count do
-        0
-        while dup count < do
-            let index do
-                source index + u8* cast @ destination index + u8* cast !
-                index 1 +
-            end
-        end
-        drop
-    end
-end
-
 proc subprocess-checked-stream -- ptr do
     subprocess-tmpfile
     if dup int cast 0 == do subprocess-fail end
@@ -70,7 +58,7 @@ proc subprocess-capture-push int SubprocessCapture* -- do
             let capacity do
                 capacity alloc
                 let bytes do
-                    capture @SubprocessCapture.bytes bytes capture @SubprocessCapture.len subprocess-bytes-copy
+                    capture @SubprocessCapture.bytes bytes capture @SubprocessCapture.len bytes-copy
                     capture @SubprocessCapture.bytes free
                     bytes capture !SubprocessCapture.bytes
                     capacity capture !SubprocessCapture.capacity

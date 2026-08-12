@@ -12,6 +12,9 @@
 @_black:
     black .
 
+@_black-check:
+    black --check .
+
 @_vscode-grammar:
     python test/vscode_grammar.py
 
@@ -20,7 +23,7 @@ typecheck: _mypy _basedpyright
 [group("test")]
 fmt: _black
 [group("test")]
-check: typecheck fmt _vscode-grammar
+check: typecheck _black-check _vscode-grammar
 
 [group("test")]
 test: check bootstrap-check frog-regressions
@@ -32,9 +35,6 @@ frog-regressions: frogc-seed
     python -m test --frog-only
 
 _compile-frogc source output:
-    gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"
-
-_compile-frogc-filter source output:
     gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 "{{source}}" -o "{{output}}"
 
 [group("bootstrap")]
@@ -54,9 +54,9 @@ bootstrap-check: frogc-seed
 [group("bootstrap")]
 bootstrap-update: frogc-seed
     cd compiler && ../build/frogc < frogc.frog > ../build/frogc.candidate1.c
-    just _compile-frogc-filter build/frogc.candidate1.c build/frogc.candidate1
+    just _compile-frogc build/frogc.candidate1.c build/frogc.candidate1
     cd compiler && ../build/frogc.candidate1 < frogc.frog > ../build/frogc.candidate2.c
-    just _compile-frogc-filter build/frogc.candidate2.c build/frogc.candidate2
+    just _compile-frogc build/frogc.candidate2.c build/frogc.candidate2
     cd compiler && ../build/frogc.candidate2 < frogc.frog > ../build/frogc.candidate3.c
     cmp build/frogc.candidate2.c build/frogc.candidate3.c
     cp build/frogc.candidate2.c compiler/frogc.c

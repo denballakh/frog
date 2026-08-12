@@ -137,6 +137,11 @@ record UnresolvedPointerTypeEntry
     depth int
 end
 
+record PathComponent
+    start int
+    length int
+end
+
 record ScopeEntry
     name_module ModuleContext*
     name_start int
@@ -393,15 +398,7 @@ proc program-grow-pointer-types Program* -- do
         let capacity do
             capacity PointerTypeEntry:sizeof * alloc
             let entries do
-                0
-                while dup program @Program.pointer_type_count < do
-                    dup let index do
-                        program index pointer-type-at @PointerTypeEntry.pointee_type entries index PointerTypeEntry:sizeof * + PointerTypeEntry* cast !PointerTypeEntry.pointee_type
-                        program index pointer-type-at @PointerTypeEntry.pointer_type entries index PointerTypeEntry:sizeof * + PointerTypeEntry* cast !PointerTypeEntry.pointer_type
-                    end
-                    1 +
-                end
-                drop
+                program @Program.pointer_types entries program @Program.pointer_type_count PointerTypeEntry:sizeof * memory-copy
                 entries program !Program.pointer_types
                 capacity program !Program.pointer_type_capacity
             end
@@ -452,16 +449,7 @@ proc program-grow-unresolved-pointer-types Program* -- do
         let capacity do
             capacity UnresolvedPointerTypeEntry:sizeof * alloc
             let entries do
-                0
-                while dup program @Program.unresolved_pointer_type_count < do
-                    dup let index do
-                        program index unresolved-pointer-type-at @UnresolvedPointerTypeEntry.module entries index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry* cast !UnresolvedPointerTypeEntry.module
-                        program index unresolved-pointer-type-at @UnresolvedPointerTypeEntry.token entries index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry* cast !UnresolvedPointerTypeEntry.token
-                        program index unresolved-pointer-type-at @UnresolvedPointerTypeEntry.depth entries index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry* cast !UnresolvedPointerTypeEntry.depth
-                    end
-                    1 +
-                end
-                drop
+                program @Program.unresolved_pointer_types entries program @Program.unresolved_pointer_type_count UnresolvedPointerTypeEntry:sizeof * memory-copy
                 entries program !Program.unresolved_pointer_types
                 capacity program !Program.unresolved_pointer_type_capacity
             end
@@ -526,11 +514,10 @@ proc token-type-prefix-equals ModuleContext* int int String -- bool do
     let ctx token-index prefix-length value do
         ctx token-index token-slice
         let bytes length do
-            prefix-length value String.len ==
-            if dup do
-                drop bytes prefix-length value String.bytes value String.len bytes-equal
+            if prefix-length value String.len == do
+                bytes prefix-length value String.bytes value String.len bytes-equal
             else
-                drop false
+                false
             end
         end
     end
@@ -3643,15 +3630,7 @@ proc grow-stack-slots CompileContext* -- do
         let capacity do
             capacity StackSlotEntry:sizeof * alloc
             let entries do
-                0
-                while dup cc @CompileContext.stack_slot_count < do
-                    dup let index do
-                        cc index stack-slot-at @StackSlotEntry.depth entries index StackSlotEntry:sizeof * + StackSlotEntry* cast !StackSlotEntry.depth
-                        cc index stack-slot-at @StackSlotEntry.value_type entries index StackSlotEntry:sizeof * + StackSlotEntry* cast !StackSlotEntry.value_type
-                    end
-                    1 +
-                end
-                drop
+                cc @CompileContext.stack_slots entries cc @CompileContext.stack_slot_count StackSlotEntry:sizeof * memory-copy
                 entries cc !CompileContext.stack_slots
                 capacity cc !CompileContext.stack_slot_capacity
             end
@@ -3748,7 +3727,7 @@ proc type-at-depth CompileContext* int -- int do
 end
 
 proc type-snapshot CompileContext* -- ptr int do
-    peek cc do @CompileContext.type_count 1 + cell-bytes * alloc
+    peek cc do @CompileContext.type_count cell-bytes * alloc
         let snapshot do
             cc @CompileContext.type_stack snapshot cc @CompileContext.type_count cell-bytes * memory-copy
             snapshot cc @CompileContext.type_count
@@ -4200,22 +4179,13 @@ end
 
 proc bytes-are-dot ptr int int -- bool do
     let bytes start length do
-        if length 1 == do
-            bytes start byte-read 46 ==
-        else
-            false
-        end
+        bytes start + length "." bytes-equal-string
     end
 end
 
 proc bytes-are-dot-dot ptr int int -- bool do
     let bytes start length do
-        if length 2 == do
-            bytes start byte-read 46 ==
-            bytes start 1 + byte-read 46 == &&
-        else
-            false
-        end
+        bytes start + length ".." bytes-equal-string
     end
 end
 
@@ -4427,25 +4397,29 @@ proc find-path-component-end ptr int int -- int do
     end
 end
 
-proc add-path-component ptr ptr int int int -- int do
-    let starts lengths count start length do
-        start starts count cell-bytes * field-write
-        length lengths count cell-bytes * field-write
+proc path-component-at ptr int -- PathComponent* do
+    let components index do components index PathComponent:sizeof * + PathComponent* cast end
+end
+
+proc add-path-component ptr int int int -- int do
+    let components count start length do
+        start components count path-component-at !PathComponent.start
+        length components count path-component-at !PathComponent.length
         count 1 +
     end
 end
 
-proc last-path-component-is-dot-dot ptr ptr ptr int -- bool do
-    let bytes starts lengths count do
+proc last-path-component-is-dot-dot ptr ptr int -- bool do
+    let bytes components count do
         bytes
-        starts count 1 - cell-bytes * field-read
-        lengths count 1 - cell-bytes * field-read
+        components count 1 - path-component-at @PathComponent.start
+        components count 1 - path-component-at @PathComponent.length
         bytes-are-dot-dot
     end
 end
 
-proc collect-path-components ptr int bool ptr ptr int int -- int do
-    let bytes length absolute starts lengths index count do
+proc collect-path-components ptr int bool ptr int int -- int do
+    let bytes length absolute components index count do
         bytes length index skip-path-separators
         let start do
             if start length >= do
@@ -4458,8 +4432,8 @@ proc collect-path-components ptr int bool ptr ptr int int -- int do
                             count
                         elif bytes start component-length bytes-are-dot-dot do
                             if count 0 > do
-                                if bytes starts lengths count last-path-component-is-dot-dot do
-                                    starts lengths count start component-length add-path-component
+                                if bytes components count last-path-component-is-dot-dot do
+                                    components count start component-length add-path-component
                                 else
                                     count 1 -
                                 end
@@ -4467,14 +4441,14 @@ proc collect-path-components ptr int bool ptr ptr int int -- int do
                                 if absolute do
                                     count
                                 else
-                                    starts lengths count start component-length add-path-component
+                                    components count start component-length add-path-component
                                 end
                             end
                         else
-                            starts lengths count start component-length add-path-component
+                            components count start component-length add-path-component
                         end
                         let next-count do
-                            bytes length absolute starts lengths next next-count collect-path-components
+                            bytes length absolute components next next-count collect-path-components
                         end
                     end
                 end
@@ -4498,22 +4472,22 @@ proc append-path-separator ptr int -- int do
     end
 end
 
-proc write-path-components ptr ptr ptr int ptr int int -- int do
-    let bytes starts lengths count output component-index output-index do
+proc write-path-components ptr ptr int ptr int int -- int do
+    let bytes components count output component-index output-index do
         if component-index count >= do
             output-index
         else
             output output-index append-path-separator
             let destination-index do
-                starts component-index cell-bytes * field-read
+                components component-index path-component-at @PathComponent.start
                 let component-start do
-                    lengths component-index cell-bytes * field-read
+                    components component-index path-component-at @PathComponent.length
                     let component-length do
                         bytes component-start +
                         output destination-index +
                         component-length
                         memory-copy
-                        bytes starts lengths count output component-index 1 + destination-index component-length +
+                        bytes components count output component-index 1 + destination-index component-length +
                         write-path-components
                     end
                 end
@@ -4606,17 +4580,15 @@ end
 
 proc normalize-path ModuleContext* int ptr int -- ptr int do
     let ctx token bytes length do
-        length 1 + cell-bytes * alloc
-        let starts do
-            length 1 + cell-bytes * alloc
-            let lengths do
+        length 1 + PathComponent:sizeof * alloc
+        let components do
                 if length 0 > do
                     bytes 0 byte-read 47 ==
                 else
                     false
                 end
                 let absolute do
-                    bytes length absolute starts lengths 0 0 collect-path-components
+                    bytes length absolute components 0 0 collect-path-components
                     let count do
                         length 2 + alloc
                         let output do
@@ -4636,7 +4608,7 @@ proc normalize-path ModuleContext* int ptr int -- ptr int do
                                 end
                                 let output-index do
                                     output
-                                    bytes starts lengths count output 0 output-index write-path-components
+                                    bytes components count output 0 output-index write-path-components
                                 end
                             end
                             let canonical canonical-length do
@@ -4648,7 +4620,6 @@ proc normalize-path ModuleContext* int ptr int -- ptr int do
                         end
                     end
                 end
-            end
         end
     end
 end
@@ -7331,15 +7302,7 @@ proc grow-result-types Program* -- do
         let capacity do
             capacity ResultTypeEntry:sizeof * alloc
             let entries do
-                0
-                while dup program @Program.result_type_count < do
-                    dup let index do
-                        program index result-type-at @ResultTypeEntry.types entries index ResultTypeEntry:sizeof * + ResultTypeEntry* cast !ResultTypeEntry.types
-                        program index result-type-at @ResultTypeEntry.count entries index ResultTypeEntry:sizeof * + ResultTypeEntry* cast !ResultTypeEntry.count
-                    end
-                    1 +
-                end
-                drop
+                program @Program.result_types entries program @Program.result_type_count ResultTypeEntry:sizeof * memory-copy
                 entries program !Program.result_types
                 capacity program !Program.result_type_capacity
             end
@@ -7542,15 +7505,19 @@ end
 
 proc emit-c-includes-module ModuleContext* int -- do
     let ctx index do
-        if index ctx @ModuleContext.c_include_count < do
-            ctx index c-include-at let entry do
-                "#include " emit
-                if entry @CIncludeEntry.kind CIncludeKind:system == do "<" emit else "\"" emit end
-                ctx entry @CIncludeEntry.token emit-decoded-string
-                if entry @CIncludeEntry.kind CIncludeKind:system == do ">\n" emit else "\"\n" emit end
+        index
+        while dup ctx @ModuleContext.c_include_count < do
+            dup let include-index do
+                ctx include-index c-include-at let entry do
+                    "#include " emit
+                    if entry @CIncludeEntry.kind CIncludeKind:system == do "<" emit else "\"" emit end
+                    ctx entry @CIncludeEntry.token emit-decoded-string
+                    if entry @CIncludeEntry.kind CIncludeKind:system == do ">\n" emit else "\"\n" emit end
+                end
             end
-            ctx index 1 + emit-c-includes-module
+            1 +
         end
+        drop
     end
 end
 
@@ -7567,10 +7534,14 @@ end
 
 proc emit-c-types-module ModuleContext* int -- do
     let ctx index do
-        if index ctx @ModuleContext.c_type_count < do
-            "_Static_assert(sizeof(" emit ctx index emit-c-type-spelling ") <= sizeof(Cell), \"C FFI type exceeds Cell\");\n" emit
-            ctx index 1 + emit-c-types-module
+        index
+        while dup ctx @ModuleContext.c_type_count < do
+            dup let type-index do
+                "_Static_assert(sizeof(" emit ctx type-index emit-c-type-spelling ") <= sizeof(Cell), \"C FFI type exceeds Cell\");\n" emit
+            end
+            1 +
         end
+        drop
     end
 end
 

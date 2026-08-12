@@ -6,7 +6,7 @@ Run the complete suite with:
 just test
 ```
 
-This runs Python formatting and type checks, validates the VS Code grammar,
+This checks Python formatting and types, validates the VS Code grammar,
 checks the compiler bootstrap fixed point, runs the Frog-owned test corpus, and
 checks the remaining host-specific CLI policies.
 
@@ -39,11 +39,12 @@ just frog-regressions
 ## Host policy checks
 
 `test/__main__.py` is limited to CLI policies that require host environment or
-filesystem control. It verifies behavior across a forced GCC failure and checks
-lexical import resolution through a symlinked root source. Each launched process
-group, including the Frog runner and its children, has a 30-second timeout and
-process-group termination. Frog source used by these checks lives under
-`test/cases/host_policy/`.
+filesystem control. It verifies behavior across a forced GCC failure, checks
+lexical import resolution through a symlinked root source, and verifies that a
+compiler invoked through a slashless `argv[0]` can show help but cannot locate
+the standard library. Each launched process group, including the Frog runner and
+its children, has a 120-second timeout and process-group termination. Frog
+source used by these checks lives under `test/cases/host_policy/`.
 
 Python is test-only. The compiler, CLI, and all language/compiler case
 declarations and assertions are implemented in Frog; there is no Python Frog
