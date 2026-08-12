@@ -154,7 +154,13 @@ Commands:
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
 - Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
-- Generated procedures use normal C parameters and return values. A measurement pass determines maximum operand depth, then emission uses scalar `Cell frog_value_N` locals for those positions; generated code has no runtime operand-stack object or per-procedure operand-stack array.
+- Generated procedures use normal C parameters and return values. `int`, `bool`,
+  exact-width integers, `ptr`, and typed pointers use their corresponding
+  native C types. A measurement pass registers each `(stack depth, static type
+  ID)` pair, and emission gives every registered pair a distinct local such as
+  `frog_value_0_1`; generated code has no runtime operand-stack object or
+  per-procedure operand-stack array. Multi-result C structs are keyed by the
+  complete ordered output-type vector, not only by result count.
 - Generated C emits source-requested headers, C-type assertions, and mechanical C-binding wrappers before compiler-private runtime headers. This ordering ensures a `c-call` or `c-value` cannot rely on declarations leaked by the runtime implementation.
 - Generated C procedure names use `frog_proc_<global-id>_<source-name>`. ASCII
   letters, digits, and `_` remain readable; `-` and `:` become `_`; `!`, `@`,
@@ -193,7 +199,7 @@ Commands:
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.
 - C interop declarations explicitly request system or local headers, name Frog-visible C types with trusted raw C type names, and bind calls or values. Calls retain fixed Frog arity even for variadic C declarations. Header declarations are authoritative: the compiler synthesizes neither C declarations nor dynamic loading.
-- Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Generated C wrappers perform only mechanical Cell/C-ABI conversion; wait/status and child-process policy stay in Frog.
+- Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Generated C wrappers perform only mechanical native-value/C-ABI conversion; wait/status and child-process policy stay in Frog.
 - `record Name field Type ... end` defines a nominal pointer-backed record. `Name:alloc` allocates uninitialized storage, `Name:sizeof` exposes its Cell-based byte size, and `@Name.field`/`!Name.field` provide statically typed access.
 - `@.field` and `!.field` infer the nominal record type from the top static stack value after macro expansion. Exact macros with those spellings take precedence; cover direct, macro-expanded, and imported-alias access when changing this behavior.
 - Record fields occupy one eight-byte Cell in declaration order. Record-valued fields store handles, and only explicit `ptr`/record casts cross the nominal boundary.

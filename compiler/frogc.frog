@@ -462,6 +462,7 @@ proc program-intern-pointer-type Program int -- int do
                 if program @Program.pointer_type_count program @Program.pointer_type_capacity == do program program-grow-pointer-types end
                 program @Program.pointer_type_count
                 let index do
+                    if type-pointer-base index + unresolved-pointer-base >= do "too many pointer types" fail end
                     pointee program index pointer-type-at !PointerTypeEntry.pointee_type
                     type-pointer-base index + program index pointer-type-at !PointerTypeEntry.pointer_type
                     index 1 + program !Program.pointer_type_count
@@ -583,6 +584,23 @@ proc type-token-pointer-depth-from ModuleContext int int -- int do
 end
 
 proc type-token-pointer-depth ModuleContext int -- int do 0 type-token-pointer-depth-from end
+
+proc type-token-base-has-star-from ModuleContext int int int -- bool do
+    let ctx token-index base-length index do
+        if index base-length >= do
+            false
+        elif
+            ctx @ModuleContext.source ctx token-index token-at @TokenEntry.start +
+            index byte-read 42 ==
+        do
+            true
+        else
+            ctx token-index base-length index 1 + type-token-base-has-star-from
+        end
+    end
+end
+
+proc type-token-base-has-star ModuleContext int int -- bool do 0 type-token-base-has-star-from end
 
 proc token-is-pointer-type ModuleContext int -- bool do
     peek ctx token-index do type-token-pointer-depth
@@ -1218,6 +1236,7 @@ proc parse-type-token ModuleContext int -- int do
         end
         ctx token-index token-at @TokenEntry.length depth -
         let base-length do
+        if ctx token-index base-length type-token-base-has-star do "malformed pointer type" fail end
         if ctx token-index base-length "int" token-type-prefix-equals do
             type-int
         elif ctx token-index base-length "i8" token-type-prefix-equals do type-i8
@@ -2824,6 +2843,16 @@ record LocalEntry
     module ModuleContext
 end
 
+record StackSlotEntry
+    depth int
+    value_type int
+end
+
+record ResultTypeEntry
+    types ptr
+    count int
+end
+
 record RecordTypeEntry
     name_start int
     name_length int
@@ -2882,6 +2911,9 @@ record Program
     unresolved_pointer_types ptr
     unresolved_pointer_type_count int
     unresolved_pointer_type_capacity int
+    result_types ptr
+    result_type_count int
+    result_type_capacity int
     debug bool
     standard_library_root ptr
     standard_library_root_length int
@@ -2904,6 +2936,9 @@ record CompileContext
     emitting bool
     max_type_count int
     type_capacity int
+    stack_slots ptr
+    stack_slot_count int
+    stack_slot_capacity int
     diagnostic_module ModuleContext
     diagnostic_token int
     diagnostic_active bool
@@ -3158,6 +3193,77 @@ proc cc-type-address CompileContext int -- ptr do
     end
 end
 
+proc stack-slot-at CompileContext int -- StackSlotEntry do
+    let cc index do
+        cc @CompileContext.stack_slots index StackSlotEntry:sizeof * + StackSlotEntry cast
+    end
+end
+
+proc find-stack-slot-from CompileContext int int int -- int do
+    let cc depth value-type index do
+        if index cc @CompileContext.stack_slot_count >= do
+            0 1 -
+        elif
+            cc index stack-slot-at @StackSlotEntry.depth depth ==
+            cc index stack-slot-at @StackSlotEntry.value_type value-type == &&
+        do
+            index
+        else
+            cc depth value-type index 1 + find-stack-slot-from
+        end
+    end
+end
+
+proc find-stack-slot CompileContext int int -- int do 0 find-stack-slot-from end
+
+proc grow-stack-slots CompileContext -- do
+    let cc do
+        cc @CompileContext.stack_slot_capacity 2 *
+        let capacity do
+            capacity StackSlotEntry:sizeof * alloc
+            let entries do
+                0
+                while dup cc @CompileContext.stack_slot_count < do
+                    dup let index do
+                        cc index stack-slot-at @StackSlotEntry.depth entries index StackSlotEntry:sizeof * + StackSlotEntry cast !StackSlotEntry.depth
+                        cc index stack-slot-at @StackSlotEntry.value_type entries index StackSlotEntry:sizeof * + StackSlotEntry cast !StackSlotEntry.value_type
+                    end
+                    1 +
+                end
+                drop
+                entries cc !CompileContext.stack_slots
+                capacity cc !CompileContext.stack_slot_capacity
+            end
+        end
+    end
+end
+
+proc register-stack-slot CompileContext int int -- do
+    let cc depth value-type do
+        cc depth value-type find-stack-slot
+        let found do
+            if found 0 < do
+                if cc @CompileContext.emitting do
+                    "internal unmeasured typed stack slot" fail
+                end
+                if cc @CompileContext.stack_slot_count cc @CompileContext.stack_slot_capacity == do cc grow-stack-slots end
+                cc @CompileContext.stack_slot_count
+                let index do
+                    depth cc index stack-slot-at !StackSlotEntry.depth
+                    value-type cc index stack-slot-at !StackSlotEntry.value_type
+                    index 1 + cc !CompileContext.stack_slot_count
+                end
+            end
+        end
+    end
+end
+
+proc register-replaced-stack-slot CompileContext int -- do
+    let cc value-type do
+        cc cc @CompileContext.type_count value-type register-stack-slot
+    end
+end
+
 proc ensure-type-capacity CompileContext -- do
     let cc do
         if cc @CompileContext.type_count cc @CompileContext.type_capacity == do
@@ -3183,6 +3289,7 @@ proc type-push CompileContext int -- do
                 "internal compile-time stack capacity exceeded" fail
             end
         end
+        cc cc @CompileContext.type_count value register-stack-slot
         cc ensure-type-capacity
         value cc cc @CompileContext.type_count cc-type-address 0 field-write
         cc @CompileContext.type_count 1 + cc !CompileContext.type_count
@@ -5560,6 +5667,7 @@ proc emit-c-preamble -- do
     "#define _POSIX_C_SOURCE 200809L
 
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef int64_t Cell;
@@ -5740,124 +5848,208 @@ proc emit-c-symbol ModuleContext int -- do
     end
 end
 
-proc emit-result-type-name int -- do
-    "frog_results_" emit emit-unsigned
+proc emit-c-value-type Program int -- do
+    let program value-type do
+        if value-type type-int == do "intptr_t" emit
+        elif value-type type-bool == do "bool" emit
+        elif value-type type-ptr == do "void *" emit
+        elif value-type type-i8 == do "int8_t" emit
+        elif value-type type-i16 == do "int16_t" emit
+        elif value-type type-i32 == do "int32_t" emit
+        elif value-type type-i64 == do "int64_t" emit
+        elif value-type type-u8 == do "uint8_t" emit
+        elif value-type type-u16 == do "uint16_t" emit
+        elif value-type type-u32 == do "uint32_t" emit
+        elif value-type type-u64 == do "uint64_t" emit
+        elif value-type type-is-typed-pointer do
+            program program value-type type-pointer-base - pointer-type-at @PointerTypeEntry.pointee_type emit-c-value-type
+            " *" emit
+        else
+            "Cell" emit
+        end
+    end
 end
 
-proc emit-result-fields int int -- do
-    let count index do
+proc emit-c-type-identity int -- do
+    let value-type do
+        if value-type type-int == do "int" emit
+        elif value-type type-bool == do "bool" emit
+        elif value-type type-ptr == do "ptr" emit
+        elif value-type type-string == do "string" emit
+        elif value-type type-i8 == do "i8" emit
+        elif value-type type-i16 == do "i16" emit
+        elif value-type type-i32 == do "i32" emit
+        elif value-type type-i64 == do "i64" emit
+        elif value-type type-u8 == do "u8" emit
+        elif value-type type-u16 == do "u16" emit
+        elif value-type type-u32 == do "u32" emit
+        elif value-type type-u64 == do "u64" emit
+        elif value-type type-is-typed-pointer do "pointer_" emit value-type emit-unsigned
+        elif value-type type-is-function do "function_" emit value-type emit-unsigned
+        else "type_" emit value-type emit-unsigned
+        end
+    end
+end
+
+proc emit-c-type-map-fixed int String -- do
+    let value-type name do
+        "/* Frog type " emit value-type emit-unsigned " = " emit name emit " */\n" emit
+    end
+end
+
+proc emit-c-type-map-named ModuleContext int int int String -- do
+    let module value-type name-start name-length kind do
+        "/* Frog type " emit value-type emit-unsigned " = " emit kind emit " module " emit
+        module @ModuleContext.module_id emit-unsigned " " emit
+        module @ModuleContext.source name-start + name-length emit-proc-source-name
+        " */\n" emit
+    end
+end
+
+proc emit-c-type-map-records ModuleContext int -- do
+    let module index do
+        if index module @ModuleContext.record_count < do
+            module index record-type-at let entry do
+                module entry @RecordTypeEntry.record_type entry @RecordTypeEntry.name_start entry @RecordTypeEntry.name_length "record" emit-c-type-map-named
+            end
+            module index 1 + emit-c-type-map-records
+        end
+    end
+end
+
+proc emit-c-type-map-unions ModuleContext int -- do
+    let module index do
+        if index module @ModuleContext.union_count < do
+            module index union-type-at let entry do
+                module entry @UnionTypeEntry.union_type entry @UnionTypeEntry.name_start entry @UnionTypeEntry.name_length "union" emit-c-type-map-named
+            end
+            module index 1 + emit-c-type-map-unions
+        end
+    end
+end
+
+proc emit-c-type-map-functions ModuleContext int -- do
+    let module index do
+        if index module @ModuleContext.function_count < do
+            module index function-type-at let entry do
+                module entry @FunctionTypeEntry.function_type entry @FunctionTypeEntry.name_start entry @FunctionTypeEntry.name_length "function" emit-c-type-map-named
+            end
+            module index 1 + emit-c-type-map-functions
+        end
+    end
+end
+
+proc emit-c-type-map Program -- do
+    let program do
+        type-int "int" emit-c-type-map-fixed
+        type-bool "bool" emit-c-type-map-fixed
+        type-ptr "ptr" emit-c-type-map-fixed
+        type-type "type" emit-c-type-map-fixed
+        type-string "String" emit-c-type-map-fixed
+        type-i8 "i8" emit-c-type-map-fixed
+        type-i16 "i16" emit-c-type-map-fixed
+        type-i32 "i32" emit-c-type-map-fixed
+        type-i64 "i64" emit-c-type-map-fixed
+        type-u8 "u8" emit-c-type-map-fixed
+        type-u16 "u16" emit-c-type-map-fixed
+        type-u32 "u32" emit-c-type-map-fixed
+        type-u64 "u64" emit-c-type-map-fixed
+        program @Program.module_head
+        while dup ptr cast int cast 0 != do
+            let module do
+                module 0 emit-c-type-map-records
+                module 0 emit-c-type-map-unions
+                module 0 emit-c-type-map-functions
+                module @ModuleContext.next_module
+            end
+        end
+        drop
+        0
+        while dup program @Program.pointer_type_count < do
+            dup let index do
+                program index pointer-type-at let entry do
+                    "/* Frog type " emit entry @PointerTypeEntry.pointer_type emit-unsigned
+                    " = pointer to Frog type " emit entry @PointerTypeEntry.pointee_type emit-unsigned " */\n" emit
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-result-type-name-from ptr int int -- do
+    let types count index do
         if index count < do
-            " Cell value_" emit index emit-unsigned ";" emit
-            count index 1 + emit-result-fields
+            "_" emit types index cell-bytes * field-read emit-c-type-identity
+            types count index 1 + emit-result-type-name-from
         end
     end
 end
 
-proc emit-result-typedef int -- do
-    let output-count do
-        "typedef struct {" emit
-        output-count 0 emit-result-fields
-        " } " emit output-count emit-result-type-name ";\n" emit
+proc emit-result-type-name ptr int -- do
+    let types count do "frog_results_" emit count emit-unsigned
+        types count 0 emit-result-type-name-from
     end
 end
 
-proc ctx-proc-uses-result-arity-from ModuleContext int int -- bool do
-    let ctx output-count proc-index do
-        if proc-index ctx @ModuleContext.proc_count >= do
-            false
-        elif ctx proc-index procedure-at @ProcedureEntry.output_count output-count == do
-            true
-        else
-            ctx output-count proc-index 1 + ctx-proc-uses-result-arity-from
-        end
+proc result-type-at Program int -- ResultTypeEntry do
+    let program index do program @Program.result_types index ResultTypeEntry:sizeof * + ResultTypeEntry cast end
+end
+
+proc result-types-equal-from ptr ptr int int -- bool do
+    let left right count index do
+        if index count >= do true
+        elif left index cell-bytes * field-read right index cell-bytes * field-read != do false
+        else left right count index 1 + result-types-equal-from end
     end
 end
 
-proc ctx-function-uses-result-arity-from ModuleContext int int -- bool do
-    let ctx output-count function-index do
-        if function-index ctx @ModuleContext.function_count >= do
-            false
-        elif ctx function-index function-type-at @FunctionTypeEntry.output_count output-count == do
-            true
-        else
-            ctx output-count function-index 1 + ctx-function-uses-result-arity-from
-        end
+proc find-result-type-from Program ptr int int -- int do
+    let program types count index do
+        if index program @Program.result_type_count >= do 0 1 -
+        elif
+            program index result-type-at @ResultTypeEntry.count count ==
+            program index result-type-at @ResultTypeEntry.types types count 0 result-types-equal-from &&
+        do index
+        else program types count index 1 + find-result-type-from end
     end
 end
 
-proc ctx-uses-result-arity ModuleContext int -- bool do
-    let ctx output-count do
-        if ctx output-count 0 ctx-proc-uses-result-arity-from do
-            true
-        else
-            ctx output-count 0 ctx-function-uses-result-arity-from
-        end
-    end
-end
-
-proc modules-use-result-arity Program int ModuleContext -- bool do
-    let program output-count ctx do
-        if ctx ptr cast int cast 0 == do
-            false
-        elif ctx output-count ctx-uses-result-arity do
-            true
-        else
-            program output-count ctx @ModuleContext.next_module modules-use-result-arity
-        end
-    end
-end
-
-proc result-arity-max int int -- int do
-    let left right do
-        if left right > do left else right end
-    end
-end
-
-proc ctx-max-proc-output-arity-from ModuleContext int int -- int do
-    let ctx proc-index maximum do
-        if proc-index ctx @ModuleContext.proc_count >= do
-            maximum
-        else
-            ctx proc-index procedure-at @ProcedureEntry.output_count
-            peek output-count do maximum result-arity-max
-                let next-maximum do
-                    ctx proc-index 1 + next-maximum ctx-max-proc-output-arity-from
+proc grow-result-types Program -- do
+    let program do
+        program @Program.result_type_capacity 2 *
+        let capacity do
+            capacity ResultTypeEntry:sizeof * alloc
+            let entries do
+                0
+                while dup program @Program.result_type_count < do
+                    dup let index do
+                        program index result-type-at @ResultTypeEntry.types entries index ResultTypeEntry:sizeof * + ResultTypeEntry cast !ResultTypeEntry.types
+                        program index result-type-at @ResultTypeEntry.count entries index ResultTypeEntry:sizeof * + ResultTypeEntry cast !ResultTypeEntry.count
+                    end
+                    1 +
                 end
+                drop
+                entries program !Program.result_types
+                capacity program !Program.result_type_capacity
             end
         end
     end
 end
 
-proc ctx-max-proc-output-arity ModuleContext -- int do 0 0 ctx-max-proc-output-arity-from end
-
-proc ctx-max-function-output-arity-from ModuleContext int int -- int do
-    let ctx function-index maximum do
-        if function-index ctx @ModuleContext.function_count >= do
-            maximum
-        else
-            ctx function-index function-type-at @FunctionTypeEntry.output_count
-            peek output-count do maximum result-arity-max
-                let next-maximum do
-                    ctx function-index 1 + next-maximum ctx-max-function-output-arity-from
-                end
-            end
-        end
-    end
-end
-
-proc ctx-max-function-output-arity ModuleContext -- int do 0 0 ctx-max-function-output-arity-from end
-
-proc program-max-output-arity-from Program ModuleContext int -- int do
-    let program ctx maximum do
-        if ctx ptr cast int cast 0 == do
-            maximum
-        else
-            ctx ctx-max-proc-output-arity
-            ctx ctx-max-function-output-arity
-            peek proc-maximum function-maximum do result-arity-max
-                peek ctx-maximum do maximum result-arity-max
-                    let next-maximum do
-                        program ctx @ModuleContext.next_module next-maximum program-max-output-arity-from
+proc register-result-type Program ptr int -- do
+    let program types count do
+        if count 1 > do
+            program types count 0 find-result-type-from
+            let found do
+                if found 0 < do
+                    if program @Program.result_type_count program @Program.result_type_capacity == do program grow-result-types end
+                    program @Program.result_type_count
+                    let index do
+                        types program index result-type-at !ResultTypeEntry.types
+                        count program index result-type-at !ResultTypeEntry.count
+                        index 1 + program !Program.result_type_count
                     end
                 end
             end
@@ -5865,29 +6057,68 @@ proc program-max-output-arity-from Program ModuleContext int -- int do
     end
 end
 
-proc program-max-output-arity Program -- int do
-    peek program do program @Program.module_head 0 program-max-output-arity-from end
+proc collect-module-result-types Program ModuleContext -- do
+    let program module do
+        0
+        while dup module @ModuleContext.proc_count < do
+            dup let index do
+                module @ModuleContext.types module index procedure-at @ProcedureEntry.output_start cell-bytes * +
+                module index procedure-at @ProcedureEntry.output_count
+                program rot rot register-result-type
+            end
+            1 +
+        end
+        drop
+        0
+        while dup module @ModuleContext.function_count < do
+            dup let index do
+                module @ModuleContext.function_types module index function-type-at @FunctionTypeEntry.output_start cell-bytes * +
+                module index function-type-at @FunctionTypeEntry.output_count
+                program rot rot register-result-type
+            end
+            1 +
+        end
+        drop
+    end
 end
 
-proc emit-result-typedefs-from Program int int -- do
-    let program maximum output-count do
-        if output-count maximum <= do
-            program output-count program @Program.module_head modules-use-result-arity
-            if dup do
-                drop output-count emit-result-typedef
-            else
-                drop
-            end
-            program maximum output-count 1 + emit-result-typedefs-from
+proc collect-result-types Program -- do
+    peek program do @Program.module_head
+        while dup ptr cast int cast 0 != do
+            dup program swap collect-module-result-types
+            @ModuleContext.next_module
+        end
+        drop
+    end
+end
+
+proc emit-result-fields Program ptr int int -- do
+    let program types count index do
+        if index count < do
+            " " emit program types index cell-bytes * field-read emit-c-value-type
+            " value_" emit index emit-unsigned ";" emit
+            program types count index 1 + emit-result-fields
         end
     end
 end
 
+proc emit-result-typedef Program int -- do
+    let program index do program index result-type-at let result do
+        "typedef struct {" emit
+        program result @ResultTypeEntry.types result @ResultTypeEntry.count 0 emit-result-fields
+        " } " emit result @ResultTypeEntry.types result @ResultTypeEntry.count emit-result-type-name ";\n" emit
+    end end
+end
+
 proc emit-result-typedefs Program -- do
-    peek program do program-max-output-arity
-        let maximum do
-            program maximum 2 emit-result-typedefs-from
+    let program do
+        program collect-result-types
+        0
+        while dup program @Program.result_type_count < do
+            dup program swap emit-result-typedef
+            1 +
         end
+        drop
     end
 end
 
@@ -5897,8 +6128,11 @@ proc emit-proc-return-type ModuleContext int -- do
             if output-count 0 == do
                 "void" emit
             elif output-count 1 == do
-                "Cell" emit
+                ctx @ModuleContext.program
+                ctx ctx proc-index procedure-at @ProcedureEntry.output_start type-at
+                emit-c-value-type
             else
+                ctx @ModuleContext.types ctx proc-index procedure-at @ProcedureEntry.output_start cell-bytes * +
                 output-count emit-result-type-name
             end
         end
@@ -5913,7 +6147,10 @@ proc emit-proc-parameters-from ModuleContext int int -- do
     let ctx proc-index input-index do
         if input-index ctx proc-index procedure-at @ProcedureEntry.input_count < do
             if input-index 0 != do ", " emit end
-            "Cell " emit input-index emit-proc-argument-name
+            ctx @ModuleContext.program
+            ctx ctx proc-index procedure-at @ProcedureEntry.input_start input-index + type-at
+            emit-c-value-type
+            " " emit input-index emit-proc-argument-name
             ctx proc-index input-index 1 + emit-proc-parameters-from
         end
     end
@@ -5961,6 +6198,7 @@ proc emit-c-emitter-support Program -- do
         emit-c-preamble
         program emit-c-includes
         program emit-c-types
+        program emit-c-type-map
         program compile-all-c-bindings
         emit-c-private-headers
         emit-c-runtime
@@ -6094,10 +6332,20 @@ proc emit-local-name int -- do
     emit-unsigned
 end
 
-proc emit-slot CompileContext int -- do
-    let cc index do
-        "frog_value_" emit index emit-unsigned
+proc emit-slot-as CompileContext int int -- do
+    let cc index value-type do
+        if cc index value-type find-stack-slot 0 < do
+            "frogc: internal missing typed stack slot type " emit-error
+            cc @CompileContext.program value-type emit-error-type-name
+            10 eputc 1 exit
+        end
+        "frog_value_" emit index emit-unsigned "_" emit
+        if value-type 0 < do "n" emit 0 value-type - emit-unsigned else value-type emit-unsigned end
     end
+end
+
+proc emit-slot CompileContext int -- do
+    let cc index do cc index cc index type-at-depth emit-slot-as end
 end
 
 proc emit-top-slot CompileContext -- do
@@ -6309,28 +6557,31 @@ proc apply-function-contract CompileContext ModuleContext int -- do
     end
 end
 
-proc emit-binary-operation CompileContext String -- do
-    let cc operator do
+proc emit-binary-operation-types CompileContext int int int String -- do
+    let cc left-type right-type output-type operator do
         if cc @CompileContext.emitting do
             cc @CompileContext.type_count 1 -
             let left-index do
                 cc @CompileContext.type_count
                 let right-index do
                     cc emit-indent
-                    cc left-index emit-slot " = " emit
-                    cc left-index emit-slot operator emit
-                    cc right-index emit-slot ";" emit 10 putc
+                    cc left-index output-type emit-slot-as " = " emit
+                    cc left-index left-type emit-slot-as operator emit
+                    cc right-index right-type emit-slot-as ";" emit 10 putc
                 end
             end
         end
     end
 end
 
-proc emit-unary-operation CompileContext String -- do
-    let cc operator do
+proc emit-unary-operation CompileContext int int String -- do
+    let cc input-type output-type operator do
         if cc @CompileContext.emitting do
             cc emit-indent
-            cc emit-top-slot " = " emit operator emit cc emit-top-slot ";" emit 10 putc
+            cc @CompileContext.type_count 1 -
+            let index do
+                cc index output-type emit-slot-as " = " emit operator emit cc index input-type emit-slot-as ";" emit 10 putc
+            end
         end
     end
 end
@@ -6342,12 +6593,12 @@ proc emit-checked-binary-operation CompileContext String -- do
             let left-index do
                 cc @CompileContext.type_count
                 let right-index do
-                    cc emit-indent "if (" emit cc right-index emit-slot
+                    cc emit-indent "if (" emit cc right-index type-int emit-slot-as
                     " == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); }" emit 10 putc
                     cc emit-indent
-                    cc left-index emit-slot " = " emit
-                    cc left-index emit-slot operator emit
-                    cc right-index emit-slot ";" emit 10 putc
+                    cc left-index type-int emit-slot-as " = " emit
+                    cc left-index type-int emit-slot-as operator emit
+                    cc right-index type-int emit-slot-as ";" emit 10 putc
                 end
             end
         end
@@ -6361,11 +6612,11 @@ proc emit-divmod CompileContext -- do
             let left-index do
                 cc @CompileContext.type_count 1 -
                 let right-index do
-                    cc emit-indent "{ Cell a = " emit cc left-index emit-slot
-                    "; Cell b = " emit cc right-index emit-slot
+                    cc emit-indent "{ intptr_t a = " emit cc left-index type-int emit-slot-as
+                    "; intptr_t b = " emit cc right-index type-int emit-slot-as
                     "; if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } " emit
-                    cc left-index emit-slot " = a / b; " emit
-                    cc right-index emit-slot " = a % b; }" emit 10 putc
+                    cc left-index type-int emit-slot-as " = a / b; " emit
+                    cc right-index type-int emit-slot-as " = a % b; }" emit 10 putc
                 end
             end
         end
@@ -6377,7 +6628,7 @@ proc compile-fixed-binary CompileContext int int String -- do
         cc input-type type-expect
         cc input-type type-expect
         cc output-type type-push
-        cc operator emit-binary-operation
+        cc input-type input-type output-type operator emit-binary-operation-types
     end
 end
 
@@ -6385,7 +6636,7 @@ proc compile-fixed-unary CompileContext int int String -- do
     let cc input-type output-type operator do
         cc input-type type-expect
         cc output-type type-push
-        cc operator emit-unary-operation
+        cc input-type output-type operator emit-unary-operation
     end
 end
 
@@ -6412,11 +6663,19 @@ proc compile-add-sub CompileContext bool -- do
                     cc "invalid operand types for pointer/integer arithmetic" fail-compile-word
                 end
             end
-            if subtract do
-                cc " - " emit-binary-operation
-            else
-                cc " + " emit-binary-operation
-            end
+            if left-type type-ptr == do
+                if cc @CompileContext.emitting do
+                    cc @CompileContext.type_count 1 - let left-index do
+                        cc @CompileContext.type_count let right-index do
+                            cc emit-indent cc left-index type-ptr emit-slot-as
+                            " = (void *)((unsigned char *)" emit cc left-index type-ptr emit-slot-as
+                            if subtract do " - " emit else " + " emit end
+                            cc right-index type-int emit-slot-as ");" emit 10 putc
+                        end
+                    end
+                end
+            elif subtract do cc left-type right-type left-type " - " emit-binary-operation-types
+            else cc left-type right-type left-type " + " emit-binary-operation-types end
         end
     end
 end
@@ -6504,7 +6763,9 @@ proc type-is-integer int -- bool do
         value-type type-u64 == ||
     end
 end
-proc type-is-typed-pointer int -- bool do type-pointer-base >= end
+proc type-is-typed-pointer int -- bool do
+    dup type-pointer-base >= swap unresolved-pointer-base < &&
+end
 
 proc type-is-cast-target int -- bool do
     let value-type do
@@ -6557,10 +6818,15 @@ proc compile-cast-intrinsic CompileContext -- do
                 do
                     cc "unsupported cast" fail-compile-word
                 end
+                cc target-type register-replaced-stack-slot
                 cc target-type type-push
-                if source-type type-int == target-type type-bool == && do
-                    if cc @CompileContext.emitting do
-                        cc emit-indent cc emit-top-slot " = " emit cc emit-top-slot " != 0;" emit 10 putc
+                if cc @CompileContext.emitting do
+                    cc @CompileContext.type_count 1 -
+                    let index do
+                        cc emit-indent cc index target-type emit-slot-as " = " emit
+                        if target-type type-bool == do "(" emit cc index source-type emit-slot-as " != 0)" emit
+                        else "(" emit cc @CompileContext.program target-type emit-c-value-type ")" emit cc index source-type emit-slot-as end
+                        ";" emit 10 putc
                     end
                 end
             end
@@ -6568,13 +6834,16 @@ proc compile-cast-intrinsic CompileContext -- do
     end
 end
 
-proc compile-read-memory CompileContext String -- do
-    let cc function-name do
+proc compile-read-memory CompileContext int String -- do
+    let cc output-type function-name do
         cc type-ptr type-expect
-        cc type-int type-push
+        cc output-type register-replaced-stack-slot
+        cc output-type type-push
         if cc @CompileContext.emitting do
-            cc emit-indent cc emit-top-slot " = " emit function-name emit
-            "((const void *)(intptr_t)" emit cc emit-top-slot ");" emit 10 putc
+            cc @CompileContext.type_count 1 - let index do
+                cc emit-indent cc index output-type emit-slot-as " = " emit function-name emit
+                "((const void *)" emit cc index type-ptr emit-slot-as ");" emit 10 putc
+            end
         end
     end
 end
@@ -6587,8 +6856,8 @@ proc compile-write-memory CompileContext String -- do
             cc @CompileContext.type_count
             peek value-index do 1 +
                 let pointer-index do
-                    cc emit-indent function-name emit "((void *)(intptr_t)" emit
-                    cc pointer-index emit-slot ", " emit cc value-index emit-slot ");" emit 10 putc
+                    cc emit-indent function-name emit "((void *)" emit
+                    cc pointer-index type-ptr emit-slot-as ", " emit cc value-index type-int emit-slot-as ");" emit 10 putc
                 end
             end
         end
@@ -6598,9 +6867,10 @@ end
 proc emit-read-pointer CompileContext -- do
     let cc do
         if cc @CompileContext.emitting do
-            cc emit-indent cc emit-top-slot
-            " = (Cell)(intptr_t)frog_read_ptr((const void *)(intptr_t)" emit
-            cc emit-top-slot ");" emit 10 putc
+            cc @CompileContext.type_count 1 - let index do
+                cc emit-indent cc index type-ptr emit-slot-as
+                " = frog_read_ptr((const void *)" emit cc index type-ptr emit-slot-as ");" emit 10 putc
+            end
         end
     end
 end
@@ -6611,8 +6881,8 @@ proc emit-write-pointer CompileContext -- do
             cc @CompileContext.type_count
             peek value-index do 1 +
                 let pointer-index do
-                    cc emit-indent "frog_write_ptr((void *)(intptr_t)" emit cc pointer-index emit-slot
-                    ", (void *)(intptr_t)" emit cc value-index emit-slot ");" emit 10 putc
+                    cc emit-indent "frog_write_ptr((void *)" emit cc pointer-index type-ptr emit-slot-as
+                    ", (void *)" emit cc value-index type-ptr emit-slot-as ");" emit 10 putc
                 end
             end
         end
@@ -6629,31 +6899,32 @@ proc compile-memory-io-intrinsic CompileContext int -- bool do
             if cc @CompileContext.emitting do
                 cc @CompileContext.type_count 2 -
                 let argv-index do
-                    cc emit-indent cc argv-index emit-slot " = (Cell)(intptr_t)frog_argv;" emit 10 putc
-                    cc emit-indent cc argv-index 1 + emit-slot " = (Cell)frog_argc;" emit 10 putc
+                    cc emit-indent cc argv-index type-ptr emit-slot-as " = (void *)frog_argv;" emit 10 putc
+                    cc emit-indent cc argv-index 1 + type-int emit-slot-as " = (intptr_t)frog_argc;" emit 10 putc
                 end
             end
             true
         elif cc @CompileContext.defining_module token-index "@ptr" token-equals do
             cc type-ptr type-expect
+            cc type-ptr register-replaced-stack-slot
             cc type-ptr type-push
             cc emit-read-pointer true
         elif cc @CompileContext.defining_module token-index "@i8" token-equals do
-            cc "frog_read_i8" compile-read-memory true
+            cc type-int "frog_read_i8" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@i16" token-equals do
-            cc "frog_read_i16" compile-read-memory true
+            cc type-int "frog_read_i16" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@i32" token-equals do
-            cc "frog_read_i32" compile-read-memory true
+            cc type-int "frog_read_i32" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@i64" token-equals do
-            cc "frog_read_i64" compile-read-memory true
+            cc type-int "frog_read_i64" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@u8" token-equals do
-            cc "frog_read_u8" compile-read-memory true
+            cc type-int "frog_read_u8" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@u16" token-equals do
-            cc "frog_read_u16" compile-read-memory true
+            cc type-int "frog_read_u16" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@u32" token-equals do
-            cc "frog_read_u32" compile-read-memory true
+            cc type-int "frog_read_u32" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "@u64" token-equals do
-            cc "frog_read_u64" compile-read-memory true
+            cc type-int "frog_read_u64" compile-read-memory true
         elif cc @CompileContext.defining_module token-index "!ptr" token-equals do
             cc type-ptr type-expect
             cc type-ptr type-expect
@@ -6681,11 +6952,11 @@ proc compile-memory-io-intrinsic CompileContext int -- bool do
                 if value-type type-int == do
                     if cc @CompileContext.emitting do
                         cc emit-indent "printf(\"%lld\\n\", (long long)" emit
-                        cc cc @CompileContext.type_count emit-slot ");" emit 10 putc
+                        cc cc @CompileContext.type_count value-type emit-slot-as ");" emit 10 putc
                     end
                 elif value-type type-bool == do
                     if cc @CompileContext.emitting do
-                        cc emit-indent "fputs(" emit cc cc @CompileContext.type_count emit-slot
+                        cc emit-indent "fputs(" emit cc cc @CompileContext.type_count value-type emit-slot-as
                         " ? \"true\\n\" : \"false\\n\", stdout);" emit 10 putc
                     end
                 else
@@ -6743,7 +7014,9 @@ proc emit-call-arguments-from CompileContext ModuleContext int int int -- do
     let cc ctx proc-index base input-index do
         if input-index ctx proc-index procedure-at @ProcedureEntry.input_count < do
             if input-index 0 != do ", " emit end
-            cc base input-index + emit-slot
+            cc base input-index +
+            ctx ctx proc-index procedure-at @ProcedureEntry.input_start input-index + type-at
+            emit-slot-as
             cc ctx proc-index base input-index 1 + emit-call-arguments-from
         end
     end
@@ -6753,14 +7026,16 @@ proc emit-call-arguments CompileContext ModuleContext int int -- do
     peek cc ctx proc-index base do 0 emit-call-arguments-from end
 end
 
-proc emit-call-result-slots CompileContext int int -- do
-    let cc base output-count do
+proc emit-call-result-slots CompileContext ModuleContext int int int -- do
+    let cc module proc-index base output-count do
         0
         while dup output-count < do
             dup
             let output-index do
                 cc emit-indent
-                cc base output-index + emit-slot " = frog_call_result.value_" emit
+                cc base output-index +
+                module module proc-index procedure-at @ProcedureEntry.output_start output-index + type-at
+                emit-slot-as " = frog_call_result.value_" emit
                 output-index emit-unsigned ";" emit 10 putc
             end
             1 +
@@ -6778,15 +7053,18 @@ proc emit-procedure-invocation CompileContext ModuleContext int int -- do
                 module proc-index emit-proc-name
                 "(" emit cc module proc-index base emit-call-arguments ");" emit 10 putc
             elif output-count 1 == do
-                cc emit-indent cc base emit-slot " = " emit
+                cc emit-indent cc base
+                module module proc-index procedure-at @ProcedureEntry.output_start type-at
+                emit-slot-as " = " emit
                 module proc-index emit-proc-name
                 "(" emit cc module proc-index base emit-call-arguments ");" emit 10 putc
             else
                 cc emit-indent
+                module @ModuleContext.types module proc-index procedure-at @ProcedureEntry.output_start cell-bytes * +
                 output-count emit-result-type-name " frog_call_result = " emit
                 module proc-index emit-proc-name
                 "(" emit cc module proc-index base emit-call-arguments ");" emit 10 putc
-                cc base output-count emit-call-result-slots
+                cc module proc-index base output-count emit-call-result-slots
             end
         end
     end
@@ -7036,8 +7314,9 @@ proc bind-let-names CompileContext int int -- do
                     let local-id do
                         if cc @CompileContext.emitting do
                             cc emit-indent
-                            "Cell " emit local-id emit-local-name " = " emit
-                            cc cc @CompileContext.type_count emit-slot ";" emit 10 putc
+                            cc @CompileContext.program value-type emit-c-value-type
+                            " " emit local-id emit-local-name " = " emit
+                            cc cc @CompileContext.type_count value-type emit-slot-as ";" emit 10 putc
                             cc emit-indent
                             "(void)" emit local-id emit-local-name ";" emit 10 putc
                         end
@@ -7190,14 +7469,19 @@ proc compile-inferred-record-field CompileContext ptr int bool -- bool do
                         module record-index bytes 2 + length 2 - find-record-field
                         let field-index do
                             if field-index 0 < do cc "unknown record field" fail-compile-word end
+                            module record-index record-type-at
+                            module field-index record-field-at
+                            let record-entry field do
                             if setter do
-                                cc module record-index record-type-at @RecordTypeEntry.record_type type-expect
-                                cc module field-index record-field-at @RecordFieldEntry.field_type type-expect
-                                cc module field-index record-field-at @RecordFieldEntry.byte_offset emit-record-field-write
+                                cc record-entry @RecordTypeEntry.record_type type-expect
+                                cc field @RecordFieldEntry.field_type type-expect
+                                cc record-entry field emit-record-field-write
                             else
-                                cc module record-index record-type-at @RecordTypeEntry.record_type type-expect
-                                cc module field-index record-field-at @RecordFieldEntry.field_type type-push
-                                cc module field-index record-field-at @RecordFieldEntry.byte_offset emit-record-field-read
+                                cc record-entry @RecordTypeEntry.record_type type-expect
+                                cc field @RecordFieldEntry.field_type register-replaced-stack-slot
+                                cc field @RecordFieldEntry.field_type type-push
+                                cc record-entry field emit-record-field-read
+                            end
                             end
                             true
                         end
@@ -7537,30 +7821,50 @@ proc compile-record-special CompileContext ptr int int -- bool do
     end
 end
 
-proc emit-record-field-read CompileContext int -- do
-    let cc byte-offset do
+proc emit-record-field-read CompileContext RecordTypeEntry RecordFieldEntry -- do
+    let cc record-entry field do
+        record-entry @RecordTypeEntry.record_type let record-type do
+        field @RecordFieldEntry.field_type let field-type do
+        field @RecordFieldEntry.byte_offset let byte-offset do
         if cc @CompileContext.emitting do
-            cc emit-indent
-            cc emit-top-slot " = frog_read_i64((const unsigned char *)(intptr_t)" emit
-            cc emit-top-slot " + " emit
-            byte-offset emit-unsigned
-            ");" emit
-            10 putc
+            cc @CompileContext.type_count 1 - let index do
+                cc emit-indent cc index field-type emit-slot-as " = " emit
+                if field-type type-ptr == do "(void *)(intptr_t)" emit
+                elif field-type type-bool == do "(bool)" emit
+                elif field-type type-is-integer do "(" emit cc @CompileContext.program field-type emit-c-value-type ")" emit
+                end
+                "frog_read_i64((const unsigned char *)(intptr_t)" emit
+                cc index record-type emit-slot-as " + " emit
+                byte-offset emit-unsigned ");" emit 10 putc
+            end
+        end
+        end
+        end
         end
     end
 end
 
-proc emit-record-field-write CompileContext int -- do
-    let cc byte-offset do
+proc emit-record-field-write CompileContext RecordTypeEntry RecordFieldEntry -- do
+    let cc record-entry field do
+        record-entry @RecordTypeEntry.record_type let record-type do
+        field @RecordFieldEntry.field_type let field-type do
+        field @RecordFieldEntry.byte_offset let byte-offset do
         if cc @CompileContext.emitting do
             cc @CompileContext.type_count
             peek value-index do 1 +
                 let record-index do
                     cc emit-indent "frog_write_i64((unsigned char *)(intptr_t)" emit
-                    cc record-index emit-slot " + " emit byte-offset emit-unsigned ", " emit
-                    cc value-index emit-slot ");" emit 10 putc
+                    cc record-index record-type emit-slot-as " + " emit byte-offset emit-unsigned ", " emit
+                    if field-type type-ptr == field-type type-is-typed-pointer || do "(Cell)(intptr_t)" emit
+                    elif field-type type-bool == do "(Cell)" emit
+                    elif field-type type-is-integer do "(Cell)" emit
+                    end
+                    cc value-index field-type emit-slot-as ");" emit 10 putc
                 end
             end
+        end
+        end
+        end
         end
     end
 end
@@ -7584,18 +7888,28 @@ proc compile-record-field CompileContext ptr int int bool -- bool do
                                 if field-index 0 < do
                                     "unknown record field" fail
                                 end
-                                module record-index record-type-at @RecordTypeEntry.record_type
-                                let record-type do
+                                module record-index record-type-at
+                                let record-entry do
+                                    module field-index record-field-at
+                                    let field do
                                     if setter do
-                                        cc record-type type-expect
-                                        cc module field-index record-field-at @RecordFieldEntry.field_type type-expect
-                                        cc module field-index record-field-at @RecordFieldEntry.byte_offset emit-record-field-write
+                                        cc record-entry @RecordTypeEntry.record_type type-expect
+                                        field @RecordFieldEntry.field_type
+                                        let field-type do
+                                            cc field-type type-expect
+                                            cc record-entry field emit-record-field-write
+                                        end
                                     else
-                                        cc record-type type-expect
-                                        cc module field-index record-field-at @RecordFieldEntry.field_type type-push
-                                        cc module field-index record-field-at @RecordFieldEntry.byte_offset emit-record-field-read
+                                        cc record-entry @RecordTypeEntry.record_type type-expect
+                                        field @RecordFieldEntry.field_type
+                                        let field-type do
+                                            cc field-type register-replaced-stack-slot
+                                            cc field-type type-push
+                                            cc record-entry field emit-record-field-read
+                                        end
                                     end
                                     true
+                                end
                                 end
                             end
                         end
@@ -7646,14 +7960,18 @@ proc compile-record-word CompileContext int -- bool do
     end
 end
 
-proc emit-union-constructor CompileContext int bool -- do
-    let cc tag has-payload do
+proc emit-union-constructor CompileContext int int int -- do
+    let cc tag payload-type union-type do
         if cc @CompileContext.emitting do
             cc @CompileContext.type_count 1 -
             let result-index do
                 cc emit-indent "{ " emit
-                if has-payload do
-                    "Cell payload = " emit cc result-index emit-slot "; " emit
+                if payload-type type-none != do
+                    "Cell payload = " emit
+                    if payload-type type-ptr == payload-type type-is-typed-pointer || do "(Cell)(intptr_t)" emit
+                    elif payload-type type-bool == payload-type type-is-integer || do "(Cell)" emit
+                    end
+                    cc result-index payload-type emit-slot-as "; " emit
                 end
                 "unsigned char *union_value = (unsigned char *)frog_alloc(" emit
                 union-storage-bytes emit-unsigned
@@ -7662,27 +7980,27 @@ proc emit-union-constructor CompileContext int bool -- do
                 "); frog_write_i64(union_value + " emit
                 union-payload-offset emit-unsigned
                 ", " emit
-                if has-payload do
+                if payload-type type-none != do
                     "payload" emit
                 else
                     "0" emit
                 end
-                "); " emit cc result-index emit-slot " = (Cell)(intptr_t)union_value; }" emit
+                "); " emit cc result-index union-type emit-slot-as " = (Cell)(intptr_t)union_value; }" emit
                 10 putc
             end
         end
     end
 end
 
-proc emit-union-predicate CompileContext int int -- do
-    let cc tag case-count do
+proc emit-union-predicate CompileContext int int int -- do
+    let cc union-type tag case-count do
         if cc @CompileContext.emitting do
             cc @CompileContext.type_count 2 -
             peek union-index do 1 +
                 let result-index do
                     cc emit-indent "{ const void *union_value = (const void *)(intptr_t)" emit
-                    cc union-index emit-slot "; Cell union_tag = frog_union_tag(union_value, " emit
-                    case-count emit-unsigned "); " emit cc result-index emit-slot " = union_tag == " emit
+                    cc union-index union-type emit-slot-as "; Cell union_tag = frog_union_tag(union_value, " emit
+                    case-count emit-unsigned "); " emit cc result-index type-bool emit-slot-as " = union_tag == " emit
                     tag emit-unsigned "; }" emit 10 putc
                 end
             end
@@ -7690,19 +8008,25 @@ proc emit-union-predicate CompileContext int int -- do
     end
 end
 
-proc emit-union-projection CompileContext int int bool -- do
-    let cc tag case-count has-payload do
+proc emit-union-projection CompileContext int int int int -- do
+    let cc union-type payload-type tag case-count do
         if cc @CompileContext.emitting do
-            if has-payload do cc @CompileContext.type_count 1 - else cc @CompileContext.type_count end
+            if payload-type type-none != do cc @CompileContext.type_count 1 - else cc @CompileContext.type_count end
             let value-index do
                 cc emit-indent "{ const unsigned char *union_value = (const unsigned char *)(intptr_t)" emit
-                cc value-index emit-slot "; if (frog_union_tag(union_value, " emit
+                cc value-index union-type emit-slot-as "; if (frog_union_tag(union_value, " emit
                 case-count emit-unsigned
                 ") != " emit
                 tag emit-unsigned
                 ") frog_runtime_fail();" emit
-                if has-payload do
-                    " " emit cc value-index emit-slot " = frog_read_i64(union_value + " emit
+                if payload-type type-none != do
+                    " " emit cc value-index payload-type emit-slot-as " = " emit
+                    if payload-type type-ptr == payload-type type-is-typed-pointer || do
+                        "(" emit cc @CompileContext.program payload-type emit-c-value-type ")(intptr_t)" emit
+                    elif payload-type type-bool == do "(bool)" emit
+                    elif payload-type type-is-integer do "(" emit cc @CompileContext.program payload-type emit-c-value-type ")" emit
+                    end
+                    "frog_read_i64(union_value + " emit
                     union-payload-offset emit-unsigned
                     ");" emit
                 end
@@ -7739,7 +8063,8 @@ proc compile-union-constructor CompileContext ptr int int -- bool do
                             module union-index union-type-at @UnionTypeEntry.union_type cc swap type-push
                             cc
                             module case-index union-case-at @UnionCaseEntry.tag
-                            payload-type type-none !=
+                            payload-type
+                            module union-index union-type-at @UnionTypeEntry.union_type
                             emit-union-constructor
                             true
                         end
@@ -7782,6 +8107,7 @@ proc compile-union-instance CompileContext ptr int int -- bool do
                                             cc union-type type-push
                                             cc type-bool type-push
                                             cc
+                                            union-type
                                             module case-index union-case-at @UnionCaseEntry.tag
                                             module union-index union-type-at @UnionTypeEntry.case_count
                                             emit-union-predicate
@@ -7792,9 +8118,10 @@ proc compile-union-instance CompileContext ptr int int -- bool do
                                                     cc payload-type type-push
                                                 end
                                                 cc
+                                                union-type
+                                                payload-type
                                                 module case-index union-case-at @UnionCaseEntry.tag
                                                 module union-index union-type-at @UnionTypeEntry.case_count
-                                                payload-type type-none !=
                                                 emit-union-projection
                                             end
                                         end
@@ -7881,7 +8208,9 @@ proc emit-function-call CompileContext ModuleContext int -- do
                     function-module function-index function-type-at @FunctionTypeEntry.input_count
                     let input-count do
                         cc emit-indent "{ Cell function_id = " emit
-                        cc base input-count + emit-slot ";" emit 10 putc
+                        cc base input-count +
+                        function-module function-index function-type-at @FunctionTypeEntry.function_type
+                        emit-slot-as ";" emit 10 putc
                         cc indent-more
                         cc emit-indent "switch (function_id) {" emit 10 putc
                         cc indent-more
@@ -7995,18 +8324,24 @@ proc compile-string-word CompileContext int -- bool do
     let cc token-index do
         if cc @CompileContext.defining_module token-index "String.bytes" token-equals do
             cc type-string type-expect
+            cc type-ptr register-replaced-stack-slot
             cc type-ptr type-push
             if cc @CompileContext.emitting do
+                cc @CompileContext.type_count 1 - let index do
                 cc emit-indent "{ const FrogString *value = (const FrogString *)(intptr_t)" emit
-                cc emit-top-slot "; " emit cc emit-top-slot " = (Cell)(intptr_t)value->bytes; }" emit 10 putc
+                cc index type-string emit-slot-as "; " emit cc index type-ptr emit-slot-as " = (void *)value->bytes; }" emit 10 putc
+                end
             end
             true
         elif cc @CompileContext.defining_module token-index "String.len" token-equals do
             cc type-string type-expect
+            cc type-int register-replaced-stack-slot
             cc type-int type-push
             if cc @CompileContext.emitting do
+                cc @CompileContext.type_count 1 - let index do
                 cc emit-indent "{ const FrogString *value = (const FrogString *)(intptr_t)" emit
-                cc emit-top-slot "; " emit cc emit-top-slot " = value->len; }" emit 10 putc
+                cc index type-string emit-slot-as "; " emit cc index type-int emit-slot-as " = (intptr_t)value->len; }" emit 10 putc
+                end
             end
             true
         else
@@ -8295,17 +8630,13 @@ proc try-compile-constant-add CompileContext int int -- bool do
                 let fits do
                     if fits do
                         if cc cc-debug-tracing do
-                            cc @CompileContext.max_type_count
-                            let previous-maximum do
+                            cc @CompileContext.stack_slot_count
+                            let previous-slot-count do
                                 cc token-index compile-token drop
                                 cc token-index 1 + compile-token drop
                                 cc token-index 2 + compile-token drop
-                                if cc @CompileContext.type_count previous-maximum > do
-                                    cc @CompileContext.type_count
-                                else
-                                    previous-maximum
-                                end
-                                cc !CompileContext.max_type_count
+                                previous-slot-count cc !CompileContext.stack_slot_count
+                                cc cc @CompileContext.type_count 1 - type-int register-stack-slot
                             end
                         else
                             cc type-int type-push
@@ -8418,6 +8749,9 @@ proc create-compile-context Program ModuleContext int -- CompileContext do
             0 cc !CompileContext.indent
             false cc !CompileContext.emitting
             0 cc !CompileContext.max_type_count
+            16 StackSlotEntry:sizeof * alloc cc !CompileContext.stack_slots
+            0 cc !CompileContext.stack_slot_count
+            16 cc !CompileContext.stack_slot_capacity
             false cc !CompileContext.diagnostic_active
             cc
         end
@@ -8443,8 +8777,9 @@ proc emit-c-binding-arguments ModuleContext int int -- do
             ctx ctx proc-index procedure-at @ProcedureEntry.input_start input-index + type-at
             let value-type do
                 "(" emit ctx ctx proc-index procedure-at @ProcedureEntry.input_start input-index + emit-c-signature-type-name
-                if value-type type-int == do ")" emit input-index emit-ffi-argument-name
+                if value-type type-is-integer do ")" emit input-index emit-ffi-argument-name
                 elif value-type type-bool == do ")(" emit input-index emit-ffi-argument-name " != 0)" emit
+                elif value-type type-ptr == value-type type-is-typed-pointer || do ")(uintptr_t)" emit input-index emit-ffi-argument-name
                 else ")(intptr_t)" emit input-index emit-ffi-argument-name end
             end
             ctx proc-index input-index 1 + emit-c-binding-arguments
@@ -8467,8 +8802,15 @@ proc compile-c-binding-procedure ModuleContext int -- do
         else
             ctx ctx proc-index procedure-at @ProcedureEntry.output_start type-at let value-type do
                 "  return " emit
-                if value-type type-int == do "(Cell)(" emit ctx ctx proc-index procedure-at @ProcedureEntry.output_start emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ");\n" emit
-                elif value-type type-bool == do "(Cell)((" emit ctx ctx proc-index procedure-at @ProcedureEntry.output_start emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ") != 0);\n" emit
+                if value-type type-is-integer do
+                    "(" emit ctx @ModuleContext.program value-type emit-c-value-type ")(" emit
+                    ctx ctx proc-index procedure-at @ProcedureEntry.output_start emit-c-signature-type-name ")(" emit
+                    ctx proc-index emit-c-binding-expression ");\n" emit
+                elif value-type type-bool == do "(bool)((" emit ctx ctx proc-index procedure-at @ProcedureEntry.output_start emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ") != 0);\n" emit
+                elif value-type type-ptr == value-type type-is-typed-pointer || do
+                    "(" emit ctx @ModuleContext.program value-type emit-c-value-type ")(uintptr_t)(" emit
+                    ctx ctx proc-index procedure-at @ProcedureEntry.output_start emit-c-signature-type-name ")(" emit
+                    ctx proc-index emit-c-binding-expression ");\n" emit
                 else "(Cell)(intptr_t)(" emit ctx ctx proc-index procedure-at @ProcedureEntry.output_start emit-c-signature-type-name ")(" emit ctx proc-index emit-c-binding-expression ");\n" emit end
             end
         end
@@ -8502,21 +8844,22 @@ end
 proc emit-proc-input-slots CompileContext ModuleContext int int -- do
     let cc ctx proc-index input-index do
         if input-index ctx proc-index procedure-at @ProcedureEntry.input_count < do
-            cc emit-indent cc input-index emit-slot " = frog_arg_" emit input-index emit-unsigned ";" emit 10 putc
+            cc emit-indent cc input-index
+            ctx ctx proc-index procedure-at @ProcedureEntry.input_start input-index + type-at
+            emit-slot-as " = frog_arg_" emit input-index emit-unsigned ";" emit 10 putc
             cc ctx proc-index input-index 1 + emit-proc-input-slots
         end
     end
 end
 
 proc emit-proc-slot-frame CompileContext -- do
-    let cc do
-        0
-        while dup cc @CompileContext.max_type_count < do
-            dup
-            let index do
-                cc emit-indent "Cell " emit cc index emit-slot ";" emit 10 putc
-                cc emit-indent "(void)&" emit cc index emit-slot ";" emit 10 putc
-            end
+    let cc do 0
+        while dup cc @CompileContext.stack_slot_count < do
+            dup let index do cc index stack-slot-at let slot do
+                cc emit-indent cc @CompileContext.program slot @StackSlotEntry.value_type emit-c-value-type
+                " " emit cc slot @StackSlotEntry.depth slot @StackSlotEntry.value_type emit-slot-as ";" emit 10 putc
+                cc emit-indent "(void)&" emit cc slot @StackSlotEntry.depth slot @StackSlotEntry.value_type emit-slot-as ";" emit 10 putc
+            end end
             1 +
         end
         drop
@@ -8529,7 +8872,7 @@ proc emit-proc-return-values CompileContext int -- do
             remaining 1 -
             let output-index do
                 cc emit-indent "frog_result.value_" emit output-index emit-unsigned " = " emit
-                cc output-index emit-slot ";" emit 10 putc
+                cc output-index cc output-index type-at-depth emit-slot-as ";" emit 10 putc
                 cc output-index emit-proc-return-values
             end
         end
@@ -8541,9 +8884,13 @@ proc emit-proc-return CompileContext ModuleContext int -- do
         ctx proc-index procedure-at @ProcedureEntry.output_count
         let output-count do
             if output-count 1 == do
-                cc emit-indent "return " emit cc 0 emit-slot ";" emit 10 putc
+                cc emit-indent "return " emit cc 0
+                ctx ctx proc-index procedure-at @ProcedureEntry.output_start type-at
+                emit-slot-as ";" emit 10 putc
             elif output-count 1 > do
-                cc emit-indent output-count emit-result-type-name " frog_result;" emit 10 putc
+                cc emit-indent
+                ctx @ModuleContext.types ctx proc-index procedure-at @ProcedureEntry.output_start cell-bytes * +
+                output-count emit-result-type-name " frog_result;" emit 10 putc
                 cc output-count emit-proc-return-values
                 cc emit-indent "return frog_result;" emit 10 putc
             end
@@ -8562,6 +8909,9 @@ proc compile-procedure Program ModuleContext int -- do
                     let cc do
                         true cc !CompileContext.emitting
                         max-type-count cc !CompileContext.max_type_count
+                        measurement @CompileContext.stack_slots cc !CompileContext.stack_slots
+                        measurement @CompileContext.stack_slot_count cc !CompileContext.stack_slot_count
+                        measurement @CompileContext.stack_slot_capacity cc !CompileContext.stack_slot_capacity
                         ctx proc-index emit-proc-signature " {" emit 10 putc
                         1 cc !CompileContext.indent
                         cc emit-proc-slot-frame
@@ -8652,6 +9002,9 @@ proc compile-source ptr int bool ptr int -- do
             16 UnresolvedPointerTypeEntry:sizeof * alloc program !Program.unresolved_pointer_types
             0 program !Program.unresolved_pointer_type_count
             16 program !Program.unresolved_pointer_type_capacity
+            16 ResultTypeEntry:sizeof * alloc program !Program.result_types
+            0 program !Program.result_type_count
+            16 program !Program.result_type_capacity
             0 program !Program.token_count
             0 ptr cast program !Program.strings
             0 program !Program.string_count
@@ -8716,7 +9069,7 @@ proc compile-builtins-word CompileContext int -- bool do
                         let value-index do
                             cc emit-indent
                             "{ const FrogString *value = (const FrogString *)(intptr_t)" emit
-                            cc value-index emit-slot
+                            cc value-index type-string emit-slot-as
                             "; (void)fwrite(value->bytes, 1, (size_t)value->len, stderr); (void)fputc(10, stderr); exit(1); }" emit
                             10 putc
                         end
