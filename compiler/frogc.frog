@@ -28,11 +28,12 @@ const type-none 0 end
 // Builtin scalar IDs occupy the low range. Nominal values start at 1000,
 // function references at 2^32, and interned typed pointers at 2^40.
 const type-nominal-base 1000 end
-const type-function-base 1 32 << end
-const type-pointer-base 1 40 << end
-const unresolved-pointer-base 1 62 << end
+const type-function-base 1 32 u32 cast << end
+const type-pointer-base 1 40 u32 cast << end
+const unresolved-pointer-base 1 62 u32 cast << end
+const type-literal-base 100 end
 
-const max-int 1 62 << 1 62 << 1 - + end
+const max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const min-int 0 max-int - 1 - end
 
 const token-int 1 end
@@ -180,18 +181,18 @@ const resolve-resolved 2 end
 const max-source-bytes 4194304 end
 const max-import-path-bytes 1024 end
 
-proc field-read ptr int -- int do + @i64 end
+proc field-read ptr int -- int do + i64* cast @ int cast end
 
 proc field-write int ptr int -- do
-    + !i64
+    let value base offset do value i64 cast base offset + i64* cast ! end
 end
 
 proc byte-read ptr int -- int do
-    + @u8
+    + u8* cast @ int cast
 end
 
 proc byte-write int ptr int -- do
-    + !u8
+    let value base offset do value u8 cast base offset + u8* cast ! end
 end
 
 proc memory-copy ptr ptr int -- do
@@ -212,7 +213,7 @@ proc emit-bytes ptr int -- do
     let bytes length do
         0
         while dup length < do
-            dup bytes swap + @u8 putc
+            dup bytes swap + u8* cast @ int cast putc
             1 +
         end
         drop
@@ -228,7 +229,7 @@ proc emit-error-bytes ptr int -- do
     let bytes length do
         0
         while dup length < do
-            dup bytes swap + @u8 eputc
+            dup bytes swap + u8* cast @ int cast eputc
             1 +
         end
         drop
@@ -1047,6 +1048,12 @@ proc require-word ModuleContext int -- do
     end
 end
 
+proc private-intrinsic-name ModuleContext int -- bool do
+    let ctx token-index do
+        ctx token-index token-slice "__intrinsic_" bytes-starts-with-string
+    end
+end
+
 proc reserved-name ModuleContext int -- bool do
     peek ctx token-index do "proc" token-equals
         ctx token-index "macro" token-equals ||
@@ -1594,6 +1601,7 @@ proc scan-one-record ModuleContext int -- int do
             if
                 ctx name-token identifier-token !
                 ctx name-token reserved-name ||
+                ctx name-token private-intrinsic-name ||
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
@@ -1746,6 +1754,7 @@ proc scan-one-union ModuleContext int -- int do
             if
                 ctx name-token identifier-token !
                 ctx name-token reserved-name ||
+                ctx name-token private-intrinsic-name ||
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
@@ -1814,6 +1823,7 @@ proc scan-one-function ModuleContext int -- int do
             if
                 ctx name-token identifier-token !
                 ctx name-token reserved-name ||
+                ctx name-token private-intrinsic-name ||
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
@@ -2084,6 +2094,7 @@ proc scan-one-macro ModuleContext int -- int do
             ctx name-token require-word
             if
                 ctx name-token reserved-name
+                ctx name-token private-intrinsic-name ||
                 ctx name-token string-type-name ||
             do
                 "reserved keyword cannot be a macro name" fail
@@ -2184,6 +2195,7 @@ proc scan-one-constant ModuleContext int -- int do
             ctx name-token require-word
             if
                 ctx name-token reserved-name
+                ctx name-token private-intrinsic-name ||
                 ctx name-token "int" token-equals ||
                 ctx name-token "bool" token-equals ||
                 ctx name-token "ptr" token-equals ||
@@ -2302,6 +2314,7 @@ proc allocate-proc ModuleContext int -- int do
         ctx name-token require-word
         if
             ctx name-token reserved-name
+            ctx name-token private-intrinsic-name ||
             ctx name-token string-type-name ||
         do
             "reserved keyword cannot be a procedure name" fail
@@ -2434,7 +2447,7 @@ proc scan-one-c-type ModuleContext int -- int do
         token 1 + let name do
             if name ctx @ModuleContext.token_count >= do "expected C type name" fail end
             ctx name require-word
-            if ctx name reserved-name ctx name string-type-name || do "invalid C type name" fail end
+            if ctx name reserved-name ctx name private-intrinsic-name || ctx name string-type-name || do "invalid C type name" fail end
             if
                 ctx name find-proc 0 >=
                 ctx name find-macro 0 >= ||
@@ -2606,6 +2619,7 @@ proc require-import-name ModuleContext int -- do
         end
         if
             ctx token reserved-name
+            ctx token private-intrinsic-name ||
             ctx token "(" token-equals ||
             ctx token ")" token-equals ||
             ctx token "int" token-equals ||
@@ -4870,16 +4884,197 @@ end
 
 proc checked-constant-shift-left int int -- int do
     peek value count do require-constant-shift
-        if value max-int count >> > do
+        if value max-int count u32 cast >> > do
             "constant integer overflow" fail
         end
-        value count <<
+        value count u32 cast <<
     end
 end
 
 proc checked-constant-shift-right int int -- int do
     peek value count do require-constant-shift
-        value count >>
+        value count u32 cast >>
+    end
+end
+
+proc constant-cast-target int -- bool do
+    let value-type do
+        value-type type-is-integer
+        value-type type-bool == ||
+    end
+end
+
+proc normalize-constant-integer int int -- int do
+    let payload value-type do
+        if value-type type-int == do payload
+        elif value-type type-i8 == do payload i8 cast int cast
+        elif value-type type-i16 == do payload i16 cast int cast
+        elif value-type type-i32 == do payload i32 cast int cast
+        elif value-type type-i64 == do payload i64 cast int cast
+        elif value-type type-u8 == do payload u8 cast int cast
+        elif value-type type-u16 == do payload u16 cast int cast
+        elif value-type type-u32 == do payload u32 cast int cast
+        else payload u64 cast int cast
+        end
+    end
+end
+
+proc evaluate-constant-cast ConstantEvaluator -- do
+    let evaluator do
+        evaluator constant-evaluator-pop
+        let target-literal target-payload do
+            evaluator constant-evaluator-pop
+            let source-type payload do
+                if target-literal 0 < do 0 target-literal - else target-literal type-literal-base - end
+                let target-type do
+                    if target-payload target-type != do "invalid constant cast target" fail end
+                    if target-type constant-cast-target ! do "invalid constant cast target" fail end
+                    if source-type type-is-integer target-type type-is-integer && do
+                        payload target-type normalize-constant-integer
+                        let normalized do evaluator target-type normalized constant-evaluator-push end
+                    elif source-type type-int == target-type type-bool == && do
+                        evaluator type-bool payload 0 != int cast constant-evaluator-push
+                    elif source-type type-bool == target-type type-int == && do
+                        evaluator type-int payload constant-evaluator-push
+                    else
+                        "unsupported constant cast" fail
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc constant-primitive-type-literal ModuleContext int -- int bool do
+    let module token-index do
+        if module token-index "int" token-equals do type-int true
+        elif module token-index "i8" token-equals do type-i8 true
+        elif module token-index "i16" token-equals do type-i16 true
+        elif module token-index "i32" token-equals do type-i32 true
+        elif module token-index "i64" token-equals do type-i64 true
+        elif module token-index "u8" token-equals do type-u8 true
+        elif module token-index "u16" token-equals do type-u16 true
+        elif module token-index "u32" token-equals do type-u32 true
+        elif module token-index "u64" token-equals do type-u64 true
+        elif module token-index "bool" token-equals do type-bool true
+        else 0 false
+        end
+    end
+end
+
+proc procedure-inputs-are-2 ModuleContext int int int -- bool do
+    let module proc-index first-type second-type do
+        module proc-index procedure-at @ProcedureEntry.input_count 2 ==
+        module module proc-index procedure-at @ProcedureEntry.input_start type-at first-type == &&
+        module module proc-index procedure-at @ProcedureEntry.input_start 1 + type-at second-type == &&
+    end
+end
+
+proc find-builtin-procedure-2-from Program ptr int int int int -- ModuleContext int bool do
+    let program bytes length first-type second-type scope-index do
+        program @Program.builtins_module
+        let builtins do
+            if scope-index builtins @ModuleContext.scope_count >= do
+                0 ptr cast ModuleContext cast 0 false
+            else
+                program bytes length first-type second-type scope-index 1 + find-builtin-procedure-2-from
+                let selected-module selected-index found do
+                    builtins scope-index scope-at
+                    let symbol do
+                        if
+                            symbol @ScopeEntry.kind scope-procedure ==
+                            builtins scope-index bytes length scope-name-equals &&
+                            symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                            first-type second-type procedure-inputs-are-2 &&
+                        do
+                            symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index true
+                        else
+                            selected-module selected-index found
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc word-resolves-to-builtin-2 ModuleContext ModuleContext int int int -- bool do
+    let scope definition-module token-index first-type second-type do
+        definition-module @ModuleContext.program
+        definition-module token-index token-slice
+        first-type second-type 0
+        find-builtin-procedure-2-from
+        let builtin-module builtin-index found do
+            if found ! do
+                false
+            elif
+                scope ptr cast int cast
+                definition-module @ModuleContext.program @Program.builtins_module ptr cast int cast
+                ==
+            do
+                true
+            else
+                scope definition-module token-index token-slice builtin-module builtin-index
+                scope-has-procedure-inputs !
+            end
+        end
+    end
+end
+
+proc procedure-inputs-are-1 ModuleContext int int -- bool do
+    let module proc-index input-type do
+        module proc-index procedure-at @ProcedureEntry.input_count 1 ==
+        module module proc-index procedure-at @ProcedureEntry.input_start type-at input-type == &&
+    end
+end
+
+proc find-builtin-procedure-1-from Program ptr int int int -- ModuleContext int bool do
+    let program bytes length input-type scope-index do
+        program @Program.builtins_module
+        let builtins do
+            if scope-index builtins @ModuleContext.scope_count >= do
+                0 ptr cast ModuleContext cast 0 false
+            else
+                program bytes length input-type scope-index 1 + find-builtin-procedure-1-from
+                let selected-module selected-index found do
+                    builtins scope-index scope-at
+                    let symbol do
+                        if
+                            symbol @ScopeEntry.kind scope-procedure ==
+                            builtins scope-index bytes length scope-name-equals &&
+                            symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                            input-type procedure-inputs-are-1 &&
+                        do
+                            symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index true
+                        else
+                            selected-module selected-index found
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc word-resolves-to-builtin-1 ModuleContext ModuleContext int int -- bool do
+    let scope definition-module token-index input-type do
+        definition-module @ModuleContext.program
+        definition-module token-index token-slice input-type 0
+        find-builtin-procedure-1-from
+        let builtin-module builtin-index found do
+            if found ! do
+                false
+            elif
+                scope ptr cast int cast
+                definition-module @ModuleContext.program @Program.builtins_module ptr cast int cast
+                ==
+            do
+                true
+            else
+                scope definition-module token-index token-slice builtin-module builtin-index
+                scope-has-procedure-inputs !
+            end
+        end
     end
 end
 
@@ -4889,12 +5084,14 @@ proc constant-int-binary-word ModuleContext int -- bool do
         module token-index "*" token-equals ||
         module token-index "/" token-equals ||
         module token-index "%" token-equals ||
-        module token-index "<<" token-equals ||
-        module token-index ">>" token-equals ||
         module token-index "|" token-equals ||
         module token-index "&" token-equals ||
         module token-index "^" token-equals ||
     end
+end
+
+proc constant-shift-word ModuleContext int -- bool do
+    peek module token-index do "<<" token-equals module token-index ">>" token-equals || end
 end
 
 proc constant-comparison-word ModuleContext int -- bool do
@@ -4913,6 +5110,202 @@ proc constant-bool-binary-word ModuleContext int -- bool do
     end
 end
 
+proc constant-evaluator-top-type ConstantEvaluator -- int do
+    let evaluator do
+        if evaluator @ConstantEvaluator.count 0 <= do "constant expression stack underflow" fail end
+        evaluator @ConstantEvaluator.values evaluator @ConstantEvaluator.count 1 - constant-value-at @ConstantValue.value_type
+    end
+end
+
+proc constant-evaluator-type-from-top ConstantEvaluator int -- int do
+    let evaluator depth do
+        evaluator @ConstantEvaluator.count 1 - depth -
+        let index do
+            if index 0 < do "constant expression stack underflow" fail end
+            evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.value_type
+        end
+    end
+end
+
+proc constant-type-is-unsigned int -- bool do
+    let value-type do
+        value-type type-u8 ==
+        value-type type-u16 == ||
+        value-type type-u32 == ||
+        value-type type-u64 == ||
+    end
+end
+
+proc evaluate-constant-exact-binary-value int int int ModuleContext int -- int do
+    let left right value-type module token-index do
+        if
+            module token-index "/" token-equals
+            module token-index "%" token-equals ||
+        do
+            if right 0 == do "constant division by zero" fail end
+        end
+        if module token-index "+" token-equals do
+            left u64 cast right u64 cast + int cast
+        elif module token-index "-" token-equals do
+            left u64 cast right u64 cast - int cast
+        elif module token-index "*" token-equals do
+            left u64 cast right u64 cast * int cast
+        elif module token-index "/" token-equals do
+            if value-type constant-type-is-unsigned do
+                left u64 cast right u64 cast / int cast
+            else
+                left right /
+            end
+        elif module token-index "%" token-equals do
+            if value-type constant-type-is-unsigned do
+                left u64 cast right u64 cast % int cast
+            else
+                left right %
+            end
+        elif module token-index "|" token-equals do
+            left u64 cast right u64 cast | int cast
+        elif module token-index "&" token-equals do
+            left u64 cast right u64 cast & int cast
+        else
+            left u64 cast right u64 cast ^ int cast
+        end
+        value-type normalize-constant-integer
+    end
+end
+
+proc evaluate-constant-exact-divmod-value int int int bool -- int do
+    let left right value-type remainder do
+        if right 0 == do "constant division by zero" fail end
+        if value-type constant-type-is-unsigned do
+            if remainder do left u64 cast right u64 cast % int cast
+            else left u64 cast right u64 cast / int cast end
+        else
+            if remainder do left right % else left right / end
+        end
+        value-type normalize-constant-integer
+    end
+end
+
+proc evaluate-constant-exact-comparison-value int int int ModuleContext int -- int do
+    let left right value-type module token-index do
+        if module token-index "==" token-equals do left right ==
+        elif module token-index "!=" token-equals do left right !=
+        elif value-type constant-type-is-unsigned do
+            if module token-index "<" token-equals do left u64 cast right u64 cast <
+            elif module token-index ">" token-equals do left u64 cast right u64 cast >
+            elif module token-index "<=" token-equals do left u64 cast right u64 cast <=
+            else left u64 cast right u64 cast >= end
+        else
+            if module token-index "<" token-equals do left right <
+            elif module token-index ">" token-equals do left right >
+            elif module token-index "<=" token-equals do left right <=
+            else left right >= end
+        end
+        int cast
+    end
+end
+
+proc evaluate-constant-exact-shift-value int int int ModuleContext int -- int do
+    let left right value-type module token-index do
+        if module token-index "<<" token-equals do
+            left u64 cast right u32 cast << int cast
+        elif value-type constant-type-is-unsigned do
+            left u64 cast right u32 cast >> int cast
+        else
+            left right u32 cast >>
+        end
+        value-type normalize-constant-integer
+    end
+end
+
+proc evaluate-constant-integer-binary ConstantEvaluator ModuleContext int int -- do
+    let evaluator module token-index value-type do
+        if value-type type-int == do
+            evaluator module token-index evaluate-constant-int-binary
+        else
+            evaluator value-type constant-evaluator-pop-expected
+            let right do
+                evaluator value-type constant-evaluator-pop-expected
+                let left do
+                    left right value-type module token-index evaluate-constant-exact-binary-value
+                    let result do evaluator value-type result constant-evaluator-push end
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-integer-shift ConstantEvaluator ModuleContext int int -- do
+    let evaluator module token-index value-type do
+        if value-type type-int == do
+            evaluator module token-index evaluate-constant-shift
+        else
+            evaluator type-u32 constant-evaluator-pop-expected
+            let right do
+                evaluator value-type constant-evaluator-pop-expected
+                let left do
+                    left right value-type module token-index evaluate-constant-exact-shift-value
+                    let result do evaluator value-type result constant-evaluator-push end
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-integer-comparison ConstantEvaluator ModuleContext int int -- do
+    let evaluator module token-index value-type do
+        if value-type type-int == do
+            evaluator module token-index evaluate-constant-comparison
+        else
+            evaluator value-type constant-evaluator-pop-expected
+            let right do
+                evaluator value-type constant-evaluator-pop-expected
+                let left do
+                    left right value-type module token-index evaluate-constant-exact-comparison-value
+                    let result do evaluator type-bool result constant-evaluator-push end
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-integer-divmod ConstantEvaluator int -- do
+    let evaluator value-type do
+        if value-type type-int == do
+            evaluator evaluate-constant-divmod
+        else
+            evaluator value-type constant-evaluator-pop-expected
+            let right do
+                evaluator value-type constant-evaluator-pop-expected
+                let left do
+                    left right value-type false evaluate-constant-exact-divmod-value
+                    left right value-type true evaluate-constant-exact-divmod-value
+                    let quotient remainder do
+                        evaluator value-type quotient constant-evaluator-push
+                        evaluator value-type remainder constant-evaluator-push
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-integer-not ConstantEvaluator int -- do
+    let evaluator value-type do
+        if value-type type-int == do
+            evaluator type-int constant-evaluator-pop-expected
+            let value do evaluator type-int value ~ constant-evaluator-push end
+        else
+            evaluator value-type constant-evaluator-pop-expected
+            let value do
+                value u64 cast ~ int cast value-type normalize-constant-integer
+                let result do evaluator value-type result constant-evaluator-push end
+            end
+        end
+    end
+end
+
+
 proc evaluate-constant-int-binary ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         evaluator type-int constant-evaluator-pop-expected
@@ -4929,10 +5322,6 @@ proc evaluate-constant-int-binary ConstantEvaluator ModuleContext int -- do
                     left right checked-constant-divide
                 elif module token-index "%" token-equals do
                     left right checked-constant-modulo
-                elif module token-index "<<" token-equals do
-                    left right checked-constant-shift-left
-                elif module token-index ">>" token-equals do
-                    left right checked-constant-shift-right
                 elif module token-index "|" token-equals do
                     left right |
                 elif module token-index "&" token-equals do
@@ -4943,6 +5332,20 @@ proc evaluate-constant-int-binary ConstantEvaluator ModuleContext int -- do
                 let result do
                     evaluator type-int result constant-evaluator-push
                 end
+            end
+        end
+    end
+end
+
+proc evaluate-constant-shift ConstantEvaluator ModuleContext int -- do
+    let evaluator module token-index do
+        evaluator type-u32 constant-evaluator-pop-expected
+        let right do
+            evaluator type-int constant-evaluator-pop-expected
+            let left do
+                if module token-index "<<" token-equals do left right checked-constant-shift-left
+                else left right checked-constant-shift-right end
+                let result do evaluator type-int result constant-evaluator-push end
             end
         end
     end
@@ -5023,19 +5426,84 @@ end
 
 proc evaluate-constant-intrinsic ConstantEvaluator ModuleContext int -- bool do
     let evaluator module token-index do
-        if module token-index constant-int-binary-word do
-            evaluator module token-index evaluate-constant-int-binary true
-        elif module token-index constant-comparison-word do
-            evaluator module token-index evaluate-constant-comparison true
-        elif module token-index constant-bool-binary-word do
-            evaluator module token-index evaluate-constant-bool-binary true
-        elif module token-index "/%" token-equals do
-            evaluator evaluate-constant-divmod true
-        elif
-            module token-index "~" token-equals
+        if
+            module token-index constant-int-binary-word
+            module token-index constant-shift-word ||
+            module token-index constant-comparison-word ||
+            module token-index constant-bool-binary-word ||
+            module token-index "/%" token-equals ||
+            module token-index "~" token-equals ||
             module token-index "!" token-equals ||
         do
-            evaluator module token-index evaluate-constant-unary true
+            if module token-index constant-bool-binary-word do
+                evaluator constant-evaluator-top-type
+                let value-type do
+                    if
+                        value-type type-bool ==
+                        module module token-index type-bool type-bool word-resolves-to-builtin-2 &&
+                    do evaluator module token-index evaluate-constant-bool-binary true
+                    else false end
+                end
+            elif module token-index "!" token-equals do
+                evaluator constant-evaluator-top-type
+                let value-type do
+                    if
+                        value-type type-bool ==
+                        module module token-index type-bool word-resolves-to-builtin-1 &&
+                    do evaluator module token-index evaluate-constant-unary true
+                    else false end
+                end
+            elif module token-index constant-shift-word do
+                evaluator 1 constant-evaluator-type-from-top
+                let value-type do
+                    if
+                        value-type type-is-integer
+                        module module token-index value-type type-u32 word-resolves-to-builtin-2 &&
+                    do
+                        evaluator module token-index value-type evaluate-constant-integer-shift true
+                    else false end
+                end
+            elif module token-index constant-int-binary-word do
+                evaluator constant-evaluator-top-type
+                let value-type do
+                    if
+                        value-type type-is-integer
+                        module module token-index value-type value-type word-resolves-to-builtin-2 &&
+                    do
+                        evaluator module token-index value-type evaluate-constant-integer-binary true
+                    else false end
+                end
+            elif module token-index constant-comparison-word do
+                evaluator constant-evaluator-top-type
+                let value-type do
+                    if
+                        value-type type-is-integer
+                        module module token-index value-type value-type word-resolves-to-builtin-2 &&
+                    do
+                        evaluator module token-index value-type evaluate-constant-integer-comparison true
+                    else false end
+                end
+            elif module token-index "/%" token-equals do
+                evaluator constant-evaluator-top-type
+                let value-type do
+                    if
+                        value-type type-is-integer
+                        module module token-index value-type value-type word-resolves-to-builtin-2 &&
+                    do
+                        evaluator value-type evaluate-constant-integer-divmod true
+                    else false end
+                end
+            else
+                evaluator constant-evaluator-top-type
+                let value-type do
+                    if
+                        value-type type-is-integer
+                        module module token-index value-type word-resolves-to-builtin-1 &&
+                    do
+                        evaluator value-type evaluate-constant-integer-not true
+                    else false end
+                end
+            end
         else
             false
         end
@@ -5045,24 +5513,6 @@ end
 proc constant-runtime-intrinsic-word ModuleContext int -- bool do
     peek module token-index do "cast" token-equals
         module token-index "args" token-equals ||
-        module token-index "@ptr" token-equals ||
-        module token-index "@i8" token-equals ||
-        module token-index "@i16" token-equals ||
-        module token-index "@i32" token-equals ||
-        module token-index "@i64" token-equals ||
-        module token-index "@u8" token-equals ||
-        module token-index "@u16" token-equals ||
-        module token-index "@u32" token-equals ||
-        module token-index "@u64" token-equals ||
-        module token-index "!ptr" token-equals ||
-        module token-index "!i8" token-equals ||
-        module token-index "!i16" token-equals ||
-        module token-index "!i32" token-equals ||
-        module token-index "!i64" token-equals ||
-        module token-index "!u8" token-equals ||
-        module token-index "!u16" token-equals ||
-        module token-index "!u32" token-equals ||
-        module token-index "!u64" token-equals ||
         module token-index "print" token-equals ||
         module token-index "?" token-equals ||
     end
@@ -5216,7 +5666,16 @@ proc evaluate-constant-word ConstantEvaluator ModuleContext int -- do
     let evaluator module token-index do
         module module token-index find-scope-symbol
         let symbol-index do
-            if module symbol-index scope-macro scope-symbol-has-kind do
+            module token-index constant-primitive-type-literal
+            let primitive-type is-primitive-type do
+            if is-primitive-type do
+                type-literal-base primitive-type +
+                let literal-type do
+                    evaluator literal-type primitive-type constant-evaluator-push
+                end
+            elif module token-index "cast" token-equals do
+                evaluator evaluate-constant-cast
+            elif module symbol-index scope-macro scope-symbol-has-kind do
                 "unsupported constant expression word" fail
             elif evaluator module token-index evaluate-constant-intrinsic do
             elif module module token-index constant-higher-priority-word do
@@ -5228,6 +5687,7 @@ proc evaluate-constant-word ConstantEvaluator ModuleContext int -- do
                 append-constant-values
             else
                 "unsupported constant expression word" fail
+            end
             end
         end
     end
@@ -5737,6 +6197,62 @@ void frog_write_u8(void* ptr, Cell value) { uint8_t stored = (uint8_t)value; mem
 void frog_write_u16(void* ptr, Cell value) { uint16_t stored = (uint16_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u32(void* ptr, Cell value) { uint32_t stored = (uint32_t)value; memcpy(ptr, &stored, sizeof(stored)); }
 void frog_write_u64(void* ptr, Cell value) { uint64_t stored = (uint64_t)value; memcpy(ptr, &stored, sizeof(stored)); }
+
+" emit
+    "#define FROG_INTEGER_HELPERS(name, type) \\
+typedef struct { type quotient; type remainder; } frog_divmod_##name##_result; \\
+type frog_add_##name(type a, type b) { return (type)(a + b); } \\
+type frog_sub_##name(type a, type b) { return (type)(a - b); } \\
+type frog_mul_##name(type a, type b) { return (type)(a * b); } \\
+type frog_div_##name(type a, type b) { if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } return (type)(a / b); } \\
+type frog_mod_##name(type a, type b) { if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } return (type)(a % b); } \\
+frog_divmod_##name##_result frog_divmod_##name(type a, type b) { if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } return (frog_divmod_##name##_result){ (type)(a / b), (type)(a % b) }; } \\
+type frog_or_##name(type a, type b) { return (type)(a | b); } \\
+type frog_and_##name(type a, type b) { return (type)(a & b); } \\
+type frog_xor_##name(type a, type b) { return (type)(a ^ b); } \\
+type frog_not_##name(type a) { return (type)(~a); } \\
+type frog_shl_##name(type a, uint32_t b) { return (type)(a << b); } \\
+type frog_shr_##name(type a, uint32_t b) { return (type)(a >> b); } \\
+bool frog_eq_##name(type a, type b) { return a == b; } \\
+bool frog_ne_##name(type a, type b) { return a != b; } \\
+bool frog_lt_##name(type a, type b) { return a < b; } \\
+bool frog_gt_##name(type a, type b) { return a > b; } \\
+bool frog_le_##name(type a, type b) { return a <= b; } \\
+bool frog_ge_##name(type a, type b) { return a >= b; }
+
+FROG_INTEGER_HELPERS(int, intptr_t)
+FROG_INTEGER_HELPERS(i8, int8_t)
+FROG_INTEGER_HELPERS(i16, int16_t)
+FROG_INTEGER_HELPERS(i32, int32_t)
+FROG_INTEGER_HELPERS(i64, int64_t)
+FROG_INTEGER_HELPERS(u8, uint8_t)
+FROG_INTEGER_HELPERS(u16, uint16_t)
+FROG_INTEGER_HELPERS(u32, uint32_t)
+FROG_INTEGER_HELPERS(u64, uint64_t)
+
+#define FROG_MEMORY_HELPERS(name, type) \\
+type frog_load_##name(const void *ptr) { type value; memcpy(&value, ptr, sizeof(value)); return value; } \\
+void frog_store_##name(void *ptr, type value) { memcpy(ptr, &value, sizeof(value)); }
+
+FROG_MEMORY_HELPERS(int, intptr_t)
+FROG_MEMORY_HELPERS(bool, bool)
+FROG_MEMORY_HELPERS(i8, int8_t)
+FROG_MEMORY_HELPERS(i16, int16_t)
+FROG_MEMORY_HELPERS(i32, int32_t)
+FROG_MEMORY_HELPERS(i64, int64_t)
+FROG_MEMORY_HELPERS(u8, uint8_t)
+FROG_MEMORY_HELPERS(u16, uint16_t)
+FROG_MEMORY_HELPERS(u32, uint32_t)
+FROG_MEMORY_HELPERS(u64, uint64_t)
+FROG_MEMORY_HELPERS(ptr, void *)
+
+bool frog_and_bool(bool a, bool b) { return a && b; }
+bool frog_or_bool(bool a, bool b) { return a || b; }
+bool frog_not_bool(bool a) { return !a; }
+void *frog_add_ptr(void *ptr, intptr_t offset) { return (void *)((unsigned char *)ptr + offset); }
+void *frog_sub_ptr(void *ptr, intptr_t offset) { return (void *)((unsigned char *)ptr - offset); }
+bool frog_eq_ptr(void *a, void *b) { return a == b; }
+bool frog_ne_ptr(void *a, void *b) { return a != b; }
 
 " emit
 end
@@ -6557,193 +7073,6 @@ proc apply-function-contract CompileContext ModuleContext int -- do
     end
 end
 
-proc emit-binary-operation-types CompileContext int int int String -- do
-    let cc left-type right-type output-type operator do
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count 1 -
-            let left-index do
-                cc @CompileContext.type_count
-                let right-index do
-                    cc emit-indent
-                    cc left-index output-type emit-slot-as " = " emit
-                    cc left-index left-type emit-slot-as operator emit
-                    cc right-index right-type emit-slot-as ";" emit 10 putc
-                end
-            end
-        end
-    end
-end
-
-proc emit-unary-operation CompileContext int int String -- do
-    let cc input-type output-type operator do
-        if cc @CompileContext.emitting do
-            cc emit-indent
-            cc @CompileContext.type_count 1 -
-            let index do
-                cc index output-type emit-slot-as " = " emit operator emit cc index input-type emit-slot-as ";" emit 10 putc
-            end
-        end
-    end
-end
-
-proc emit-checked-binary-operation CompileContext String -- do
-    let cc operator do
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count 1 -
-            let left-index do
-                cc @CompileContext.type_count
-                let right-index do
-                    cc emit-indent "if (" emit cc right-index type-int emit-slot-as
-                    " == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); }" emit 10 putc
-                    cc emit-indent
-                    cc left-index type-int emit-slot-as " = " emit
-                    cc left-index type-int emit-slot-as operator emit
-                    cc right-index type-int emit-slot-as ";" emit 10 putc
-                end
-            end
-        end
-    end
-end
-
-proc emit-divmod CompileContext -- do
-    let cc do
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count 2 -
-            let left-index do
-                cc @CompileContext.type_count 1 -
-                let right-index do
-                    cc emit-indent "{ intptr_t a = " emit cc left-index type-int emit-slot-as
-                    "; intptr_t b = " emit cc right-index type-int emit-slot-as
-                    "; if (b == 0) { fputs(\"frog: division by zero\\n\", stderr); exit(1); } " emit
-                    cc left-index type-int emit-slot-as " = a / b; " emit
-                    cc right-index type-int emit-slot-as " = a % b; }" emit 10 putc
-                end
-            end
-        end
-    end
-end
-
-proc compile-fixed-binary CompileContext int int String -- do
-    let cc input-type output-type operator do
-        cc input-type type-expect
-        cc input-type type-expect
-        cc output-type type-push
-        cc input-type input-type output-type operator emit-binary-operation-types
-    end
-end
-
-proc compile-fixed-unary CompileContext int int String -- do
-    let cc input-type output-type operator do
-        cc input-type type-expect
-        cc output-type type-push
-        cc input-type output-type operator emit-unary-operation
-    end
-end
-
-proc compile-checked-binary CompileContext String -- do
-    let cc operator do
-        cc type-int type-expect
-        cc type-int type-expect
-        cc type-int type-push
-        cc operator emit-checked-binary-operation
-    end
-end
-
-proc compile-add-sub CompileContext bool -- do
-    let cc subtract do
-        cc type-pop
-        cc type-pop
-        let right-type left-type do
-            if left-type type-int == right-type type-int == && do
-                cc type-int type-push
-            else
-                if left-type type-ptr == right-type type-int == && do
-                    cc type-ptr type-push
-                else
-                    cc "invalid operand types for pointer/integer arithmetic" fail-compile-word
-                end
-            end
-            if left-type type-ptr == do
-                if cc @CompileContext.emitting do
-                    cc @CompileContext.type_count 1 - let left-index do
-                        cc @CompileContext.type_count let right-index do
-                            cc emit-indent cc left-index type-ptr emit-slot-as
-                            " = (void *)((unsigned char *)" emit cc left-index type-ptr emit-slot-as
-                            if subtract do " - " emit else " + " emit end
-                            cc right-index type-int emit-slot-as ");" emit 10 putc
-                        end
-                    end
-                end
-            elif subtract do cc left-type right-type left-type " - " emit-binary-operation-types
-            else cc left-type right-type left-type " + " emit-binary-operation-types end
-        end
-    end
-end
-
-proc compile-arithmetic-intrinsic CompileContext int -- bool do
-    let cc token-index do
-        if cc @CompileContext.defining_module token-index "+" token-equals do
-            cc false compile-add-sub true
-        elif cc @CompileContext.defining_module token-index "-" token-equals do
-            cc true compile-add-sub true
-        elif cc @CompileContext.defining_module token-index "*" token-equals do
-            cc type-int type-int " * " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "/" token-equals do
-            cc " / " compile-checked-binary true
-        elif cc @CompileContext.defining_module token-index "%" token-equals do
-            cc " % " compile-checked-binary true
-        elif cc @CompileContext.defining_module token-index "/%" token-equals do
-            cc type-int type-expect
-            cc type-int type-expect
-            cc type-int type-push
-            cc type-int type-push
-            cc emit-divmod
-            true
-        elif cc @CompileContext.defining_module token-index "<<" token-equals do
-            cc type-int type-int " << " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index ">>" token-equals do
-            cc type-int type-int " >> " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "|" token-equals do
-            cc type-int type-int " | " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "&" token-equals do
-            cc type-int type-int " & " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "^" token-equals do
-            cc type-int type-int " ^ " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "~" token-equals do
-            cc type-int type-int "~" compile-fixed-unary true
-        else
-            false
-        end
-    end
-end
-
-proc compile-logic-comparison-intrinsic CompileContext int -- bool do
-    let cc token-index do
-        if cc @CompileContext.defining_module token-index "&&" token-equals do
-            cc type-bool type-bool " && " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "||" token-equals do
-            cc type-bool type-bool " || " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "!" token-equals do
-            cc type-bool type-bool "!" compile-fixed-unary true
-        elif cc @CompileContext.defining_module token-index "==" token-equals do
-            cc type-int type-bool " == " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "!=" token-equals do
-            cc type-int type-bool " != " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "<" token-equals do
-            cc type-int type-bool " < " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index ">" token-equals do
-            cc type-int type-bool " > " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index "<=" token-equals do
-            cc type-int type-bool " <= " compile-fixed-binary true
-        elif cc @CompileContext.defining_module token-index ">=" token-equals do
-            cc type-int type-bool " >= " compile-fixed-binary true
-        else
-            false
-        end
-    end
-end
-
-const type-literal-base 100 end
 proc type-is-nominal int -- bool do
     dup type-nominal-base >= swap type-function-base < &&
 end
@@ -6765,6 +7094,283 @@ proc type-is-integer int -- bool do
 end
 proc type-is-typed-pointer int -- bool do
     dup type-pointer-base >= swap unresolved-pointer-base < &&
+end
+
+const private-op-none 0 end
+const private-op-add 1 end
+const private-op-sub 2 end
+const private-op-mul 3 end
+const private-op-div 4 end
+const private-op-mod 5 end
+const private-op-divmod 6 end
+const private-op-or 7 end
+const private-op-and 8 end
+const private-op-xor 9 end
+const private-op-not 10 end
+const private-op-shl 11 end
+const private-op-shr 12 end
+const private-op-eq 13 end
+const private-op-ne 14 end
+const private-op-lt 15 end
+const private-op-gt 16 end
+const private-op-le 17 end
+const private-op-ge 18 end
+const private-op-load 19 end
+const private-op-store 20 end
+
+macro bytes-ends-with-string
+    let bytes length suffix do
+        suffix String.bytes suffix String.len
+        let suffix-bytes suffix-length do
+            if suffix-length length > do
+                false
+            else
+                bytes length suffix-length - + suffix-length suffix-bytes suffix-length bytes-equal
+            end
+        end
+    end
+end
+
+proc private-intrinsic-type ModuleContext int -- int do
+    let ctx token-index do
+        ctx token-index token-slice
+        let bytes length do
+            if bytes length "_bool" bytes-ends-with-string do type-bool
+            elif bytes length "_ptr" bytes-ends-with-string do type-ptr
+            elif bytes length "_i8" bytes-ends-with-string do type-i8
+            elif bytes length "_i16" bytes-ends-with-string do type-i16
+            elif bytes length "_i32" bytes-ends-with-string do type-i32
+            elif bytes length "_i64" bytes-ends-with-string do type-i64
+            elif bytes length "_u8" bytes-ends-with-string do type-u8
+            elif bytes length "_u16" bytes-ends-with-string do type-u16
+            elif bytes length "_u32" bytes-ends-with-string do type-u32
+            elif bytes length "_u64" bytes-ends-with-string do type-u64
+            elif bytes length "_int" bytes-ends-with-string do type-int
+            else type-none
+            end
+        end
+    end
+end
+
+proc private-intrinsic-suffix-length int -- int do
+    let value-type do
+        if value-type type-bool == do 5
+        elif value-type type-ptr == do 4
+        elif value-type type-int == do 4
+        elif value-type type-i8 == value-type type-u8 == || do 3
+        else 4
+        end
+    end
+end
+
+proc private-intrinsic-operation ModuleContext int int -- int do
+    let ctx token-index value-type do
+        ctx token-index token-slice
+        let bytes length do
+            length value-type private-intrinsic-suffix-length -
+            let operation-length do
+                if bytes operation-length "__intrinsic_add" bytes-equal-string do private-op-add
+                elif bytes operation-length "__intrinsic_sub" bytes-equal-string do private-op-sub
+                elif bytes operation-length "__intrinsic_mul" bytes-equal-string do private-op-mul
+                elif bytes operation-length "__intrinsic_div" bytes-equal-string do private-op-div
+                elif bytes operation-length "__intrinsic_mod" bytes-equal-string do private-op-mod
+                elif bytes operation-length "__intrinsic_divmod" bytes-equal-string do private-op-divmod
+                elif bytes operation-length "__intrinsic_or" bytes-equal-string do private-op-or
+                elif bytes operation-length "__intrinsic_and" bytes-equal-string do private-op-and
+                elif bytes operation-length "__intrinsic_xor" bytes-equal-string do private-op-xor
+                elif bytes operation-length "__intrinsic_not" bytes-equal-string do private-op-not
+                elif bytes operation-length "__intrinsic_shl" bytes-equal-string do private-op-shl
+                elif bytes operation-length "__intrinsic_shr" bytes-equal-string do private-op-shr
+                elif bytes operation-length "__intrinsic_eq" bytes-equal-string do private-op-eq
+                elif bytes operation-length "__intrinsic_ne" bytes-equal-string do private-op-ne
+                elif bytes operation-length "__intrinsic_lt" bytes-equal-string do private-op-lt
+                elif bytes operation-length "__intrinsic_gt" bytes-equal-string do private-op-gt
+                elif bytes operation-length "__intrinsic_le" bytes-equal-string do private-op-le
+                elif bytes operation-length "__intrinsic_ge" bytes-equal-string do private-op-ge
+                elif bytes operation-length "__intrinsic_load" bytes-equal-string do private-op-load
+                elif bytes operation-length "__intrinsic_store" bytes-equal-string do private-op-store
+                else private-op-none
+                end
+            end
+        end
+    end
+end
+
+proc emit-private-operation int -- do
+    let operation do
+        if operation private-op-add == do "add" emit
+        elif operation private-op-sub == do "sub" emit
+        elif operation private-op-mul == do "mul" emit
+        elif operation private-op-div == do "div" emit
+        elif operation private-op-mod == do "mod" emit
+        elif operation private-op-divmod == do "divmod" emit
+        elif operation private-op-or == do "or" emit
+        elif operation private-op-and == do "and" emit
+        elif operation private-op-xor == do "xor" emit
+        elif operation private-op-not == do "not" emit
+        elif operation private-op-shl == do "shl" emit
+        elif operation private-op-shr == do "shr" emit
+        elif operation private-op-eq == do "eq" emit
+        elif operation private-op-ne == do "ne" emit
+        elif operation private-op-lt == do "lt" emit
+        elif operation private-op-gt == do "gt" emit
+        elif operation private-op-le == do "le" emit
+        elif operation private-op-ge == do "ge" emit
+        elif operation private-op-load == do "load" emit
+        else "store" emit
+        end
+    end
+end
+
+proc emit-private-helper int int -- do
+    let operation value-type do
+        "frog_" emit operation emit-private-operation "_" emit value-type emit-c-type-identity
+    end
+end
+
+proc compile-private-binary CompileContext int int int -- do
+    let cc operation input-type output-type do
+        cc input-type type-expect cc input-type type-expect cc output-type type-push
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count 1 - let left-index do
+                cc @CompileContext.type_count let right-index do
+                    cc emit-indent cc left-index output-type emit-slot-as " = " emit
+                    operation input-type emit-private-helper "(" emit
+                    cc left-index input-type emit-slot-as ", " emit cc right-index input-type emit-slot-as ");\n" emit
+                end
+            end
+        end
+    end
+end
+
+proc compile-private-unary CompileContext int int int -- do
+    let cc operation input-type output-type do
+        cc input-type type-expect cc output-type type-push
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count 1 - let index do
+                cc emit-indent cc index output-type emit-slot-as " = " emit operation input-type emit-private-helper
+                "(" emit cc index input-type emit-slot-as ");\n" emit
+            end
+        end
+    end
+end
+
+proc compile-private-load CompileContext int -- do
+    let cc value-type do
+        cc cc @CompileContext.program value-type program-intern-pointer-type type-expect
+        cc value-type register-replaced-stack-slot cc value-type type-push
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count 1 - let index do
+                cc emit-indent cc index value-type emit-slot-as " = " emit private-op-load value-type emit-private-helper
+                "((const void *)" emit cc index cc @CompileContext.program value-type program-intern-pointer-type emit-slot-as ");\n" emit
+            end
+        end
+    end
+end
+
+proc compile-private-shift CompileContext int int -- do
+    let cc operation value-type do
+        cc type-u32 type-expect cc value-type type-expect cc value-type type-push
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count 1 - let left-index do
+                cc @CompileContext.type_count let right-index do
+                    cc emit-indent cc left-index value-type emit-slot-as " = " emit operation value-type emit-private-helper
+                    "(" emit cc left-index value-type emit-slot-as ", " emit cc right-index type-u32 emit-slot-as ");\n" emit
+                end
+            end
+        end
+    end
+end
+
+proc compile-private-pointer-arithmetic CompileContext int -- do
+    let cc operation do
+        cc type-int type-expect cc type-ptr type-expect cc type-ptr type-push
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count 1 - let left-index do
+                cc @CompileContext.type_count let right-index do
+                    cc emit-indent cc left-index type-ptr emit-slot-as " = " emit operation type-ptr emit-private-helper
+                    "(" emit cc left-index type-ptr emit-slot-as ", " emit cc right-index type-int emit-slot-as ");\n" emit
+                end
+            end
+        end
+    end
+end
+
+proc compile-private-divmod CompileContext int -- do
+    let cc value-type do
+        cc value-type type-expect cc value-type type-expect
+        cc value-type type-push cc value-type type-push
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count 2 - let left-index do
+                cc @CompileContext.type_count 1 - let right-index do
+                    cc emit-indent "{ " emit private-op-divmod value-type emit-private-helper "_result result = " emit
+                    private-op-divmod value-type emit-private-helper "(" emit cc left-index value-type emit-slot-as ", " emit
+                    cc right-index value-type emit-slot-as "); " emit
+                    cc left-index value-type emit-slot-as " = result.quotient; " emit
+                    cc right-index value-type emit-slot-as " = result.remainder; }\n" emit
+                end
+            end
+        end
+    end
+end
+
+proc compile-private-store CompileContext int -- do
+    let cc value-type do
+        cc cc @CompileContext.program value-type program-intern-pointer-type type-expect
+        cc value-type type-expect
+        if cc @CompileContext.emitting do
+            cc @CompileContext.type_count let value-index do
+                cc @CompileContext.type_count 1 +
+                let pointer-index do
+                    cc emit-indent private-op-store value-type emit-private-helper "((void *)" emit
+                    cc pointer-index cc @CompileContext.program value-type program-intern-pointer-type emit-slot-as
+                    ", " emit cc value-index value-type emit-slot-as ");\n" emit
+                end
+            end
+        end
+    end
+end
+
+proc compile-private-intrinsic CompileContext int -- bool do
+    let cc token-index do
+        if
+            cc @CompileContext.procedure_module ptr cast int cast
+            cc @CompileContext.program @Program.builtins_module ptr cast int cast
+            !=
+        do
+            false
+        elif cc @CompileContext.defining_module token-index token-slice "__intrinsic_" bytes-starts-with-string ! do
+            false
+        else
+            cc @CompileContext.defining_module token-index private-intrinsic-type
+            let value-type do
+                if value-type type-none == do false else
+                    cc @CompileContext.defining_module token-index value-type private-intrinsic-operation
+                    let operation do
+                        if operation private-op-none == do false
+                        elif operation private-op-load == do cc value-type compile-private-load true
+                        elif operation private-op-store == do cc value-type compile-private-store true
+                        elif value-type type-is-integer do
+                            if operation private-op-not == do cc operation value-type value-type compile-private-unary true
+                            elif operation private-op-shl == operation private-op-shr == || do cc operation value-type compile-private-shift true
+                            elif operation private-op-divmod == do cc value-type compile-private-divmod true
+                            elif operation private-op-eq >= operation private-op-ge <= && do cc operation value-type type-bool compile-private-binary true
+                            elif operation private-op-add >= operation private-op-xor <= && do cc operation value-type value-type compile-private-binary true
+                            else false end
+                        elif value-type type-bool == do
+                            if operation private-op-not == do cc operation type-bool type-bool compile-private-unary true
+                            elif operation private-op-and == operation private-op-or == || do cc operation type-bool type-bool compile-private-binary true
+                            else false end
+                        elif value-type type-ptr == do
+                            if operation private-op-add == operation private-op-sub == || do cc operation compile-private-pointer-arithmetic true
+                            elif operation private-op-eq == operation private-op-ne == || do cc operation type-ptr type-bool compile-private-binary true
+                            else false end
+                        else false end
+                    end
+                end
+            end
+        end
+    end
 end
 
 proc type-is-cast-target int -- bool do
@@ -6834,61 +7440,6 @@ proc compile-cast-intrinsic CompileContext -- do
     end
 end
 
-proc compile-read-memory CompileContext int String -- do
-    let cc output-type function-name do
-        cc type-ptr type-expect
-        cc output-type register-replaced-stack-slot
-        cc output-type type-push
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count 1 - let index do
-                cc emit-indent cc index output-type emit-slot-as " = " emit function-name emit
-                "((const void *)" emit cc index type-ptr emit-slot-as ");" emit 10 putc
-            end
-        end
-    end
-end
-
-proc compile-write-memory CompileContext String -- do
-    let cc function-name do
-        cc type-ptr type-expect
-        cc type-int type-expect
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count
-            peek value-index do 1 +
-                let pointer-index do
-                    cc emit-indent function-name emit "((void *)" emit
-                    cc pointer-index type-ptr emit-slot-as ", " emit cc value-index type-int emit-slot-as ");" emit 10 putc
-                end
-            end
-        end
-    end
-end
-
-proc emit-read-pointer CompileContext -- do
-    let cc do
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count 1 - let index do
-                cc emit-indent cc index type-ptr emit-slot-as
-                " = frog_read_ptr((const void *)" emit cc index type-ptr emit-slot-as ");" emit 10 putc
-            end
-        end
-    end
-end
-
-proc emit-write-pointer CompileContext -- do
-    let cc do
-        if cc @CompileContext.emitting do
-            cc @CompileContext.type_count
-            peek value-index do 1 +
-                let pointer-index do
-                    cc emit-indent "frog_write_ptr((void *)" emit cc pointer-index type-ptr emit-slot-as
-                    ", (void *)" emit cc value-index type-ptr emit-slot-as ");" emit 10 putc
-                end
-            end
-        end
-    end
-end
-
 proc compile-memory-io-intrinsic CompileContext int -- bool do
     let cc token-index do
         if cc @CompileContext.defining_module token-index "cast" token-equals do
@@ -6904,48 +7455,6 @@ proc compile-memory-io-intrinsic CompileContext int -- bool do
                 end
             end
             true
-        elif cc @CompileContext.defining_module token-index "@ptr" token-equals do
-            cc type-ptr type-expect
-            cc type-ptr register-replaced-stack-slot
-            cc type-ptr type-push
-            cc emit-read-pointer true
-        elif cc @CompileContext.defining_module token-index "@i8" token-equals do
-            cc type-int "frog_read_i8" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@i16" token-equals do
-            cc type-int "frog_read_i16" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@i32" token-equals do
-            cc type-int "frog_read_i32" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@i64" token-equals do
-            cc type-int "frog_read_i64" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@u8" token-equals do
-            cc type-int "frog_read_u8" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@u16" token-equals do
-            cc type-int "frog_read_u16" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@u32" token-equals do
-            cc type-int "frog_read_u32" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "@u64" token-equals do
-            cc type-int "frog_read_u64" compile-read-memory true
-        elif cc @CompileContext.defining_module token-index "!ptr" token-equals do
-            cc type-ptr type-expect
-            cc type-ptr type-expect
-            cc emit-write-pointer
-            true
-        elif cc @CompileContext.defining_module token-index "!i8" token-equals do
-            cc "frog_write_i8" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!i16" token-equals do
-            cc "frog_write_i16" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!i32" token-equals do
-            cc "frog_write_i32" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!i64" token-equals do
-            cc "frog_write_i64" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!u8" token-equals do
-            cc "frog_write_u8" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!u16" token-equals do
-            cc "frog_write_u16" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!u32" token-equals do
-            cc "frog_write_u32" compile-write-memory true
-        elif cc @CompileContext.defining_module token-index "!u64" token-equals do
-            cc "frog_write_u64" compile-write-memory true
         elif cc @CompileContext.defining_module token-index "print" token-equals do
             cc type-pop
             let value-type do
@@ -6968,18 +7477,6 @@ proc compile-memory-io-intrinsic CompileContext int -- bool do
             true
         else
             false
-        end
-    end
-end
-
-proc compile-intrinsic CompileContext int -- bool do
-    let cc token-index do
-        if cc token-index compile-arithmetic-intrinsic do
-            true
-        elif cc token-index compile-logic-comparison-intrinsic do
-            true
-        else
-            cc token-index compile-memory-io-intrinsic
         end
     end
 end
@@ -8401,8 +8898,16 @@ proc compile-constant-values-from CompileContext ModuleContext int int -- do
                 values value-index constant-value-at @ConstantValue.payload
                 let value-type payload do
                     cc value-type type-push
-                    if value-type type-int == value-type type-bool == || do
-                        cc payload emit-push-integer
+                    if value-type type-is-integer value-type type-bool == || do
+                        if value-type type-int == value-type type-bool == || do
+                            cc payload emit-push-integer
+                        else
+                            if cc @CompileContext.emitting do
+                                cc emit-indent cc emit-top-slot " = (" emit
+                                cc @CompileContext.program value-type emit-c-value-type ")" emit
+                                payload emit-integer ";" emit 10 putc
+                            end
+                        end
                     elif value-type type-string == do
                         cc payload emit-push-pooled-string
                     else
@@ -8470,7 +8975,7 @@ proc compile-ordinary-word CompileContext int -- do
                     elif cc token-index compile-record-word do
                     elif cc token-index compile-union-word do
                     elif cc token-index compile-function-word do
-                    elif cc token-index compile-intrinsic do
+                    elif cc token-index compile-private-intrinsic do
                     else
                         cc token-index find-local
                         let local-index do
@@ -8528,7 +9033,9 @@ proc compile-ordinary-word CompileContext int -- do
                                     end
                                 else
                                     if cc token-index compile-builtins-word ! do
-                                        "unknown word" fail
+                                        if cc token-index compile-memory-io-intrinsic ! do
+                                            "unknown word" fail
+                                        end
                                     end
                                 end
                             end
@@ -8616,6 +9123,7 @@ proc try-compile-constant-add CompileContext int int -- bool do
             cc @CompileContext.defining_module token-index 2 + token-at @TokenEntry.kind token-word == &&
             cc @CompileContext.defining_module token-index 2 + "+" token-equals &&
             cc token-index 2 + token-resolves-to-macro ! &&
+            cc @CompileContext.scope_module cc @CompileContext.defining_module token-index 2 + type-int type-int word-resolves-to-builtin-2 &&
         do
             cc @CompileContext.defining_module token-index token-at @TokenEntry.value
             cc @CompileContext.defining_module token-index 1 + token-at @TokenEntry.value
@@ -9135,7 +9643,7 @@ proc null-pointer -- ptr do 0 ptr cast end
 proc cstring-length ptr -- int do
     let bytes do
         0
-        while dup bytes swap + @u8 0 != do
+        while dup bytes swap + u8* cast @ int cast 0 != do
             1 +
         end
     end
@@ -9150,7 +9658,7 @@ proc cstring-equals ptr String -- bool do
     end
 end
 
-proc argv-at ptr int -- ptr do cell-bytes * + @ptr end
+proc argv-at ptr int -- ptr do cell-bytes * + ptr* cast @ end
 
 proc copy-cstring ptr int -- ptr do
     let bytes length do
@@ -9268,7 +9776,7 @@ end
 
 proc set-pointer-at ptr int ptr -- do
     let array index value do
-        value array index cell-bytes * + !ptr
+        value array index cell-bytes * + ptr* cast !
     end
 end
 
@@ -9555,7 +10063,7 @@ proc run-command ptr int int bool ptr int -- do
                         code cstring-length "." String.bytes debug
                         standard-library-root standard-library-root-length run-source exit
                     end
-                elif argument @u8 45 == do
+                elif argument u8* cast @ int cast 45 == do
                     "unknown run option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "run accepts exactly one source file" cli-usage-error
@@ -9575,7 +10083,7 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
         else
             argv index argv-at
             let argument do
-                if argument @u8 45 == do
+                if argument u8* cast @ int cast 45 == do
                     if
                         argument "-h" cstring-equals
                         argument "--help" cstring-equals ||

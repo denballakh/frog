@@ -7,7 +7,7 @@ const string-map-default-capacity 8 end
 const string-map-hash-initial 5381 end
 const string-map-hash-multiplier 33 end
 const string-map-hash-mask 0x7fffffff end
-const container-max-int 1 62 << 1 62 << 1 - + end
+const container-max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const container-max-capacity container-max-int container-slot-bytes / end
 
 record PtrArray
@@ -93,8 +93,8 @@ proc ptr-array-grow PtrArray -- do
                 0
                 while dup array @.count < do
                     let index do
-                        array @.items index container-slot-address @ptr
-                        items index container-slot-address !ptr
+                        array @.items index container-slot-address ptr* cast @
+                        items index container-slot-address ptr* cast !
                         index 1 +
                     end
                 end
@@ -112,7 +112,7 @@ proc ptr-array-push ptr PtrArray -- do
         if array @.count array @.capacity == do
             array ptr-array-grow
         end
-        value array @.items array @.count container-slot-address !ptr
+        value array @.items array @.count container-slot-address ptr* cast !
         array @.count 1 + array !.count
     end
 end
@@ -122,7 +122,7 @@ proc ptr-array-get PtrArray int -- ptr bool do
         if index 0 < index array @.count >= || do
             0 ptr cast false
         else
-            array @.items index container-slot-address @ptr true
+            array @.items index container-slot-address ptr* cast @ true
         end
     end
 end
@@ -132,7 +132,7 @@ proc ptr-array-set ptr PtrArray int -- bool do
         if index 0 < index array @.count >= || do
             false
         else
-            value array @.items index container-slot-address !ptr
+            value array @.items index container-slot-address ptr* cast !
             true
         end
     end
@@ -145,7 +145,7 @@ proc ptr-array-pop PtrArray -- ptr bool do
         else
             array @.count 1 -
             let index do
-                array @.items index container-slot-address @ptr
+                array @.items index container-slot-address ptr* cast @
                 index array !.count
                 true
             end
@@ -235,7 +235,7 @@ proc string-map-hash ptr int -- int do
             let index hash do
                 index 1 +
                 hash string-map-hash-multiplier *
-                bytes index + @u8 +
+                bytes index + u8* cast @ int cast +
                 string-map-hash-mask &
             end
         end
@@ -260,7 +260,7 @@ proc string-map-new int -- StringMap do
                 0
                 while dup capacity < do
                     let index do
-                        0 ptr cast buckets index container-slot-address !ptr
+                        0 ptr cast buckets index container-slot-address ptr* cast !
                         index 1 +
                     end
                 end
@@ -315,7 +315,7 @@ end
 
 proc string-map-find ptr int StringMap -- ptr do
     let key length map do
-        key length map string-map-bucket-address @ptr
+        key length map string-map-bucket-address ptr* cast @
         let current do
             key length current string-map-find-from
         end
@@ -357,8 +357,8 @@ proc string-map-set ptr int ptr StringMap -- ptr bool do
                             value entry !.value
                             key length map string-map-bucket-address
                             let bucket do
-                                bucket @ptr entry !.next
-                                entry ptr cast bucket !ptr
+                                bucket ptr* cast @ entry !.next
+                                entry ptr cast bucket ptr* cast !
                             end
                             map @.count 1 + map !.count
                             0 ptr cast false
@@ -384,7 +384,7 @@ proc string-map-remove ptr int StringMap -- ptr bool do
         else
             key length map string-map-bucket-address
             let bucket do
-                bucket @ptr 0 ptr cast false
+                bucket ptr* cast @ 0 ptr cast false
                 while peek current previous found do
                     current container-null? ! found ! &&
                 end
@@ -409,7 +409,7 @@ proc string-map-remove ptr int StringMap -- ptr bool do
                             entry @.value
                             let value do
                                 if previous container-null? do
-                                    entry @.next bucket !ptr
+                                    entry @.next bucket ptr* cast !
                                 else
                                     entry @.next previous StringMapEntry cast !.next
                                 end
@@ -445,7 +445,7 @@ proc string-map-free StringMap -- do
         0
         while dup map @.capacity < do
             let index do
-                map @.buckets index container-slot-address @ptr string-map-free-chain
+                map @.buckets index container-slot-address ptr* cast @ string-map-free-chain
                 index 1 +
             end
         end

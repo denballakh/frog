@@ -42,7 +42,7 @@ proc assert-one-byte-reject int -- do
     let byte do
         1 alloc
         let bytes do
-            byte bytes !u8
+            byte u8 cast bytes u8* cast !
             bytes 1 assert-reject-bytes
             bytes free
         end

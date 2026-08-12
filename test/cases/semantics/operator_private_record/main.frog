@@ -1,0 +1,2 @@
+record __intrinsic_user value int end
+proc main -- do end

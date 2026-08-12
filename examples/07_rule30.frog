@@ -1,7 +1,9 @@
 from "stdlib/libc.frog" import ( alloc putc )
 
 proc setcell int ptr int -- do
-    + !u8
+    let value buffer index do
+        value u8 cast buffer index + u8* cast !
+    end
 end
 
 proc clear ptr -- do
@@ -30,7 +32,7 @@ proc render ptr -- do
         0
         while dup 40 < do
             dup let i do
-                buf i + @u8 rendercell
+                buf i + u8* cast @ int cast rendercell
             end
             1 +
         end
@@ -45,15 +47,15 @@ proc step ptr ptr -- do
         while dup 40 < do
             dup let i do
                 if i 0 > do
-                    src i 1 - + @u8
+                    src i 1 - + u8* cast @ int cast
                 else
                     0
                 end
 
-                src i + @u8
+                src i + u8* cast @ int cast
 
                 if i 1 + 40 < do
-                    src i 1 + + @u8
+                    src i 1 + + u8* cast @ int cast
                 else
                     0
                 end

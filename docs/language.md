@@ -198,7 +198,7 @@ Macro bodies are syntax-checked for normal block structure and may use function-
 Constants evaluate a restricted postfix expression once during compilation and expand each use into the resulting typed literals:
 
 ```frog
-const max-int 1 62 << 1 62 << 1 - + end
+const max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const answer-and-ready 6 7 * true end
 
 proc main -- do
@@ -207,9 +207,9 @@ proc main -- do
 end
 ```
 
-`const name <expression> end` starts evaluation with an empty stack, infers the result arity and types, and requires at least one result. Results may be `int`, `bool`, or `String`; character literals produce `int`. Multiple results retain their bottom-to-top order. Evaluation happens once during compilation; each use pushes the stored results without reevaluating the expression at runtime.
+`const name <expression> end` starts evaluation with an empty stack, infers the result arity and types, and requires at least one result. Results may be integer types, `bool`, or `String`; character literals produce `int`. Multiple results retain their bottom-to-top order. Evaluation happens once during compilation; each use pushes the stored results without reevaluating the expression at runtime.
 
-Constant expressions accept literals, visible constant references, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. They do not execute macros, procedures, control flow, local bindings, allocation, memory or I/O operations, casts, or nominal-type operations. Integer overflow, division by zero, and invalid shifts are compile errors. Constant shifts require a non-negative value and a count from 0 through 62.
+Constant expressions accept literals, visible constant references, explicit integer casts, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. Operators require the same exact contracts as runtime operators; in particular, shift counts are `u32`. They do not execute macros, other procedures, control flow, local bindings, allocation, memory or I/O operations, or nominal-type operations. Overflow checks apply to `int` constant arithmetic; exact-width arithmetic follows its C-style result conversion. Division by zero and invalid `int` shifts are compile errors.
 
 Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a builtins definition.
 
@@ -338,25 +338,18 @@ end
 - `peek name... do ... end` binds visible stack values and evaluates those names before the block body.
 - `//` starts a line comment only when it appears as its own whitespace-delimited token.
 
-## Intrinsics
+## Operators
+
+Operators are overloaded implicit builtins. They have no special source-level namespace and follow ordinary visible-word shadowing rules; the compiler lowers the selected builtin implementation to a private intrinsic. Exact-width operands must match exactly: Frog never widens or narrows them implicitly.
 
 ### Arithmetic
 
-- `+`: `int int -- int`, `ptr int -- ptr`
-- `-`: `int int -- int`, `ptr int -- ptr`
-- `*`: `int int -- int`
-- `/`: `int int -- int`
-- `%`: `int int -- int`
-- `/%`: `int int -- int int`, producing quotient then remainder
+- `+`, `-`, `*`, `/`, `%`, `/%`: matching `int` or matching exact integer widths; `+` and `-` also support `ptr int -- ptr`.
 
 ### Bitwise
 
-- `<<`: `int int -- int`
-- `>>`: `int int -- int`
-- `|`: `int int -- int`
-- `&`: `int int -- int`
-- `^`: `int int -- int`
-- `~`: `int -- int`
+- `<<`, `>>`: `int u32 -- int` and matching exact-width integer left operands with `u32` shift counts.
+- `|`, `&`, `^`, `~`: matching `int` or exact integer widths.
 
 ### Logic
 
@@ -366,28 +359,19 @@ end
 
 ### Comparisons
 
-- `==`: `int int -- bool`
-- `!=`: `int int -- bool`
-- `<`: `int int -- bool`
-- `>`: `int int -- bool`
-- `<=`: `int int -- bool`
-- `>=`: `int int -- bool`
+- `==`, `!=`, `<`, `>`, `<=`, `>=`: matching `int` or exact integer widths. Pointers support `==` and `!=`.
 
 ### Process Arguments
 
 - `args`: `-- ptr int` pushes the raw C `argv` pointer followed by C `argc`. The count includes `argv[0]`.
-- `argv` points to an array of C string pointers whose byte stride is the target C platform's pointer size. Use `@ptr` to load an entry; each resulting string is NUL-terminated and can be read with `@u8`.
+- `argv` points to an array of C string pointers whose byte stride is the target C platform's pointer size. Use `ptr* cast @` to load an entry; each resulting string is NUL-terminated and can be read with `u8* cast @`.
 
 ### Memory
 
 - Pointer arithmetic supports `ptr int + -- ptr` and `ptr int - -- ptr`; offsets are in bytes.
 - `int ptr +` is not supported.
-- Signed pointer reads: `@i8`, `@i16`, `@i32`, `@i64`, each `ptr -- int`.
-- Unsigned pointer reads: `@u8`, `@u16`, `@u32`, `@u64`, each `ptr -- int`.
-- Pointer reads: `@ptr`, with stack effect `ptr -- ptr`; it copies one target-platform pointer-sized value.
-- Pointer writes: `!ptr`, with stack effect `ptr ptr --`; it copies the first pointer value into the address on top of the stack.
-- Signed pointer writes: `!i8`, `!i16`, `!i32`, `!i64`, each `int ptr --`.
-- Unsigned pointer writes: `!u8`, `!u16`, `!u32`, `!u64`, each `int ptr --`.
+- `@` reads one value from a typed pointer: `T* -- T`. `!` writes one value: `T T* --`. For example, `address u8* cast @ int cast` reads a byte for use as an `int`, and `value u8 cast address u8* cast !` writes a byte.
+- The width-spelled memory words (`@u8`, `!i32`, `@ptr`, and similar) are removed.
 - Memory reads and writes support unaligned addresses.
 
 ### Casts
@@ -406,4 +390,4 @@ Byte allocation, byte-oriented standard I/O, memory release, and process termina
 
 ## Runtime Limits
 
-Runtime signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count have unspecified results. Right shift of a negative value is platform-dependent. Compile-time constant arithmetic rejects these cases instead. Pointer/integer casts require a target where object pointers fit in an integer. C interop conversions follow the declared C type, so values outside that target C type's range and function-pointer values represented as `ptr` are target-dependent.
+Arithmetic operators use the corresponding C integer operations after type selection. Runtime signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count have unspecified results. Right shift of a negative value is platform-dependent. Compile-time `int` constant arithmetic rejects these cases; exact-width constant arithmetic follows its C-style result conversion. Pointer/integer casts require a target where object pointers fit in an integer. C interop conversions follow the declared C type, so values outside that target C type's range and function-pointer values represented as `ptr` are target-dependent.

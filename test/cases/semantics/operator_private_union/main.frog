@@ -1,0 +1,2 @@
+union __intrinsic_user case value end
+proc main -- do end

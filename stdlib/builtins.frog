@@ -13,3 +13,205 @@ proc assert bool String -- do
         end
     end
 end
+
+proc + int int -- int do __intrinsic_add_int end
+proc - int int -- int do __intrinsic_sub_int end
+proc * int int -- int do __intrinsic_mul_int end
+proc / int int -- int do __intrinsic_div_int end
+proc % int int -- int do __intrinsic_mod_int end
+proc /% int int -- int int do __intrinsic_divmod_int end
+proc | int int -- int do __intrinsic_or_int end
+proc & int int -- int do __intrinsic_and_int end
+proc ^ int int -- int do __intrinsic_xor_int end
+proc ~ int -- int do __intrinsic_not_int end
+proc << int u32 -- int do __intrinsic_shl_int end
+proc >> int u32 -- int do __intrinsic_shr_int end
+proc == int int -- bool do __intrinsic_eq_int end
+proc != int int -- bool do __intrinsic_ne_int end
+proc < int int -- bool do __intrinsic_lt_int end
+proc > int int -- bool do __intrinsic_gt_int end
+proc <= int int -- bool do __intrinsic_le_int end
+proc >= int int -- bool do __intrinsic_ge_int end
+
+proc + i8 i8 -- i8 do __intrinsic_add_i8 end
+proc - i8 i8 -- i8 do __intrinsic_sub_i8 end
+proc * i8 i8 -- i8 do __intrinsic_mul_i8 end
+proc / i8 i8 -- i8 do __intrinsic_div_i8 end
+proc % i8 i8 -- i8 do __intrinsic_mod_i8 end
+proc /% i8 i8 -- i8 i8 do __intrinsic_divmod_i8 end
+proc | i8 i8 -- i8 do __intrinsic_or_i8 end
+proc & i8 i8 -- i8 do __intrinsic_and_i8 end
+proc ^ i8 i8 -- i8 do __intrinsic_xor_i8 end
+proc ~ i8 -- i8 do __intrinsic_not_i8 end
+proc << i8 u32 -- i8 do __intrinsic_shl_i8 end
+proc >> i8 u32 -- i8 do __intrinsic_shr_i8 end
+proc == i8 i8 -- bool do __intrinsic_eq_i8 end
+proc != i8 i8 -- bool do __intrinsic_ne_i8 end
+proc < i8 i8 -- bool do __intrinsic_lt_i8 end
+proc > i8 i8 -- bool do __intrinsic_gt_i8 end
+proc <= i8 i8 -- bool do __intrinsic_le_i8 end
+proc >= i8 i8 -- bool do __intrinsic_ge_i8 end
+
+proc + i16 i16 -- i16 do __intrinsic_add_i16 end
+proc - i16 i16 -- i16 do __intrinsic_sub_i16 end
+proc * i16 i16 -- i16 do __intrinsic_mul_i16 end
+proc / i16 i16 -- i16 do __intrinsic_div_i16 end
+proc % i16 i16 -- i16 do __intrinsic_mod_i16 end
+proc /% i16 i16 -- i16 i16 do __intrinsic_divmod_i16 end
+proc | i16 i16 -- i16 do __intrinsic_or_i16 end
+proc & i16 i16 -- i16 do __intrinsic_and_i16 end
+proc ^ i16 i16 -- i16 do __intrinsic_xor_i16 end
+proc ~ i16 -- i16 do __intrinsic_not_i16 end
+proc << i16 u32 -- i16 do __intrinsic_shl_i16 end
+proc >> i16 u32 -- i16 do __intrinsic_shr_i16 end
+proc == i16 i16 -- bool do __intrinsic_eq_i16 end
+proc != i16 i16 -- bool do __intrinsic_ne_i16 end
+proc < i16 i16 -- bool do __intrinsic_lt_i16 end
+proc > i16 i16 -- bool do __intrinsic_gt_i16 end
+proc <= i16 i16 -- bool do __intrinsic_le_i16 end
+proc >= i16 i16 -- bool do __intrinsic_ge_i16 end
+
+proc + i32 i32 -- i32 do __intrinsic_add_i32 end
+proc - i32 i32 -- i32 do __intrinsic_sub_i32 end
+proc * i32 i32 -- i32 do __intrinsic_mul_i32 end
+proc / i32 i32 -- i32 do __intrinsic_div_i32 end
+proc % i32 i32 -- i32 do __intrinsic_mod_i32 end
+proc /% i32 i32 -- i32 i32 do __intrinsic_divmod_i32 end
+proc | i32 i32 -- i32 do __intrinsic_or_i32 end
+proc & i32 i32 -- i32 do __intrinsic_and_i32 end
+proc ^ i32 i32 -- i32 do __intrinsic_xor_i32 end
+proc ~ i32 -- i32 do __intrinsic_not_i32 end
+proc << i32 u32 -- i32 do __intrinsic_shl_i32 end
+proc >> i32 u32 -- i32 do __intrinsic_shr_i32 end
+proc == i32 i32 -- bool do __intrinsic_eq_i32 end
+proc != i32 i32 -- bool do __intrinsic_ne_i32 end
+proc < i32 i32 -- bool do __intrinsic_lt_i32 end
+proc > i32 i32 -- bool do __intrinsic_gt_i32 end
+proc <= i32 i32 -- bool do __intrinsic_le_i32 end
+proc >= i32 i32 -- bool do __intrinsic_ge_i32 end
+
+proc + i64 i64 -- i64 do __intrinsic_add_i64 end
+proc - i64 i64 -- i64 do __intrinsic_sub_i64 end
+proc * i64 i64 -- i64 do __intrinsic_mul_i64 end
+proc / i64 i64 -- i64 do __intrinsic_div_i64 end
+proc % i64 i64 -- i64 do __intrinsic_mod_i64 end
+proc /% i64 i64 -- i64 i64 do __intrinsic_divmod_i64 end
+proc | i64 i64 -- i64 do __intrinsic_or_i64 end
+proc & i64 i64 -- i64 do __intrinsic_and_i64 end
+proc ^ i64 i64 -- i64 do __intrinsic_xor_i64 end
+proc ~ i64 -- i64 do __intrinsic_not_i64 end
+proc << i64 u32 -- i64 do __intrinsic_shl_i64 end
+proc >> i64 u32 -- i64 do __intrinsic_shr_i64 end
+proc == i64 i64 -- bool do __intrinsic_eq_i64 end
+proc != i64 i64 -- bool do __intrinsic_ne_i64 end
+proc < i64 i64 -- bool do __intrinsic_lt_i64 end
+proc > i64 i64 -- bool do __intrinsic_gt_i64 end
+proc <= i64 i64 -- bool do __intrinsic_le_i64 end
+proc >= i64 i64 -- bool do __intrinsic_ge_i64 end
+
+proc + u8 u8 -- u8 do __intrinsic_add_u8 end
+proc - u8 u8 -- u8 do __intrinsic_sub_u8 end
+proc * u8 u8 -- u8 do __intrinsic_mul_u8 end
+proc / u8 u8 -- u8 do __intrinsic_div_u8 end
+proc % u8 u8 -- u8 do __intrinsic_mod_u8 end
+proc /% u8 u8 -- u8 u8 do __intrinsic_divmod_u8 end
+proc | u8 u8 -- u8 do __intrinsic_or_u8 end
+proc & u8 u8 -- u8 do __intrinsic_and_u8 end
+proc ^ u8 u8 -- u8 do __intrinsic_xor_u8 end
+proc ~ u8 -- u8 do __intrinsic_not_u8 end
+proc << u8 u32 -- u8 do __intrinsic_shl_u8 end
+proc >> u8 u32 -- u8 do __intrinsic_shr_u8 end
+proc == u8 u8 -- bool do __intrinsic_eq_u8 end
+proc != u8 u8 -- bool do __intrinsic_ne_u8 end
+proc < u8 u8 -- bool do __intrinsic_lt_u8 end
+proc > u8 u8 -- bool do __intrinsic_gt_u8 end
+proc <= u8 u8 -- bool do __intrinsic_le_u8 end
+proc >= u8 u8 -- bool do __intrinsic_ge_u8 end
+
+proc + u16 u16 -- u16 do __intrinsic_add_u16 end
+proc - u16 u16 -- u16 do __intrinsic_sub_u16 end
+proc * u16 u16 -- u16 do __intrinsic_mul_u16 end
+proc / u16 u16 -- u16 do __intrinsic_div_u16 end
+proc % u16 u16 -- u16 do __intrinsic_mod_u16 end
+proc /% u16 u16 -- u16 u16 do __intrinsic_divmod_u16 end
+proc | u16 u16 -- u16 do __intrinsic_or_u16 end
+proc & u16 u16 -- u16 do __intrinsic_and_u16 end
+proc ^ u16 u16 -- u16 do __intrinsic_xor_u16 end
+proc ~ u16 -- u16 do __intrinsic_not_u16 end
+proc << u16 u32 -- u16 do __intrinsic_shl_u16 end
+proc >> u16 u32 -- u16 do __intrinsic_shr_u16 end
+proc == u16 u16 -- bool do __intrinsic_eq_u16 end
+proc != u16 u16 -- bool do __intrinsic_ne_u16 end
+proc < u16 u16 -- bool do __intrinsic_lt_u16 end
+proc > u16 u16 -- bool do __intrinsic_gt_u16 end
+proc <= u16 u16 -- bool do __intrinsic_le_u16 end
+proc >= u16 u16 -- bool do __intrinsic_ge_u16 end
+
+proc + u32 u32 -- u32 do __intrinsic_add_u32 end
+proc - u32 u32 -- u32 do __intrinsic_sub_u32 end
+proc * u32 u32 -- u32 do __intrinsic_mul_u32 end
+proc / u32 u32 -- u32 do __intrinsic_div_u32 end
+proc % u32 u32 -- u32 do __intrinsic_mod_u32 end
+proc /% u32 u32 -- u32 u32 do __intrinsic_divmod_u32 end
+proc | u32 u32 -- u32 do __intrinsic_or_u32 end
+proc & u32 u32 -- u32 do __intrinsic_and_u32 end
+proc ^ u32 u32 -- u32 do __intrinsic_xor_u32 end
+proc ~ u32 -- u32 do __intrinsic_not_u32 end
+proc << u32 u32 -- u32 do __intrinsic_shl_u32 end
+proc >> u32 u32 -- u32 do __intrinsic_shr_u32 end
+proc == u32 u32 -- bool do __intrinsic_eq_u32 end
+proc != u32 u32 -- bool do __intrinsic_ne_u32 end
+proc < u32 u32 -- bool do __intrinsic_lt_u32 end
+proc > u32 u32 -- bool do __intrinsic_gt_u32 end
+proc <= u32 u32 -- bool do __intrinsic_le_u32 end
+proc >= u32 u32 -- bool do __intrinsic_ge_u32 end
+
+proc + u64 u64 -- u64 do __intrinsic_add_u64 end
+proc - u64 u64 -- u64 do __intrinsic_sub_u64 end
+proc * u64 u64 -- u64 do __intrinsic_mul_u64 end
+proc / u64 u64 -- u64 do __intrinsic_div_u64 end
+proc % u64 u64 -- u64 do __intrinsic_mod_u64 end
+proc /% u64 u64 -- u64 u64 do __intrinsic_divmod_u64 end
+proc | u64 u64 -- u64 do __intrinsic_or_u64 end
+proc & u64 u64 -- u64 do __intrinsic_and_u64 end
+proc ^ u64 u64 -- u64 do __intrinsic_xor_u64 end
+proc ~ u64 -- u64 do __intrinsic_not_u64 end
+proc << u64 u32 -- u64 do __intrinsic_shl_u64 end
+proc >> u64 u32 -- u64 do __intrinsic_shr_u64 end
+proc == u64 u64 -- bool do __intrinsic_eq_u64 end
+proc != u64 u64 -- bool do __intrinsic_ne_u64 end
+proc < u64 u64 -- bool do __intrinsic_lt_u64 end
+proc > u64 u64 -- bool do __intrinsic_gt_u64 end
+proc <= u64 u64 -- bool do __intrinsic_le_u64 end
+proc >= u64 u64 -- bool do __intrinsic_ge_u64 end
+
+proc && bool bool -- bool do __intrinsic_and_bool end
+proc || bool bool -- bool do __intrinsic_or_bool end
+proc ! bool -- bool do __intrinsic_not_bool end
+proc + ptr int -- ptr do __intrinsic_add_ptr end
+proc - ptr int -- ptr do __intrinsic_sub_ptr end
+proc == ptr ptr -- bool do __intrinsic_eq_ptr end
+proc != ptr ptr -- bool do __intrinsic_ne_ptr end
+
+proc @ int* -- int do __intrinsic_load_int end
+proc ! int int* -- do __intrinsic_store_int end
+proc @ bool* -- bool do __intrinsic_load_bool end
+proc ! bool bool* -- do __intrinsic_store_bool end
+proc @ i8* -- i8 do __intrinsic_load_i8 end
+proc ! i8 i8* -- do __intrinsic_store_i8 end
+proc @ i16* -- i16 do __intrinsic_load_i16 end
+proc ! i16 i16* -- do __intrinsic_store_i16 end
+proc @ i32* -- i32 do __intrinsic_load_i32 end
+proc ! i32 i32* -- do __intrinsic_store_i32 end
+proc @ i64* -- i64 do __intrinsic_load_i64 end
+proc ! i64 i64* -- do __intrinsic_store_i64 end
+proc @ u8* -- u8 do __intrinsic_load_u8 end
+proc ! u8 u8* -- do __intrinsic_store_u8 end
+proc @ u16* -- u16 do __intrinsic_load_u16 end
+proc ! u16 u16* -- do __intrinsic_store_u16 end
+proc @ u32* -- u32 do __intrinsic_load_u32 end
+proc ! u32 u32* -- do __intrinsic_store_u32 end
+proc @ u64* -- u64 do __intrinsic_load_u64 end
+proc ! u64 u64* -- do __intrinsic_store_u64 end
+proc @ ptr* -- ptr do __intrinsic_load_ptr end
+proc ! ptr ptr* -- do __intrinsic_store_ptr end

@@ -4,7 +4,7 @@ from "facade.frog" import reexport_text
 from "stdlib/libc.frog" import putc
 
 proc emit_one String -- do
-    String.bytes @u8 putc
+    String.bytes u8* cast @ int cast putc
 end
 
 proc main -- do

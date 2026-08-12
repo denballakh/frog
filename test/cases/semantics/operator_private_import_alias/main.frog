@@ -1,0 +1,2 @@
+from "lib.frog" import value as __intrinsic_user
+proc main -- do end

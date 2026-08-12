@@ -1,0 +1,8 @@
+proc + i8 i8 -- i8 do
+    drop drop 42 i8 cast
+end
+
+proc main -- do
+    1 i8 cast 2 i8 cast + int cast print
+    1 2 + print
+end

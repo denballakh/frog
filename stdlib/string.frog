@@ -5,7 +5,7 @@ proc bytes-copy ptr ptr int -- do
         0
         while dup count < do
             let index do
-                source index + @u8 destination index + !u8
+                source index + u8* cast @ destination index + u8* cast !
                 index 1 +
             end
         end
@@ -27,7 +27,7 @@ proc bytes-equal ptr int ptr int -- bool do
                 let index equal do
                     index 1 +
                     equal
-                    first index + @u8 second index + @u8 == &&
+                    first index + u8* cast @ second index + u8* cast @ == &&
                 end
             end
             let index equal do equal end
@@ -163,7 +163,7 @@ proc byte-buffer-push int ByteBuffer -- do
                 end
             end
         end
-        byte buffer @ByteBuffer.bytes buffer @ByteBuffer.len + !u8
+        byte u8 cast buffer @ByteBuffer.bytes buffer @ByteBuffer.len + u8* cast !
         buffer @ByteBuffer.len 1 + buffer !ByteBuffer.len
     end
 end
@@ -173,7 +173,7 @@ proc byte-buffer-append-bytes ptr int ByteBuffer -- do
         0
         while dup length < do
             let index do
-                bytes index + @u8 buffer byte-buffer-push
+                bytes index + u8* cast @ int cast buffer byte-buffer-push
                 index 1 +
             end
         end

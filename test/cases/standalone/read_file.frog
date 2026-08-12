@@ -6,7 +6,7 @@ proc main -- do
         path String.bytes path String.len read-file
         let data length success do
             if success do
-                data @u8 putc
+                data u8* cast @ int cast putc
                 10 putc
                 length 0 > print
             else

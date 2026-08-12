@@ -62,7 +62,7 @@ proc main -- do
         buffer @ByteBuffer.capacity 7 >= assert
         buffer "ABCDEFG" byte-buffer-equal-string assert
         buffer "ABD" byte-buffer-equal-string ! assert
-        buffer @ByteBuffer.bytes 1 + @u8 66 == assert
+        buffer @ByteBuffer.bytes 1 + u8* cast @ int cast 66 == assert
         buffer byte-buffer-free
     end
 end

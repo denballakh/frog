@@ -21,15 +21,15 @@ record FrogTestContext
 end
 
 const generated-c-check-c-ffi 1 end
-const generated-c-check-functions-layout 1 1 << end
-const generated-c-check-type-stack-growth 1 2 << end
-const generated-c-check-optimizer 1 3 << end
-const generated-c-check-constants 1 4 << end
-const generated-c-check-procedure-symbols 1 5 << end
-const generated-c-check-strings 1 6 << end
-const generated-c-check-native-scalar-abi 1 7 << end
-const generated-c-required-checks 1 8 << 1 - end
-const expected-test-cases 486 end
+const generated-c-check-functions-layout 1 1 u32 cast << end
+const generated-c-check-type-stack-growth 1 2 u32 cast << end
+const generated-c-check-optimizer 1 3 u32 cast << end
+const generated-c-check-constants 1 4 u32 cast << end
+const generated-c-check-procedure-symbols 1 5 u32 cast << end
+const generated-c-check-strings 1 6 u32 cast << end
+const generated-c-check-native-scalar-abi 1 7 u32 cast << end
+const generated-c-required-checks 1 8 u32 cast << 1 - end
+const expected-test-cases 505 end
 
 proc frog-test-context ptr ptr -- FrogTestContext do
     let compiler executable do
@@ -243,7 +243,7 @@ proc frog-line-length ptr int -- int do
         0
         while
             peek index do
-                if index length < do bytes index + @u8 10 != else false end
+                if index length < do bytes index + u8* cast @ int cast 10 != else false end
             end
         do
             1 +
@@ -433,26 +433,8 @@ proc frog-check-semantic-c ptr int String FrogTestContext -- do
                         "generated-c/optimizer folded assignment order" context frog-check
                     end
 
-                    function function-length
-                    "    frog_value_0_1 = 9223372036854775807;\n    frog_value_1_1 = 1;\n    frog_value_0_1 = frog_value_0_1 + frog_value_1_1;\n"
-                    String.bytes
-                    "    frog_value_0_1 = 9223372036854775807;\n    frog_value_1_1 = 1;\n    frog_value_0_1 = frog_value_0_1 + frog_value_1_1;\n"
-                    String.len bytes-contain
-                    "generated-c/optimizer overflow body remains" context frog-check
-
-                    function function-length
-                    "    frog_value_0_1 = INT64_MIN;\n    frog_value_1_1 = -1;\n    frog_value_0_1 = frog_value_0_1 + frog_value_1_1;\n"
-                    String.bytes
-                    "    frog_value_0_1 = INT64_MIN;\n    frog_value_1_1 = -1;\n    frog_value_0_1 = frog_value_0_1 + frog_value_1_1;\n"
-                    String.len bytes-contain
-                    "generated-c/optimizer negative overflow body remains" context frog-check
-
-                    function function-length
-                    "    frog_value_0_1 = -1;\n    frog_value_1_1 = INT64_MIN;\n    frog_value_0_1 = frog_value_0_1 + frog_value_1_1;\n"
-                    String.bytes
-                    "    frog_value_0_1 = -1;\n    frog_value_1_1 = INT64_MIN;\n    frog_value_0_1 = frog_value_0_1 + frog_value_1_1;\n"
-                    String.len bytes-contain
-                    "generated-c/optimizer minimum right operand overflow body remains" context frog-check
+                    function function-length "frog_proc_3__2B(" String.bytes "frog_proc_3__2B(" String.len bytes-count 3 ==
+                    "generated-c/optimizer overflow additions remain runtime calls" context frog-check
                 end
             end
             generated-c-check-optimizer context frog-mark-generated-check
@@ -522,7 +504,7 @@ proc frog-line-start-before ptr int -- int do
                 index 1 +
                 let next-index do
                     next-index
-                    if bytes index + @u8 10 == do next-index else line-start end
+                    if bytes index + u8* cast @ int cast 10 == do next-index else line-start end
                 end
             end
         end
@@ -536,7 +518,7 @@ proc frog-string-symbol-valid ptr int -- bool do
             "frog_string_" String.len true
             while peek index valid do index symbol-length < valid && end do
                 let index valid do
-                    symbol index + @u8
+                    symbol index + u8* cast @ int cast
                     let byte do
                         index 1 +
                         valid byte 48 >= byte 57 <= && byte 95 == || &&
@@ -566,7 +548,7 @@ proc frog-string-symbol-at ptr int int String -- ptr int bool do
                         if line-end length == do
                             true
                         elif line-end length < do
-                            bytes line-end + @u8 10 ==
+                            bytes line-end + u8* cast @ int cast 10 ==
                         else
                             false
                         end

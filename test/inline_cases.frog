@@ -10,12 +10,12 @@ proc run-inline-cases FrogTestContext -- do
 
         // basics (7)
         "1 2 + print" "3\n" "" 0 "code/basics/01" context frog-inline-run-body
-        "1 + print" "frogc: +: compile-time stack underflow\n" 1 "code/basics/02" context frog-inline-error-body
+        "1 + print" "frogc: +: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/basics/02" context frog-inline-error-body
         "1 2 +" "frogc: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/basics/03" context frog-inline-error-body
         "? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?" "10\n" "" 0 "code/basics/04" context frog-inline-run-body
-        "+" "frogc: +: compile-time stack underflow\n" 1 "code/basics/05" context frog-inline-error-body
-        "~" "frogc: ~: compile-time stack underflow\n" 1 "code/basics/06" context frog-inline-error-body
-        "/%" "frogc: /%: compile-time stack underflow\n" 1 "code/basics/07" context frog-inline-error-body
+        "+" "frogc: +: stack contract mismatch: expected [int int], actual []\n" 1 "code/basics/05" context frog-inline-error-body
+        "~" "frogc: ~: stack contract mismatch: expected [int], actual []\n" 1 "code/basics/06" context frog-inline-error-body
+        "/%" "frogc: /%: stack contract mismatch: expected [int int], actual []\n" 1 "code/basics/07" context frog-inline-error-body
 
         // arithmetic (13)
         "25 7 + print" "32\n" "" 0 "code/arithmetic/01" context frog-inline-run-body
@@ -27,24 +27,24 @@ proc run-inline-cases FrogTestContext -- do
         "25 7 /% ? print print" "4
 3
 " "" 0 "code/arithmetic/07" context frog-inline-run-body
-        "25 7 << print" "3200\n" "" 0 "code/arithmetic/08" context frog-inline-run-body
-        "25 7 >> print" "0\n" "" 0 "code/arithmetic/09" context frog-inline-run-body
+        "25 7 u32 cast << print" "3200\n" "" 0 "code/arithmetic/08" context frog-inline-run-body
+        "25 7 u32 cast >> print" "0\n" "" 0 "code/arithmetic/09" context frog-inline-run-body
         "25 7 | print" "31\n" "" 0 "code/arithmetic/10" context frog-inline-run-body
         "25 7 & print" "1\n" "" 0 "code/arithmetic/11" context frog-inline-run-body
         "25 7 ^ print" "30\n" "" 0 "code/arithmetic/12" context frog-inline-run-body
         "25 ~ print" "-26\n" "" 0 "code/arithmetic/13" context frog-inline-run-body
 
         // int_bool_type_errors (10)
-        "true 5 + print" "frogc: +: invalid operand types for pointer/integer arithmetic\n" 1 "code/int_bool_type_errors/01" context frog-inline-error-body
-        "true 5 * print" "frogc: *: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/02" context frog-inline-error-body
-        "true 5 % print" "frogc: %: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/03" context frog-inline-error-body
-        "true 5 | print" "frogc: |: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/04" context frog-inline-error-body
-        "true 5 << print" "frogc: <<: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/05" context frog-inline-error-body
-        "true 5 && print" "frogc: &&: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/06" context frog-inline-error-body
-        "true 5 ! print" "frogc: !: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/07" context frog-inline-error-body
-        "true 5 swap ~ print" "frogc: ~: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/08" context frog-inline-error-body
-        "true 5 == print" "frogc: ==: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/09" context frog-inline-error-body
-        "true 5 < print" "frogc: <: compile-time stack type mismatch\n" 1 "code/int_bool_type_errors/10" context frog-inline-error-body
+        "true 5 + print" "frogc: +: stack contract mismatch: expected [int int], actual [bool int]\n" 1 "code/int_bool_type_errors/01" context frog-inline-error-body
+        "true 5 * print" "frogc: *: stack contract mismatch: expected [int int], actual [bool int]\n" 1 "code/int_bool_type_errors/02" context frog-inline-error-body
+        "true 5 % print" "frogc: %: stack contract mismatch: expected [int int], actual [bool int]\n" 1 "code/int_bool_type_errors/03" context frog-inline-error-body
+        "true 5 | print" "frogc: |: stack contract mismatch: expected [int int], actual [bool int]\n" 1 "code/int_bool_type_errors/04" context frog-inline-error-body
+        "true 5 << print" "frogc: <<: stack contract mismatch: expected [int u32], actual [bool int]\n" 1 "code/int_bool_type_errors/05" context frog-inline-error-body
+        "true 5 && print" "frogc: &&: stack contract mismatch: expected [bool bool], actual [bool int]\n" 1 "code/int_bool_type_errors/06" context frog-inline-error-body
+        "true 5 ! print" "frogc: !: stack contract mismatch: expected [bool], actual [int]\n" 1 "code/int_bool_type_errors/07" context frog-inline-error-body
+        "true 5 swap ~ print" "frogc: ~: stack contract mismatch: expected [int], actual [bool]\n" 1 "code/int_bool_type_errors/08" context frog-inline-error-body
+        "true 5 == print" "frogc: ==: stack contract mismatch: expected [int int], actual [bool int]\n" 1 "code/int_bool_type_errors/09" context frog-inline-error-body
+        "true 5 < print" "frogc: <: stack contract mismatch: expected [int int], actual [bool int]\n" 1 "code/int_bool_type_errors/10" context frog-inline-error-body
 
         // booleans (4)
         "true false && print" "false\n" "" 0 "code/booleans/01" context frog-inline-run-body
@@ -201,7 +201,7 @@ end
         "\"abc\\n\" ? drop" "" "" 0 "code/literals_and_comments/11" context frog-inline-run-body
         "\"abc'\" ? drop" "" "" 0 "code/literals_and_comments/12" context frog-inline-run-body
         "\"abc\\\"\" ? drop" "" "" 0 "code/literals_and_comments/13" context frog-inline-run-body
-        "\"A\\n\\x42\\0é\" let s do s String.len print s String.bytes let p do p @u8 print p 1 + @u8 print p 2 + @u8 print p 3 + @u8 print p 4 + @u8 print end end" "6
+        "\"A\\n\\x42\\0é\" let s do s String.len print s String.bytes let p do p u8* cast @ int cast print p 1 + u8* cast @ int cast print p 2 + u8* cast @ int cast print p 3 + u8* cast @ int cast print p 4 + u8* cast @ int cast print end end" "6
 65
 10
 66
@@ -219,7 +219,7 @@ end
         "proc a int -- int do 2 * end" "5 a print" "" "10\n" "" 0 "code/procedures/01" context frog-inline-run-source
         "proc a do 2 * end" "" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/02" context frog-inline-error-source
         "proc a int do 2 * end" "" "" "frogc: unknown type in procedure signature\n" 1 "code/procedures/03" context frog-inline-error-source
-        "proc a -- do 2 * end" "" "" "frogc: *: compile-time stack underflow\n" 1 "code/procedures/04" context frog-inline-error-source
+        "proc a -- do 2 * end" "" "" "frogc: *: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/04" context frog-inline-error-source
         "proc a int -- do 2 * end" "" "" "frogc: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/procedures/05" context frog-inline-error-source
         "proc a int -- int int do 2 * end" "" "" "frogc: procedure output contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/06" context frog-inline-error-source
         "proc a int -- int do drop 5 end" "5 a print" "" "5\n" "" 0 "code/procedures/07" context frog-inline-run-source
@@ -299,27 +299,27 @@ c-call set-handler signal CInt Handler -- Handler end" "hangup default-handler s
         "false bool cast print" "false\n" "" 0 "code/casts_and_memory/06" context frog-inline-run-body
         "1 ptr cast int cast print" "1\n" "" 0 "code/casts_and_memory/07" context frog-inline-run-body
         "9223372036854775807 print" "9223372036854775807\n" "" 0 "code/casts_and_memory/08" context frog-inline-run-body
-        "from \"stdlib/libc.frog\" import alloc" "9 alloc let p do 4660 p 1 + !u16 p 1 + @u16 print end" "" "4660\n" "" 0 "code/casts_and_memory/09" context frog-inline-run-source
+        "from \"stdlib/libc.frog\" import alloc" "9 alloc let p do 4660 u16 cast p 1 + u16* cast ! p 1 + u16* cast @ int cast print end" "" "4660\n" "" 0 "code/casts_and_memory/09" context frog-inline-run-source
         "proc forward -- int do later end
 proc later -- int do 42 end" "forward print" "" "42\n" "" 0 "code/casts_and_memory/10" context frog-inline-run-source
         "proc sink int -- do drop end" "1 sink" "" "" "" 0 "code/casts_and_memory/11" context frog-inline-run-source
         "proc countdown int -- int do
     if dup 0 == do drop 0 else 1 - countdown end
 end" "3 countdown print" "" "0\n" "" 0 "code/casts_and_memory/12" context frog-inline-run-source
-        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 42 p !i8 p @i8 print end" "" "42\n" "" 0 "code/casts_and_memory/13" context frog-inline-run-source
-        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 255 p !u8 p @u8 print p @i8 print end" "" "255
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 42 i8 cast p i8* cast ! p i8* cast @ int cast print end" "" "42\n" "" 0 "code/casts_and_memory/13" context frog-inline-run-source
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 255 u8 cast p u8* cast ! p u8* cast @ int cast print p i8* cast @ int cast print end" "" "255
 -1
 " "" 0 "code/casts_and_memory/14" context frog-inline-run-source
-        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 4660 p !u16 p @u16 print p 1 + @u8 print end" "" "4660
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 4660 u16 cast p u16* cast ! p u16* cast @ int cast print p 1 + u8* cast @ int cast print end" "" "4660
 18
 " "" 0 "code/casts_and_memory/15" context frog-inline-run-source
-        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 127 p !i8 p @i8 print 128 p !u8 p @u8 print end" "" "127
+        "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 127 i8 cast p i8* cast ! p i8* cast @ int cast print 128 u8 cast p u8* cast ! p u8* cast @ int cast print end" "" "127
 128
 " "" 0 "code/casts_and_memory/16" context frog-inline-run-source
         "from \"stdlib/libc.frog\" import alloc
 
-proc cell ptr int -- int do + @u8 end" "4 alloc let p do 42 p !u8 p 0 cell print end" "" "42\n" "" 0 "code/casts_and_memory/17" context frog-inline-run-source
-        "from \"stdlib/libc.frog\" import ( putc read-file )" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data @u8 putc 10 putc end" "" "true
+proc cell ptr int -- int do + u8* cast @ int cast end" "4 alloc let p do 42 u8 cast p u8* cast ! p 0 cell print end" "" "42\n" "" 0 "code/casts_and_memory/17" context frog-inline-run-source
+        "from \"stdlib/libc.frog\" import ( putc read-file )" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data u8* cast @ int cast putc 10 putc end" "" "true
 true
 #
 " "" 0 "code/casts_and_memory/18" context frog-inline-run-source
@@ -328,7 +328,7 @@ false
 " "" 0 "code/casts_and_memory/19" context frog-inline-run-source
 
         // process_arguments (1)
-        "from \"stdlib/libc.frog\" import putc" "args let argv argc do argc print argv @ptr @u8 putc 10 putc end" "" "1
+        "from \"stdlib/libc.frog\" import putc" "args let argv argc do argc print argv ptr* cast @ u8* cast @ int cast putc 10 putc end" "" "1
 b
 " "" 0 "build/frog-test-case.exe" "code/process_arguments/01" context frog-inline-run-source-program
 

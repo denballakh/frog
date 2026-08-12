@@ -1,0 +1,3 @@
+proc main -- do
+    __intrinsic_add_int
+end

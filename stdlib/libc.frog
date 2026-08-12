@@ -148,7 +148,7 @@ proc wait-child int -- int do
     let child do
         libc-status-bytes alloc
         let status do
-            0 status !i64
+            0 i64 cast status i64* cast !
             child status 0 c-waitpid
             while dup 0 < c-errno c-eintr == && do
                 drop
@@ -160,7 +160,7 @@ proc wait-child int -- int do
                 0 1 -
             else
                 drop
-                status @i32
+                status i32* cast @ int cast
                 status free
                 let value do
                     if value c-wifexited do
@@ -209,7 +209,7 @@ proc read-file-path ptr int -- ptr bool do
             else
                 let path do
                     if length 0 > do path bytes length c-memcpy drop end
-                    0 path length + !u8
+                    0 u8 cast path length + u8* cast !
                     path true
                 end
             end

@@ -39,7 +39,7 @@ proc large-response -- HttpResponse do
         0
         while dup large-body-length < do
             let index do
-                120 source index + !u8
+                120 u8 cast source index + u8* cast !
                 index 1 +
             end
         end
@@ -127,8 +127,8 @@ proc open-socket-pair -- int int do
     descriptor-pair-bytes alloc
     let descriptors do
         descriptors local-socket-pair 0 == assert
-        descriptors @i32
-        descriptors descriptor-byte-offset + @i32
+        descriptors i32* cast @ int cast
+        descriptors descriptor-byte-offset + i32* cast @ int cast
         descriptors free
     end
 end
@@ -230,7 +230,7 @@ proc response-has-large-body ByteBuffer -- bool do
                 do
                     let index equal do
                         index 1 +
-                        equal response @ByteBuffer.bytes header String.len + index + @u8 120 == &&
+                        equal response @ByteBuffer.bytes header String.len + index + u8* cast @ int cast 120 == &&
                     end
                 end
                 let index equal do equal end

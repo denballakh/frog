@@ -196,7 +196,7 @@ Commands:
   imported aliases of one nominal type produce the same pointer type. `ptr`
   is the untyped boundary and explicit `ptr`/typed-pointer casts cross it.
 - The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
-- `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
+- `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; use `ptr* cast @` to load and `ptr* cast !` to store one pointer-sized entry.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.
 - C interop declarations explicitly request system or local headers, name Frog-visible C types with trusted raw C type names, and bind calls or values. Calls retain fixed Frog arity even for variadic C declarations. Header declarations are authoritative: the compiler synthesizes neither C declarations nor dynamic loading.
 - Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Generated C wrappers perform only mechanical native-value/C-ABI conversion; wait/status and child-process policy stay in Frog.
@@ -212,7 +212,7 @@ Commands:
 ## Implementation Conventions And Gotchas
 
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
-- When adding an intrinsic, update native recognition, type-stack behavior, emitted C/runtime support, bootstrap and regression coverage, user-facing docs, and optionally the VS Code grammar.
+- Operators are public overloaded builtins lowered to private `__intrinsic_*` implementation details. Do not expose or invoke private intrinsic names outside compiler lowering; update overload contracts, emitted C/runtime support, bootstrap and regression coverage, user-facing docs, and the VS Code grammar together.
 - Name direct compiler-internal pointer-field accessors `@object-field` and `!object-field`, used as `object @object-field` and `value object !object-field`. Keep indexed table operations and computed helpers under descriptive names instead of treating them as direct accessors.
 - Compiler module state is the nominal `ModuleContext` record. Use generated `@ModuleContext.field` / `!ModuleContext.field` operations, keep semantic module values nominal, and confine raw casts to storage boundaries and null/identity checks; do not recreate manual `ctx-*` offset/accessor families.
 - Fixed compiler metadata rows may use nominal records while their table bases remain contiguous raw allocations. Cast once in the row-address helper, size rows with `Type:sizeof`, and use generated typed field operations; `LocalEntry`, `ImportEntry`, `ScopeEntry`, and `BlockFrame` follow this pattern. `ConstantEvaluator` is a nominal record whose `values` field points to a separately grown raw value buffer.

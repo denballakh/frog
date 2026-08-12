@@ -5,7 +5,7 @@ const pair product true end
 const greeting "frog" end
 const negative 3 8 - end
 const logic true false || false ! && end
-const max-int 1 62 << 1 62 << 1 - + end
+const max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const shadowed 41 end
 const many 0 1 2 3 4 5 6 7 8 9 end
 const + 41 end

@@ -14,8 +14,8 @@ proc main -- do
     args
     let argv argc do
         if argc 3 != do 2 exit end
-        argv pointer-bytes + @ptr
-        argv pointer-bytes 2 * + @ptr
+        argv pointer-bytes + ptr* cast @
+        argv pointer-bytes 2 * + ptr* cast @
         frog-test-context
         let context do
             context run-regression-cases

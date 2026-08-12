@@ -1,5 +1,5 @@
 from "stdlib/containers.frog" import ptr-array-new
 
 proc main -- do
-    1 60 << ptr-array-new drop
+    1 60 u32 cast << ptr-array-new drop
 end

@@ -4,8 +4,8 @@ const multiply_value 9 4 * end
 const divide_value 9 4 / end
 const modulo_value 9 4 % end
 const divmod_value 9 4 /% end
-const shift_left_value 1 3 << end
-const shift_right_value 8 2 >> end
+const shift_left_value 1 3 u32 cast << end
+const shift_right_value 8 2 u32 cast >> end
 const or_value 6 3 | end
 const and_value 6 3 & end
 const xor_value 6 3 ^ end
@@ -19,6 +19,11 @@ const less_value 1 2 < end
 const greater_value 1 2 > end
 const less_equal_value 1 2 <= end
 const greater_equal_value 1 2 >= end
+const narrowed_value 255 i8 cast end
+const wrapped_value 255 u8 cast 1 u8 cast + end
+const exact_shift_value 1 i16 cast 4 u32 cast << end
+const max_u64 0 u64 cast ~ end
+const max_u64_is_positive max_u64 0 u64 cast > end
 
 proc main -- do
     add_value print
@@ -42,4 +47,9 @@ proc main -- do
     greater_value print
     less_equal_value print
     greater_equal_value print
+    narrowed_value int cast print
+    wrapped_value int cast print
+    exact_shift_value int cast print
+    max_u64 0 u64 cast > print
+    max_u64_is_positive print
 end

@@ -101,11 +101,11 @@ proc main -- do
 
         3 alloc
         let key do
-            107 key !u8
-            101 key 1 + !u8
-            121 key 2 + !u8
+            107 u8 cast key u8* cast !
+            101 u8 cast key 1 + u8* cast !
+            121 u8 cast key 2 + u8* cast !
             key 3 44 ptr cast map string-map-set assert-null
-            122 key !u8
+            122 u8 cast key u8* cast !
             key free
         end
         "key" String.bytes 3 map string-map-get 44 assert-value

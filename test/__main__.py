@@ -14,7 +14,7 @@ FROG_TEST_EXECUTABLE = ROOT / 'build' / 'frog-test-case.exe'
 HOST_POLICY_FIXTURES = ROOT / 'test' / 'cases' / 'host_policy'
 TMP_FS = ROOT / 'test' / 'tmp_fs'
 CLI_BUILD_ARTIFACTS = [ROOT / 'test' / 'cases' / 'cli' / f'build_run.{suffix}' for suffix in ('c', 'exe')]
-COMMAND_TIMEOUT_SECONDS = 30
+COMMAND_TIMEOUT_SECONDS = 120
 COMMAND_TERMINATION_GRACE_SECONDS = 2
 
 

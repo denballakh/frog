@@ -11,7 +11,7 @@ proc test-emit-error String -- do
         0
         while dup value String.len < do
             let index do
-                value String.bytes index + @u8 eputc
+                value String.bytes index + u8* cast @ int cast eputc
                 index 1 +
             end
         end

@@ -21,8 +21,8 @@ proc main -- do
         let escaped escaped-length do
             plain-length escaped-length == print
             plain String.bytes int cast escaped String.bytes int cast == print
-            98 plain String.bytes !u8
-            escaped String.bytes @u8 print
+            98 u8 cast plain String.bytes u8* cast !
+            escaped String.bytes u8* cast @ int cast print
         end
     end
 
@@ -32,8 +32,8 @@ proc main -- do
         let second-collision second-length do
             first-length second-length == print
             first-collision String.bytes int cast second-collision String.bytes int cast != print
-            first-collision String.bytes @u8 print
-            second-collision String.bytes @u8 print
+            first-collision String.bytes u8* cast @ int cast print
+            second-collision String.bytes u8* cast @ int cast print
         end
     end
 
@@ -42,15 +42,15 @@ proc main -- do
         length print
         value String.bytes
         let bytes do
-            bytes @u8 print
-            bytes 1 + @u8 print
-            bytes 2 + @u8 print
-            bytes 3 + @u8 print
-            bytes 4 + @u8 print
-            bytes 5 + @u8 print
-            bytes 6 + @u8 print
-            bytes 7 + @u8 print
-            bytes 8 + @u8 print
+            bytes u8* cast @ int cast print
+            bytes 1 + u8* cast @ int cast print
+            bytes 2 + u8* cast @ int cast print
+            bytes 3 + u8* cast @ int cast print
+            bytes 4 + u8* cast @ int cast print
+            bytes 5 + u8* cast @ int cast print
+            bytes 6 + u8* cast @ int cast print
+            bytes 7 + u8* cast @ int cast print
+            bytes 8 + u8* cast @ int cast print
         end
     end
 
@@ -60,10 +60,10 @@ proc main -- do
         multiline-length print
         multiline String.bytes
         let bytes do
-            bytes 8 + @u8 print
-            bytes 9 + @u8 print
-            bytes 25 + @u8 print
-            bytes 32 + @u8 print
+            bytes 8 + u8* cast @ int cast print
+            bytes 9 + u8* cast @ int cast print
+            bytes 25 + u8* cast @ int cast print
+            bytes 32 + u8* cast @ int cast print
         end
     end
 end

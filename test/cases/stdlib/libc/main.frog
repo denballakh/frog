@@ -11,8 +11,8 @@ end
 proc main -- do
     8 alloc
     let bytes do
-        65 bytes !u8
-        bytes @u8 65 == require
+        65 u8 cast bytes u8* cast !
+        bytes u8* cast @ int cast 65 == require
         bytes free
     end
 

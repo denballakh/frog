@@ -213,7 +213,7 @@ frogc: debug: print: after []
 " 0 "cli/debug-run-macro" context frog-cli-case-4
 
         "--debug" "run" "-c" "proc main -- do true 1 + end" "" "frogc: debug: +: before [bool int]
-frogc: +: invalid operand types for pointer/integer arithmetic
+frogc: +: stack contract mismatch: expected [int int], actual [bool int]
 " 1 "cli/debug-run-error" context frog-cli-case-4
 
         "--debug" "build" "-r" "test/cases/cli/build_run.frog" "42

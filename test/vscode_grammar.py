@@ -65,7 +65,15 @@ def main() -> None:
 
     operator_pattern = operator['match']
     assert isinstance(operator_pattern, str)
-    assert re.compile(operator_pattern).fullmatch('!ptr')
+    operator_regex = re.compile(operator_pattern)
+    assert operator_regex.fullmatch('@')
+    assert operator_regex.fullmatch('!')
+    assert operator_regex.fullmatch('@u8') is None
+    assert operator_regex.fullmatch('!ptr') is None
+    for spelling in ('/%', '<<', '>>', '&&', '||', '==', '!=', '<=', '>='):
+        match = operator_regex.match(spelling)
+        assert match is not None
+        assert match.group() == spelling
 
     keyword_pattern = keyword['match']
     special_pattern = special_function['match']

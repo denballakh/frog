@@ -7,7 +7,7 @@ end
 proc main -- do
     16 alloc
     let raw do
-        0 1 - raw !i64
+        0 1 - i64 cast raw i64* cast !
         raw Maybe cast Maybe.none
     end
 end
