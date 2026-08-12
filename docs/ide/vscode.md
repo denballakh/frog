@@ -1,6 +1,10 @@
 # Visual Studio Code
 
-The repository includes a dependency-free VS Code extension in `ide/vscode`. It associates `.frog` files with FrogLang and provides TextMate grammar-based syntax highlighting. It does not currently provide a language server, completion, diagnostics, formatting, or build commands.
+The repository includes a local, dependency-free VS Code extension in
+`ide/vscode`. It associates `.frog` files with FrogLang and provides TextMate
+grammar-based syntax highlighting. It is installed directly from a source
+checkout rather than from an extension marketplace. It does not provide a
+language server, completion, diagnostics, formatting, or build commands.
 
 ## Installation
 

@@ -2,6 +2,27 @@
 
 FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, C interop declarations, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
+## Contents
+
+- [Diagnostics](#diagnostics)
+- [Values and literals](#values-and-literals)
+- [Stack effects](#stack-effects)
+- [Procedures](#procedures)
+- [Records](#records)
+- [Tagged unions](#tagged-unions)
+- [Function references](#function-references)
+- [C interop](#c-interop)
+- [Macros](#macros)
+- [Compile-time constants](#compile-time-constants)
+- [Implicit builtins](#implicit-builtins-module)
+- [Imports](#imports)
+- [Local bindings](#local-bindings)
+- [Control flow](#control-flow)
+- [Operators and memory](#operators)
+- [Runtime limits](#runtime-limits)
+
+## Diagnostics
+
 Compiler errors are written to standard error. Source-located errors use this
 format:
 
@@ -22,7 +43,7 @@ expansion is attributed to the outer source word that invoked the expansion.
 
 Contract mismatch diagnostics show expected and actual types in brackets. Types are ordered from the lower stack position to the top, matching their order in source signatures. For a failed call, the actual list contains only the relevant top-of-stack suffix; unrelated values below it are omitted. Nominal types defined in imported modules use `<module-path>:<declaration-name>` so distinct same-named types remain distinguishable. Full function-reference and C-call contracts show their input and output lists separated by `--`.
 
-## Values And Literals
+## Values and literals
 
 - Supported runtime value classes are `int`, the exact-width integer types, `bool`, `ptr`, typed pointers, `String`, nominal record and union values, nominal function references, and `type`.
 - Procedure, record-field, union-payload, and function-reference signatures can name `int`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `bool`, `ptr`, `String`, and visible nominal types.
@@ -38,7 +59,7 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.
 - `//` starts a line comment only when tokenized as its own whitespace-delimited chunk.
 
-## Stack Effects
+## Stack effects
 
 Stack effects are written with inputs before `--` and outputs after it. For example, `int int -- int` consumes two integers and produces one integer.
 
@@ -46,7 +67,10 @@ The rightmost stack item is the top of the stack. For example, after `1 2 3`, th
 
 `frogc --debug` traces the complete compile-time type stack immediately before and after each outer source word. The trace is written to standard error, lists types from the bottom of the stack to the top, and does not change generated C or program output. Procedure calls, intrinsics, macros, local and constant references, type words, and nominal operations are traced. Literals, declarations, control keywords, `let`, and `peek` are not separate trace entries. A macro reports its aggregate effect under the caller's spelling; its expansion details are not exposed. If a word fails, its `before` entry precedes the normal diagnostic and there is no `after` entry.
 
-`frogc --release` enables release-mode compilation. Global `--debug` and `--release` options may appear in either order before a subcommand or before filter input.
+`frogc --release` omits calls resolved implicitly to the builtin `assert`, but
+still evaluates their operands. Explicitly imported, aliased, or shadowing
+assertions continue to run. Global `--debug` and `--release` options may appear
+in either order before a subcommand or before filter input.
 
 ## Procedures
 
@@ -59,6 +83,12 @@ end
 ```
 
 Procedure calls are statically checked against declared stack contracts.
+
+A root program must define exactly one `main` procedure with the contract
+`--`. Empty files, declaration-only root files without `main`, and executable
+instructions at the root level are invalid. Top-level source is limited to
+procedure, C interop, constant, record, union, function-reference, macro, and
+import declarations.
 
 ## Records
 
@@ -88,7 +118,7 @@ Record value and pointer types are nominal. Two declarations with identical fiel
 
 See the runnable [records example](../examples/09_records.frog).
 
-## Tagged Unions
+## Tagged unions
 
 Tagged unions define nominal alternatives with zero or one typed payload per variant:
 
@@ -121,7 +151,7 @@ An exact user-defined or imported macro may shadow a qualified record or union o
 
 See the runnable [tagged-unions example](../examples/10_tagged_unions.frog).
 
-## Function References
+## Function references
 
 Named function-reference types describe a static Frog stack contract:
 
@@ -149,7 +179,7 @@ A function reference is opaque and can call only a procedure whose complete reso
 
 There are no anonymous functions, captured environments, closures, implicit contract coercions, or C callback conversions. Exact macros may shadow `Name:ref:procedure` or `Name:call`; otherwise qualified function operations have the same precedence over locals and procedures as other nominal operations.
 
-## C Interop
+## C interop
 
 C interop declarations explicitly name the headers, C type spellings, calls, and values that a Frog module uses:
 
@@ -206,7 +236,7 @@ end
 
 Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `c-include`, `c-type`, `c-call`, `c-value`, `record`, `union`, `fn`, `const`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
 
-## Compile-Time Constants
+## Compile-time constants
 
 Constants evaluate a restricted postfix expression once during compilation and expand each use into the resulting typed literals:
 
@@ -226,7 +256,7 @@ Constant expressions accept literals, visible constant references, explicit inte
 
 Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a builtins definition.
 
-## Implicit Builtins Module
+## Implicit builtins module
 
 The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) as an ordinary Frog module for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `assert` is an ordinary procedure.
 
@@ -296,7 +326,7 @@ Imported macros expand using the scope of the module where the macro was defined
 
 Import cycles are rejected. Importing the same canonical file more than once is allowed, but two different symbols cannot be imported under the same visible name.
 
-## Local Bindings
+## Local bindings
 
 `let a b c do ... end` binds stack values to names in source order. If the stack is `1 2 3`, then `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`.
 
@@ -325,37 +355,16 @@ proc main -- do
 end
 ```
 
-## Control Flow
+## Control flow
 
 - `if <cond> do <then> [elif <cond> do <body> ...] [else <else>] end` requires every condition to preserve the stack from before `if` and add exactly one `bool`. Each arm, including the implicit no-op path when there is no `else`, must leave the same stack shape.
 - `while <cond> do <body> end` requires the condition to preserve the stack from before `while` and add exactly one `bool`. The loop body must preserve the original loop stack shape.
 
-## Language Constructs
-
-- `proc name <inputs> -- <outputs> do ... end` defines a named procedure with an explicit stack-effect contract.
-- `c-include system|local "path" end` explicitly includes a system or local C header.
-- `c-type Name int|bool|ptr "C type name" end` declares an importable trusted C type representation.
-- `c-call frog-name c-symbol c-types... -- [c-type] end` declares a fixed-arity C function or function-like-macro call with zero or one output.
-- `c-value frog-name c-symbol -- c-type end` declares a zero-input C object or object-like-macro value.
-- `record Name field Type ... end` defines a nominal record.
-- `union Name case Variant [PayloadType] ... end` defines a nominal tagged union.
-- `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract.
-- `const name <expression> end` eagerly evaluates a restricted expression and defines one or more typed literal values.
-- A root program must define exactly one explicit `proc main -- do ... end`; `main` cannot have inputs or outputs.
-- Empty sources and declaration-only sources without `main` are invalid. Root top-level executable instructions are also invalid; there is no implicit `main`.
-- Only procedure, C interop, constant, record, union, function-reference, macro, and import declarations are allowed at the root top level. Imported top-level executable code is ignored.
-- Procedure calls use the procedure name as a word and are statically checked against the declared contract.
-- `macro name <body> end` defines a compile-time token substitution.
-- `from "path" import name`, `from "path" import name as alias`, and `from "path" import ( name... )` import procedures, C calls, C values, C types, constants, records, unions, function-reference types, or macros from another file.
-- `if ... do ... elif ... do ... else ... end` selects the first arm whose condition is true. `elif` may repeat; `else` is optional.
-- `while ... do ... end` repeats while the condition leaves `true`.
-- `let name... do ... end` binds visible stack values to local names in source order.
-- `peek name... do ... end` binds visible stack values and evaluates those names before the block body.
-- `//` starts a line comment only when it appears as its own whitespace-delimited token.
-
 ## Operators
 
-Operators are overloaded implicit builtins. They have no special source-level namespace and follow ordinary visible-word shadowing rules; the compiler lowers the selected builtin implementation to a private intrinsic. Exact-width operands must match exactly: Frog never widens or narrows them implicitly.
+Operators are overloaded implicit builtins. They have no special source-level
+namespace and follow ordinary visible-word shadowing rules. Exact-width operands
+must match exactly: Frog never widens or narrows them implicitly.
 
 ### Arithmetic
 
@@ -376,7 +385,7 @@ Operators are overloaded implicit builtins. They have no special source-level na
 
 - `==`, `!=`, `<`, `>`, `<=`, `>=`: matching `int` or exact integer widths. Pointers support `==` and `!=`.
 
-### Process Arguments
+### Process arguments
 
 - `args`: `-- ptr int` pushes the raw C `argv` pointer followed by C `argc`. The count includes `argv[0]`.
 - `argv` points to an array of C string pointers whose byte stride is the target C platform's pointer size. Use `ptr* cast @` to load an entry; each resulting string is NUL-terminated and can be read with `u8* cast @`.
@@ -396,13 +405,21 @@ Operators are overloaded implicit builtins. They have no special source-level na
 - Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
 - The destination type is pushed with a primitive, typed-pointer, or visible nominal type word.
 
-### Output And Debugging
+### Output and debugging
 
 - `print`: `int --` or `bool --`, prints one value with a newline.
 - `?`: `--`, a no-op debugging marker.
 
 Byte allocation, byte-oriented standard I/O, memory release, and process termination are provided by [`stdlib/libc.frog`](stdlib.md#libc), not by the language.
 
-## Runtime Limits
+## Runtime limits
 
-Arithmetic operators use the corresponding C integer operations after type selection. Runtime signed overflow, division of `-9223372036854775808` by `-1`, and shifts with a negative or at-least-64 count have unspecified results. Right shift of a negative value is platform-dependent. Compile-time `int` constant arithmetic rejects these cases; exact-width constant arithmetic follows its C-style result conversion. Pointer/integer casts require a target where object pointers fit in an integer. C interop conversions follow the declared C type, so values outside that target C type's range and function-pointer values represented as `ptr` are target-dependent.
+Arithmetic operators use the corresponding C integer operations after type
+selection. Runtime signed overflow, division of the minimum signed value by
+`-1`, and shifts with a count greater than or equal to the left operand's width
+have unspecified results. Right shift of a negative value is platform-dependent.
+Compile-time `int` constant arithmetic rejects these cases; exact-width constant
+arithmetic follows its C-style result conversion. Pointer/integer casts require
+a target where object pointers fit in an integer. C interop conversions follow
+the declared C type, so values outside that target C type's range and
+function-pointer values represented as `ptr` are target-dependent.

@@ -1,12 +1,9 @@
-# Compiler simplification
+# Documentation cleanup
 
-- [x] Replace manual record-array growth copies with `memory-copy`.
-- [x] Represent normalized path components with a record instead of parallel arrays.
-- [x] Simplify `token-type-prefix-equals`, dot-component checks, `type-snapshot`, and recursive C metadata emitters.
-- [x] Deduplicate the standard-library byte-copy implementation used by subprocess capture.
-- [x] Reconcile documented test policy and remove duplicated or mutating check recipes.
-- [x] Regenerate the checked-in C compiler.
-- [x] Pass `just bootstrap-check` and `just test`.
-- [x] Commit and push the completed change on `master`.
+- [x] Remove external inspiration references.
+- [x] Audit user-facing documentation for accuracy, structure, duplication, and implementation details.
+- [x] Improve documentation navigation and make commands and examples consistent with the repository.
+- [x] Verify documentation links, documented commands, tests, and bootstrap consistency.
+- [x] Commit and push the completed cleanup on `master`.
 
 Preserve the pre-existing uncommitted change in `stdlib/json.frog`.

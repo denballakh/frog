@@ -11,6 +11,18 @@ The compiler locates this search path from its own executable path. Invoke it
 with a path containing `/`, such as `build/frogc`; a name found only through
 the shell's `PATH` does not identify the accompanying standard library.
 
+## Contents
+
+- [Implicit builtins](#builtins)
+- [C and POSIX operations](#libc)
+- [Descriptors and sockets](#posix-descriptors-and-sockets)
+- [Strings and byte buffers](#strings-and-byte-buffers)
+- [Containers](#opaque-pointer-containers)
+- [JSON](#json)
+- [HTTP](#http)
+- [Subprocesses](#subprocesses)
+- [Testing](#testing)
+
 ## builtins
 
 `stdlib/builtins.frog` is an ordinary Frog module loaded implicitly for every
@@ -22,12 +34,9 @@ module are also supported.
 
 ## libc
 
-`stdlib/libc.frog` declares its C dependencies with `c-include`, maps trusted header
-types with `c-type`, and wraps header-declared functions, macros, and values
-with private `c-call` and `c-value` bindings. The compiler emits no C
-declarations for those symbols.
-
-It exposes this small C-library surface to Frog programs:
+`stdlib/libc.frog` exposes low-level C and POSIX operations. Programs using its
+POSIX procedures are platform-specific. Its general allocation and byte-I/O
+procedures are:
 
 - `alloc`: `int -- ptr` allocates uninitialized bytes. The size must be
   non-negative and representable as the target C `size_t`.
@@ -44,8 +53,7 @@ It exposes this small C-library surface to Frog programs:
 These are ordinary Frog procedures, so callers use the Frog contracts above
 rather than the underlying C signatures.
 
-The module also exposes the POSIX operations used by the compiler and
-subprocess library:
+The POSIX procedures are:
 
 - `fork`: `-- int`
 - `create-file`: `path -- int`
@@ -69,7 +77,7 @@ signal. The other
 integer-returning operations return a negative value on failure. `finish-child`
 flushes standard output and terminates without running parent cleanup code.
 
-## POSIX Descriptors And Sockets
+## POSIX descriptors and sockets
 
 `stdlib/socket.frog` exposes the descriptor and socket operations used by the
 HTTP module:
@@ -90,7 +98,7 @@ HTTP module:
 The module is POSIX-specific. Callers own descriptors returned by
 `accept-connection` and both descriptors written by `local-socket-pair`.
 
-## Strings And Byte Buffers
+## Strings and byte buffers
 
 `stdlib/string.frog` provides operations for literal `String` values and
 heap-backed byte buffers:
@@ -122,7 +130,7 @@ heap-backed byte buffers:
 record operations. Its byte storage may move after `byte-buffer-push`, so code
 must load `@ByteBuffer.bytes` again after an append.
 
-## Opaque-Pointer Containers
+## Opaque-pointer containers
 
 `stdlib/containers.frog` provides containers for borrowed `ptr` values. The
 containers never release stored values. Callers retain ownership of every value

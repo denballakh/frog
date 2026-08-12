@@ -16,24 +16,13 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI process/file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
 
-The language and implementation are inspired by Porth. Frog programs use postfix stack operations, explicit stack-effect procedure signatures, nominal records, tagged unions, first-class function references, compile-time imports and macros, and block keywords such as `proc`, `record`, `union`, `fn`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+Frog programs use postfix stack operations, explicit stack-effect procedure signatures, nominal records, tagged unions, first-class function references, compile-time imports and macros, and block keywords such as `proc`, `record`, `union`, `fn`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
 - `compiler/frogc.frog`: The Frog-written compiler, typechecker, deterministic C emitter, and CLI. It imports the libc words it uses from `stdlib/libc.frog`. Filter mode reads the root source from stdin; file commands preserve lexical source-relative import resolution.
 - `compiler/frogc.c`: Checked-in fixed-point C bootstrap seed generated from `compiler/frogc.frog`; this is an authoritative bootstrap artifact, not a disposable build output.
-- `examples/*.frog`: Example Frog programs. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
-- `examples/01_simple.frog`: Basic stack arithmetic, debug, and print demo.
-- `examples/02_while.frog`: While loop, nested if/else, and arithmetic demo.
-- `examples/03_fib.frog`: Fibonacci sequence using procedures and stack rotation.
-- `examples/04_procs.frog`: Small procedure composition and loop demo.
-- `examples/05_is_prime.frog`: Prime-checking procedures and boolean logic demo.
-- `examples/06_let.frog`: Local binding demo with `let`.
-- `examples/07_rule30.frog`: Rule 30 ASCII cellular automaton using byte buffers, pointer arithmetic, memory reads/writes, and `putc`.
-- `examples/08_gcd_grid.frog`: Euclidean GCD rendered as a 40x40 coprimality grid using `#` for coprime coordinates and space otherwise.
-- `examples/09_records.frog`: Record allocation, field access, and a typed procedure.
-- `examples/10_tagged_unions.frog`: A tagged result with checked testing and projection.
-- `examples/11_c_ffi.frog`: Calls C standard-library functions through explicit C interop declarations.
+- `examples/*.frog`: Example Frog programs documented in `examples/README.md`. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/stdlib.md`: User-facing standard-library module reference.
@@ -82,7 +71,7 @@ The language and implementation are inspired by Porth. Frog programs use postfix
 - Verify the checked seed, source, and next two generations are byte-identical: `just bootstrap-check`
 - Regenerate the checked seed after a verified compiler-source change: `just bootstrap-update`
 - Run Frog CLI through just: `just cli <args>`
-- Remove generated root/example/test C/exe artifacts: `just clean`
+- Remove generated root, direct `test/`, and `examples/` C/exe artifacts: `just clean`
 
 Useful direct commands:
 
@@ -105,7 +94,7 @@ Useful direct commands:
 ## Testing Nuances
 
 - `just test` is the expected and recommended full verification command
-- Do not run `just check` and `python -m test` separately as a substitute for `just test`; the test suite uses shared generated files and separate/parallel runs can race.
+- `just check` is not a substitute for `just test`; it omits bootstrap, Frog regressions, and host-policy checks.
 - `just test` runs the Frog-owned corpus and then the small Python host-policy runner. Do not run its components concurrently because they share generated build files.
 - Successful Frog cases compile through stdin-to-stdout mode with strict C11 warnings before execution. Cases check exact stdout, stderr, and status; compiler failures ignore partial C on stdout but require the exact diagnostic and status 1.
 - `test/inline_cases.frog` materializes concise bodies inside an explicit `proc main -- do ... end`; declaration-order and malformed structural cases use the corresponding whole-source helper.
@@ -113,7 +102,7 @@ Useful direct commands:
 - `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, lexical symlink-root policy, and slashless compiler-path policy. `just frog-regressions` invokes it with `--frog-only`, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
 - Python host-policy artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
 - `just bootstrap-check` checks only compiler fixed-point equality. The Frog regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `just frog-regressions` / `just test`.
-- Use `just clean` after builds/tests if generated `.c`/`.exe` files are not intended to remain.
+- `just clean` removes only generated root, direct `test/`, and `examples/` C/exe artifacts; it does not remove `build/` or nested test-case artifacts.
 
 ## CLI Behavior
 
@@ -125,22 +114,8 @@ Useful direct commands:
 - `build -r FILE` runs the resulting executable.
 - CLI argument parsing, path construction, build policy, process setup, and exit-status forwarding are implemented in Frog in `compiler/frogc.frog` over the bindings in `stdlib/libc.frog`.
 
-Current CLI help output:
-
-```text
-$ build/frogc -h
-Usage:
-  frogc [--debug] [--release] < source.frog > source.c
-  frogc [--debug] [--release] <command> [options]
-
-Commands:
-  run [-c CODE | FILE]       compile and run Frog source
-  build [-o FILE] [-r] FILE  compile Frog source to a binary
-
-Options:
-  --debug    trace compile-time type stacks to standard error
-  --release  omit implicit builtin assertion calls
-```
+Use `build/frogc -h` for current CLI help. Exact help text belongs in CLI tests,
+not in this maintenance guide.
 
 ## Compiler Pipeline
 

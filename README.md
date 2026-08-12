@@ -1,13 +1,19 @@
 # FrogLang
-FrogLang is a programming language:
+
+FrogLang is a programming language that is:
+
 - stack based
 - concatenative
 - statically typed
 - compiled to C
 
-It is heavily inspired by [Porth](https://gitlab.com/tsoding/porth)
+## Requirements
 
-# Usage
+Building FrogLang requires a POSIX environment, [just](https://just.systems/),
+and a C11-capable GCC installation. The repository's devenv configuration
+provides the Python formatting and type-checking tools used by the test suite.
+
+## Quick start
 
 ```sh
 just frogc-seed
@@ -15,15 +21,15 @@ build/frogc -h
 build/frogc run examples/01_simple.frog
 ```
 
-`compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI. Python is test-only.
-
 Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
+
+## Command-line interface
 
 `build/frogc -h` shows CLI help. With no arguments, `build/frogc` is a compiler filter: it reads Frog source from standard input and writes generated C to standard output. `run` writes reusable scratch artifacts under `build/`, compiles them, and executes the binary. `build` writes the source-adjacent `.c` and executable directly; `build -r` runs the resulting executable.
 
-Prefix a filter, `run`, or `build` invocation with `--debug` to trace compile-time type stacks to standard error. Debug tracing does not change generated C or program output.
+Prefix a filter, `run`, or `build` invocation with `--debug` to trace compile-time type stacks to standard error. Use `--release` to omit calls to the implicit builtin `assert` while retaining operand evaluation. See the [language reference](./docs/language.md) for details.
 
-# Compiler and bootstrap
+## Bootstrap
 
 The checked fixed-point C bootstrap seed is `compiler/frogc.c`, so a C compiler is sufficient to bootstrap Frog:
 
@@ -39,8 +45,6 @@ Run the complete two-generation fixed-point verification with:
 just bootstrap-check
 ```
 
-The language supports strings, nominal records and tagged unions, first-class function references, compile-time constants and macros, C interop declarations, source-relative imports, and `stdlib/...` imports independent of source nesting. Imports support aliases, groups, and reexports. See the [language reference](./docs/language.md) for syntax and semantics.
-
 To bootstrap manually without Python:
 
 ```sh
@@ -49,15 +53,12 @@ gcc -std=c11 -pedantic -Wall -Wextra -Wconversion -Werror -O2 compiler/frogc.c -
 build/frogc < compiler/frogc.frog > build/frogc.next.c
 ```
 
-# Editor support
+## Documentation
 
-VS Code extension features, installation, updates, and removal are documented in [`docs/ide/vscode.md`](./docs/ide/vscode.md).
+- [Language reference](./docs/language.md)
+- [Standard library](./docs/stdlib.md)
+- [Testing and bootstrap verification](./docs/testing.md)
+- [VS Code support](./docs/ide/vscode.md)
+- [Examples](./examples/README.md)
 
-# Examples
--> [/examples/](./examples/)
-
-Feature-focused examples:
-
-- [records](./examples/09_records.frog)
-- [tagged unions](./examples/10_tagged_unions.frog)
-- [C interop](./examples/11_c_ffi.frog)
+The complete documentation index is available in [`docs/README.md`](./docs/README.md).
