@@ -25,7 +25,7 @@ proc test-report-failure String -- do
     10 eputc
 end
 
-proc test-suite -- TestSuite do
+proc test-suite -- TestSuite* do
     TestSuite:alloc
     peek suite do
         0 suite !TestSuite.checks
@@ -33,7 +33,7 @@ proc test-suite -- TestSuite do
     end
 end
 
-proc check bool String TestSuite -- do
+proc check bool String TestSuite* -- do
     let condition name suite do
         suite @TestSuite.checks 1 + suite !TestSuite.checks
         if condition do
@@ -44,20 +44,20 @@ proc check bool String TestSuite -- do
     end
 end
 
-proc check-int-equal int int String TestSuite -- do
+proc check-int-equal int int String TestSuite* -- do
     let actual expected name suite do
         actual expected == name suite check
     end
 end
 
-proc check-bytes-equal ptr int ptr int String TestSuite -- do
+proc check-bytes-equal ptr int ptr int String TestSuite* -- do
     let actual actual-length expected expected-length name suite do
         actual actual-length expected expected-length bytes-equal
         name suite check
     end
 end
 
-proc check-string-equal String String String TestSuite -- do
+proc check-string-equal String String String TestSuite* -- do
     let actual expected name suite do
         actual String.bytes actual String.len
         expected String.bytes expected String.len
@@ -65,7 +65,7 @@ proc check-string-equal String String String TestSuite -- do
     end
 end
 
-proc test-finish TestSuite -- do
+proc test-finish TestSuite* -- do
     let suite do
         suite @TestSuite.failures
         let failures do

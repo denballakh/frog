@@ -5,7 +5,7 @@ from "framework.frog" import (
     frog-inline-error-raw
 )
 
-proc run-inline-cases FrogTestContext -- do
+proc run-inline-cases FrogTestContext* -- do
     let context do
 
         // basics (7)

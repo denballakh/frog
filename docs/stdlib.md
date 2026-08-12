@@ -230,9 +230,9 @@ binding, listening, routing, concurrency, TLS, and timeouts are outside the
 module.
 
 ```frog
-fn HttpHandler HttpRequest -- HttpResponse end
+fn HttpHandler HttpRequest* -- HttpResponse* end
 
-proc handler HttpRequest -- HttpResponse do
+proc handler HttpRequest* -- HttpResponse* do
     drop
     200 "frog" http-response
 end

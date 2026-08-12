@@ -130,7 +130,7 @@ record ByteBuffer
     capacity int
 end
 
-proc byte-buffer-new int -- ByteBuffer do
+proc byte-buffer-new int -- ByteBuffer* do
     let capacity do
         capacity alloc
         let bytes do
@@ -145,7 +145,7 @@ proc byte-buffer-new int -- ByteBuffer do
     end
 end
 
-proc byte-buffer-push int ByteBuffer -- do
+proc byte-buffer-push int ByteBuffer* -- do
     let byte buffer do
         if buffer @ByteBuffer.len buffer @ByteBuffer.capacity == do
             if buffer @ByteBuffer.capacity 0 == do
@@ -168,7 +168,7 @@ proc byte-buffer-push int ByteBuffer -- do
     end
 end
 
-proc byte-buffer-append-bytes ptr int ByteBuffer -- do
+proc byte-buffer-append-bytes ptr int ByteBuffer* -- do
     let bytes length buffer do
         0
         while dup length < do
@@ -181,13 +181,13 @@ proc byte-buffer-append-bytes ptr int ByteBuffer -- do
     end
 end
 
-proc byte-buffer-append-string String ByteBuffer -- do
+proc byte-buffer-append-string String ByteBuffer* -- do
     let value buffer do
         value String.bytes value String.len buffer byte-buffer-append-bytes
     end
 end
 
-proc byte-buffer-equal-string ByteBuffer String -- bool do
+proc byte-buffer-equal-string ByteBuffer* String -- bool do
     let buffer value do
         buffer @ByteBuffer.bytes buffer @ByteBuffer.len
         value String.bytes value String.len
@@ -195,7 +195,7 @@ proc byte-buffer-equal-string ByteBuffer String -- bool do
     end
 end
 
-proc byte-buffer-free ByteBuffer -- do
+proc byte-buffer-free ByteBuffer* -- do
     let buffer do
         buffer @ByteBuffer.bytes free
         buffer ptr cast free

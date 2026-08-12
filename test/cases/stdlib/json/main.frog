@@ -131,7 +131,7 @@ proc assert-array-length JsonValue int -- do
     end
 end
 
-proc nested-array-json int -- ByteBuffer do
+proc nested-array-json int -- ByteBuffer* do
     let depth do
         depth 2 * 1 + byte-buffer-new
         let buffer do

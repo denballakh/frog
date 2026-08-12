@@ -1,6 +1,6 @@
 from "framework.frog" import ( FrogTestContext frog-run-case frog-error-fixture )
 
-proc run-import-cases FrogTestContext -- do
+proc run-import-cases FrogTestContext* -- do
     let context do
         "test/cases/import_cases/import_proc/main.frog" "test/cases/import_cases/import_proc" "42\n" "" 0 "" "" "" "imports/import_proc" context frog-run-case
         "test/cases/import_cases/import_group/main.frog" "test/cases/import_cases/import_group" "6\n4\n7\n" "" 0 "" "" "" "imports/import_group" context frog-run-case

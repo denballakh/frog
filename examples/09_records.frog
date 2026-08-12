@@ -3,7 +3,7 @@ record Point
     y int
 end
 
-proc squared-distance Point -- int do
+proc squared-distance Point* -- int do
     let point do
         point @Point.x dup *
         point @Point.y dup *

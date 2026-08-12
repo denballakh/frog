@@ -12,7 +12,7 @@ end
 
 union Box
     case empty
-    case full Payload
+    case full Payload*
 end
 
 union Chain

@@ -6,7 +6,7 @@ proc take P* P** -- do
 end
 
 proc main -- do
-    P:alloc ptr cast Q* cast
+    P:alloc Q* cast
     0 ptr cast Q** cast
     take
 end

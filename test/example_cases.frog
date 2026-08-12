@@ -1,6 +1,6 @@
 from "framework.frog" import ( FrogTestContext frog-run-case )
 
-proc run-example-cases FrogTestContext -- do
+proc run-example-cases FrogTestContext* -- do
     let context do
         "examples/01_simple.frog" "examples" "3\n" "" 0 "" "" "" "examples/01_simple" context frog-run-case
         "examples/02_while.frog" "examples" "1

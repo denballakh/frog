@@ -2,4 +2,4 @@ record Point
     x int
 end
 
-proc read Point -- int do @Point.x end
+proc read Point* -- int do @Point.x end

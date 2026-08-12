@@ -4,7 +4,7 @@ from "framework.frog" import (
     frog-stable-string-symbol
 )
 
-proc run-regression-cases FrogTestContext -- do
+proc run-regression-cases FrogTestContext* -- do
     let context do
         "test/cases/imports/direct_proc/main.frog" "test/cases/imports/direct_proc" "42\n" "" 0 "" "" "" "imports/direct_proc" context frog-run-case
         "test/cases/imports/group_alias_identity/main.frog" "test/cases/imports/group_alias_identity" "6\n4\n6\n" "" 0 "" "" "" "imports/group_alias_identity" context frog-run-case
@@ -209,7 +209,7 @@ proc run-regression-cases FrogTestContext -- do
         "macro bad c-type Number int \"int\" end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/c_type_inside_macro" context frog-error-source
         "proc main -- do c-call magnitude abs -- end end\n" "test/cases/semantics" "frogc: declarations are only allowed at top level\n" "semantics-error/c_call_inside_proc" context frog-error-source
         "macro bad c-value seek-set SEEK_SET -- CInt end end\nproc main -- do end\n" "test/cases/semantics" "frogc: declarations are not allowed in macro bodies\n" "semantics-error/c_value_inside_macro" context frog-error-source
-        "from \"shape.frog\" import Point as Imported\nrecord Point x int end\nproc take Imported -- do drop end\nproc main -- do Point:alloc take end\n" "test/cases/imports/records_collision" "frogc: take: stack contract mismatch: expected [shape.frog:Point], actual [Point]\n" "diagnostics-error/nominal_identity" context frog-error-source
+        "from \"shape.frog\" import Point as Imported\nrecord Point x int end\nproc take Imported* -- do drop end\nproc main -- do Point:alloc take end\n" "test/cases/imports/records_collision" "frogc: take: stack contract mismatch: expected [shape.frog:Point*], actual [Point*]\n" "diagnostics-error/nominal_identity" context frog-error-source
         "macro outer dup end\nproc main -- do outer end\n" "test/cases/semantics" "frogc: outer: compile-time stack underflow\n" "diagnostics-error/nested_macro_word" context frog-error-source
         "proc main -- do 1 2 cast drop end\n" "test/cases/semantics" "frogc: cast: cast target is not a type literal\n" "diagnostics-error/cast_target" context frog-error-source
         "proc main -- do 0 ptr cast print end\n" "test/cases/semantics" "frogc: print: printing this type is not supported\n" "diagnostics-error/unsupported_print" context frog-error-source

@@ -27,26 +27,26 @@ record JsonText
 end
 
 record JsonArray
-    values PtrArray
+    values PtrArray*
 end
 
 record JsonObjectEntry
-    key JsonText
+    key JsonText*
     value JsonValue
-    next ptr
+    next JsonObjectEntry*
 end
 
 record JsonObject
-    head ptr
+    head JsonObjectEntry*
 end
 
 union JsonValue
     case null
     case boolean bool
-    case number JsonText
-    case string JsonText
-    case array JsonArray
-    case object JsonObject
+    case number JsonText*
+    case string JsonText*
+    case array JsonArray*
+    case object JsonObject*
 end
 
 record JsonParser
@@ -67,11 +67,11 @@ proc json-parse-failure -- JsonValue bool do
     json-null-value false
 end
 
-proc json-text-failure -- JsonText bool do
-    0 ptr cast JsonText cast false
+proc json-text-failure -- JsonText* bool do
+    0 ptr cast JsonText* cast false
 end
 
-proc json-text-copy ptr int -- JsonText do
+proc json-text-copy ptr int -- JsonText* do
     let source length do
         length alloc
         let bytes do
@@ -86,7 +86,7 @@ proc json-text-copy ptr int -- JsonText do
     end
 end
 
-proc json-text-free JsonText -- do
+proc json-text-free JsonText* -- do
     let text do
         text @JsonText.bytes free
         text ptr cast free
@@ -118,7 +118,7 @@ proc json-value-array? JsonValue -- bool do
     let value matches do matches end
 end
 
-proc json-ptr-array-free-values PtrArray -- do
+proc json-ptr-array-free-values PtrArray* -- do
     let values do
         0
         while dup values @PtrArray.count < do
@@ -135,18 +135,18 @@ proc json-ptr-array-free-values PtrArray -- do
     end
 end
 
-proc json-array-free JsonArray -- do
+proc json-array-free JsonArray* -- do
     let array do
         array @JsonArray.values json-ptr-array-free-values
         array ptr cast free
     end
 end
 
-proc json-object-free JsonObject -- do
+proc json-object-free JsonObject* -- do
     let object do
         object @JsonObject.head
-        while dup json-null-pointer? ! do
-            JsonObjectEntry cast
+        while dup ptr cast json-null-pointer? ! do
+            JsonObjectEntry* cast
             let entry do
                 entry @JsonObjectEntry.next
                 entry @JsonObjectEntry.key json-text-free
@@ -195,11 +195,11 @@ proc json-digit? int -- bool do
     let byte do byte 48 >= byte 57 <= && end
 end
 
-proc json-parser-at-end? JsonParser -- bool do
+proc json-parser-at-end? JsonParser* -- bool do
     let parser do parser @JsonParser.index parser @JsonParser.len >= end
 end
 
-proc json-parser-next-is JsonParser int -- bool do
+proc json-parser-next-is JsonParser* int -- bool do
     let parser expected do
         if parser json-parser-at-end? do
             false
@@ -209,7 +209,7 @@ proc json-parser-next-is JsonParser int -- bool do
     end
 end
 
-proc json-parser-skip-whitespace JsonParser -- do
+proc json-parser-skip-whitespace JsonParser* -- do
     let parser do
         parser @JsonParser.index
         while peek index do
@@ -226,7 +226,7 @@ proc json-parser-skip-whitespace JsonParser -- do
     end
 end
 
-proc json-parser-consume JsonParser String -- bool do
+proc json-parser-consume JsonParser* String -- bool do
     let parser expected do
         if expected String.len parser @JsonParser.len parser @JsonParser.index - > do
             false
@@ -255,7 +255,7 @@ proc json-hex-value int -- int bool do
     end
 end
 
-proc json-parser-hex4 JsonParser -- int bool do
+proc json-parser-hex4 JsonParser* -- int bool do
     let parser do
         0 0 true
         while peek count value valid do
@@ -282,7 +282,7 @@ proc json-parser-hex4 JsonParser -- int bool do
     end
 end
 
-proc json-buffer-push-codepoint int ByteBuffer -- do
+proc json-buffer-push-codepoint int ByteBuffer* -- do
     let codepoint buffer do
         if codepoint 0x7f <= do
             codepoint buffer byte-buffer-push
@@ -302,7 +302,7 @@ proc json-buffer-push-codepoint int ByteBuffer -- do
     end
 end
 
-proc json-parser-string-escape JsonParser ByteBuffer -- bool do
+proc json-parser-string-escape JsonParser* ByteBuffer* -- bool do
     let parser buffer do
         if parser json-parser-at-end? do
             false
@@ -371,7 +371,7 @@ proc json-parser-string-escape JsonParser ByteBuffer -- bool do
     end
 end
 
-proc json-parser-string-text JsonParser -- JsonText bool do
+proc json-parser-string-text JsonParser* -- JsonText* bool do
     let parser do
         if parser json-parser-at-end? do
             json-text-failure
@@ -430,7 +430,7 @@ proc json-parser-string-text JsonParser -- JsonText bool do
     end
 end
 
-proc json-parser-consume-digits JsonParser -- int do
+proc json-parser-consume-digits JsonParser* -- int do
     let parser do
         parser @JsonParser.index
         let start do
@@ -453,7 +453,7 @@ proc json-parser-consume-digits JsonParser -- int do
     end
 end
 
-proc json-parser-number-integer JsonParser -- bool do
+proc json-parser-number-integer JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             false
@@ -478,7 +478,7 @@ proc json-parser-number-integer JsonParser -- bool do
     end
 end
 
-proc json-parser-number-fraction JsonParser -- bool do
+proc json-parser-number-fraction JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             true
@@ -491,7 +491,7 @@ proc json-parser-number-fraction JsonParser -- bool do
     end
 end
 
-proc json-parser-number-exponent JsonParser -- bool do
+proc json-parser-number-exponent JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             true
@@ -517,7 +517,7 @@ proc json-parser-number-exponent JsonParser -- bool do
     end
 end
 
-proc json-parser-number JsonParser -- JsonValue bool do
+proc json-parser-number JsonParser* -- JsonValue bool do
     let parser do
         parser @JsonParser.index
         let start do
@@ -541,7 +541,7 @@ proc json-parser-number JsonParser -- JsonValue bool do
     end
 end
 
-proc json-parser-value JsonParser int -- JsonValue bool do
+proc json-parser-value JsonParser* int -- JsonValue bool do
     let parser depth do
         if parser json-parser-at-end? do
             json-parse-failure
@@ -593,7 +593,7 @@ proc json-parser-value JsonParser int -- JsonValue bool do
     end
 end
 
-proc json-parser-array JsonParser int -- JsonValue bool do
+proc json-parser-array JsonParser* int -- JsonValue bool do
     let parser depth do
         parser @JsonParser.index 1 + parser !JsonParser.index
         parser json-parser-skip-whitespace
@@ -656,13 +656,13 @@ proc json-parser-array JsonParser int -- JsonValue bool do
     end
 end
 
-proc json-parser-object JsonParser int -- JsonValue bool do
+proc json-parser-object JsonParser* int -- JsonValue bool do
     let parser depth do
         parser @JsonParser.index 1 + parser !JsonParser.index
         parser json-parser-skip-whitespace
         JsonObject:alloc
         let object do
-            0 ptr cast object !JsonObject.head
+            0 ptr cast JsonObjectEntry* cast object !JsonObject.head
             if parser 125 json-parser-next-is do
                 parser @JsonParser.index 1 + parser !JsonParser.index
                 object JsonValue:object true
@@ -697,7 +697,7 @@ proc json-parser-object JsonParser int -- JsonValue bool do
                                                 key entry !JsonObjectEntry.key
                                                 child entry !JsonObjectEntry.value
                                                 object @JsonObject.head entry !JsonObjectEntry.next
-                                                entry ptr cast object !JsonObject.head
+                                                entry object !JsonObject.head
                                             end
                                             parser json-parser-skip-whitespace
                                             if parser json-parser-at-end? do
@@ -942,11 +942,11 @@ proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
                 else
                     candidate JsonValue.object @JsonObject.head json-null-value false
                     while peek current result found do
-                        current json-null-pointer? ! found ! &&
+                        current ptr cast json-null-pointer? ! found ! &&
                     end
                     do
                         let current result found do
-                            current JsonObjectEntry cast
+                            current JsonObjectEntry* cast
                             let entry do
                                 if entry @JsonObjectEntry.key
                                     let entry-key do
@@ -954,7 +954,7 @@ proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
                                         key key-length bytes-equal
                                     end
                                 do
-                                    0 ptr cast entry @JsonObjectEntry.value true
+                                    0 ptr cast JsonObjectEntry* cast entry @JsonObjectEntry.value true
                                 else
                                     entry @JsonObjectEntry.next result false
                                 end

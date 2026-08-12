@@ -34,7 +34,7 @@ record HttpResponse
     body_len int
 end
 
-fn HttpHandler HttpRequest -- HttpResponse end
+fn HttpHandler HttpRequest* -- HttpResponse* end
 
 const http-serve-ok 0 end
 const http-serve-peer-closed 1 end
@@ -49,8 +49,8 @@ const http-read-closed 1 end
 const http-read-reject 2 end
 const http-read-io-error 3 end
 
-proc http-null-request -- HttpRequest do
-    0 ptr cast HttpRequest cast
+proc http-null-request -- HttpRequest* do
+    0 ptr cast HttpRequest* cast
 end
 
 proc http-response-forbids-body? int -- bool do
@@ -61,7 +61,7 @@ proc http-response-forbids-body? int -- bool do
     end
 end
 
-proc http-response-bytes int ptr int -- HttpResponse do
+proc http-response-bytes int ptr int -- HttpResponse* do
     let status bytes length do
         if status 200 < status 599 > || do 1 exit end
         if length 0 < do 1 exit end
@@ -81,13 +81,13 @@ proc http-response-bytes int ptr int -- HttpResponse do
     end
 end
 
-proc http-response int String -- HttpResponse do
+proc http-response int String -- HttpResponse* do
     let status body do
         status body String.bytes body String.len http-response-bytes
     end
 end
 
-proc http-response-free HttpResponse -- do
+proc http-response-free HttpResponse* -- do
     let response do
         response @HttpResponse.body free
         response ptr cast free
@@ -396,7 +396,7 @@ proc http-validate-headers ptr int int -- bool do
     end
 end
 
-proc http-parse-request ptr int -- HttpRequest bool do
+proc http-parse-request ptr int -- HttpRequest* bool do
     let storage length do
         storage 0 length http-find-crlf
         let line-end do
@@ -425,7 +425,7 @@ proc http-parse-request ptr int -- HttpRequest bool do
     end
 end
 
-proc http-read-request int -- HttpRequest int do
+proc http-read-request int -- HttpRequest* int do
     let descriptor do
         http-request-buffer-size alloc
         let storage do
@@ -485,14 +485,14 @@ proc http-read-request int -- HttpRequest int do
     end
 end
 
-proc http-request-free HttpRequest -- do
+proc http-request-free HttpRequest* -- do
     let request do
         request @HttpRequest.storage free
         request ptr cast free
     end
 end
 
-proc http-buffer-append-decimal int ByteBuffer -- do
+proc http-buffer-append-decimal int ByteBuffer* -- do
     let value buffer do
         if value 10 >= do value 10 / buffer http-buffer-append-decimal end
         value 10 % 48 + buffer byte-buffer-push
@@ -523,7 +523,7 @@ proc http-write-all int ptr int -- bool do
     end
 end
 
-proc http-response-header HttpResponse -- ByteBuffer do
+proc http-response-header HttpResponse* -- ByteBuffer* do
     let response do
         96 byte-buffer-new
         let buffer do
@@ -544,7 +544,7 @@ proc http-response-header HttpResponse -- ByteBuffer do
     end
 end
 
-proc http-send-response int bool HttpResponse -- bool do
+proc http-send-response int bool HttpResponse* -- bool do
     let descriptor head response do
         response http-response-header
         let header do

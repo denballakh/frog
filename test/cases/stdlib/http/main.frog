@@ -25,7 +25,7 @@ proc assert bool -- do
     end
 end
 
-proc request-target-equal HttpRequest String -- bool do
+proc request-target-equal HttpRequest* String -- bool do
     let request expected do
         request @HttpRequest.target request @HttpRequest.target_len
         expected String.bytes expected String.len
@@ -33,7 +33,7 @@ proc request-target-equal HttpRequest String -- bool do
     end
 end
 
-proc large-response -- HttpResponse do
+proc large-response -- HttpResponse* do
     large-body-length alloc
     let source do
         0
@@ -52,7 +52,7 @@ proc large-response -- HttpResponse do
     end
 end
 
-proc test-handler HttpRequest -- HttpResponse do
+proc test-handler HttpRequest* -- HttpResponse* do
     let request do
         if request "/large" request-target-equal do
             large-response
@@ -91,7 +91,7 @@ proc write-all int ptr int -- bool do
     0 write-all-from
 end
 
-proc read-to-end int ptr ByteBuffer -- bool do
+proc read-to-end int ptr ByteBuffer* -- bool do
     let descriptor scratch buffer do
         descriptor scratch read-chunk-bytes descriptor-read
         let count do
@@ -107,7 +107,7 @@ proc read-to-end int ptr ByteBuffer -- bool do
     end
 end
 
-proc read-response int -- ByteBuffer bool do
+proc read-response int -- ByteBuffer* bool do
     let descriptor do
         0 byte-buffer-new
         let buffer do
@@ -166,7 +166,7 @@ proc start-server int -- int int do
     end
 end
 
-proc response-equal ByteBuffer String -- bool do
+proc response-equal ByteBuffer* String -- bool do
     let response expected do
         response @ByteBuffer.bytes response @ByteBuffer.len
         expected String.bytes expected String.len
@@ -212,7 +212,7 @@ proc run-request String String -- do
     let request expected do request "" expected run-request-fragments end
 end
 
-proc response-has-large-body ByteBuffer -- bool do
+proc response-has-large-body ByteBuffer* -- bool do
     let response do
         "HTTP/1.1 200 \r\nContent-Length: 20000\r\nConnection: close\r\n\r\n"
         let header do

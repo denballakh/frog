@@ -44,16 +44,16 @@ Procedure calls are statically checked against declared stack contracts.
 
 ## Records
 
-Records define nominal reference values with typed fields:
+Records define nominal pointer types with typed fields:
 
 ```frog
 record Node
-    next Node
+    next Node*
     value int
     ready bool
 end
 
-proc value-of Node -- int do @Node.value end
+proc value-of Node* -- int do @Node.value end
 
 proc main -- do
     Node:alloc
@@ -65,13 +65,13 @@ proc main -- do
 end
 ```
 
-`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Record, union, and function-reference fields store handles rather than inline copies.
+`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Use `Name*` for a field that stores a reference to an allocated `Name`. Union and function-reference fields store their values directly rather than inline copies of another value.
 
-Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
+Record instances use manual memory management. `Name:alloc` has stack effect `-- Name*` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
 
-`@Name.field` reads a field with stack effect `Name -- FieldType`; `!Name.field` writes it with stack effect `FieldType Name --`. `@.field` and `!.field` infer `Name` from the record on top of the static stack after macro expansion, with the same respective stack effects. Exact macros named `@.field` or `!.field` take precedence over inferred access. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
+`@Name.field` reads a field with stack effect `Name* -- FieldType`; `!Name.field` writes it with stack effect `FieldType Name* --`. `@.field` and `!.field` infer `Name` from the record pointer on top of the static stack after macro expansion, with the same respective stack effects. Exact macros named `@.field` or `!.field` take precedence over inferred access. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
 
-Record types are nominal. Two declarations with identical fields are different types, and field access requires the declared owner type. Explicit `ptr` to record and record to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different record types are rejected.
+Record pointer types are nominal. Two declarations with identical fields are different types, and field access requires a pointer to the declared owner type. Explicit `ptr` to record-pointer and record-pointer to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different record pointer types are rejected.
 
 See the runnable [records example](../examples/09_records.frog).
 

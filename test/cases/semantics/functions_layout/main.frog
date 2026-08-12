@@ -3,7 +3,7 @@ fn Unit -- end
 fn Add int int -- int end
 fn Duplicate int -- int int end
 fn Answer -- int end
-fn BoxValue Box -- int end
+fn BoxValue Box* -- int end
 fn MaybeValue Maybe -- int end
 fn Apply Mapper int -- int end
 fn Factory -- Mapper end
@@ -40,7 +40,7 @@ proc duplicate int -- int int do dup end
 c-include local "test/cases/semantics/functions_layout/helper.h" end
 c-type CInt int "int" end
 c-call ffi-answer ffi_test_answer -- CInt end
-proc box-value Box -- int do @Box.value end
+proc box-value Box* -- int do @Box.value end
 proc maybe-value Maybe -- int do Maybe.some end
 proc apply Mapper int -- int do
     let mapper value do
