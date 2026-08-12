@@ -1,0 +1,12 @@
+from "shape.frog" import Point as P
+from "shape.frog" import Point as Q
+
+proc take P* P** -- do
+    drop drop
+end
+
+proc main -- do
+    P:alloc ptr cast Q* cast
+    0 ptr cast Q** cast
+    take
+end

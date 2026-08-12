@@ -72,7 +72,10 @@ def main() -> None:
     assert isinstance(keyword_pattern, str)
     assert isinstance(special_pattern, str)
     type_regex = re.compile(cast(str, type_pattern['match']))
-    assert type_regex.fullmatch('String')
+    for spelling in ('String', 'int', 'i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64', 'bool', 'ptr'):
+        assert type_regex.fullmatch(spelling), spelling
+        assert type_regex.fullmatch(spelling + '*'), spelling + '*'
+        assert type_regex.fullmatch(spelling + '**'), spelling + '**'
     assert re.compile(keyword_pattern).fullmatch('record')
     assert re.compile(keyword_pattern).fullmatch('union')
     assert re.compile(keyword_pattern).fullmatch('case')

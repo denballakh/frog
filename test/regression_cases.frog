@@ -35,6 +35,8 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/imports/builtins_explicit/main.frog" "test/cases/imports/builtins_explicit" "42\n" "" 0 "" "" "" "imports/builtins_explicit" context frog-run-case
         "test/cases/imports/procedure_overloads/main.frog" "test/cases/imports/procedure_overloads" "6\n2\n13\n20\n20\n77\n77\n42\n" "" 0 "" "" "" "imports/procedure_overloads" context frog-run-case
         "test/cases/semantics/bool_cast/main.frog" "test/cases/semantics/bool_cast" "1\n0\n1\n" "" 0 "" "" "" "semantics/bool_cast" context frog-run-case
+        "test/cases/semantics/exact_types/main.frog" "test/cases/semantics/exact_types" "8\n10\n" "" 0 "" "" "" "semantics/exact_types" context frog-run-case
+        "test/cases/imports/typed_pointer_alias/main.frog" "test/cases/imports/typed_pointer_alias" "" "" 0 "" "" "" "imports/typed_pointer_alias" context frog-run-case
         "test/cases/semantics/integer_max/main.frog" "test/cases/semantics/integer_max" "9223372036854775807\n" "" 0 "" "" "" "semantics/integer_max" context frog-run-case
         "test/cases/semantics/integer_bases/main.frog" "test/cases/semantics/integer_bases" "0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n-7\n7\n0\n0\n-7\n7\n-146\n146\n-819\n43981\n9223372036854775807\n-9223372036854775808\n-9223372036854775808\n-9223372036854775808\n-9223372036854775808\n" "" 0 "" "" "" "semantics/integer_bases" context frog-run-case
         "test/cases/semantics/builtins_shadow/main.frog" "test/cases/semantics/builtins_shadow" "42\n7\n2\n1\n6\n99\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n" "" 0 "" "" "" "semantics/builtins_shadow" context frog-run-case
@@ -57,6 +59,9 @@ proc run-regression-cases FrogTestContext -- do
         "test/cases/semantics/peek/main.frog" "test/cases/semantics/peek" "3\n3\ntrue\ntrue\n7\n4\n3\n2\n1\n2\n1\n" "" 0 "" "" "" "semantics/peek" context frog-run-case
         "proc choose int -- int do end\nproc choose int -- bool do drop true end\nproc main -- do end\n" "test/cases/semantics" "frogc: duplicate procedure input contract\n" "semantics-error/procedure_overload_duplicate_inputs" context frog-error-source
         "proc choose int -- int do end\nproc choose int int -- int do + end\nproc main -- do 1 2 choose drop end\n" "test/cases/semantics" "frogc: choose: ambiguous procedure call\n" "semantics-error/procedure_overload_ambiguous" context frog-error-source
+        "proc take i8 -- do drop end\nproc main -- do 1 take end\n" "test/cases/semantics" "frogc: take: stack contract mismatch: expected [i8], actual [int]\n" "semantics-error/exact_integer_no_implicit_conversion" context frog-error-source
+        "proc take i8* -- do drop end\nproc main -- do 0 ptr cast u8* cast take end\n" "test/cases/semantics" "frogc: take: stack contract mismatch: expected [i8*], actual [u8*]\n" "semantics-error/typed_pointer_identity" context frog-error-source
+        "proc main -- do end\nrecord Broken value * end\n" "test/cases/semantics" "frogc: malformed pointer type\n" "semantics-error/malformed_pointer_type" context frog-error-source
         "test/cases/semantics/unions_wrong_variant/main.frog" "test/cases/semantics/unions_wrong_variant" "" 1 "semantics/unions_wrong_variant" context frog-run-status-case
         "test/cases/semantics/unions_invalid_tag/main.frog" "test/cases/semantics/unions_invalid_tag" "" 1 "semantics/unions_invalid_tag" context frog-run-status-case
         "test/cases/semantics/unions_negative_tag/main.frog" "test/cases/semantics/unions_negative_tag" "" 1 "semantics/unions_negative_tag" context frog-run-status-case

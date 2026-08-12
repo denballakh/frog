@@ -16,9 +16,21 @@ const type-bool 2 end
 const type-ptr 3 end
 const type-type 4 end
 const type-string 5 end
+const type-i8 6 end
+const type-i16 7 end
+const type-i32 8 end
+const type-i64 9 end
+const type-u8 10 end
+const type-u16 11 end
+const type-u32 12 end
+const type-u64 13 end
 const type-none 0 end
+// Builtin scalar IDs occupy the low range. Nominal values start at 1000,
+// function references at 2^32, and interned typed pointers at 2^40.
 const type-nominal-base 1000 end
 const type-function-base 1 32 << end
+const type-pointer-base 1 40 << end
+const unresolved-pointer-base 1 62 << end
 
 const max-int 1 62 << 1 62 << 1 - + end
 const min-int 0 max-int - 1 - end
@@ -127,6 +139,17 @@ record CSignatureType
     token int
     definition_module ModuleContext
     definition_index int
+end
+
+record PointerTypeEntry
+    pointee_type int
+    pointer_type int
+end
+
+record UnresolvedPointerTypeEntry
+    module ModuleContext
+    token int
+    depth int
 end
 
 record ScopeEntry
@@ -373,7 +396,9 @@ end
 
 proc program-allocate-nominal-type Program -- int do
     peek program do @Program.next_nominal_type
-        peek nominal-type do 1 + program !Program.next_nominal_type
+        let nominal-type do
+            if nominal-type type-function-base >= do "too many nominal types" fail end
+            nominal-type 1 + program !Program.next_nominal_type
             nominal-type
         end
     end
@@ -381,8 +406,109 @@ end
 
 proc program-allocate-function-type Program -- int do
     peek program do @Program.next_function_type
-        peek function-type do 1 + program !Program.next_function_type
+        let function-type do
+            if function-type type-pointer-base >= do "too many function types" fail end
+            function-type 1 + program !Program.next_function_type
             function-type
+        end
+    end
+end
+
+proc pointer-type-at Program int -- PointerTypeEntry do
+    let program index do program @Program.pointer_types index PointerTypeEntry:sizeof * + PointerTypeEntry cast end
+end
+
+proc program-grow-pointer-types Program -- do
+    let program do
+        program @Program.pointer_type_capacity 2 *
+        let capacity do
+            capacity PointerTypeEntry:sizeof * alloc
+            let entries do
+                0
+                while dup program @Program.pointer_type_count < do
+                    dup let index do
+                        program index pointer-type-at @PointerTypeEntry.pointee_type entries index PointerTypeEntry:sizeof * + PointerTypeEntry cast !PointerTypeEntry.pointee_type
+                        program index pointer-type-at @PointerTypeEntry.pointer_type entries index PointerTypeEntry:sizeof * + PointerTypeEntry cast !PointerTypeEntry.pointer_type
+                    end
+                    1 +
+                end
+                drop
+                entries program !Program.pointer_types
+                capacity program !Program.pointer_type_capacity
+            end
+        end
+    end
+end
+
+proc program-find-pointer-type-from Program int int -- int do
+    let program pointee index do
+        if index program @Program.pointer_type_count >= do
+            0 1 -
+        elif program index pointer-type-at @PointerTypeEntry.pointee_type pointee == do
+            program index pointer-type-at @PointerTypeEntry.pointer_type
+        else
+            program pointee index 1 + program-find-pointer-type-from
+        end
+    end
+end
+
+proc program-intern-pointer-type Program int -- int do
+    let program pointee do
+        program pointee 0 program-find-pointer-type-from
+        let found do
+            if found 0 >= do
+                found
+            else
+                if program @Program.pointer_type_count program @Program.pointer_type_capacity == do program program-grow-pointer-types end
+                program @Program.pointer_type_count
+                let index do
+                    pointee program index pointer-type-at !PointerTypeEntry.pointee_type
+                    type-pointer-base index + program index pointer-type-at !PointerTypeEntry.pointer_type
+                    index 1 + program !Program.pointer_type_count
+                    program index pointer-type-at @PointerTypeEntry.pointer_type
+                end
+            end
+        end
+    end
+end
+
+proc unresolved-pointer-type-at Program int -- UnresolvedPointerTypeEntry do
+    let program index do program @Program.unresolved_pointer_types index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry cast end
+end
+
+proc program-grow-unresolved-pointer-types Program -- do
+    let program do
+        program @Program.unresolved_pointer_type_capacity 2 *
+        let capacity do
+            capacity UnresolvedPointerTypeEntry:sizeof * alloc
+            let entries do
+                0
+                while dup program @Program.unresolved_pointer_type_count < do
+                    dup let index do
+                        program index unresolved-pointer-type-at @UnresolvedPointerTypeEntry.module entries index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry cast !UnresolvedPointerTypeEntry.module
+                        program index unresolved-pointer-type-at @UnresolvedPointerTypeEntry.token entries index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry cast !UnresolvedPointerTypeEntry.token
+                        program index unresolved-pointer-type-at @UnresolvedPointerTypeEntry.depth entries index UnresolvedPointerTypeEntry:sizeof * + UnresolvedPointerTypeEntry cast !UnresolvedPointerTypeEntry.depth
+                    end
+                    1 +
+                end
+                drop
+                entries program !Program.unresolved_pointer_types
+                capacity program !Program.unresolved_pointer_type_capacity
+            end
+        end
+    end
+end
+
+proc program-add-unresolved-pointer-type Program ModuleContext int int -- int do
+    let program module token depth do
+        if program @Program.unresolved_pointer_type_count program @Program.unresolved_pointer_type_capacity == do program program-grow-unresolved-pointer-types end
+        program @Program.unresolved_pointer_type_count
+        let index do
+            module program index unresolved-pointer-type-at !UnresolvedPointerTypeEntry.module
+            token program index unresolved-pointer-type-at !UnresolvedPointerTypeEntry.token
+            depth program index unresolved-pointer-type-at !UnresolvedPointerTypeEntry.depth
+            index 1 + program !Program.unresolved_pointer_type_count
+            unresolved-pointer-base index + 0 swap -
         end
     end
 end
@@ -423,6 +549,61 @@ end
 
 proc string-type-name ModuleContext int -- bool do
     peek ctx token-index do "String" token-equals
+    end
+end
+
+proc token-type-prefix-equals ModuleContext int int String -- bool do
+    let ctx token-index prefix-length value do
+        ctx token-index token-slice
+        let bytes length do
+            prefix-length value String.len ==
+            if dup do
+                drop bytes prefix-length value String.bytes value String.len bytes-equal
+            else
+                drop false
+            end
+        end
+    end
+end
+
+proc type-token-pointer-depth-from ModuleContext int int -- int do
+    let ctx token-index depth do
+        if depth ctx token-index token-at @TokenEntry.length >= do
+            depth
+        elif
+            ctx @ModuleContext.source ctx token-index token-at @TokenEntry.start +
+            ctx token-index token-at @TokenEntry.length depth 1 + - byte-read
+            42 ==
+        do
+            ctx token-index depth 1 + type-token-pointer-depth-from
+        else
+            depth
+        end
+    end
+end
+
+proc type-token-pointer-depth ModuleContext int -- int do 0 type-token-pointer-depth-from end
+
+proc token-is-pointer-type ModuleContext int -- bool do
+    peek ctx token-index do type-token-pointer-depth
+        let depth do
+            depth 0 >
+            depth ctx token-index token-at @TokenEntry.length < &&
+        end
+    end
+end
+
+proc intern-pointer-depth Program int int -- int do
+    let program value-type depth do
+        if depth 0 == do
+            value-type
+        else
+            program value-type program-intern-pointer-type
+            program swap
+            let next-program pointer-type do
+                next-program pointer-type depth 1 - intern-pointer-depth
+            end
+        end
     end
 end
 
@@ -1030,21 +1211,53 @@ end
 
 proc parse-type-token ModuleContext int -- int do
     peek ctx token-index do require-word
-        if ctx token-index "int" token-equals do
+        ctx token-index type-token-pointer-depth
+        let depth do
+        if depth ctx token-index token-at @TokenEntry.length == do
+            "malformed pointer type" fail
+        end
+        ctx token-index token-at @TokenEntry.length depth -
+        let base-length do
+        if ctx token-index base-length "int" token-type-prefix-equals do
             type-int
-        elif ctx token-index "bool" token-equals do
+        elif ctx token-index base-length "i8" token-type-prefix-equals do type-i8
+        elif ctx token-index base-length "i16" token-type-prefix-equals do type-i16
+        elif ctx token-index base-length "i32" token-type-prefix-equals do type-i32
+        elif ctx token-index base-length "i64" token-type-prefix-equals do type-i64
+        elif ctx token-index base-length "u8" token-type-prefix-equals do type-u8
+        elif ctx token-index base-length "u16" token-type-prefix-equals do type-u16
+        elif ctx token-index base-length "u32" token-type-prefix-equals do type-u32
+        elif ctx token-index base-length "u64" token-type-prefix-equals do type-u64
+        elif ctx token-index base-length "bool" token-type-prefix-equals do
             type-bool
-        elif ctx token-index "ptr" token-equals do
+        elif ctx token-index base-length "ptr" token-type-prefix-equals do
             type-ptr
-        elif ctx token-index "String" token-equals do
+        elif ctx token-index base-length "String" token-type-prefix-equals do
             type-string
         else
-            if ctx token-index reserved-name do
+            if depth 0 > do
+                if base-length 0 == do
+                    "malformed pointer type" fail
+                    0
+                else
+                    ctx @ModuleContext.program ctx token-index depth program-add-unresolved-pointer-type
+                end
+            elif ctx token-index reserved-name do
                 "unknown type in procedure signature" fail
                 0
             else
                 0 token-index - 1 -
             end
+        end
+        let value-type do
+            if depth 0 > value-type 0 >= && do
+                ctx @ModuleContext.program
+                let program do program value-type depth intern-pointer-depth end
+            else
+                value-type
+            end
+        end
+        end
         end
     end
 end
@@ -2663,6 +2876,12 @@ record Program
     builtins_module ModuleContext
     next_nominal_type int
     next_function_type int
+    pointer_types ptr
+    pointer_type_count int
+    pointer_type_capacity int
+    unresolved_pointer_types ptr
+    unresolved_pointer_type_count int
+    unresolved_pointer_type_capacity int
     debug bool
     standard_library_root ptr
     standard_library_root_length int
@@ -2868,8 +3087,19 @@ proc emit-error-type-name Program int -- do
             "type" emit-error
         elif value-type type-string == do
             "String" emit-error
+        elif value-type type-i8 == do "i8" emit-error
+        elif value-type type-i16 == do "i16" emit-error
+        elif value-type type-i32 == do "i32" emit-error
+        elif value-type type-i64 == do "i64" emit-error
+        elif value-type type-u8 == do "u8" emit-error
+        elif value-type type-u16 == do "u16" emit-error
+        elif value-type type-u32 == do "u32" emit-error
+        elif value-type type-u64 == do "u64" emit-error
         elif value-type type-none == do
             "none" emit-error
+        elif value-type type-pointer-base >= do
+            program program value-type type-pointer-base - pointer-type-at @PointerTypeEntry.pointee_type emit-error-type-name
+            "*" emit-error
         else
             if program @Program.module_head value-type emit-error-nominal-type-name ! do
                 "unknown" emit-error
@@ -4001,6 +4231,8 @@ proc find-scope-symbol-from ModuleContext ptr int int -- int do
     end
 end
 
+proc find-scope-symbol-bytes ModuleContext ptr int -- int do 0 find-scope-symbol-from end
+
 proc find-scope-symbol ModuleContext ModuleContext int -- int do
     let ctx name-module token do
         name-module token token-slice
@@ -4977,6 +5209,59 @@ proc resolve-nominal-type-token ModuleContext int String -- int do
     end
 end
 
+proc resolve-type-value ModuleContext int String -- int do
+    let ctx value-type error-message do
+        if value-type 0 >= do
+            value-type
+        elif value-type 0 unresolved-pointer-base - <= do
+            ctx @ModuleContext.program value-type 0 - unresolved-pointer-base - unresolved-pointer-type-at
+            let entry do
+                entry @UnresolvedPointerTypeEntry.module
+                entry @UnresolvedPointerTypeEntry.token
+                entry @UnresolvedPointerTypeEntry.depth
+                let definition-module token-index depth do
+                    definition-module @ModuleContext.source definition-module token-index token-at @TokenEntry.start +
+                    definition-module token-index token-at @TokenEntry.length depth -
+                    let bytes length do
+                        definition-module bytes length 0 find-scope-symbol-from
+                    end
+                    let symbol-index do
+                if symbol-index 0 < do
+                    error-message fail
+                    0
+                else
+                    definition-module symbol-index scope-at @ScopeEntry.kind
+                    let kind do
+                        if kind scope-record == do
+                            definition-module symbol-index scope-at @ScopeEntry.definition_module
+                            definition-module symbol-index scope-at @ScopeEntry.definition_index
+                            record-type-at @RecordTypeEntry.record_type
+                        elif kind scope-union == do
+                            definition-module symbol-index scope-at @ScopeEntry.definition_module
+                            definition-module symbol-index scope-at @ScopeEntry.definition_index
+                            union-type-at @UnionTypeEntry.union_type
+                        elif kind scope-function == do
+                            definition-module symbol-index scope-at @ScopeEntry.definition_module
+                            definition-module symbol-index scope-at @ScopeEntry.definition_index
+                            function-type-at @FunctionTypeEntry.function_type
+                        else
+                            error-message fail
+                            0
+                        end
+                    end
+                end
+                let pointee-type do
+                    definition-module @ModuleContext.program pointee-type depth intern-pointer-depth
+                end
+                    end
+                end
+            end
+        else
+            ctx value-type unresolved-type-token-index error-message resolve-nominal-type-token
+        end
+    end
+end
+
 proc resolve-module-signature-types ModuleContext -- do
     let ctx do
         0
@@ -4998,10 +5283,7 @@ proc resolve-module-signature-types ModuleContext -- do
                     else
                         ctx type-index type-at let value-type do
                             if value-type 0 < do
-                                ctx
-                                value-type unresolved-type-token-index
-                                "unknown type in procedure signature"
-                                resolve-nominal-type-token
+                                ctx value-type "unknown type in procedure signature" resolve-type-value
                                 ctx @ModuleContext.types type-index cell-bytes * field-write
                             end
                         end
@@ -5134,10 +5416,7 @@ proc resolve-module-record-field-types ModuleContext -- do
                 ctx field-index record-field-at @RecordFieldEntry.field_type
                 let value-type do
                     if value-type 0 < do
-                        ctx
-                        value-type unresolved-type-token-index
-                        "unknown type in record field"
-                        resolve-nominal-type-token
+                        ctx value-type "unknown type in record field" resolve-type-value
                         ctx field-index record-field-at !RecordFieldEntry.field_type
                     end
                 end
@@ -5157,10 +5436,7 @@ proc resolve-module-union-case-types ModuleContext -- do
                 ctx case-index union-case-at @UnionCaseEntry.payload_type
                 let value-type do
                     if value-type 0 < do
-                        ctx
-                        value-type unresolved-type-token-index
-                        "unknown type in union variant"
-                        resolve-nominal-type-token
+                        ctx value-type "unknown type in union variant" resolve-type-value
                         ctx case-index union-case-at !UnionCaseEntry.payload_type
                     end
                 end
@@ -5180,10 +5456,7 @@ proc resolve-module-function-signature-types ModuleContext -- do
                 ctx type-index function-signature-type-at
                 let value-type do
                     if value-type 0 < do
-                        ctx
-                        value-type unresolved-type-token-index
-                        "unknown type in function signature"
-                        resolve-nominal-type-token
+                        ctx value-type "unknown type in function signature" resolve-type-value
                         ctx type-index set-function-signature-type
                     end
                 end
@@ -6215,7 +6488,46 @@ const type-literal-base 100 end
 proc type-is-nominal int -- bool do
     dup type-nominal-base >= swap type-function-base < &&
 end
-proc type-is-function int -- bool do type-function-base >= end
+proc type-is-function int -- bool do
+    dup type-function-base >= swap type-pointer-base < &&
+end
+proc type-is-integer int -- bool do
+    let value-type do
+        value-type type-int ==
+        value-type type-i8 == ||
+        value-type type-i16 == ||
+        value-type type-i32 == ||
+        value-type type-i64 == ||
+        value-type type-u8 == ||
+        value-type type-u16 == ||
+        value-type type-u32 == ||
+        value-type type-u64 == ||
+    end
+end
+proc type-is-typed-pointer int -- bool do type-pointer-base >= end
+
+proc type-is-cast-target int -- bool do
+    let value-type do
+        value-type type-is-integer
+        value-type type-bool == ||
+        value-type type-ptr == ||
+        value-type type-string == ||
+        value-type type-is-nominal ||
+        value-type type-is-function ||
+        value-type type-is-typed-pointer ||
+    end
+end
+
+proc compile-primitive-type-literal CompileContext int -- bool do
+    let cc value-type do
+        type-literal-base value-type +
+        let literal-type do
+            cc literal-type type-push
+            cc literal-type emit-push-integer
+            true
+        end
+    end
+end
 
 proc compile-cast-intrinsic CompileContext -- do
     peek cc do type-pop
@@ -6227,23 +6539,18 @@ proc compile-cast-intrinsic CompileContext -- do
                 target-literal type-literal-base -
             end
             let target-type do
-                if
-                    target-type type-int ==
-                    target-type type-bool == ||
-                    target-type type-ptr == ||
-                    target-type type-string == ||
-                    target-type type-is-nominal ||
-                    target-type type-is-function ||
-                    !
-                do
+                if target-type type-is-cast-target ! do
                     cc "cast target is not a type literal" fail-compile-word
                 end
                 if
                     source-type target-type ==
+                    source-type type-is-integer target-type type-is-integer && ||
                     source-type type-int == target-type type-bool == && ||
                     source-type type-bool == target-type type-int == && ||
                     source-type type-int == target-type type-ptr == && ||
                     source-type type-ptr == target-type type-int == && ||
+                    source-type type-ptr == target-type type-is-typed-pointer && ||
+                    source-type type-is-typed-pointer target-type type-ptr == && ||
                     source-type type-ptr == target-type type-is-nominal && ||
                     source-type type-is-nominal target-type type-ptr == && ||
                     !
@@ -7710,22 +8017,33 @@ end
 
 proc compile-type-word CompileContext int -- bool do
     let cc token-index do
-        if cc @CompileContext.defining_module token-index "int" token-equals do
-            cc type-literal-base type-int + type-push
-            cc type-literal-base type-int + emit-push-integer
-            true
-        elif cc @CompileContext.defining_module token-index "bool" token-equals do
-            cc type-literal-base type-bool + type-push
-            cc type-literal-base type-bool + emit-push-integer
-            true
-        elif cc @CompileContext.defining_module token-index "ptr" token-equals do
-            cc type-literal-base type-ptr + type-push
-            cc type-literal-base type-ptr + emit-push-integer
-            true
-        elif cc @CompileContext.defining_module token-index "String" token-equals do
-            cc type-literal-base type-string + type-push
-            cc type-literal-base type-string + emit-push-integer
-            true
+        if cc @CompileContext.defining_module token-index token-is-pointer-type do
+            cc @CompileContext.defining_module token-index parse-type-token
+            let value-type do
+                if value-type 0 < do
+                    cc @CompileContext.scope_module value-type "unknown type literal" resolve-type-value
+                else
+                    value-type
+                end
+                0 swap -
+                let literal-type do
+                    cc literal-type type-push
+                    cc literal-type emit-push-integer
+                end
+                true
+            end
+        elif cc @CompileContext.defining_module token-index "int" token-equals do cc type-int compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "i8" token-equals do cc type-i8 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "i16" token-equals do cc type-i16 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "i32" token-equals do cc type-i32 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "i64" token-equals do cc type-i64 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "u8" token-equals do cc type-u8 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "u16" token-equals do cc type-u16 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "u32" token-equals do cc type-u32 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "u64" token-equals do cc type-u64 compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "bool" token-equals do cc type-bool compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "ptr" token-equals do cc type-ptr compile-primitive-type-literal
+        elif cc @CompileContext.defining_module token-index "String" token-equals do cc type-string compile-primitive-type-literal
         else
             if cc token-index compile-record-type-word do
                 true
@@ -8328,6 +8646,12 @@ proc compile-source ptr int bool ptr int -- do
             0 program !Program.next_proc_id
             type-nominal-base program !Program.next_nominal_type
             type-function-base program !Program.next_function_type
+            16 PointerTypeEntry:sizeof * alloc program !Program.pointer_types
+            0 program !Program.pointer_type_count
+            16 program !Program.pointer_type_capacity
+            16 UnresolvedPointerTypeEntry:sizeof * alloc program !Program.unresolved_pointer_types
+            0 program !Program.unresolved_pointer_type_count
+            16 program !Program.unresolved_pointer_type_capacity
             0 program !Program.token_count
             0 ptr cast program !Program.strings
             0 program !Program.string_count

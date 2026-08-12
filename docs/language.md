@@ -8,9 +8,11 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 
 ## Values And Literals
 
-- Supported runtime value classes are `int`, `bool`, `ptr`, `String`, nominal record and union handles, nominal function references, and `type`.
-- Procedure signatures can name `int`, `bool`, `ptr`, `String`, and visible record, union, or function-reference types.
-- `int` is a signed 64-bit integer. Integer literals are decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks with an optional leading `+` or `-`. Their values must be within `-9223372036854775808` through `9223372036854775807`. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. A standalone `+` or `-` remains an arithmetic word.
+- Supported runtime value classes are `int`, the exact-width integer types, `bool`, `ptr`, typed pointers, `String`, nominal record and union handles, nominal function references, and `type`.
+- Procedure, record-field, union-payload, and function-reference signatures can name `int`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `bool`, `ptr`, `String`, and visible nominal types.
+- `int` is a target-sized signed integer. Integer literals are decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks with an optional leading `+` or `-`. Literals outside the target `int` range are unsupported. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. A standalone `+` or `-` remains an arithmetic word.
+- `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, and `u64` are distinct static integer types. Integer literals are still `int`, so conversion to or between exact-width types requires `cast`; no implicit integer conversion is performed.
+- A trailing `*` names a typed pointer: `i8*`, `String*`, `Node*`, and `Node**` are valid. Pointer types are structural and canonicalized by their pointee, so repeated spelling and imported aliases of the same nominal type yield the same pointer type. Different pointee types remain distinct. `ptr` is the untyped raw-pointer boundary; casts are available between `ptr` and a typed pointer, but no implicit conversion is performed.
 - `true` and `false` are bool literals.
 - Character literals push integer codepoints.
 - Character literals accept exactly one raw Unicode codepoint. `\'` represents
@@ -63,7 +65,7 @@ proc main -- do
 end
 ```
 
-`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be `int`, `bool`, `ptr`, `String`, or any visible nominal type. Record, union, and function-reference fields store handles rather than inline copies.
+`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Record, union, and function-reference fields store handles rather than inline copies.
 
 Record instances use manual memory management. `Name:alloc` has stack effect `-- Name` and allocates uninitialized storage for exactly that record. `Name:sizeof` has stack effect `-- int` and pushes the allocation size without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no constructors, default field values, implicit allocation, ownership tracking, or garbage collection.
 
@@ -94,7 +96,7 @@ proc main -- do
 end
 ```
 
-`union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be `int`, `bool`, `ptr`, `String`, or any visible nominal type.
+`union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be primitive, typed-pointer, or visible nominal types.
 
 `Name:variant` constructs a value, consuming the declared payload when present. `Name.variant?` validates the stored tag and has stack effect `Name -- Name bool`, preserving the handle so an immediately following `if` can project it. `Name.variant` validates that the value has exactly that variant, consumes the handle, and produces its payload; for a payloadless variant it only validates and consumes the handle. Invalid tags and wrong-variant projections terminate the program with status 1.
 
@@ -391,9 +393,9 @@ end
 ### Casts
 
 - `cast`: `x type -- y`
-- Casts allow same-type, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/record-or-union-handle conversions. `String` and function-reference types support only same-type casts.
+- Casts allow same-type, conversions among `int` and the exact-width integer types, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, `ptr`/typed-pointer, and the existing `ptr`/record-or-union-handle conversions. `String` and function-reference types support only same-type casts.
 - Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
-- The destination type is pushed with the `int`, `bool`, `ptr`, `String`, or visible record, union, or function-reference type word.
+- The destination type is pushed with a primitive, typed-pointer, or visible nominal type word.
 
 ### Output And Debugging
 

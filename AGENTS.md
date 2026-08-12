@@ -182,6 +182,13 @@ Commands:
 - Integer literals accept an optional leading `+` or `-` in decimal, binary,
   octal, and hexadecimal forms. They cover the complete signed 64-bit range;
   standalone `+` and `-` remain arithmetic words.
+- Exact-width integer types are `i8`, `i16`, `i32`, `i64`, `u8`, `u16`,
+  `u32`, and `u64`. Literals have type `int`; conversions to and among exact
+  widths require an explicit `cast`.
+- A trailing `*` forms a typed pointer, including repeated levels such as
+  `Node**`. Pointer identity follows the pointee's resolved type identity, so
+  imported aliases of one nominal type produce the same pointer type. `ptr`
+  is the untyped boundary and explicit `ptr`/typed-pointer casts cross it.
 - The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; `@ptr` loads and `!ptr` stores one pointer-sized entry as `ptr`.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.
