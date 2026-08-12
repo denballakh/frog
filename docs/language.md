@@ -126,6 +126,8 @@ end
 
 `fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and C-call procedures are supported.
 
+Procedures may be overloaded by their complete ordered input contract. Their outputs do not distinguish overloads, so two procedures with the same name and inputs are a duplicate even if their outputs differ. A call selects the single visible overload whose inputs exactly match the top of the static stack; no match is a contract mismatch and multiple matches are ambiguous. Imports, aliases, and reexports preserve the complete overload family. User and imported overloads are considered before builtin procedures, but an unmatched user overload does not hide a matching builtin signature.
+
 `Name:call` has stack effect `<inputs> Name -- <outputs>`: the function reference is on top of its inputs. Function-reference types are nominal, so independently declared types with identical contracts are not interchangeable. They may appear in procedure signatures, record fields, union payloads, and other function-reference contracts.
 
 A function reference is opaque and can call only a procedure whose complete resolved contract matches the declared function-reference type. Function references cannot be cast to or from `int` or `ptr`, have no allocation or lifetime operations, and do not expose an underlying identity value.
@@ -213,7 +215,7 @@ Constants have whole-module scope, may refer forward to later constants, and are
 
 The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) as an ordinary Frog module for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `assert` is an ordinary procedure.
 
-Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or procedure, and finally a builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
+Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or matching procedure overload, and finally a matching builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
 
 - `dup`: `a -- a a`
 - `dup2`: `a b -- a b a b`

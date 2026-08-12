@@ -2074,15 +2074,6 @@ proc allocate-proc ModuleContext int -- int do
         do
             "reserved keyword cannot be a procedure name" fail
         end
-        ctx name-token find-proc
-        let existing-proc do
-            if existing-proc 0 >= do
-                "duplicate procedure name: " emit-error
-                ctx name-token token-slice emit-error-bytes
-                10 eputc
-                1 exit
-            end
-        end
         if
             ctx name-token find-record 0 >=
             ctx name-token find-union 0 >= ||
@@ -4019,6 +4010,42 @@ proc find-scope-symbol ModuleContext ModuleContext int -- int do
     end
 end
 
+proc find-scope-macro-from ModuleContext ptr int int -- int do
+    let ctx bytes length scope-index do
+        if scope-index ctx @ModuleContext.scope_count >= do
+            0 1 -
+        else
+            ctx scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind scope-macro ==
+                    ctx scope-index bytes length scope-name-equals &&
+                do
+                    scope-index
+                else
+                    ctx bytes length scope-index 1 + find-scope-macro-from
+                end
+            end
+        end
+    end
+end
+
+proc find-scope-macro ModuleContext ModuleContext int -- int do
+    let ctx name-module token do
+        name-module token token-slice
+        let bytes length do
+            ctx bytes length 0 find-scope-macro-from
+        end
+    end
+end
+
+proc scope-name-equals-token ModuleContext int ModuleContext int -- bool do
+    let ctx scope-index name-module token do
+        name-module token token-slice
+        let bytes length do ctx scope-index bytes length scope-name-equals end
+    end
+end
+
 proc scope-symbols-identical ModuleContext int ModuleContext int -- bool do
     let first first-index second second-index do
         first first-index scope-at
@@ -4060,6 +4087,68 @@ proc add-scope-symbol-from-token ModuleContext ModuleContext int int ModuleConte
     end
 end
 
+proc scope-has-procedure-identity-from ModuleContext ModuleContext int int -- bool do
+    let ctx definition-module definition-index scope-index do
+        if scope-index ctx @ModuleContext.scope_count >= do
+            false
+        else
+            ctx scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind scope-procedure ==
+                    symbol @ScopeEntry.definition_module ptr cast int cast definition-module ptr cast int cast == &&
+                    symbol @ScopeEntry.definition_index definition-index == &&
+                do
+                    true
+                else
+                    ctx definition-module definition-index scope-index 1 + scope-has-procedure-identity-from
+                end
+            end
+        end
+    end
+end
+
+proc scope-has-procedure-identity ModuleContext ModuleContext int -- bool do
+    0 scope-has-procedure-identity-from
+end
+
+proc add-imported-procedures-from ModuleContext ModuleContext int int int -- do
+    let ctx target source-token visible-token scope-index do
+        if scope-index target @ModuleContext.scope_count < do
+            target scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind scope-procedure ==
+                    target scope-index ctx source-token scope-name-equals-token
+                    &&
+                do
+                    ctx ctx visible-token find-scope-symbol
+                    let existing do
+                        if
+                            existing 0 >=
+                            if dup do
+                                drop ctx existing scope-at @ScopeEntry.kind scope-procedure !=
+                            end
+                        do
+                            "import alias conflict" fail
+                        end
+                        if
+                            ctx symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                            scope-has-procedure-identity !
+                        do
+                            ctx ctx visible-token scope-procedure
+                            symbol @ScopeEntry.definition_module
+                            symbol @ScopeEntry.definition_index
+                            add-scope-symbol-from-token
+                        end
+                    end
+                end
+            end
+            ctx target source-token visible-token scope-index 1 + add-imported-procedures-from
+        end
+    end
+end
+
 proc resolve-one-import ModuleContext int -- do
     let ctx import-index do
         ctx import-index import-at
@@ -4070,7 +4159,10 @@ proc resolve-one-import ModuleContext int -- do
                     "internal import target is missing" fail
                 end
                 target resolve-module-scope
-                target ctx entry @ImportEntry.name_token find-scope-symbol
+                target ctx entry @ImportEntry.name_token find-scope-macro
+                if dup 0 < do
+                    drop target ctx entry @ImportEntry.name_token find-scope-symbol
+                end
                 let target-symbol do
                     if target-symbol 0 < do
                         "imported name not found" fail
@@ -4082,7 +4174,9 @@ proc resolve-one-import ModuleContext int -- do
                             drop entry @ImportEntry.name_token
                         end
                         let visible-token do
-                            if
+                            if target-entry @ScopeEntry.kind scope-procedure == do
+                                ctx target entry @ImportEntry.name_token visible-token 0 add-imported-procedures-from
+                            elif
                                 target-entry @ScopeEntry.kind scope-record ==
                                 ctx visible-token identifier-token ! &&
                             do
@@ -4102,7 +4196,9 @@ proc resolve-one-import ModuleContext int -- do
                             end
                             if
                                 ctx visible-token find-proc 0 >=
-                                ctx visible-token find-macro 0 >= ||
+                                target-entry @ScopeEntry.kind scope-macro != &&
+                                ctx visible-token find-macro 0 >=
+                                target-entry @ScopeEntry.kind scope-macro != && ||
                                 ctx visible-token find-constant 0 >= ||
                                 ctx visible-token find-record 0 >= ||
                                 ctx visible-token find-union 0 >= ||
@@ -4143,6 +4239,22 @@ proc resolve-module-scope ModuleContext -- do
                 "cyclic import" fail
             end
             resolve-resolving ctx !ModuleContext.resolve_state
+            0
+            while dup ctx @ModuleContext.macro_count < do
+                dup
+                let macro-index do
+                    ctx
+                    ctx
+                    ctx macro-index macro-at @MacroEntry.name_start
+                    ctx macro-index macro-at @MacroEntry.name_length
+                    scope-macro
+                    ctx
+                    macro-index
+                    add-scope-symbol
+                end
+                1 +
+            end
+            drop
             0
             while dup ctx @ModuleContext.import_count < do
                 dup ctx swap resolve-one-import
@@ -4192,22 +4304,6 @@ proc resolve-module-scope ModuleContext -- do
                     scope-function
                     ctx
                     function-index
-                    add-scope-symbol
-                end
-                1 +
-            end
-            drop
-            0
-            while dup ctx @ModuleContext.macro_count < do
-                dup
-                let macro-index do
-                    ctx
-                    ctx
-                    ctx macro-index macro-at @MacroEntry.name_start
-                    ctx macro-index macro-at @MacroEntry.name_length
-                    scope-macro
-                    ctx
-                    macro-index
                     add-scope-symbol
                 end
                 1 +
@@ -4918,6 +5014,117 @@ proc resolve-module-signature-types ModuleContext -- do
     end
 end
 
+proc procedure-inputs-equal ModuleContext int ModuleContext int -- bool do
+    let first-module first-index second-module second-index do
+        if
+            first-module first-index procedure-at @ProcedureEntry.input_count
+            second-module second-index procedure-at @ProcedureEntry.input_count
+            !=
+        do
+            false
+        else
+            0 true
+            while
+                peek input-index equal do
+                    input-index first-module first-index procedure-at @ProcedureEntry.input_count < equal &&
+                end
+            do
+                let input-index equal do
+                    input-index 1 +
+                    equal
+                    first-module first-module first-index procedure-at @ProcedureEntry.input_start input-index + type-at
+                    second-module second-module second-index procedure-at @ProcedureEntry.input_start input-index + type-at
+                    == &&
+                end
+            end
+            let input-index equal do equal end
+        end
+    end
+end
+
+proc procedure-names-equal ModuleContext int ModuleContext int -- bool do
+    let first-module first-index second-module second-index do
+        first-module @ModuleContext.source
+        first-module first-index procedure-at @ProcedureEntry.name_start
+        +
+        first-module first-index procedure-at @ProcedureEntry.name_length
+        second-module @ModuleContext.source
+        second-module second-index procedure-at @ProcedureEntry.name_start
+        +
+        second-module second-index procedure-at @ProcedureEntry.name_length
+        bytes-equal
+    end
+end
+
+proc validate-module-procedure-inputs-from ModuleContext int int -- do
+    let ctx first-index second-index do
+        if second-index ctx @ModuleContext.proc_count < do
+            if
+                ctx first-index ctx second-index procedure-names-equal
+                ctx first-index ctx second-index procedure-inputs-equal &&
+            do
+                "duplicate procedure input contract" fail
+            end
+            ctx first-index second-index 1 + validate-module-procedure-inputs-from
+        end
+    end
+end
+
+proc validate-module-procedure-inputs ModuleContext -- do
+    let ctx do
+        0
+        while dup ctx @ModuleContext.proc_count < do
+            dup
+            let first-index do
+                ctx first-index first-index 1 + validate-module-procedure-inputs-from
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc scope-procedure-input-conflicts-from ModuleContext int int -- do
+    let ctx first-index second-index do
+        if second-index ctx @ModuleContext.scope_count < do
+            ctx first-index scope-at
+            ctx second-index scope-at
+            let first-symbol second-symbol do
+                if
+                    first-symbol @ScopeEntry.kind scope-procedure ==
+                    second-symbol @ScopeEntry.kind scope-procedure == &&
+                    first-symbol @ScopeEntry.name_module @ModuleContext.source first-symbol @ScopeEntry.name_start +
+                    first-symbol @ScopeEntry.name_length
+                    second-symbol @ScopeEntry.name_module @ModuleContext.source second-symbol @ScopeEntry.name_start +
+                    second-symbol @ScopeEntry.name_length
+                    bytes-equal &&
+                    first-symbol @ScopeEntry.definition_module ptr cast int cast second-symbol @ScopeEntry.definition_module ptr cast int cast !=
+                    first-symbol @ScopeEntry.definition_index second-symbol @ScopeEntry.definition_index != || &&
+                    first-symbol @ScopeEntry.definition_module first-symbol @ScopeEntry.definition_index
+                    second-symbol @ScopeEntry.definition_module second-symbol @ScopeEntry.definition_index
+                    procedure-inputs-equal &&
+                do
+                    "import alias conflict" fail
+                end
+            end
+            ctx first-index second-index 1 + scope-procedure-input-conflicts-from
+        end
+    end
+end
+
+proc validate-scope-procedure-input-conflicts ModuleContext -- do
+    let ctx do
+        0
+        while dup ctx @ModuleContext.scope_count < do
+            dup let first-index do
+                ctx first-index first-index 1 + scope-procedure-input-conflicts-from
+            end
+            1 +
+        end
+        drop
+    end
+end
+
 proc resolve-module-record-field-types ModuleContext -- do
     let ctx do
         0
@@ -4994,6 +5201,8 @@ proc resolve-all-types Program -- do
             dup resolve-module-union-case-types
             dup resolve-module-function-signature-types
             dup resolve-module-signature-types
+            dup validate-module-procedure-inputs
+            dup validate-scope-procedure-input-conflicts
             @ModuleContext.next_module
         end
         drop
@@ -6749,6 +6958,165 @@ proc visible-procedure-definition ModuleContext ptr int -- ModuleContext int boo
     end
 end
 
+proc visible-macro-definition-from ModuleContext ptr int int -- ModuleContext int bool do
+    let scope bytes length scope-index do
+        if scope-index scope @ModuleContext.scope_count >= do
+            0 ptr cast ModuleContext cast 0 1 - false
+        else
+            scope scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind scope-macro ==
+                    scope scope-index bytes length scope-name-equals &&
+                do
+                    symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index true
+                else
+                    scope bytes length scope-index 1 + visible-macro-definition-from
+                end
+            end
+        end
+    end
+end
+
+proc visible-macro-definition ModuleContext ptr int -- ModuleContext int bool do
+    0 visible-macro-definition-from
+end
+
+proc visible-procedure-matches-from CompileContext ModuleContext ptr int int -- ModuleContext int int bool do
+    let cc scope bytes length scope-index do
+        if scope-index scope @ModuleContext.scope_count >= do
+            0 ptr cast ModuleContext cast 0 1 - 0 false
+        else
+            cc scope bytes length scope-index 1 + visible-procedure-matches-from
+            let selected-module selected-index count found do
+                scope scope-index scope-at
+                let symbol do
+                    if
+                        symbol @ScopeEntry.kind scope-procedure ==
+                        scope scope-index bytes length scope-name-equals &&
+                        cc symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index proc-input-contract-matches &&
+                    do
+                        symbol @ScopeEntry.definition_module
+                        symbol @ScopeEntry.definition_index
+                        count 1 +
+                        true
+                    else
+                        selected-module selected-index count found
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc visible-procedure-matches CompileContext ModuleContext ptr int -- ModuleContext int int bool do
+    0 visible-procedure-matches-from
+end
+
+proc scope-has-procedure-inputs-from ModuleContext ptr int ModuleContext int int -- bool do
+    let scope bytes length procedure-module procedure-index scope-index do
+        if scope-index scope @ModuleContext.scope_count >= do
+            false
+        else
+            scope scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind scope-procedure ==
+                    scope scope-index bytes length scope-name-equals &&
+                    symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                    procedure-module procedure-index procedure-inputs-equal &&
+                do
+                    true
+                else
+                    scope bytes length procedure-module procedure-index scope-index 1 +
+                    scope-has-procedure-inputs-from
+                end
+            end
+        end
+    end
+end
+
+proc scope-has-procedure-inputs ModuleContext ptr int ModuleContext int -- bool do
+    0 scope-has-procedure-inputs-from
+end
+
+proc visible-builtin-procedure-matches-from CompileContext ModuleContext ModuleContext ptr int int -- ModuleContext int int bool do
+    let cc visible-scope builtins bytes length scope-index do
+        if scope-index builtins @ModuleContext.scope_count >= do
+            0 ptr cast ModuleContext cast 0 1 - 0 false
+        else
+            cc visible-scope builtins bytes length scope-index 1 + visible-builtin-procedure-matches-from
+            let selected-module selected-index count found do
+                builtins scope-index scope-at
+                let symbol do
+                    if
+                        symbol @ScopeEntry.kind scope-procedure ==
+                        builtins scope-index bytes length scope-name-equals &&
+                        symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                        procedure-at @ProcedureEntry.c_binding c-binding-none == &&
+                        cc symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                        proc-input-contract-matches &&
+                        visible-scope bytes length
+                        symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                        scope-has-procedure-inputs ! &&
+                    do
+                        symbol @ScopeEntry.definition_module
+                        symbol @ScopeEntry.definition_index
+                        count 1 +
+                        true
+                    else
+                        selected-module selected-index count found
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc visible-builtin-procedure-matches CompileContext ModuleContext ModuleContext ptr int -- ModuleContext int int bool do
+    0 visible-builtin-procedure-matches-from
+end
+
+proc visible-function-reference-matches-from ModuleContext int ModuleContext ptr int int -- ModuleContext int int bool do
+    let function-module function-index scope bytes length scope-index do
+        if scope-index scope @ModuleContext.scope_count >= do
+            0 ptr cast ModuleContext cast 0 1 - 0 false
+        else
+            function-module function-index scope bytes length scope-index 1 + visible-function-reference-matches-from
+            let selected-module selected-index count found do
+                scope scope-index scope-at
+                let symbol do
+                    if
+                        symbol @ScopeEntry.kind scope-procedure ==
+                        scope scope-index bytes length scope-name-equals &&
+                        function-module function-index symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index function-proc-contracts-equal &&
+                    do
+                        symbol @ScopeEntry.definition_module
+                        symbol @ScopeEntry.definition_index
+                        count 1 +
+                        true
+                    else
+                        selected-module selected-index count found
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc visible-function-reference-matches ModuleContext int ModuleContext ptr int -- ModuleContext int int bool do
+    0 visible-function-reference-matches-from
+end
+
+proc fail-ambiguous-procedure-call CompileContext -- do
+    let cc do
+        cc emit-compile-word-error-prefix
+        "ambiguous procedure call" emit-error
+        10 eputc
+        1 exit
+    end
+end
+
 proc compile-record-type-word CompileContext int -- bool do
     let cc token-index do
         cc @CompileContext.scope_module
@@ -7263,21 +7631,28 @@ proc compile-function-operation CompileContext ptr int int -- bool do
                             if operation-length 4 == do
                                 "expected function reference target" fail
                             end
+                            function-module function-index
                             cc @CompileContext.scope_module
                             operation 4 +
                             operation-length 4 -
-                            visible-procedure-definition
-                            let proc-module proc-index proc-found do
-                                if proc-found ! do
-                                    "function reference target not found" fail
+                            visible-function-reference-matches
+                            let proc-module proc-index count proc-found do
+                                if count 1 > do
+                                    "ambiguous function reference target" fail
                                 end
-                                if
-                                    function-module function-index proc-module proc-index
-                                    function-proc-contracts-equal
-                                    !
-                                do
-                                    cc function-module function-index proc-module proc-index
-                                    fail-function-reference-contract
+                                if count 0 == do
+                                    cc @CompileContext.scope_module
+                                    operation 4 +
+                                    operation-length 4 -
+                                    visible-procedure-definition
+                                    let actual-module actual-index actual-found do
+                                        if actual-found do
+                                            cc function-module function-index actual-module actual-index
+                                            fail-function-reference-contract
+                                        else
+                                            "function reference target not found" fail
+                                        end
+                                    end
                                 end
                                 cc function-module function-index function-type-at @FunctionTypeEntry.function_type type-push
                                 cc proc-module proc-index procedure-at @ProcedureEntry.global_id emit-push-integer
@@ -7431,10 +7806,12 @@ proc compile-ordinary-word CompileContext int -- do
                     cc token-index token-resolves-to-macro
                     let is-macro do
                     if is-macro do
-                        cc
-                        cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_module
-                        cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_index
-                        compile-macro
+                        cc @CompileContext.scope_module cc @CompileContext.defining_module token-index token-slice
+                        visible-macro-definition
+                        let macro-module macro-index found do
+                            if found ! do "internal macro resolution failed" fail end
+                            cc macro-module macro-index compile-macro
+                        end
                     elif cc token-index compile-type-word do
                     elif cc token-index compile-string-word do
                     elif cc token-index compile-record-word do
@@ -7456,11 +7833,45 @@ proc compile-ordinary-word CompileContext int -- do
                                     elif cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
                                         "unknown word" fail
                                     else
-                                        cc
-                                        token-index
-                                        cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_module
-                                        cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_index
-                                        compile-procedure-call
+                                        cc @CompileContext.defining_module token-index token-slice
+                                        let bytes length do
+                                            cc cc @CompileContext.scope_module bytes length visible-procedure-matches
+                                            let proc-module proc-index count found do
+                                                if
+                                                    cc @CompileContext.scope_module ptr cast int cast
+                                                    cc @CompileContext.program @Program.builtins_module ptr cast int cast
+                                                    ==
+                                                do
+                                                    0 ptr cast ModuleContext cast 0 1 - 0 false
+                                                else
+                                                    cc
+                                                    cc @CompileContext.scope_module
+                                                    cc @CompileContext.program @Program.builtins_module
+                                                    bytes length
+                                                    visible-builtin-procedure-matches
+                                                end
+                                                let builtin-module builtin-index builtin-count builtin-found do
+                                                    count builtin-count +
+                                                    let total-count do
+                                                        if total-count 1 == do
+                                                            if count 1 == do
+                                                                cc token-index proc-module proc-index compile-procedure-call
+                                                            else
+                                                                cc token-index builtin-module builtin-index compile-procedure-call
+                                                            end
+                                                        elif total-count 1 > do
+                                                            cc fail-ambiguous-procedure-call
+                                                        else
+                                                            cc
+                                                            token-index
+                                                            cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_module
+                                                            cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_index
+                                                            compile-procedure-call
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
                                     end
                                 else
                                     if cc token-index compile-builtins-word ! do
@@ -7536,14 +7947,9 @@ end
 
 proc token-resolves-to-macro CompileContext int -- bool do
     let cc token-index do
-        cc @CompileContext.scope_module cc @CompileContext.defining_module token-index find-scope-symbol
-        let symbol-index do
-            if symbol-index 0 >= do
-                cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind scope-macro ==
-            else
-                false
-            end
-        end
+        cc @CompileContext.scope_module cc @CompileContext.defining_module token-index token-slice
+        visible-macro-definition
+        let module index found do found end
     end
 end
 
@@ -7997,35 +8403,46 @@ proc compile-builtins-word CompileContext int -- bool do
                 end
             else
                 cc @CompileContext.program @Program.builtins_module
-                peek builtins do cc @CompileContext.defining_module token-index find-scope-symbol
-                    let symbol-index do
-                        if symbol-index 0 < do
-                            false
-                        else
-                            builtins symbol-index scope-at
-                            let symbol do
-                                if symbol @ScopeEntry.kind scope-macro == do
-                                    cc
-                                    symbol @ScopeEntry.definition_module
-                                    symbol @ScopeEntry.definition_index
-                                    compile-macro
-                                    true
-                                elif symbol @ScopeEntry.kind scope-procedure == do
-                                    if
-                                        symbol @ScopeEntry.definition_module
-                                        symbol @ScopeEntry.definition_index
-                                        procedure-at @ProcedureEntry.c_binding c-binding-none ==
-                                    do
-                                        cc token-index
-                                        symbol @ScopeEntry.definition_module
-                                        symbol @ScopeEntry.definition_index
-                                        compile-procedure-call
-                                        true
-                                    else
+                let builtins do cc @CompileContext.defining_module token-index token-slice
+                    let bytes length do
+                        builtins bytes length visible-macro-definition
+                        let macro-module macro-index macro-found do
+                            if macro-found do
+                                cc macro-module macro-index compile-macro
+                                true
+                            else
+                                builtins bytes length 0 find-scope-symbol-from
+                                let symbol-index do
+                                    if symbol-index 0 < do
                                         false
+                                    else
+                                        builtins symbol-index scope-at
+                                        let symbol do
+                                            if symbol @ScopeEntry.kind scope-procedure != do
+                                                false
+                                            elif
+                                                symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                                                procedure-at @ProcedureEntry.c_binding c-binding-none !=
+                                            do
+                                                false
+                                            else
+                                                cc builtins bytes length visible-procedure-matches
+                                                let proc-module proc-index count found do
+                                                    if count 1 == do
+                                                        cc token-index proc-module proc-index compile-procedure-call
+                                                    elif count 1 > do
+                                                        cc fail-ambiguous-procedure-call
+                                                    else
+                                                        cc token-index
+                                                        symbol @ScopeEntry.definition_module
+                                                        symbol @ScopeEntry.definition_index
+                                                        compile-procedure-call
+                                                    end
+                                                    true
+                                                end
+                                            end
+                                        end
                                     end
-                                else
-                                    false
                                 end
                             end
                         end

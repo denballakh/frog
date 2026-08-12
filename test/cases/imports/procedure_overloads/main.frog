@@ -1,0 +1,23 @@
+from "facade.frog" import pick
+from "facade.frog" import masked
+from "lib.frog" import BoolChoice
+
+proc local int -- int do 1 + end
+proc local bool -- int do drop 2 end
+
+proc assert int -- int do 1 + end
+
+proc main -- do
+    5 local print
+    true local print
+
+    3 pick print
+    false pick print
+    true BoolChoice:ref:pick BoolChoice:call print
+
+    9 masked print
+    false masked print
+
+    41 assert print
+    true "builtin overload remains visible" assert
+end

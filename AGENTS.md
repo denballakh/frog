@@ -194,6 +194,7 @@ Commands:
 - Union constructors allocate internal tag-and-payload storage. Union lifetime is manual, payload handles are borrowed, explicit `ptr`/union casts form an unsafe boundary, and matching through `if`/`elif` is not exhaustiveness-checked.
 - `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract. `Name:ref:procedure` creates an opaque one-Cell reference after exact contract checking, and `Name:call` consumes inputs followed by the reference and produces the declared outputs.
 - Function calls dispatch only to generated procedure IDs with the exact resolved contract. Function references have no pointer/integer casts, allocation, lifetime, closure environment, anonymous syntax, implicit coercion, or C callback conversion.
+- Procedures may share a name only when their resolved ordered input contracts differ. Calls select exactly one matching visible input contract; outputs do not participate. Imports, aliases, and reexports preserve overload families, and builtin procedure candidates remain a final fallback for unmatched user/imported signatures.
 
 ## Implementation Conventions And Gotchas
 
