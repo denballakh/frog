@@ -52,9 +52,11 @@ def main() -> None:
 
     character_pattern = character['match']
     assert isinstance(character_pattern, str)
+    assert '"|[^\'"\\r\\n]' in character_pattern
     character_regex = re.compile(character_pattern)
     assert character_regex.fullmatch("'E'")
     assert character_regex.fullmatch("'é'")
+    assert character_regex.fullmatch("'\"'")
     assert character_regex.fullmatch(r"'\'")
     assert character_regex.fullmatch(r"'\''")
     assert character_regex.fullmatch("''") is None
