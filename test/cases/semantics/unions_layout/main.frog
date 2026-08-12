@@ -1,3 +1,8 @@
+union EnumOnly
+    case first
+    case second
+end
+
 proc maybe-value Maybe -- int do Maybe.some end
 
 union Maybe
@@ -26,6 +31,12 @@ union Scalar
 end
 
 proc main -- do
+    EnumOnly:first EnumOnly.first?
+    let value matches do
+        matches print
+        value EnumOnly.first
+    end
+
     Maybe:none Maybe.none?
     let value matches do
         matches print

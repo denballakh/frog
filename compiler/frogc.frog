@@ -36,26 +36,9 @@ const type-literal-base 100 end
 const max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const min-int 0 max-int - 1 - end
 
-const token-int 1 end
-const token-bool 2 end
-const token-char 3 end
-const token-string 4 end
-const token-word 5 end
-
-const c-binding-none 0 end
-const c-binding-call 1 end
-const c-binding-value 2 end
-
 const fnv-offset-basis 0x811c9dc5 end
 const fnv-prime 0x01000193 end
 const fnv-modulus 0x100000000 end
-
-const constant-new 0 end
-const constant-evaluating 1 end
-const constant-evaluated 2 end
-
-const c-include-system 1 end
-const c-include-local 2 end
 
 record ModuleContext
     source ptr
@@ -83,8 +66,8 @@ record ModuleContext
     import_count int
     scope ptr
     scope_count int
-    load_state int
-    resolve_state int
+    load_state LoadState
+    resolve_state ResolveState
     is_root bool
     records ptr
     record_count int
@@ -132,7 +115,7 @@ record CTypeEntry
 end
 
 record CIncludeEntry
-    kind int
+    kind CIncludeKind
     token int
 end
 
@@ -158,26 +141,10 @@ record ScopeEntry
     name_module ModuleContext*
     name_start int
     name_length int
-    kind int
+    kind ScopeKind
     definition_module ModuleContext*
     definition_index int
 end
-
-const scope-procedure 1 end
-const scope-macro 2 end
-const scope-record 3 end
-const scope-union 4 end
-const scope-function 5 end
-const scope-constant 6 end
-const scope-c-type 7 end
-
-const load-new 0 end
-const load-loading 1 end
-const load-loaded 2 end
-
-const resolve-new 0 end
-const resolve-resolving 1 end
-const resolve-resolved 2 end
 
 const max-source-bytes 4194304 end
 const max-import-path-bytes 1024 end
@@ -627,7 +594,7 @@ proc intern-pointer-depth Program* int int -- int do
     end
 end
 
-proc add-token ModuleContext* int int int int int int -- do
+proc add-token ModuleContext* TokenKind int int int int int -- do
     let ctx kind start length value line column do
         ctx @ModuleContext.token_count
         let index do
@@ -970,14 +937,14 @@ proc parse-integer ModuleContext* int int int int int bool int -- int do
     end
 end
 
-proc classify-word ModuleContext* int int int -- int int do
+proc classify-word ModuleContext* int int int -- TokenKind int do
     let ctx start length line do
         ctx @ModuleContext.source
         let source do
         if source start + length "true" bytes-equal-string do
-            token-bool 1
+            TokenKind:bool 1
         elif source start + length "false" bytes-equal-string do
-            token-bool 0
+            TokenKind:bool 0
         else
             if
                 length 1 >
@@ -994,17 +961,17 @@ proc classify-word ModuleContext* int int int -- int int do
                     start sign-length + length sign-length -
                     let literal-start literal-length do
                         if source literal-start literal-length all-digits do
-                            token-int ctx start length literal-start literal-length 10 negative line parse-integer
+                            TokenKind:int ctx start length literal-start literal-length 10 negative line parse-integer
                         else
                             source literal-start literal-length integer-literal-base
                             let base do
                                 if base 0 > do
-                                    token-int ctx start length literal-start 2 + literal-length 2 - base negative line parse-integer
+                                    TokenKind:int ctx start length literal-start 2 + literal-length 2 - base negative line parse-integer
                                 elif source literal-start byte-read is-digit do
                                     ctx start length line "invalid integer literal" fail-span-at
-                                    token-word 0
+                                    TokenKind:word 0
                                 else
-                                    token-word 0
+                                    TokenKind:word 0
                                 end
                             end
                         end
@@ -1064,7 +1031,7 @@ proc lex-string ModuleContext* int int int -- do
             end
             ctx @ModuleContext.lex_index content-start -
             let content-length do
-                ctx token-string content-start content-length 0 line column add-token
+                ctx TokenKind:string content-start content-length 0 line column add-token
             end
             ctx lex-advance
         end
@@ -1123,7 +1090,7 @@ proc lex-character ModuleContext* int int int -- do
         let quote-escape do
             if quote-escape do
                 ctx 3 lex-advance-count
-                ctx token-char start 4 '\'' line column add-token
+                ctx TokenKind:char start 4 '\'' line column add-token
             else
                 if ctx ctx @ModuleContext.lex_index source-byte '\'' == do
                     ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
@@ -1150,7 +1117,7 @@ proc lex-character ModuleContext* int int int -- do
                         end
                     end
                     ctx lex-advance
-                    ctx token-char start width 2 + value line column add-token
+                    ctx TokenKind:char start width 2 + value line column add-token
                     end
                 end
             end
@@ -1316,7 +1283,7 @@ end
 
 proc require-word ModuleContext* int -- do
     let ctx token-index do
-        if ctx token-index token-at @TokenEntry.kind token-word != do
+        if ctx token-index token-at @TokenEntry.kind TokenKind:word != do
             ctx token-index "expected word token" fail-at
         end
     end
@@ -1473,7 +1440,7 @@ end
 
 proc validate-c-include-token ModuleContext* int -- do
     let ctx token do
-        if ctx token token-at @TokenEntry.kind token-string != do ctx token "expected C include path string" fail-at end
+        if ctx token token-at @TokenEntry.kind TokenKind:string != do ctx token "expected C include path string" fail-at end
         ctx token decoded-string-length
         let length do
             if length 0 == do ctx token "C include path must not be empty" fail-at end
@@ -1491,7 +1458,7 @@ end
 
 proc validate-c-type-spelling ModuleContext* int -- do
     let ctx token do
-        if ctx token token-at @TokenEntry.kind token-string != do ctx token "expected C type string" fail-at end
+        if ctx token token-at @TokenEntry.kind TokenKind:string != do ctx token "expected C type string" fail-at end
         ctx token decoded-string-length let length do
             if length 0 == do ctx token "C type must not be empty" fail-at end
             0
@@ -1891,7 +1858,7 @@ proc scan-one-record ModuleContext* int -- int do
                 ctx @ModuleContext.record_field_count ctx record-index record-type-at !RecordTypeEntry.field_start
                 0 ctx record-index record-type-at !RecordTypeEntry.field_count
                 ctx @ModuleContext.program program-allocate-nominal-type ctx record-index record-type-at !RecordTypeEntry.record_type
-                0 ctx record-index record-type-at !RecordTypeEntry.cycle_state
+                AggregateCycleState:unvisited ctx record-index record-type-at !RecordTypeEntry.cycle_state
                 false ctx record-index record-type-at !RecordTypeEntry.c_emitted
                 ctx record-index name-token 1 + scan-record-fields
                 let next-token do
@@ -2036,7 +2003,7 @@ proc scan-one-union ModuleContext* int -- int do
                 ctx @ModuleContext.union_case_count ctx union-index union-type-at !UnionTypeEntry.case_start
                 0 ctx union-index union-type-at !UnionTypeEntry.case_count
                 ctx @ModuleContext.program program-allocate-nominal-type ctx union-index union-type-at !UnionTypeEntry.union_type
-                0 ctx union-index union-type-at !UnionTypeEntry.cycle_state
+                AggregateCycleState:unvisited ctx union-index union-type-at !UnionTypeEntry.cycle_state
                 false ctx union-index union-type-at !UnionTypeEntry.c_emitted
                 ctx union-index name-token 1 + scan-union-cases
                 let next-token do
@@ -2164,7 +2131,7 @@ proc scan-macro-body ModuleContext* int -- int do
                 if token-index ctx @ModuleContext.token_count >= do
                     ctx "unterminated macro body" fail-eof
                     token-index depth false
-                elif ctx token-index token-at @TokenEntry.kind token-word == do
+                elif ctx token-index token-at @TokenEntry.kind TokenKind:word == do
                     if ctx token-index "end" token-equals do
                         if depth 0 == do
                             token-index 1 + depth false
@@ -2213,7 +2180,7 @@ proc scan-macro-body ModuleContext* int -- int do
 end
 
 record MacroBlockFrame
-    kind int
+    kind BlockKind
     has_do bool
     has_else bool
 end
@@ -2233,7 +2200,7 @@ proc validate-macro-body ModuleContext* int int -- do
                 end
             do
                 let token-index depth do
-                    if ctx token-index token-at @TokenEntry.kind token-word == do
+                    if ctx token-index token-at @TokenEntry.kind TokenKind:word == do
                         if
                             ctx token-index "from" token-equals
                             ctx token-index "import" token-equals ||
@@ -2261,11 +2228,11 @@ proc validate-macro-body ModuleContext* int int -- do
                             ctx token-index "peek" token-equals ||
                         do
                             if ctx token-index "if" token-equals do
-                                block-if frames depth macro-block-frame-at !MacroBlockFrame.kind
+                                BlockKind:conditional frames depth macro-block-frame-at !MacroBlockFrame.kind
                             elif ctx token-index "while" token-equals do
-                                block-while frames depth macro-block-frame-at !MacroBlockFrame.kind
+                                BlockKind:loop frames depth macro-block-frame-at !MacroBlockFrame.kind
                             else
-                                block-let frames depth macro-block-frame-at !MacroBlockFrame.kind
+                                BlockKind:local_scope frames depth macro-block-frame-at !MacroBlockFrame.kind
                             end
                             false frames depth macro-block-frame-at !MacroBlockFrame.has_do
                             false frames depth macro-block-frame-at !MacroBlockFrame.has_else
@@ -2283,7 +2250,7 @@ proc validate-macro-body ModuleContext* int int -- do
                             if depth 0 <= do
                                 ctx token-index "else outside macro if block" fail-at
                             end
-                            if frames depth 1 - macro-block-frame-at @MacroBlockFrame.kind block-if != do
+                            if frames depth 1 - macro-block-frame-at @MacroBlockFrame.kind BlockKind:conditional != do
                                 ctx token-index "else outside macro if block" fail-at
                             end
                             if frames depth 1 - macro-block-frame-at @MacroBlockFrame.has_do ! do
@@ -2298,7 +2265,7 @@ proc validate-macro-body ModuleContext* int int -- do
                             if depth 0 <= do
                                 ctx token-index "elif outside macro if block" fail-at
                             end
-                            if frames depth 1 - macro-block-frame-at @MacroBlockFrame.kind block-if != do
+                            if frames depth 1 - macro-block-frame-at @MacroBlockFrame.kind BlockKind:conditional != do
                                 ctx token-index "elif outside macro if block" fail-at
                             end
                             if frames depth 1 - macro-block-frame-at @MacroBlockFrame.has_do ! do
@@ -2416,13 +2383,13 @@ proc scan-constant-body ModuleContext* int -- int do
                     ctx "unterminated constant declaration" fail-eof
                     token-index false
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "end" token-equals &&
                 do
                     token-index 1 + false
                 else
                     if
-                        ctx token-index token-at @TokenEntry.kind token-word ==
+                        ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                         ctx token-index constant-expression-forbidden-word &&
                     do
                         ctx token-index "unsupported constant expression word" fail-at
@@ -2470,7 +2437,7 @@ proc scan-one-constant ModuleContext* int -- int do
             let constant-index do
                 ctx name-token token-at @TokenEntry.start ctx constant-index constant-at !ConstantEntry.name_start
                 ctx name-token token-at @TokenEntry.length ctx constant-index constant-at !ConstantEntry.name_length
-                constant-new ctx constant-index constant-at !ConstantEntry.state
+                ConstantState:new ctx constant-index constant-at !ConstantEntry.state
                 0 ptr cast ctx constant-index constant-at !ConstantEntry.values
                 0 ctx constant-index constant-at !ConstantEntry.value_count
                 ctx name-token 1 + scan-constant-body
@@ -2495,7 +2462,7 @@ proc scan-block-end-with-outer-elif ModuleContext* int bool -- int do
             end
         do
             let token-index depth do
-                if ctx token-index token-at @TokenEntry.kind token-word == do
+                if ctx token-index token-at @TokenEntry.kind TokenKind:word == do
                     if
                         ctx token-index "from" token-equals
                         ctx token-index "import" token-equals ||
@@ -2585,7 +2552,7 @@ proc allocate-proc ModuleContext* int -- int do
             ctx name-token token-at @TokenEntry.length ctx proc-index procedure-at !ProcedureEntry.name_length
             proc-index ctx proc-index procedure-at !ProcedureEntry.index
             ctx @ModuleContext.program program-allocate-proc-id ctx proc-index procedure-at !ProcedureEntry.global_id
-            c-binding-none ctx proc-index procedure-at !ProcedureEntry.c_binding
+            CBinding:none ctx proc-index procedure-at !ProcedureEntry.c_binding
             proc-index
         end
     end
@@ -2671,9 +2638,9 @@ proc scan-one-c-include ModuleContext* int -- int do
     let ctx token do
         token 1 + let kind-token do
             if kind-token ctx @ModuleContext.token_count >= do ctx "expected C include kind" fail-eof end
-            if ctx kind-token "system" token-equals do c-include-system
-            elif ctx kind-token "local" token-equals do c-include-local
-            else ctx kind-token "expected C include kind" fail-name-at 0 end
+            if ctx kind-token "system" token-equals do CIncludeKind:system
+            elif ctx kind-token "local" token-equals do CIncludeKind:local
+            else ctx kind-token "expected C include kind" fail-name-at CIncludeKind:system end
             kind-token 1 + let kind path-token do
                 if path-token ctx @ModuleContext.token_count >= do ctx "expected C include path string" fail-eof end
                 ctx path-token validate-c-include-token
@@ -2770,7 +2737,7 @@ proc scan-one-c-call ModuleContext* int -- int do
     let ctx token do
         token 1 + let name do
             ctx name allocate-proc let index do
-                c-binding-call ctx index procedure-at !ProcedureEntry.c_binding
+                CBinding:call ctx index procedure-at !ProcedureEntry.c_binding
                 if ctx name "main" token-equals do ctx name "main cannot be a C binding" fail-at end
                 name 1 + let symbol do
                     if symbol ctx @ModuleContext.token_count >= do ctx "expected C symbol" fail-eof end
@@ -2802,7 +2769,7 @@ proc scan-one-c-value ModuleContext* int -- int do
     let ctx token do
         token 1 + let name do
             ctx name allocate-proc let index do
-                c-binding-value ctx index procedure-at !ProcedureEntry.c_binding
+                CBinding:value ctx index procedure-at !ProcedureEntry.c_binding
                 if ctx name "main" token-equals do ctx name "main cannot be a C binding" fail-at end
                 name 1 + let symbol do
                     if symbol ctx @ModuleContext.token_count >= do ctx "expected C symbol" fail-eof end
@@ -2936,7 +2903,7 @@ proc scan-one-import ModuleContext* int -- int do
     let ctx token do
         token 1 + let path-token do
             if path-token ctx @ModuleContext.token_count >= do ctx "expected import path string" fail-eof end
-            if ctx path-token token-at @TokenEntry.kind token-string != do ctx path-token "expected import path string" fail-at end
+            if ctx path-token token-at @TokenEntry.kind TokenKind:string != do ctx path-token "expected import path string" fail-at end
             path-token 1 + let import-token do
                 if import-token ctx @ModuleContext.token_count >= do ctx "expected import after import path" fail-eof end
                 if ctx import-token "import" token-equals ! do ctx import-token "expected import after import path" fail-at end
@@ -2972,7 +2939,7 @@ end
 
 proc token-starts-block ModuleContext* int -- bool do
     let ctx token do
-        if ctx token token-at @TokenEntry.kind token-word != do
+        if ctx token token-at @TokenEntry.kind TokenKind:word != do
             false
         else
             ctx token "if" token-equals
@@ -3002,69 +2969,69 @@ proc scan-declarations ModuleContext* -- do
         while dup ctx @ModuleContext.token_count < do
             let token-index do
                 if
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "from" token-equals &&
                 do
                     ctx token-index scan-one-import
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "import" token-equals &&
                 do
                     ctx token-index "module aliases are not supported" fail-at
                     token-index 1 +
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "macro" token-equals &&
                 do
                     ctx token-index scan-one-macro
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "const" token-equals &&
                 do
                     ctx token-index scan-one-constant
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "proc" token-equals &&
                 do
                     ctx token-index scan-one-proc
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-include" token-equals &&
                 do
                     ctx token-index scan-one-c-include
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-type" token-equals &&
                 do
                     ctx token-index scan-one-c-type
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-call" token-equals &&
                 do
                     ctx token-index scan-one-c-call
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-value" token-equals &&
                 do
                     ctx token-index scan-one-c-value
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "record" token-equals &&
                 do
                     ctx token-index scan-one-record
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "union" token-equals &&
                 do
                     ctx token-index scan-one-union
                 elif
-                    ctx token-index token-at @TokenEntry.kind token-word ==
+                    ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "fn" token-equals &&
                 do
                     ctx token-index scan-one-function
                 else
                     if ctx @ModuleContext.is_root do
-                        if ctx token-index token-at @TokenEntry.kind token-word == do
+                        if ctx token-index token-at @TokenEntry.kind TokenKind:word == do
                             ctx token-index "unexpected top-level word" fail-name-at
                         else
                             ctx token-index "unexpected top-level token" fail-name-at
@@ -3087,12 +3054,8 @@ proc scan-declarations ModuleContext* -- do
     end
 end
 
-const block-if 1 end
-const block-while 2 end
-const block-let 3 end
-
 record BlockFrame
-    kind int
+    kind BlockKind
     base_types ptr
     base_count int
     then_types ptr
@@ -3127,7 +3090,7 @@ record RecordTypeEntry
     field_start int
     field_count int
     record_type int
-    cycle_state int
+    cycle_state AggregateCycleState
     c_emitted bool
 end
 
@@ -3144,7 +3107,7 @@ record UnionTypeEntry
     case_start int
     case_count int
     union_type int
-    cycle_state int
+    cycle_state AggregateCycleState
     c_emitted bool
 end
 
@@ -3221,7 +3184,7 @@ record CompileContext
 end
 
 record TokenEntry
-    kind int
+    kind TokenKind
     start int
     length int
     value int
@@ -3241,7 +3204,7 @@ record ProcedureEntry
     index int
     global_id int
     c_symbol_token int
-    c_binding int
+    c_binding CBinding
 end
 
 record StringPoolEntry
@@ -3264,7 +3227,7 @@ record ConstantEntry
     name_length int
     body_start int
     body_end int
-    state int
+    state ConstantState
     values ptr
     value_count int
 end
@@ -3273,6 +3236,160 @@ record ConstantValue
     value_type int
     payload int
 end
+
+union CBinding
+    case none
+    case call
+    case value
+end
+
+proc == CBinding CBinding -- bool do
+    let first second do
+        first CBinding.none? swap drop second CBinding.none? swap drop &&
+        first CBinding.call? swap drop second CBinding.call? swap drop && ||
+        first CBinding.value? swap drop second CBinding.value? swap drop && ||
+    end
+end
+
+proc != CBinding CBinding -- bool do == ! end
+
+union CIncludeKind
+    case system
+    case local
+end
+
+proc == CIncludeKind CIncludeKind -- bool do
+    let first second do
+        first CIncludeKind.system? swap drop second CIncludeKind.system? swap drop &&
+        first CIncludeKind.local? swap drop second CIncludeKind.local? swap drop && ||
+    end
+end
+
+proc != CIncludeKind CIncludeKind -- bool do == ! end
+
+union ConstantState
+    case new
+    case evaluating
+    case evaluated
+end
+
+proc == ConstantState ConstantState -- bool do
+    let first second do
+        first ConstantState.new? swap drop second ConstantState.new? swap drop &&
+        first ConstantState.evaluating? swap drop second ConstantState.evaluating? swap drop && ||
+        first ConstantState.evaluated? swap drop second ConstantState.evaluated? swap drop && ||
+    end
+end
+
+proc != ConstantState ConstantState -- bool do == ! end
+
+union LoadState
+    case new
+    case loading
+    case loaded
+end
+
+proc == LoadState LoadState -- bool do
+    let first second do
+        first LoadState.new? swap drop second LoadState.new? swap drop &&
+        first LoadState.loading? swap drop second LoadState.loading? swap drop && ||
+        first LoadState.loaded? swap drop second LoadState.loaded? swap drop && ||
+    end
+end
+
+proc != LoadState LoadState -- bool do == ! end
+
+union ResolveState
+    case new
+    case resolving
+    case resolved
+end
+
+proc == ResolveState ResolveState -- bool do
+    let first second do
+        first ResolveState.new? swap drop second ResolveState.new? swap drop &&
+        first ResolveState.resolving? swap drop second ResolveState.resolving? swap drop && ||
+        first ResolveState.resolved? swap drop second ResolveState.resolved? swap drop && ||
+    end
+end
+
+proc != ResolveState ResolveState -- bool do == ! end
+
+union ScopeKind
+    case procedure
+    case macro_symbol
+    case record_type
+    case union_type
+    case function_type
+    case constant
+    case c_type
+end
+
+proc == ScopeKind ScopeKind -- bool do
+    let first second do
+        first ScopeKind.procedure? swap drop second ScopeKind.procedure? swap drop &&
+        first ScopeKind.macro_symbol? swap drop second ScopeKind.macro_symbol? swap drop && ||
+        first ScopeKind.record_type? swap drop second ScopeKind.record_type? swap drop && ||
+        first ScopeKind.union_type? swap drop second ScopeKind.union_type? swap drop && ||
+        first ScopeKind.function_type? swap drop second ScopeKind.function_type? swap drop && ||
+        first ScopeKind.constant? swap drop second ScopeKind.constant? swap drop && ||
+        first ScopeKind.c_type? swap drop second ScopeKind.c_type? swap drop && ||
+    end
+end
+
+proc != ScopeKind ScopeKind -- bool do == ! end
+
+union AggregateCycleState
+    case unvisited
+    case visiting
+    case visited
+end
+
+proc == AggregateCycleState AggregateCycleState -- bool do
+    let first second do
+        first AggregateCycleState.unvisited? swap drop second AggregateCycleState.unvisited? swap drop &&
+        first AggregateCycleState.visiting? swap drop second AggregateCycleState.visiting? swap drop && ||
+        first AggregateCycleState.visited? swap drop second AggregateCycleState.visited? swap drop && ||
+    end
+end
+
+proc != AggregateCycleState AggregateCycleState -- bool do == ! end
+
+union TokenKind
+    case int
+    case bool
+    case char
+    case string
+    case word
+end
+
+proc == TokenKind TokenKind -- bool do
+    let first second do
+        first TokenKind.int? swap drop second TokenKind.int? swap drop &&
+        first TokenKind.bool? swap drop second TokenKind.bool? swap drop && ||
+        first TokenKind.char? swap drop second TokenKind.char? swap drop && ||
+        first TokenKind.string? swap drop second TokenKind.string? swap drop && ||
+        first TokenKind.word? swap drop second TokenKind.word? swap drop && ||
+    end
+end
+
+proc != TokenKind TokenKind -- bool do == ! end
+
+union BlockKind
+    case conditional
+    case loop
+    case local_scope
+end
+
+proc == BlockKind BlockKind -- bool do
+    let first second do
+        first BlockKind.conditional? swap drop second BlockKind.conditional? swap drop &&
+        first BlockKind.loop? swap drop second BlockKind.loop? swap drop && ||
+        first BlockKind.local_scope? swap drop second BlockKind.local_scope? swap drop && ||
+    end
+end
+
+proc != BlockKind BlockKind -- bool do == ! end
 
 proc emit-source-error-prefix CompileContext* -- do
     let cc do
@@ -3676,7 +3793,7 @@ proc block-address CompileContext* int -- BlockFrame* do
     end
 end
 
-proc push-block CompileContext* int -- BlockFrame* do
+proc push-block CompileContext* BlockKind -- BlockFrame* do
     let cc kind do
         cc cc @CompileContext.block_count block-address
         let block do
@@ -4059,7 +4176,7 @@ proc intern-module-strings Program* ModuleContext* -- do
         while dup ctx @ModuleContext.token_count < do
             dup
             let token do
-                if ctx token token-at @TokenEntry.kind token-string == do
+                if ctx token token-at @TokenEntry.kind TokenKind:string == do
                     program ctx token intern-string-token
                 end
             end
@@ -4565,7 +4682,7 @@ proc initialize-module-source ModuleContext* ptr int -- do
         ctx @ModuleContext.token_count 1 + CIncludeEntry:sizeof * alloc ctx !ModuleContext.c_includes
         ctx @ModuleContext.token_count 1 + CSignatureType:sizeof * alloc ctx !ModuleContext.c_signature_types
         0 ctx !ModuleContext.scope_count
-        resolve-new ctx !ModuleContext.resolve_state
+        ResolveState:new ctx !ModuleContext.resolve_state
         ctx scan-declarations
     end
 end
@@ -4619,7 +4736,7 @@ proc load-module-path Program* ModuleContext* int ptr int -- ModuleContext* do
         program canonical canonical-length find-module-by-path
         let existing do
             if existing ptr cast int cast 0 != do
-                if existing @ModuleContext.load_state load-loading == do
+                if existing @ModuleContext.load_state LoadState:loading == do
                     importer import-token "cyclic import" fail-at
                 end
                 existing
@@ -4642,13 +4759,13 @@ proc load-module-path Program* ModuleContext* int ptr int -- ModuleContext* do
                         0 module !ModuleContext.import_count
                         0 ptr cast module !ModuleContext.scope
                         0 module !ModuleContext.scope_count
-                        load-loading module !ModuleContext.load_state
-                        resolve-new module !ModuleContext.resolve_state
+                        LoadState:loading module !ModuleContext.load_state
+                        ResolveState:new module !ModuleContext.resolve_state
                         false module !ModuleContext.is_root
                         program module program-add-module
                         module source source-length initialize-module-source
                         program module load-module-imports
-                        load-loaded module !ModuleContext.load_state
+                        LoadState:loaded module !ModuleContext.load_state
                         module
                     end
                 end
@@ -4701,7 +4818,7 @@ proc find-scope-macro-from ModuleContext* ptr int int -- int do
             ctx scope-index scope-at
             let symbol do
                 if
-                    symbol @ScopeEntry.kind scope-macro ==
+                    symbol @ScopeEntry.kind ScopeKind:macro_symbol ==
                     ctx scope-index bytes length scope-name-equals &&
                 do
                     scope-index
@@ -4742,7 +4859,7 @@ proc scope-symbols-identical ModuleContext* int ModuleContext* int -- bool do
     end
 end
 
-proc add-scope-symbol ModuleContext* ModuleContext* int int int ModuleContext* int -- do
+proc add-scope-symbol ModuleContext* ModuleContext* int int ScopeKind ModuleContext* int -- do
     let ctx name-module name-start name-length kind definition-module definition-index do
         ctx ctx @ModuleContext.scope_count scope-at
         let symbol do
@@ -4757,7 +4874,7 @@ proc add-scope-symbol ModuleContext* ModuleContext* int int int ModuleContext* i
     end
 end
 
-proc add-scope-symbol-from-token ModuleContext* ModuleContext* int int ModuleContext* int -- do
+proc add-scope-symbol-from-token ModuleContext* ModuleContext* int ScopeKind ModuleContext* int -- do
     let ctx name-module token kind definition-module definition-index do
         ctx
         name-module
@@ -4778,7 +4895,7 @@ proc scope-has-procedure-identity-from ModuleContext* ModuleContext* int int -- 
             ctx scope-index scope-at
             let symbol do
                 if
-                    symbol @ScopeEntry.kind scope-procedure ==
+                    symbol @ScopeEntry.kind ScopeKind:procedure ==
                     symbol @ScopeEntry.definition_module ptr cast int cast definition-module ptr cast int cast == &&
                     symbol @ScopeEntry.definition_index definition-index == &&
                 do
@@ -4801,7 +4918,7 @@ proc add-imported-procedures-from ModuleContext* ModuleContext* int int int -- d
             target scope-index scope-at
             let symbol do
                 if
-                    symbol @ScopeEntry.kind scope-procedure ==
+                    symbol @ScopeEntry.kind ScopeKind:procedure ==
                     target scope-index ctx source-token scope-name-equals-token
                     &&
                 do
@@ -4810,7 +4927,7 @@ proc add-imported-procedures-from ModuleContext* ModuleContext* int int int -- d
                         if
                             existing 0 >=
                             if dup do
-                                drop ctx existing scope-at @ScopeEntry.kind scope-procedure !=
+                                drop ctx existing scope-at @ScopeEntry.kind ScopeKind:procedure !=
                             end
                         do
                             ctx visible-token "import alias conflict" fail-at
@@ -4819,7 +4936,7 @@ proc add-imported-procedures-from ModuleContext* ModuleContext* int int int -- d
                             ctx symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                             scope-has-procedure-identity !
                         do
-                            ctx ctx visible-token scope-procedure
+                            ctx ctx visible-token ScopeKind:procedure
                             symbol @ScopeEntry.definition_module
                             symbol @ScopeEntry.definition_index
                             add-scope-symbol-from-token
@@ -4857,31 +4974,31 @@ proc resolve-one-import ModuleContext* int -- do
                             drop entry @ImportEntry.name_token
                         end
                         let visible-token do
-                            if target-entry @ScopeEntry.kind scope-procedure == do
+                            if target-entry @ScopeEntry.kind ScopeKind:procedure == do
                                 ctx target entry @ImportEntry.name_token visible-token 0 add-imported-procedures-from
                             elif
-                                target-entry @ScopeEntry.kind scope-record ==
+                                target-entry @ScopeEntry.kind ScopeKind:record_type ==
                                 ctx visible-token identifier-token ! &&
                             do
                                 ctx visible-token "record import alias must be an identifier" fail-at
                             end
                             if
-                                target-entry @ScopeEntry.kind scope-union ==
+                                target-entry @ScopeEntry.kind ScopeKind:union_type ==
                                 ctx visible-token identifier-token ! &&
                             do
                                 ctx visible-token "union import alias must be an identifier" fail-at
                             end
                             if
-                                target-entry @ScopeEntry.kind scope-function ==
+                                target-entry @ScopeEntry.kind ScopeKind:function_type ==
                                 ctx visible-token identifier-token ! &&
                             do
                                 ctx visible-token "function import alias must be an identifier" fail-at
                             end
                             if
                                 ctx visible-token find-proc 0 >=
-                                target-entry @ScopeEntry.kind scope-macro != &&
+                                target-entry @ScopeEntry.kind ScopeKind:macro_symbol != &&
                                 ctx visible-token find-macro 0 >=
-                                target-entry @ScopeEntry.kind scope-macro != && ||
+                                target-entry @ScopeEntry.kind ScopeKind:macro_symbol != && ||
                                 ctx visible-token find-constant 0 >= ||
                                 ctx visible-token find-record 0 >= ||
                                 ctx visible-token find-union 0 >= ||
@@ -4916,12 +5033,12 @@ end
 
 proc resolve-module-scope ModuleContext* -- do
     let ctx do
-        if ctx @ModuleContext.resolve_state resolve-resolved == do
+        if ctx @ModuleContext.resolve_state ResolveState:resolved == do
         else
-            if ctx @ModuleContext.resolve_state resolve-resolving == do
+            if ctx @ModuleContext.resolve_state ResolveState:resolving == do
                 "cyclic import" fail
             end
-            resolve-resolving ctx !ModuleContext.resolve_state
+            ResolveState:resolving ctx !ModuleContext.resolve_state
             0
             while dup ctx @ModuleContext.macro_count < do
                 dup
@@ -4930,7 +5047,7 @@ proc resolve-module-scope ModuleContext* -- do
                     ctx
                     ctx macro-index macro-at @MacroEntry.name_start
                     ctx macro-index macro-at @MacroEntry.name_length
-                    scope-macro
+                    ScopeKind:macro_symbol
                     ctx
                     macro-index
                     add-scope-symbol
@@ -4952,7 +5069,7 @@ proc resolve-module-scope ModuleContext* -- do
                     ctx
                     ctx record-index record-type-at @RecordTypeEntry.name_start
                     ctx record-index record-type-at @RecordTypeEntry.name_length
-                    scope-record
+                    ScopeKind:record_type
                     ctx
                     record-index
                     add-scope-symbol
@@ -4968,7 +5085,7 @@ proc resolve-module-scope ModuleContext* -- do
                     ctx
                     ctx union-index union-type-at @UnionTypeEntry.name_start
                     ctx union-index union-type-at @UnionTypeEntry.name_length
-                    scope-union
+                    ScopeKind:union_type
                     ctx
                     union-index
                     add-scope-symbol
@@ -4984,7 +5101,7 @@ proc resolve-module-scope ModuleContext* -- do
                     ctx
                     ctx function-index function-type-at @FunctionTypeEntry.name_start
                     ctx function-index function-type-at @FunctionTypeEntry.name_length
-                    scope-function
+                    ScopeKind:function_type
                     ctx
                     function-index
                     add-scope-symbol
@@ -5000,7 +5117,7 @@ proc resolve-module-scope ModuleContext* -- do
                     ctx
                     ctx constant-index constant-at @ConstantEntry.name_start
                     ctx constant-index constant-at @ConstantEntry.name_length
-                    scope-constant
+                    ScopeKind:constant
                     ctx
                     constant-index
                     add-scope-symbol
@@ -5011,7 +5128,7 @@ proc resolve-module-scope ModuleContext* -- do
             0
             while dup ctx @ModuleContext.c_type_count < do
                 dup let index do
-                    ctx ctx ctx index c-type-at @CTypeEntry.name_start ctx index c-type-at @CTypeEntry.name_length scope-c-type ctx index add-scope-symbol
+                    ctx ctx ctx index c-type-at @CTypeEntry.name_start ctx index c-type-at @CTypeEntry.name_length ScopeKind:c_type ctx index add-scope-symbol
                 end
                 1 +
             end
@@ -5024,7 +5141,7 @@ proc resolve-module-scope ModuleContext* -- do
                     ctx
                     ctx proc-index procedure-at @ProcedureEntry.name_start
                     ctx proc-index procedure-at @ProcedureEntry.name_length
-                    scope-procedure
+                    ScopeKind:procedure
                     ctx
                     proc-index
                     add-scope-symbol
@@ -5032,7 +5149,7 @@ proc resolve-module-scope ModuleContext* -- do
                 1 +
             end
             drop
-            resolve-resolved ctx !ModuleContext.resolve_state
+            ResolveState:resolved ctx !ModuleContext.resolve_state
         end
     end
 end
@@ -5322,7 +5439,7 @@ proc find-builtin-procedure-2-from Program* ptr int int int int -- ModuleContext
                     builtins scope-index scope-at
                     let symbol do
                         if
-                            symbol @ScopeEntry.kind scope-procedure ==
+                            symbol @ScopeEntry.kind ScopeKind:procedure ==
                             builtins scope-index bytes length scope-name-equals &&
                             symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                             first-type second-type procedure-inputs-are-2 &&
@@ -5380,7 +5497,7 @@ proc find-builtin-procedure-1-from Program* ptr int int int -- ModuleContext* in
                     builtins scope-index scope-at
                     let symbol do
                         if
-                            symbol @ScopeEntry.kind scope-procedure ==
+                            symbol @ScopeEntry.kind ScopeKind:procedure ==
                             builtins scope-index bytes length scope-name-equals &&
                             symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                             input-type procedure-inputs-are-1 &&
@@ -5866,16 +5983,16 @@ proc scope-prefix-is-nominal ModuleContext* ptr int bool -- bool do
                 false
             else
                 scope symbol-index scope-at @ScopeEntry.kind
-                peek kind do scope-record ==
-                    kind scope-union == ||
-                    kind scope-function == allow-function && ||
+                peek kind do ScopeKind:record_type ==
+                    kind ScopeKind:union_type == ||
+                    kind ScopeKind:function_type == allow-function && ||
                 end
             end
         end
     end
 end
 
-proc scope-prefix-has-kind ModuleContext* ptr int int -- bool do
+proc scope-prefix-has-kind ModuleContext* ptr int ScopeKind -- bool do
     let scope bytes length expected-kind do
         scope bytes length 0 find-scope-symbol-from
         let symbol-index do
@@ -5906,10 +6023,10 @@ proc constant-qualified-nominal-word ModuleContext* ModuleContext* int -- bool d
                                 if dot 1 <= do
                                     false
                                 else
-                                    scope bytes 1 + dot 1 - scope-record scope-prefix-has-kind
+                                    scope bytes 1 + dot 1 - ScopeKind:record_type scope-prefix-has-kind
                                 end
                             else
-                                scope bytes dot scope-union scope-prefix-has-kind
+                                scope bytes dot ScopeKind:union_type scope-prefix-has-kind
                             end
                         else
                             false
@@ -5937,8 +6054,8 @@ end
 proc evaluate-constant ModuleContext* int -- do
     peek module constant-index do constant-at @ConstantEntry.state
         let state do
-            if state constant-evaluated == do
-            elif state constant-evaluating == do
+            if state ConstantState:evaluated == do
+            elif state ConstantState:evaluating == do
                 module constant-index constant-at @ConstantEntry.name_start
                 let start do
                     module start module constant-index constant-at @ConstantEntry.name_length
@@ -5946,7 +6063,7 @@ proc evaluate-constant ModuleContext* int -- do
                     "recursive constant" fail-span-at
                 end
             else
-                constant-evaluating module constant-index constant-at !ConstantEntry.state
+                ConstantState:evaluating module constant-index constant-at !ConstantEntry.state
                 module module constant-index constant-at @ConstantEntry.body_start create-constant-evaluator
                 peek evaluator do
                     module
@@ -5966,7 +6083,7 @@ proc evaluate-constant ModuleContext* int -- do
                             memory-copy
                             values module constant-index constant-at !ConstantEntry.values
                             value-count module constant-index constant-at !ConstantEntry.value_count
-                            constant-evaluated module constant-index constant-at !ConstantEntry.state
+                            ConstantState:evaluated module constant-index constant-at !ConstantEntry.state
                         end
                     end
                 end
@@ -5997,7 +6114,7 @@ proc append-constant-values ConstantEvaluator* ModuleContext* int -- do
     end
 end
 
-proc scope-symbol-has-kind ModuleContext* int int -- bool do
+proc scope-symbol-has-kind ModuleContext* int ScopeKind -- bool do
     let scope symbol-index kind do
         if symbol-index 0 < do
             false
@@ -6020,12 +6137,12 @@ proc evaluate-constant-word ConstantEvaluator* ModuleContext* int -- do
                 end
             elif module token-index "cast" token-equals do
                 evaluator evaluate-constant-cast
-            elif module symbol-index scope-macro scope-symbol-has-kind do
+            elif module symbol-index ScopeKind:macro_symbol scope-symbol-has-kind do
                 evaluator "unsupported constant expression word" constant-fail
             elif evaluator module token-index evaluate-constant-intrinsic do
             elif module module token-index constant-higher-priority-word do
                 evaluator "unsupported constant expression word" constant-fail
-            elif module symbol-index scope-constant scope-symbol-has-kind do
+            elif module symbol-index ScopeKind:constant scope-symbol-has-kind do
                 evaluator
                 module symbol-index scope-at @ScopeEntry.definition_module
                 module symbol-index scope-at @ScopeEntry.definition_index
@@ -6044,13 +6161,13 @@ proc evaluate-constant-token ConstantEvaluator* ModuleContext* int -- do
         token-index evaluator !ConstantEvaluator.token
         module token-index token-at @TokenEntry.kind
         let kind do
-            if kind token-int == kind token-char == || do
+            if kind TokenKind:int == kind TokenKind:char == || do
                 evaluator type-int module token-index token-at @TokenEntry.value constant-evaluator-push
-            elif kind token-bool == do
+            elif kind TokenKind:bool == do
                 evaluator type-bool module token-index token-at @TokenEntry.value constant-evaluator-push
-            elif kind token-string == do
+            elif kind TokenKind:string == do
                 evaluator type-string module token-index token-at @TokenEntry.value constant-evaluator-push
-            elif kind token-word == do
+            elif kind TokenKind:word == do
                 evaluator module token-index evaluate-constant-word
             else
                 evaluator "unknown token kind" constant-fail
@@ -6097,13 +6214,13 @@ proc nominal-symbol-type ModuleContext* int -- int bool do
         let symbol do
             symbol @ScopeEntry.kind
             let kind do
-                if kind scope-record == do
+                if kind ScopeKind:record_type == do
                     symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                     record-type-at @RecordTypeEntry.record_type true
-                elif kind scope-union == do
+                elif kind ScopeKind:union_type == do
                     symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                     union-type-at @UnionTypeEntry.union_type true
-                elif kind scope-function == do
+                elif kind ScopeKind:function_type == do
                     symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                     function-type-at @FunctionTypeEntry.function_type true
                 else
@@ -6177,7 +6294,7 @@ proc resolve-module-signature-types ModuleContext* -- do
                     if signature @CSignatureType.active do
                         ctx ctx signature @CSignatureType.token find-scope-symbol let symbol do
                             if symbol 0 < do ctx signature @CSignatureType.token "unknown C type" fail-name-at end
-                            if ctx symbol scope-at @ScopeEntry.kind scope-c-type != do ctx signature @CSignatureType.token "unknown C type" fail-name-at end
+                            if ctx symbol scope-at @ScopeEntry.kind ScopeKind:c_type != do ctx signature @CSignatureType.token "unknown C type" fail-name-at end
                             ctx symbol scope-at let entry do
                                 entry @ScopeEntry.definition_module signature !CSignatureType.definition_module
                                 entry @ScopeEntry.definition_index signature !CSignatureType.definition_index
@@ -6283,8 +6400,8 @@ proc scope-procedure-input-conflicts-from ModuleContext* int int -- do
             ctx second-index scope-at
             let first-symbol second-symbol do
                 if
-                    first-symbol @ScopeEntry.kind scope-procedure ==
-                    second-symbol @ScopeEntry.kind scope-procedure == &&
+                    first-symbol @ScopeEntry.kind ScopeKind:procedure ==
+                    second-symbol @ScopeEntry.kind ScopeKind:procedure == &&
                     first-symbol @ScopeEntry.name_module @ModuleContext.source first-symbol @ScopeEntry.name_start +
                     first-symbol @ScopeEntry.name_length
                     second-symbol @ScopeEntry.name_module @ModuleContext.source second-symbol @ScopeEntry.name_start +
@@ -6375,14 +6492,14 @@ proc find-aggregate-type Program* int -- ModuleContext* int bool bool do
     end
 end
 
-proc aggregate-cycle-state ModuleContext* int bool -- int do
+proc aggregate-cycle-state ModuleContext* int bool -- AggregateCycleState do
     let module index is-record do
         if is-record do module index record-type-at @RecordTypeEntry.cycle_state
         else module index union-type-at @UnionTypeEntry.cycle_state end
     end
 end
 
-proc set-aggregate-cycle-state int ModuleContext* int bool -- do
+proc set-aggregate-cycle-state AggregateCycleState ModuleContext* int bool -- do
     let state module index is-record do
         if is-record do state module index record-type-at !RecordTypeEntry.cycle_state
         else state module index union-type-at !UnionTypeEntry.cycle_state end
@@ -6425,7 +6542,7 @@ proc validate-aggregate-value-cycle-dependencies Program* ModuleContext* int boo
                     program value-type find-aggregate-type
                     let dependency-module dependency-index found dependency-record do
                         if found do
-                            if dependency-module dependency-index dependency-record aggregate-cycle-state 1 == do
+                            if dependency-module dependency-index dependency-record aggregate-cycle-state AggregateCycleState:visiting == do
                                 module index is-record offset aggregate-member-type-token
                                 let token do module token "recursive aggregate value requires a pointer" fail-name-at end
                             end
@@ -6443,11 +6560,11 @@ proc validate-aggregate-value-cycle Program* ModuleContext* int bool -- do
     let program module index is-record do
         module index is-record aggregate-cycle-state
         let state do
-            if state 1 == do
-            elif state 2 != do
-                1 module index is-record set-aggregate-cycle-state
+            if state AggregateCycleState:visiting == do
+            elif state AggregateCycleState:visited != do
+                AggregateCycleState:visiting module index is-record set-aggregate-cycle-state
                 program module index is-record 0 validate-aggregate-value-cycle-dependencies
-                2 module index is-record set-aggregate-cycle-state
+                AggregateCycleState:visited module index is-record set-aggregate-cycle-state
             end
         end
     end
@@ -6947,6 +7064,25 @@ proc emit-c-aggregate-dependencies Program* ModuleContext* int bool int -- do
     end
 end
 
+proc union-has-payload-from ModuleContext* int int -- bool do
+    let module union-index case-offset do
+        if case-offset module union-index union-type-at @UnionTypeEntry.case_count >= do
+            false
+        else
+            module
+            module union-index union-type-at @UnionTypeEntry.case_start case-offset +
+            union-case-at @UnionCaseEntry.payload_type
+            type-none !=
+            if dup do
+            else
+                drop module union-index case-offset 1 + union-has-payload-from
+            end
+        end
+    end
+end
+
+proc union-has-payload ModuleContext* int -- bool do 0 union-has-payload-from end
+
 proc emit-c-aggregate-definition Program* ModuleContext* int bool -- do
     let program module index is-record do
         if module index is-record aggregate-c-emitted? ! do
@@ -6964,9 +7100,13 @@ proc emit-c-aggregate-definition Program* ModuleContext* int bool -- do
                 let union-entry do
                     union-entry @UnionTypeEntry.union_type
                     let value-type do
-                        "struct " emit value-type emit-c-union-type-name " {\n  Cell tag;\n  union {\n    Cell empty;\n" emit
-                        program module index 0 emit-c-union-case-members
-                        "  } payload;\n};\n" emit
+                        "struct " emit value-type emit-c-union-type-name " {\n  Cell tag;\n" emit
+                        if module index union-has-payload do
+                            "  union {\n" emit
+                            program module index 0 emit-c-union-case-members
+                            "  } payload;\n" emit
+                        end
+                        "};\n" emit
                     end
                 end
             end
@@ -7405,9 +7545,9 @@ proc emit-c-includes-module ModuleContext* int -- do
         if index ctx @ModuleContext.c_include_count < do
             ctx index c-include-at let entry do
                 "#include " emit
-                if entry @CIncludeEntry.kind c-include-system == do "<" emit else "\"" emit end
+                if entry @CIncludeEntry.kind CIncludeKind:system == do "<" emit else "\"" emit end
                 ctx entry @CIncludeEntry.token emit-decoded-string
-                if entry @CIncludeEntry.kind c-include-system == do ">\n" emit else "\"\n" emit end
+                if entry @CIncludeEntry.kind CIncludeKind:system == do ">\n" emit else "\"\n" emit end
             end
             ctx index 1 + emit-c-includes-module
         end
@@ -7752,27 +7892,57 @@ proc type-is-typed-pointer int -- bool do
     dup type-pointer-base >= swap unresolved-pointer-base < &&
 end
 
-const private-op-none 0 end
-const private-op-add 1 end
-const private-op-sub 2 end
-const private-op-mul 3 end
-const private-op-div 4 end
-const private-op-mod 5 end
-const private-op-divmod 6 end
-const private-op-or 7 end
-const private-op-and 8 end
-const private-op-xor 9 end
-const private-op-not 10 end
-const private-op-shl 11 end
-const private-op-shr 12 end
-const private-op-eq 13 end
-const private-op-ne 14 end
-const private-op-lt 15 end
-const private-op-gt 16 end
-const private-op-le 17 end
-const private-op-ge 18 end
-const private-op-load 19 end
-const private-op-store 20 end
+union PrivateOperation
+    case none
+    case add
+    case sub
+    case mul
+    case div
+    case mod
+    case divmod
+    case or
+    case and
+    case xor
+    case not
+    case shl
+    case shr
+    case eq
+    case ne
+    case lt
+    case gt
+    case le
+    case ge
+    case load
+    case store
+end
+
+proc == PrivateOperation PrivateOperation -- bool do
+    let first second do
+        first PrivateOperation.none? swap drop second PrivateOperation.none? swap drop &&
+        first PrivateOperation.add? swap drop second PrivateOperation.add? swap drop && ||
+        first PrivateOperation.sub? swap drop second PrivateOperation.sub? swap drop && ||
+        first PrivateOperation.mul? swap drop second PrivateOperation.mul? swap drop && ||
+        first PrivateOperation.div? swap drop second PrivateOperation.div? swap drop && ||
+        first PrivateOperation.mod? swap drop second PrivateOperation.mod? swap drop && ||
+        first PrivateOperation.divmod? swap drop second PrivateOperation.divmod? swap drop && ||
+        first PrivateOperation.or? swap drop second PrivateOperation.or? swap drop && ||
+        first PrivateOperation.and? swap drop second PrivateOperation.and? swap drop && ||
+        first PrivateOperation.xor? swap drop second PrivateOperation.xor? swap drop && ||
+        first PrivateOperation.not? swap drop second PrivateOperation.not? swap drop && ||
+        first PrivateOperation.shl? swap drop second PrivateOperation.shl? swap drop && ||
+        first PrivateOperation.shr? swap drop second PrivateOperation.shr? swap drop && ||
+        first PrivateOperation.eq? swap drop second PrivateOperation.eq? swap drop && ||
+        first PrivateOperation.ne? swap drop second PrivateOperation.ne? swap drop && ||
+        first PrivateOperation.lt? swap drop second PrivateOperation.lt? swap drop && ||
+        first PrivateOperation.gt? swap drop second PrivateOperation.gt? swap drop && ||
+        first PrivateOperation.le? swap drop second PrivateOperation.le? swap drop && ||
+        first PrivateOperation.ge? swap drop second PrivateOperation.ge? swap drop && ||
+        first PrivateOperation.load? swap drop second PrivateOperation.load? swap drop && ||
+        first PrivateOperation.store? swap drop second PrivateOperation.store? swap drop && ||
+    end
+end
+
+proc != PrivateOperation PrivateOperation -- bool do == ! end
 
 macro bytes-ends-with-string
     let bytes length suffix do
@@ -7819,72 +7989,89 @@ proc private-intrinsic-suffix-length int -- int do
     end
 end
 
-proc private-intrinsic-operation ModuleContext* int int -- int do
+proc private-intrinsic-operation ModuleContext* int int -- PrivateOperation do
     let ctx token-index value-type do
         ctx token-index token-slice
         let bytes length do
             length value-type private-intrinsic-suffix-length -
             let operation-length do
-                if bytes operation-length "__intrinsic_add" bytes-equal-string do private-op-add
-                elif bytes operation-length "__intrinsic_sub" bytes-equal-string do private-op-sub
-                elif bytes operation-length "__intrinsic_mul" bytes-equal-string do private-op-mul
-                elif bytes operation-length "__intrinsic_div" bytes-equal-string do private-op-div
-                elif bytes operation-length "__intrinsic_mod" bytes-equal-string do private-op-mod
-                elif bytes operation-length "__intrinsic_divmod" bytes-equal-string do private-op-divmod
-                elif bytes operation-length "__intrinsic_or" bytes-equal-string do private-op-or
-                elif bytes operation-length "__intrinsic_and" bytes-equal-string do private-op-and
-                elif bytes operation-length "__intrinsic_xor" bytes-equal-string do private-op-xor
-                elif bytes operation-length "__intrinsic_not" bytes-equal-string do private-op-not
-                elif bytes operation-length "__intrinsic_shl" bytes-equal-string do private-op-shl
-                elif bytes operation-length "__intrinsic_shr" bytes-equal-string do private-op-shr
-                elif bytes operation-length "__intrinsic_eq" bytes-equal-string do private-op-eq
-                elif bytes operation-length "__intrinsic_ne" bytes-equal-string do private-op-ne
-                elif bytes operation-length "__intrinsic_lt" bytes-equal-string do private-op-lt
-                elif bytes operation-length "__intrinsic_gt" bytes-equal-string do private-op-gt
-                elif bytes operation-length "__intrinsic_le" bytes-equal-string do private-op-le
-                elif bytes operation-length "__intrinsic_ge" bytes-equal-string do private-op-ge
-                elif bytes operation-length "__intrinsic_load" bytes-equal-string do private-op-load
-                elif bytes operation-length "__intrinsic_store" bytes-equal-string do private-op-store
-                else private-op-none
+                if bytes operation-length "__intrinsic_add" bytes-equal-string do PrivateOperation:add
+                elif bytes operation-length "__intrinsic_sub" bytes-equal-string do PrivateOperation:sub
+                elif bytes operation-length "__intrinsic_mul" bytes-equal-string do PrivateOperation:mul
+                elif bytes operation-length "__intrinsic_div" bytes-equal-string do PrivateOperation:div
+                elif bytes operation-length "__intrinsic_mod" bytes-equal-string do PrivateOperation:mod
+                elif bytes operation-length "__intrinsic_divmod" bytes-equal-string do PrivateOperation:divmod
+                elif bytes operation-length "__intrinsic_or" bytes-equal-string do PrivateOperation:or
+                elif bytes operation-length "__intrinsic_and" bytes-equal-string do PrivateOperation:and
+                elif bytes operation-length "__intrinsic_xor" bytes-equal-string do PrivateOperation:xor
+                elif bytes operation-length "__intrinsic_not" bytes-equal-string do PrivateOperation:not
+                elif bytes operation-length "__intrinsic_shl" bytes-equal-string do PrivateOperation:shl
+                elif bytes operation-length "__intrinsic_shr" bytes-equal-string do PrivateOperation:shr
+                elif bytes operation-length "__intrinsic_eq" bytes-equal-string do PrivateOperation:eq
+                elif bytes operation-length "__intrinsic_ne" bytes-equal-string do PrivateOperation:ne
+                elif bytes operation-length "__intrinsic_lt" bytes-equal-string do PrivateOperation:lt
+                elif bytes operation-length "__intrinsic_gt" bytes-equal-string do PrivateOperation:gt
+                elif bytes operation-length "__intrinsic_le" bytes-equal-string do PrivateOperation:le
+                elif bytes operation-length "__intrinsic_ge" bytes-equal-string do PrivateOperation:ge
+                elif bytes operation-length "__intrinsic_load" bytes-equal-string do PrivateOperation:load
+                elif bytes operation-length "__intrinsic_store" bytes-equal-string do PrivateOperation:store
+                else PrivateOperation:none
                 end
             end
         end
     end
 end
 
-proc emit-private-operation int -- do
+proc private-operation-is-comparison PrivateOperation -- bool do
     let operation do
-        if operation private-op-add == do "add" emit
-        elif operation private-op-sub == do "sub" emit
-        elif operation private-op-mul == do "mul" emit
-        elif operation private-op-div == do "div" emit
-        elif operation private-op-mod == do "mod" emit
-        elif operation private-op-divmod == do "divmod" emit
-        elif operation private-op-or == do "or" emit
-        elif operation private-op-and == do "and" emit
-        elif operation private-op-xor == do "xor" emit
-        elif operation private-op-not == do "not" emit
-        elif operation private-op-shl == do "shl" emit
-        elif operation private-op-shr == do "shr" emit
-        elif operation private-op-eq == do "eq" emit
-        elif operation private-op-ne == do "ne" emit
-        elif operation private-op-lt == do "lt" emit
-        elif operation private-op-gt == do "gt" emit
-        elif operation private-op-le == do "le" emit
-        elif operation private-op-ge == do "ge" emit
-        elif operation private-op-load == do "load" emit
+        operation PrivateOperation:eq == operation PrivateOperation:ne == ||
+        operation PrivateOperation:lt == || operation PrivateOperation:gt == ||
+        operation PrivateOperation:le == || operation PrivateOperation:ge == ||
+    end
+end
+
+proc private-operation-is-integer-binary PrivateOperation -- bool do
+    let operation do
+        operation PrivateOperation:add == operation PrivateOperation:sub == ||
+        operation PrivateOperation:mul == || operation PrivateOperation:div == ||
+        operation PrivateOperation:mod == || operation PrivateOperation:or == ||
+        operation PrivateOperation:and == || operation PrivateOperation:xor == ||
+    end
+end
+
+proc emit-private-operation PrivateOperation -- do
+    let operation do
+        if operation PrivateOperation:add == do "add" emit
+        elif operation PrivateOperation:sub == do "sub" emit
+        elif operation PrivateOperation:mul == do "mul" emit
+        elif operation PrivateOperation:div == do "div" emit
+        elif operation PrivateOperation:mod == do "mod" emit
+        elif operation PrivateOperation:divmod == do "divmod" emit
+        elif operation PrivateOperation:or == do "or" emit
+        elif operation PrivateOperation:and == do "and" emit
+        elif operation PrivateOperation:xor == do "xor" emit
+        elif operation PrivateOperation:not == do "not" emit
+        elif operation PrivateOperation:shl == do "shl" emit
+        elif operation PrivateOperation:shr == do "shr" emit
+        elif operation PrivateOperation:eq == do "eq" emit
+        elif operation PrivateOperation:ne == do "ne" emit
+        elif operation PrivateOperation:lt == do "lt" emit
+        elif operation PrivateOperation:gt == do "gt" emit
+        elif operation PrivateOperation:le == do "le" emit
+        elif operation PrivateOperation:ge == do "ge" emit
+        elif operation PrivateOperation:load == do "load" emit
         else "store" emit
         end
     end
 end
 
-proc emit-private-helper int int -- do
+proc emit-private-helper PrivateOperation int -- do
     let operation value-type do
         "frog_" emit operation emit-private-operation "_" emit value-type emit-c-type-identity
     end
 end
 
-proc compile-private-binary CompileContext* int int int -- do
+proc compile-private-binary CompileContext* PrivateOperation int int -- do
     let cc operation input-type output-type do
         cc input-type type-expect cc input-type type-expect cc output-type type-push
         if cc @CompileContext.emitting do
@@ -7899,7 +8086,7 @@ proc compile-private-binary CompileContext* int int int -- do
     end
 end
 
-proc compile-private-unary CompileContext* int int int -- do
+proc compile-private-unary CompileContext* PrivateOperation int int -- do
     let cc operation input-type output-type do
         cc input-type type-expect cc output-type type-push
         if cc @CompileContext.emitting do
@@ -7917,14 +8104,14 @@ proc compile-private-load CompileContext* int -- do
         cc value-type register-replaced-stack-slot cc value-type type-push
         if cc @CompileContext.emitting do
             cc @CompileContext.type_count 1 - let index do
-                cc emit-indent cc index value-type emit-slot-as " = " emit private-op-load value-type emit-private-helper
+                cc emit-indent cc index value-type emit-slot-as " = " emit PrivateOperation:load value-type emit-private-helper
                 "((const void *)" emit cc index cc @CompileContext.program value-type program-intern-pointer-type emit-slot-as ");\n" emit
             end
         end
     end
 end
 
-proc compile-private-shift CompileContext* int int -- do
+proc compile-private-shift CompileContext* PrivateOperation int -- do
     let cc operation value-type do
         cc type-u32 type-expect cc value-type type-expect cc value-type type-push
         if cc @CompileContext.emitting do
@@ -7938,7 +8125,7 @@ proc compile-private-shift CompileContext* int int -- do
     end
 end
 
-proc compile-private-pointer-arithmetic CompileContext* int -- do
+proc compile-private-pointer-arithmetic CompileContext* PrivateOperation -- do
     let cc operation do
         cc type-int type-expect cc type-ptr type-expect cc type-ptr type-push
         if cc @CompileContext.emitting do
@@ -7959,8 +8146,8 @@ proc compile-private-divmod CompileContext* int -- do
         if cc @CompileContext.emitting do
             cc @CompileContext.type_count 2 - let left-index do
                 cc @CompileContext.type_count 1 - let right-index do
-                    cc emit-indent "{ " emit private-op-divmod value-type emit-private-helper "_result result = " emit
-                    private-op-divmod value-type emit-private-helper "(" emit cc left-index value-type emit-slot-as ", " emit
+                    cc emit-indent "{ " emit PrivateOperation:divmod value-type emit-private-helper "_result result = " emit
+                    PrivateOperation:divmod value-type emit-private-helper "(" emit cc left-index value-type emit-slot-as ", " emit
                     cc right-index value-type emit-slot-as "); " emit
                     cc left-index value-type emit-slot-as " = result.quotient; " emit
                     cc right-index value-type emit-slot-as " = result.remainder; }\n" emit
@@ -7978,7 +8165,7 @@ proc compile-private-store CompileContext* int -- do
             cc @CompileContext.type_count let value-index do
                 cc @CompileContext.type_count 1 +
                 let pointer-index do
-                    cc emit-indent private-op-store value-type emit-private-helper "((void *)" emit
+                    cc emit-indent PrivateOperation:store value-type emit-private-helper "((void *)" emit
                     cc pointer-index cc @CompileContext.program value-type program-intern-pointer-type emit-slot-as
                     ", " emit cc value-index value-type emit-slot-as ");\n" emit
                 end
@@ -8003,23 +8190,23 @@ proc compile-private-intrinsic CompileContext* int -- bool do
                 if value-type type-none == do false else
                     cc @CompileContext.defining_module token-index value-type private-intrinsic-operation
                     let operation do
-                        if operation private-op-none == do false
-                        elif operation private-op-load == do cc value-type compile-private-load true
-                        elif operation private-op-store == do cc value-type compile-private-store true
+                        if operation PrivateOperation:none == do false
+                        elif operation PrivateOperation:load == do cc value-type compile-private-load true
+                        elif operation PrivateOperation:store == do cc value-type compile-private-store true
                         elif value-type type-is-integer do
-                            if operation private-op-not == do cc operation value-type value-type compile-private-unary true
-                            elif operation private-op-shl == operation private-op-shr == || do cc operation value-type compile-private-shift true
-                            elif operation private-op-divmod == do cc value-type compile-private-divmod true
-                            elif operation private-op-eq >= operation private-op-ge <= && do cc operation value-type type-bool compile-private-binary true
-                            elif operation private-op-add >= operation private-op-xor <= && do cc operation value-type value-type compile-private-binary true
+                            if operation PrivateOperation:not == do cc operation value-type value-type compile-private-unary true
+                            elif operation PrivateOperation:shl == operation PrivateOperation:shr == || do cc operation value-type compile-private-shift true
+                            elif operation PrivateOperation:divmod == do cc value-type compile-private-divmod true
+                            elif operation private-operation-is-comparison do cc operation value-type type-bool compile-private-binary true
+                            elif operation private-operation-is-integer-binary do cc operation value-type value-type compile-private-binary true
                             else false end
                         elif value-type type-bool == do
-                            if operation private-op-not == do cc operation type-bool type-bool compile-private-unary true
-                            elif operation private-op-and == operation private-op-or == || do cc operation type-bool type-bool compile-private-binary true
+                            if operation PrivateOperation:not == do cc operation type-bool type-bool compile-private-unary true
+                            elif operation PrivateOperation:and == operation PrivateOperation:or == || do cc operation type-bool type-bool compile-private-binary true
                             else false end
                         elif value-type type-ptr == do
-                            if operation private-op-add == operation private-op-sub == || do cc operation compile-private-pointer-arithmetic true
-                            elif operation private-op-eq == operation private-op-ne == || do cc operation type-ptr type-bool compile-private-binary true
+                            if operation PrivateOperation:add == operation PrivateOperation:sub == || do cc operation compile-private-pointer-arithmetic true
+                            elif operation PrivateOperation:eq == operation PrivateOperation:ne == || do cc operation type-ptr type-bool compile-private-binary true
                             else false end
                         else false end
                     end
@@ -8316,11 +8503,11 @@ proc emit-local-load CompileContext* int -- do
 end
 
 proc compile-if CompileContext* -- do
-    block-if push-block drop
+    BlockKind:conditional push-block drop
 end
 
 proc compile-while CompileContext* -- do
-    peek cc do block-while push-block drop
+    peek cc do BlockKind:loop push-block drop
         cc "while (1) {" emit-line
         cc indent-more
     end
@@ -8356,7 +8543,7 @@ proc compile-do CompileContext* -- do
             cc block require-block-types
             block @BlockFrame.kind
             let kind do
-                if kind block-if == do
+                if kind BlockKind:conditional == do
                     cc @CompileContext.type_count
                     let condition-index do
                         if cc @CompileContext.emitting do
@@ -8365,7 +8552,7 @@ proc compile-do CompileContext* -- do
                     end
                     cc indent-more
                 else
-                    if kind block-while == do
+                    if kind BlockKind:loop == do
                         cc @CompileContext.type_count
                         let condition-index do
                             if cc @CompileContext.emitting do
@@ -8385,7 +8572,7 @@ end
 proc compile-else CompileContext* -- do
     peek cc do top-block
         let block do
-            if block @BlockFrame.kind block-if != do
+            if block @BlockFrame.kind BlockKind:conditional != do
                 cc "else outside if" fail-compile-word
             end
             if block @BlockFrame.has_else do
@@ -8414,7 +8601,7 @@ end
 proc compile-elif CompileContext* -- do
     peek cc do top-block
         let block do
-            if block @BlockFrame.kind block-if != do
+            if block @BlockFrame.kind BlockKind:conditional != do
                 cc "elif outside if" fail-compile-word
             end
             if block @BlockFrame.has_do ! do
@@ -8424,7 +8611,7 @@ proc compile-elif CompileContext* -- do
                 cc "elif after else" fail-compile-word
             end
             cc compile-else
-            cc block-if push-block
+            cc BlockKind:conditional push-block
             let nested do
                 true nested !BlockFrame.elif_parent
             end
@@ -8477,11 +8664,11 @@ proc close-end-chain CompileContext* BlockFrame* -- do
     let cc block do
         block @BlockFrame.kind
         let kind do
-            if kind block-if == do
+            if kind BlockKind:conditional == do
                 cc block close-if-block
-            elif kind block-while == do
+            elif kind BlockKind:loop == do
                 cc block close-while-block
-            elif kind block-let == do
+            elif kind BlockKind:local_scope == do
                 cc block close-let-block
             else
                 "unknown block kind" fail
@@ -8548,7 +8735,7 @@ end
 
 proc begin-binding-block CompileContext* int int -- do
     let cc first-token name-count do
-        cc block-let push-block drop
+        cc BlockKind:local_scope push-block drop
         cc "{" emit-line
         cc indent-more
         cc first-token name-count bind-let-names
@@ -8635,7 +8822,7 @@ proc visible-record-definition ModuleContext* ptr int -- ModuleContext* int bool
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-at @ScopeEntry.kind scope-record ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind ScopeKind:record_type ==
                 end
             do
                 scope symbol-index scope-at @ScopeEntry.definition_module
@@ -8739,7 +8926,7 @@ proc visible-union-definition ModuleContext* ptr int -- ModuleContext* int bool 
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-at @ScopeEntry.kind scope-union ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind ScopeKind:union_type ==
                 end
             do
                 scope symbol-index scope-at @ScopeEntry.definition_module
@@ -8758,7 +8945,7 @@ proc visible-function-definition ModuleContext* ptr int -- ModuleContext* int bo
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-at @ScopeEntry.kind scope-function ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind ScopeKind:function_type ==
                 end
             do
                 scope symbol-index scope-at @ScopeEntry.definition_module
@@ -8777,7 +8964,7 @@ proc visible-procedure-definition ModuleContext* ptr int -- ModuleContext* int b
             if
                 symbol-index 0 >=
                 if dup do
-                    drop scope symbol-index scope-at @ScopeEntry.kind scope-procedure ==
+                    drop scope symbol-index scope-at @ScopeEntry.kind ScopeKind:procedure ==
                 end
             do
                 scope symbol-index scope-at @ScopeEntry.definition_module
@@ -8798,7 +8985,7 @@ proc visible-macro-definition-from ModuleContext* ptr int int -- ModuleContext* 
             scope scope-index scope-at
             let symbol do
                 if
-                    symbol @ScopeEntry.kind scope-macro ==
+                    symbol @ScopeEntry.kind ScopeKind:macro_symbol ==
                     scope scope-index bytes length scope-name-equals &&
                 do
                     symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index true
@@ -8824,7 +9011,7 @@ proc visible-procedure-matches-from CompileContext* ModuleContext* ptr int int -
                 scope scope-index scope-at
                 let symbol do
                     if
-                        symbol @ScopeEntry.kind scope-procedure ==
+                        symbol @ScopeEntry.kind ScopeKind:procedure ==
                         scope scope-index bytes length scope-name-equals &&
                         cc symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index proc-input-contract-matches &&
                     do
@@ -8853,7 +9040,7 @@ proc scope-has-procedure-inputs-from ModuleContext* ptr int ModuleContext* int i
             scope scope-index scope-at
             let symbol do
                 if
-                    symbol @ScopeEntry.kind scope-procedure ==
+                    symbol @ScopeEntry.kind ScopeKind:procedure ==
                     scope scope-index bytes length scope-name-equals &&
                     symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                     procedure-module procedure-index procedure-inputs-equal &&
@@ -8882,10 +9069,10 @@ proc visible-builtin-procedure-matches-from CompileContext* ModuleContext* Modul
                 builtins scope-index scope-at
                 let symbol do
                     if
-                        symbol @ScopeEntry.kind scope-procedure ==
+                        symbol @ScopeEntry.kind ScopeKind:procedure ==
                         builtins scope-index bytes length scope-name-equals &&
                         symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
-                        procedure-at @ProcedureEntry.c_binding c-binding-none == &&
+                        procedure-at @ProcedureEntry.c_binding CBinding:none == &&
                         cc symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                         proc-input-contract-matches &&
                         visible-scope bytes length
@@ -8919,7 +9106,7 @@ proc visible-function-reference-matches-from ModuleContext* int ModuleContext* p
                 scope scope-index scope-at
                 let symbol do
                     if
-                        symbol @ScopeEntry.kind scope-procedure ==
+                    symbol @ScopeEntry.kind ScopeKind:procedure ==
                         scope scope-index bytes length scope-name-equals &&
                         function-module function-index symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index function-proc-contracts-equal &&
                     do
@@ -9775,12 +9962,12 @@ proc compile-ordinary-word CompileContext* int -- do
                                 cc token-index local-index compile-local-reference
                             else
                                 if symbol-index 0 >= do
-                                    if cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind scope-constant == do
+                                    if cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind ScopeKind:constant == do
                                         cc
                                         cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_module
                                         cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.definition_index
                                         compile-constant
-                                    elif cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind scope-procedure != do
+                                    elif cc @CompileContext.scope_module symbol-index scope-at @ScopeEntry.kind ScopeKind:procedure != do
                                         cc token-index fail-unknown-word
                                     else
                                         cc @CompileContext.defining_module token-index token-slice
@@ -9873,23 +10060,23 @@ proc compile-token-inner CompileContext* int -- int do
     let cc token-index do
         cc @CompileContext.defining_module token-index token-at @TokenEntry.kind
         let kind do
-            if kind token-int == do
+            if kind TokenKind:int == do
                 cc type-int type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
-            elif kind token-bool == do
+            elif kind TokenKind:bool == do
                 cc type-bool type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
-            elif kind token-char == do
+            elif kind TokenKind:char == do
                 cc type-int type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
-            elif kind token-string == do
+            elif kind TokenKind:string == do
                 cc type-string type-push
                 cc token-index emit-push-string
                 token-index 1 +
-            elif kind token-word == do
+            elif kind TokenKind:word == do
                 cc token-index compile-word-token
             else
                 cc "unknown token kind" fail-compile-word
@@ -9931,9 +10118,9 @@ proc try-compile-constant-add CompileContext* int int -- bool do
         if token-index 2 + body-end >= do
             false
         elif
-            cc @CompileContext.defining_module token-index token-at @TokenEntry.kind token-int ==
-            cc @CompileContext.defining_module token-index 1 + token-at @TokenEntry.kind token-int == &&
-            cc @CompileContext.defining_module token-index 2 + token-at @TokenEntry.kind token-word == &&
+            cc @CompileContext.defining_module token-index token-at @TokenEntry.kind TokenKind:int ==
+            cc @CompileContext.defining_module token-index 1 + token-at @TokenEntry.kind TokenKind:int == &&
+            cc @CompileContext.defining_module token-index 2 + token-at @TokenEntry.kind TokenKind:word == &&
             cc @CompileContext.defining_module token-index 2 + "+" token-equals &&
             cc token-index 2 + token-resolves-to-macro ! &&
             cc @CompileContext.scope_module cc @CompileContext.defining_module token-index 2 + type-int type-int word-resolves-to-builtin-2 &&
@@ -10118,7 +10305,7 @@ end
 
 proc emit-c-binding-expression ModuleContext* int -- do
     peek ctx proc-index do emit-c-symbol
-        if ctx proc-index procedure-at @ProcedureEntry.c_binding c-binding-call == do
+        if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:call == do
             "(" emit ctx proc-index 0 emit-c-binding-arguments ")" emit
         end
     end
@@ -10234,7 +10421,7 @@ end
 
 proc compile-procedure Program* ModuleContext* int -- do
     let program ctx proc-index do
-        if ctx proc-index procedure-at @ProcedureEntry.c_binding c-binding-none == do
+        if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none == do
             program ctx proc-index create-compile-context
             peek measurement do ctx proc-index compile-procedure-body
                 measurement @CompileContext.max_type_count
@@ -10265,7 +10452,7 @@ proc compile-c-bindings-module ModuleContext* -- do
         0
         while dup ctx @ModuleContext.proc_count < do
             dup let proc-index do
-                if ctx proc-index procedure-at @ProcedureEntry.c_binding c-binding-none != do
+                if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none != do
                     ctx proc-index compile-c-binding-procedure
                 end
             end
@@ -10358,14 +10545,14 @@ proc compile-source ptr int ptr int bool bool ptr int -- do
                 0 ctx !ModuleContext.import_count
                 0 ptr cast ctx !ModuleContext.scope
                 0 ctx !ModuleContext.scope_count
-                load-loading ctx !ModuleContext.load_state
-                resolve-new ctx !ModuleContext.resolve_state
+                LoadState:loading ctx !ModuleContext.load_state
+                ResolveState:new ctx !ModuleContext.resolve_state
                 true ctx !ModuleContext.is_root
                 program ctx program-add-module
                 ctx program !Program.root_module
                 ctx source source-length initialize-module-source
                 program ctx load-module-imports
-                load-loaded ctx !ModuleContext.load_state
+                LoadState:loaded ctx !ModuleContext.load_state
                 program initialize-builtins
                 program initialize-string-pool
                 program resolve-all-module-scopes
@@ -10391,7 +10578,7 @@ proc find-builtins-assert-procedure Program* -- int do
                 builtins symbol-index scope-at
                 let symbol do
                     if
-                        symbol @ScopeEntry.kind scope-procedure !=
+                        symbol @ScopeEntry.kind ScopeKind:procedure !=
                         symbol @ScopeEntry.definition_module ptr cast int cast builtins ptr cast int cast != ||
                         symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                         type-bool type-string procedure-inputs-are-2 ! ||
@@ -10475,11 +10662,11 @@ proc compile-builtins-word CompileContext* int -- bool do
                                     else
                                         builtins symbol-index scope-at
                                         let symbol do
-                                            if symbol @ScopeEntry.kind scope-procedure != do
+                                            if symbol @ScopeEntry.kind ScopeKind:procedure != do
                                                 false
                                             elif
                                                 symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
-                                                procedure-at @ProcedureEntry.c_binding c-binding-none !=
+                                                procedure-at @ProcedureEntry.c_binding CBinding:none !=
                                             do
                                                 false
                                             else

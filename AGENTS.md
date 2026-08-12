@@ -228,6 +228,8 @@ Options:
 - The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
 - Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.
 - Frog `int` is `intptr_t` in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
+- A tagged union whose variants all have no payload emits only its tag field;
+  do not add an unused payload union to its generated C representation.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable source-located diagnostics on standard error when a token is available: `PATH:LINE:COLUMN:\n  SOURCE-LINE\n  CARETS\nerror: MESSAGE\n`. Use `<stdin>` for filter input and `<command>` for `run -c`; preserve imported modules' paths. Columns are visual columns: UTF-8 codepoints advance one column and tabs expand to 8-column stops. Attribute macro-expansion errors to the outer call token, and keep focused exact-output coverage for root, CLI, imported-module, tab, UTF-8, and macro cases.
 - Static stack and operand failures caused by ordinary words use the source-located diagnostic's `error: <source-word>: <message>` line. Preserve the outer source spelling across nested macro expansion.

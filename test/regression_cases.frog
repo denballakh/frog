@@ -52,7 +52,7 @@ proc run-regression-cases FrogTestContext* -- do
         "test/cases/semantics/native_aggregates/main.frog" "test/cases/semantics/native_aggregates" "0\n0\n5\n0\n9\n7\ntrue\n11\n5\n41\ntrue\n" "" 0 "" "" "" "semantics/native_aggregates" context frog-run-case
         "test/cases/semantics/records_layout/main.frog" "test/cases/semantics/records_layout" "41\ntrue\ntrue\n32\n7\n" "" 0 "" "" "" "semantics/records_layout" context frog-run-case
         "test/cases/semantics/inferred_record_access/main.frog" "test/cases/semantics/inferred_record_access" "77\n1\n9\n2\n9\n" "" 0 "" "" "" "semantics/inferred_record_access" context frog-run-case
-        "test/cases/semantics/unions_layout/main.frog" "test/cases/semantics/unions_layout" "true\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n" "" 0 "" "" "" "semantics/unions_layout" context frog-run-case
+        "test/cases/semantics/unions_layout/main.frog" "test/cases/semantics/unions_layout" "true\ntrue\nfalse\ntrue\n9\ntrue\n7\ntrue\ntrue\ntrue\n" "" 0 "" "" "" "semantics/unions_layout" context frog-run-case
         "test/cases/semantics/functions_layout/main.frog" "test/cases/semantics/functions_layout" "42\n2\n3\n42\n7\n7\n77\n8\n5\n42\n42\n5\n6\ntrue\ntrue\n0\n11\n22\n99\n11\n22\n77\n17\n" "" 0 "test/cases/semantics/functions_layout/helper.c" "" "" "semantics/functions_layout" context frog-run-case
         "test/cases/semantics/functions_macro_shadow/main.frog" "test/cases/semantics/functions_macro_shadow" "99\n" "" 0 "" "" "" "semantics/functions_macro_shadow" context frog-run-case
         "test/cases/semantics/optimizer_constant_add/main.frog" "test/cases/semantics/optimizer_constant_add" "5\n18\n3\n9\n3\n-3\n-9223372036854775808\n" "" 0 "" "" "" "semantics/optimizer_constant_add" context frog-run-case

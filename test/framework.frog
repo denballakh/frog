@@ -27,7 +27,8 @@ const generated-c-check-constants 1 4 u32 cast << end
 const generated-c-check-procedure-symbols 1 5 u32 cast << end
 const generated-c-check-strings 1 6 u32 cast << end
 const generated-c-check-native-scalar-abi 1 7 u32 cast << end
-const generated-c-required-checks 1 8 u32 cast << 1 - end
+const generated-c-check-unions-layout 1 8 u32 cast << end
+const generated-c-required-checks 1 9 u32 cast << 1 - end
 
 proc frog-test-context ptr ptr -- FrogTestContext* do
     let compiler executable do
@@ -389,6 +390,10 @@ proc frog-check-semantic-c ptr int String FrogTestContext* -- do
                 "generated-c/functions empty unit body" context frog-check
             end
             generated-c-check-functions-layout context frog-mark-generated-check
+        elif name "semantics/unions_layout" string-equal do
+            bytes length "struct frog_union_1000 {\n  Cell tag;\n};"
+            "generated-c/unions payloadless tag-only layout" context frog-check-contains
+            generated-c-check-unions-layout context frog-mark-generated-check
         elif name "semantics/type_stack_growth" string-equal do
             bytes length "intptr_t frog_value_255_1;"
             "generated-c/type-stack slot 255" context frog-check-contains
