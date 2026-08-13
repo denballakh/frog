@@ -16,7 +16,17 @@ from "containers.frog" import (
 )
 
 const json-max-depth 64 end
-const json-int-max 1 62 u32 cast << 1 62 u32 cast << 1 - + end
+const json-int-max
+        1
+        62 u32 cast
+      <<
+          1
+          62 u32 cast
+        <<
+        1
+      -
+    +
+end
 const json-int-magnitude-limit json-int-max 10 / end
 const json-int-max-last-digit json-int-max 10 % end
 const json-int-min-last-digit json-int-max-last-digit 1 + end
