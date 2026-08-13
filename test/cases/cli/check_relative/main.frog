@@ -1,0 +1,5 @@
+from "helper.frog" import value
+
+proc main -- do
+    value drop
+end

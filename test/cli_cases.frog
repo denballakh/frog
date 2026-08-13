@@ -87,6 +87,23 @@ proc frog-cli-case-5 String String String String String String String int String
     end
 end
 
+proc frog-cli-check-stdin String String String int String FrogTestContext* -- do
+    let source expected-stdout expected-stderr expected-status name context do
+        2 subprocess-argv
+        let arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+            "check" arguments 1 subprocess-arg
+            arguments source String.bytes source String.len "" subprocess-run-bytes-in
+            let result do
+                result expected-stdout expected-stderr expected-status frog-process-equals
+                name context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
 proc frog-cli-filter-debug-invariant FrogTestContext* -- do
     let context do
         "proc main -- do 1 2 + print end
@@ -133,6 +150,7 @@ proc run-cli-cases FrogTestContext* -- do
   frogc [--debug] [--release] <command> [options]
 
 Commands:
+  check [FILE]               analyze Frog source without generating C
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -146,6 +164,7 @@ Options:
   frogc [--debug] [--release] <command> [options]
 
 Commands:
+  check [FILE]               analyze Frog source without generating C
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -159,6 +178,33 @@ Options:
 
         "build" "-h" "Usage: frogc [--debug] [--release] build [-o FILE] [-r] FILE
 " "" 0 "cli/build-help" context frog-cli-case-2
+
+        "check" "-h" "Usage: frogc [--debug] [--release] check [FILE]
+" "" 0 "cli/check-help" context frog-cli-case-2
+
+        "proc helper int -- int do 1 + end
+proc main -- do 41 helper drop end
+" "" "" 0 "cli/check-stdin" context frog-cli-check-stdin
+
+        "proc early -- do end
+proc main -- do end
+proc late -- do nope end
+" "" "<stdin>:3:17:
+  proc late -- do nope end
+                  ^^^^
+error: unknown word: nope
+" 1 "cli/check-stdin-late-error" context frog-cli-check-stdin
+
+        "check" "test/cases/cli/check_relative/main.frog" "" "" 0
+        "cli/check-file-relative-import" context frog-cli-case-2
+
+        "check" "--unknown" "" "frogc: unknown check option: --unknown
+Try `frogc --help`.
+" 2 "cli/check-unknown-option" context frog-cli-case-2
+
+        "check" "first.frog" "second.frog" "" "frogc: check accepts at most one source file
+Try `frogc --help`.
+" 2 "cli/check-too-many-files" context frog-cli-case-3
 
         "run" "test/cases/cli/missing.frog" ""
         "frogc: unable to read source: test/cases/cli/missing.frog

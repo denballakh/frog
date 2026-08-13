@@ -182,6 +182,17 @@ proc memory-copy ptr ptr int -- do
     end
 end
 
+proc copy-bytes ptr int -- ptr do
+    let bytes length do
+        length 1 + alloc
+        let result do
+            bytes result length memory-copy
+            0 result length byte-write
+            result
+        end
+    end
+end
+
 proc emit-bytes ptr int -- do
     let bytes length do
         0
@@ -2540,6 +2551,14 @@ proc allocate-proc ModuleContext* int -- int do
             proc-index ctx proc-index procedure-at !ProcedureEntry.index
             ctx @ModuleContext.program program-allocate-proc-id ctx proc-index procedure-at !ProcedureEntry.global_id
             CBinding:none ctx proc-index procedure-at !ProcedureEntry.c_binding
+            ProcedureAnalysis:alloc
+            let analysis do
+                0 analysis !ProcedureAnalysis.max_type_count
+                0 ptr cast analysis !ProcedureAnalysis.stack_slots
+                0 analysis !ProcedureAnalysis.stack_slot_count
+                0 analysis !ProcedureAnalysis.stack_slot_capacity
+                analysis ctx proc-index procedure-at !ProcedureEntry.analysis
+            end
             proc-index
         end
     end
@@ -3066,6 +3085,13 @@ record StackSlotEntry
     value_type int
 end
 
+record ProcedureAnalysis
+    max_type_count int
+    stack_slots ptr
+    stack_slot_count int
+    stack_slot_capacity int
+end
+
 record ResultTypeEntry
     types ptr
     count int
@@ -3142,6 +3168,7 @@ record Program
     builtins_assert_proc int
     standard_library_root ptr
     standard_library_root_length int
+    phase ProgramPhase
 end
 
 record CompileContext
@@ -3192,6 +3219,7 @@ record ProcedureEntry
     global_id int
     c_symbol_token int
     c_binding CBinding
+    analysis ProcedureAnalysis*
 end
 
 record StringPoolEntry
@@ -3301,6 +3329,24 @@ proc == ResolveState ResolveState -- bool do
 end
 
 proc != ResolveState ResolveState -- bool do == ! end
+
+union ProgramPhase
+    case allocated
+    case loaded
+    case resolved
+    case analyzed
+end
+
+proc == ProgramPhase ProgramPhase -- bool do
+    let first second do
+        first ProgramPhase.allocated? second ProgramPhase.allocated? &&
+        first ProgramPhase.loaded? second ProgramPhase.loaded? && ||
+        first ProgramPhase.resolved? second ProgramPhase.resolved? && ||
+        first ProgramPhase.analyzed? second ProgramPhase.analyzed? && ||
+    end
+end
+
+proc != ProgramPhase ProgramPhase -- bool do == ! end
 
 union ScopeKind
     case procedure
@@ -7474,7 +7520,7 @@ proc emit-c-emitter-support Program* -- do
         program emit-c-union-forward-declarations
         program emit-c-aggregate-definitions
         program emit-c-type-map
-        program compile-all-c-bindings
+        program emit-all-c-bindings
         emit-c-private-headers
         emit-c-runtime
         program emit-string-globals
@@ -10387,35 +10433,50 @@ proc emit-proc-return CompileContext* ModuleContext* int -- do
     end
 end
 
-proc compile-procedure Program* ModuleContext* int -- do
+proc analyze-procedure Program* ModuleContext* int -- do
     let program ctx proc-index do
         if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none == do
             program ctx proc-index create-compile-context
-            peek measurement do ctx proc-index compile-procedure-body
-                measurement @CompileContext.max_type_count
-                let max-type-count do
-                    program ctx proc-index create-compile-context
-                    let cc do
-                        true cc !CompileContext.emitting
-                        max-type-count cc !CompileContext.max_type_count
-                        measurement @CompileContext.stack_slots cc !CompileContext.stack_slots
-                        measurement @CompileContext.stack_slot_count cc !CompileContext.stack_slot_count
-                        measurement @CompileContext.stack_slot_capacity cc !CompileContext.stack_slot_capacity
-                        ctx proc-index emit-proc-signature " {" emit 10 putc
-                        1 cc !CompileContext.indent
-                        cc emit-proc-slot-frame
-                        cc ctx proc-index 0 emit-proc-input-slots
-                        cc ctx proc-index compile-procedure-body
-                        cc ctx proc-index emit-proc-return
-                        "}" emit 10 putc
-                    end
+            let measurement do
+                measurement ctx proc-index compile-procedure-body
+                ctx proc-index procedure-at @ProcedureEntry.analysis
+                let analysis do
+                    measurement @CompileContext.max_type_count analysis !ProcedureAnalysis.max_type_count
+                    measurement @CompileContext.stack_slots analysis !ProcedureAnalysis.stack_slots
+                    measurement @CompileContext.stack_slot_count analysis !ProcedureAnalysis.stack_slot_count
+                    measurement @CompileContext.stack_slot_capacity analysis !ProcedureAnalysis.stack_slot_capacity
                 end
             end
         end
     end
 end
 
-proc compile-c-bindings-module ModuleContext* -- do
+proc emit-procedure Program* ModuleContext* int -- do
+    let program ctx proc-index do
+        if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none == do
+            ctx proc-index procedure-at @ProcedureEntry.analysis
+            let analysis do
+                program ctx proc-index create-compile-context
+                let cc do
+                    true cc !CompileContext.emitting
+                    analysis @ProcedureAnalysis.max_type_count cc !CompileContext.max_type_count
+                    analysis @ProcedureAnalysis.stack_slots cc !CompileContext.stack_slots
+                    analysis @ProcedureAnalysis.stack_slot_count cc !CompileContext.stack_slot_count
+                    analysis @ProcedureAnalysis.stack_slot_capacity cc !CompileContext.stack_slot_capacity
+                    ctx proc-index emit-proc-signature " {" emit 10 putc
+                    1 cc !CompileContext.indent
+                    cc emit-proc-slot-frame
+                    cc ctx proc-index 0 emit-proc-input-slots
+                    cc ctx proc-index compile-procedure-body
+                    cc ctx proc-index emit-proc-return
+                    "}" emit 10 putc
+                end
+            end
+        end
+    end
+end
+
+proc emit-module-c-bindings ModuleContext* -- do
     let ctx do
         0
         while dup ctx @ModuleContext.proc_count < do
@@ -10430,31 +10491,57 @@ proc compile-c-bindings-module ModuleContext* -- do
     end
 end
 
-proc compile-all-c-bindings Program* -- do
+proc emit-all-c-bindings Program* -- do
     peek program do @Program.module_head
         while dup ptr cast int cast 0 != do
-            dup compile-c-bindings-module
+            dup emit-module-c-bindings
             @ModuleContext.next_module
         end
         drop
     end
 end
 
-proc compile-module-procedures Program* ModuleContext* -- do
+proc analyze-module-procedures Program* ModuleContext* -- do
     let program ctx do
         0
         while dup ctx @ModuleContext.proc_count < do
-            dup program ctx rot compile-procedure
+            dup program ctx rot analyze-procedure
             1 +
         end
         drop
     end
 end
 
-proc compile-all-procedures Program* -- do
+proc analyze-all-procedures Program* -- do
+    let program do
+        if program @Program.phase ProgramPhase:resolved != do
+            "internal program must be resolved before analysis" fail
+        end
+        program @Program.module_head
+        while dup ptr cast int cast 0 != do
+            dup program swap analyze-module-procedures
+            @ModuleContext.next_module
+        end
+        drop
+        ProgramPhase:analyzed program !Program.phase
+    end
+end
+
+proc emit-module-procedures Program* ModuleContext* -- do
+    let program ctx do
+        0
+        while dup ctx @ModuleContext.proc_count < do
+            dup program ctx rot emit-procedure
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-all-procedures Program* -- do
     peek program do @Program.module_head
         while dup ptr cast int cast 0 != do
-            dup program swap compile-module-procedures
+            dup program swap emit-module-procedures
             @ModuleContext.next_module
         end
         drop
@@ -10474,10 +10561,10 @@ end
 // END BODY COMPILER
 
 
-proc compile-source ptr int ptr int bool bool ptr int -- do
-    let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
+proc allocate-program bool bool ptr int -- Program* do
+    let debug release standard-library-root standard-library-root-length do
         Program:alloc
-        let program do
+        peek program do
             0 ptr cast ModuleContext* cast program !Program.root_module
             0 ptr cast ModuleContext* cast program !Program.module_head
             0 ptr cast ModuleContext* cast program !Program.module_tail
@@ -10500,38 +10587,90 @@ proc compile-source ptr int ptr int bool bool ptr int -- do
             debug program !Program.debug
             release program !Program.release
             0 1 - program !Program.builtins_assert_proc
-            standard-library-root program !Program.standard_library_root
+            if standard-library-root int cast 0 == do
+                0 ptr cast
+            else
+                standard-library-root standard-library-root-length copy-bytes
+            end
+            program !Program.standard_library_root
             standard-library-root-length program !Program.standard_library_root_length
             0 ptr cast ModuleContext* cast program !Program.builtins_module
-            ModuleContext:alloc
-            let ctx do
-                0 ptr cast ctx !ModuleContext.canonical_path
-                0 ctx !ModuleContext.canonical_path_length
-                diagnostic-path ctx !ModuleContext.diagnostic_path
-                diagnostic-path-length ctx !ModuleContext.diagnostic_path_length
-                0 ptr cast ctx !ModuleContext.imports
-                0 ctx !ModuleContext.import_count
-                0 ptr cast ctx !ModuleContext.scope
-                0 ctx !ModuleContext.scope_count
-                LoadState:loading ctx !ModuleContext.load_state
-                ResolveState:new ctx !ModuleContext.resolve_state
-                true ctx !ModuleContext.is_root
-                program ctx program-add-module
-                ctx program !Program.root_module
-                ctx source source-length initialize-module-source
-                program ctx load-module-imports
-                LoadState:loaded ctx !ModuleContext.load_state
-                program initialize-builtins
-                program initialize-string-pool
-                program resolve-all-module-scopes
-                program find-builtins-assert-procedure program !Program.builtins_assert_proc
-                program evaluate-all-constants
-                program resolve-all-types
+            ProgramPhase:allocated program !Program.phase
+        end
+    end
+end
 
-                program emit-c-emitter-support
-                program compile-all-procedures
-                program emit-main-wrapper
-            end
+proc load-program-source Program* ptr int ptr int -- do
+    let program source source-length diagnostic-path diagnostic-path-length do
+        if program @Program.phase ProgramPhase:allocated != do
+            "internal program must be allocated before loading" fail
+        end
+        ModuleContext:alloc
+        let ctx do
+            0 ptr cast ctx !ModuleContext.canonical_path
+            0 ctx !ModuleContext.canonical_path_length
+            diagnostic-path diagnostic-path-length copy-bytes ctx !ModuleContext.diagnostic_path
+            diagnostic-path-length ctx !ModuleContext.diagnostic_path_length
+            0 ptr cast ctx !ModuleContext.imports
+            0 ctx !ModuleContext.import_count
+            0 ptr cast ctx !ModuleContext.scope
+            0 ctx !ModuleContext.scope_count
+            LoadState:loading ctx !ModuleContext.load_state
+            ResolveState:new ctx !ModuleContext.resolve_state
+            true ctx !ModuleContext.is_root
+            program ctx program-add-module
+            ctx program !Program.root_module
+            source source-length copy-bytes ctx swap source-length initialize-module-source
+            program ctx load-module-imports
+            LoadState:loaded ctx !ModuleContext.load_state
+            program initialize-builtins
+            program initialize-string-pool
+            ProgramPhase:loaded program !Program.phase
+        end
+    end
+end
+
+proc resolve-program Program* -- do
+    let program do
+        if program @Program.phase ProgramPhase:loaded != do
+            "internal program must be loaded before resolution" fail
+        end
+        program resolve-all-module-scopes
+        program find-builtins-assert-procedure program !Program.builtins_assert_proc
+        program evaluate-all-constants
+        program resolve-all-types
+        ProgramPhase:resolved program !Program.phase
+    end
+end
+
+proc emit-program Program* -- do
+    let program do
+        if program @Program.phase ProgramPhase:analyzed != do
+            "internal program must be analyzed before emission" fail
+        end
+        program emit-c-emitter-support
+        program emit-all-procedures
+        program emit-main-wrapper
+    end
+end
+
+proc analyze-source ptr int ptr int bool bool ptr int -- Program* do
+    let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
+        debug release standard-library-root standard-library-root-length allocate-program
+        peek program do
+            program source source-length diagnostic-path diagnostic-path-length load-program-source
+            program resolve-program
+            program analyze-all-procedures
+        end
+    end
+end
+
+proc compile-source ptr int ptr int bool bool ptr int -- do
+    let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
+        source source-length diagnostic-path diagnostic-path-length debug release
+        standard-library-root standard-library-root-length analyze-source
+        let program do
+            program emit-program
         end
     end
 end
@@ -10694,14 +10833,7 @@ end
 proc argv-at ptr int -- ptr do cell-bytes * + ptr* cast @ end
 
 proc copy-cstring ptr int -- ptr do
-    let bytes length do
-        length 1 + alloc
-        let result do
-            bytes result length memory-copy
-            0 result length byte-write
-            result
-        end
-    end
+    copy-bytes
 end
 
 proc last-index-of-byte ptr int int -- int do
@@ -10862,6 +10994,7 @@ proc cli-usage -- do
   frogc [--debug] [--release] <command> [options]
 
 Commands:
+  check [FILE]               analyze Frog source without generating C
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -11035,6 +11168,45 @@ proc run-file ptr bool bool ptr int -- int do
     end
 end
 
+proc check-frog-source ptr int ptr int ptr bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory debug release standard-library-root standard-library-root-length do
+        fork
+        let child do
+            if child 0 < do
+                "unable to fork compiler" cli-error
+                1
+            elif child 0 == do
+                reset-child-signals
+                if directory chdir 0 != do
+                    "unable to prepare compiler child" cli-error
+                    1 finish-child
+                    1
+                else
+                    source source-length diagnostic-path diagnostic-path-length debug release
+                    standard-library-root standard-library-root-length analyze-source drop
+                    0 finish-child
+                    0
+                end
+            else
+                child wait-for-child
+            end
+        end
+    end
+end
+
+proc check-file ptr bool bool ptr int -- int do
+    let path debug release standard-library-root standard-library-root-length do
+        path read-source-path
+        let source source-length do
+            path parent-path
+            let directory do
+                source source-length path path cstring-length directory debug release
+                standard-library-root standard-library-root-length check-frog-source
+            end
+        end
+    end
+end
+
 proc build-file ptr ptr bool bool bool ptr int -- int do
     let path requested-output should-run debug release standard-library-root standard-library-root-length do
         path ".c" replace-path-suffix
@@ -11103,6 +11275,33 @@ proc run-command ptr int int bool bool ptr int -- do
                     "run accepts exactly one source file" cli-usage-error
                 else
                     argument debug release standard-library-root standard-library-root-length run-file exit
+                end
+            end
+        end
+    end
+end
+
+proc check-command ptr int int bool bool ptr int -- do
+    let argv argc command-index debug release standard-library-root standard-library-root-length do
+        command-index 1 +
+        let argument-index do
+            if argument-index argc >= do
+                read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release
+                standard-library-root standard-library-root-length check-frog-source exit
+            end
+            argv argument-index argv-at
+            let argument do
+                if
+                    argc argument-index 1 + ==
+                    argument "-h" cstring-equals argument "--help" cstring-equals || &&
+                do
+                    "Usage: frogc [--debug] [--release] check [FILE]\n" emit
+                elif argument u8* cast @ int cast 45 == do
+                    "unknown check option: " argument cli-usage-error-value
+                elif argc argument-index 1 + != do
+                    "check accepts at most one source file" cli-usage-error
+                else
+                    argument debug release standard-library-root standard-library-root-length check-file exit
                 end
             end
         end
@@ -11192,6 +11391,8 @@ proc main -- do
                         command "--help" cstring-equals ||
                     do
                         cli-usage
+                    elif command "check" cstring-equals do
+                        argv argc command-index debug release standard-library-root standard-library-root-length check-command
                     elif command "run" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length run-command
                     elif command "build" cstring-equals do

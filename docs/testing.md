@@ -17,6 +17,9 @@ import, and CLI cases. Successful programs are compiled to C, built with strict
 C11 warnings, and executed. Tests compare exact output, diagnostics, and exit
 status, and also check selected generated-C properties.
 
+CLI cases also verify that `frogc check [FILE]` analyzes every procedure without
+emitting C, using standard input when `FILE` is omitted.
+
 The case manifests are:
 
 - `test/regression_cases.frog` for fixture-based language, compiler, generated-C,
