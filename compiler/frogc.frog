@@ -3081,6 +3081,7 @@ end
 record LocalEntry
     name_start int
     name_length int
+    name_token int
     value_type int
     id int
     module ModuleContext*
@@ -3100,6 +3101,14 @@ record AnalyzedOperation
     after_type_start int
     after_type_count int
     minimum_type_count int
+    kind OperationKind
+    target_module ModuleContext*
+    target_index int
+    secondary_module ModuleContext*
+    secondary_index int
+    value_type int
+    intrinsic IntrinsicOperation
+    private_operation PrivateOperation
 end
 
 record ProcedureAnalysis
@@ -3221,6 +3230,8 @@ record CompileContext
     record_operations bool
     operation_active bool
     operation_minimum_type_count int
+    operation_identity_set bool
+    operation_macro_lock bool
 end
 
 record TokenEntry
@@ -3373,6 +3384,41 @@ proc == ProgramPhase ProgramPhase -- bool do
 end
 
 proc != ProgramPhase ProgramPhase -- bool do == ! end
+
+union OperationKind
+    case unresolved
+    case literal
+    case local
+    case constant
+    case procedure_call
+    case macro_call
+    case type_literal
+    case record_new
+    case record_alloc
+    case record_sizeof
+    case record_field_read
+    case record_field_write
+    case union_construct
+    case union_test
+    case union_project
+    case function_call
+    case function_reference
+    case intrinsic
+end
+
+union IntrinsicOperation
+    case none
+    case private
+    case cast
+    case args
+    case print
+    case noop
+    case string_bytes
+    case string_len
+    case pointer_load
+    case pointer_store
+    case builtins_assert_fail
+end
 
 union ScopeKind
     case procedure
@@ -3685,6 +3731,75 @@ proc analyzed-operation-at ProcedureAnalysis* int -- AnalyzedOperation* do
     end
 end
 
+proc active-analyzed-operation CompileContext* -- AnalyzedOperation* do
+    let cc do
+        cc compile-context-analysis
+        let analysis do
+            analysis analysis @ProcedureAnalysis.operation_count analyzed-operation-at
+        end
+    end
+end
+
+proc set-operation-target CompileContext* OperationKind ModuleContext* int -- do
+    let cc kind module index do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && do
+            if cc @CompileContext.operation_macro_lock ! do
+                if cc @CompileContext.operation_identity_set do
+                    "internal duplicate analyzed operation identity" fail
+                end
+                cc active-analyzed-operation
+                let operation do
+                    kind operation !AnalyzedOperation.kind
+                    module operation !AnalyzedOperation.target_module
+                    index operation !AnalyzedOperation.target_index
+                    true cc !CompileContext.operation_identity_set
+                end
+            end
+        end
+    end
+end
+
+proc set-operation-type CompileContext* OperationKind int -- do
+    let cc kind value-type do
+        cc kind 0 ptr cast ModuleContext* cast 0 1 - set-operation-target
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+            value-type cc active-analyzed-operation !AnalyzedOperation.value_type
+        end
+    end
+end
+
+proc set-operation-secondary-target CompileContext* ModuleContext* int -- do
+    let cc module index do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+            if cc @CompileContext.operation_identity_set ! do "internal missing analyzed operation identity" fail end
+            module cc active-analyzed-operation !AnalyzedOperation.secondary_module
+            index cc active-analyzed-operation !AnalyzedOperation.secondary_index
+        end
+    end
+end
+
+proc set-operation-intrinsic CompileContext* IntrinsicOperation int PrivateOperation -- do
+    let cc intrinsic value-type private-operation do
+        cc OperationKind:intrinsic 0 ptr cast ModuleContext* cast 0 1 - set-operation-target
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+            intrinsic cc active-analyzed-operation !AnalyzedOperation.intrinsic
+            value-type cc active-analyzed-operation !AnalyzedOperation.value_type
+            private-operation cc active-analyzed-operation !AnalyzedOperation.private_operation
+        end
+    end
+end
+
+proc set-operation-macro CompileContext* ModuleContext* int -- do
+    let cc module index do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && do
+            if cc @CompileContext.operation_macro_lock ! do
+                cc OperationKind:macro_call module index set-operation-target
+                true cc !CompileContext.operation_macro_lock
+            end
+        end
+    end
+end
+
 proc grow-analyzed-operations ProcedureAnalysis* -- do
     let analysis do
         if analysis @ProcedureAnalysis.operation_capacity max-int AnalyzedOperation:sizeof 2 * / > do
@@ -3761,7 +3876,17 @@ proc begin-analyzed-operation CompileContext* int -- do
                 0 1 - operation !AnalyzedOperation.after_type_start
                 0 1 - operation !AnalyzedOperation.after_type_count
                 cc @CompileContext.type_count operation !AnalyzedOperation.minimum_type_count
+                OperationKind:unresolved operation !AnalyzedOperation.kind
+                0 ptr cast ModuleContext* cast operation !AnalyzedOperation.target_module
+                0 1 - operation !AnalyzedOperation.target_index
+                0 ptr cast ModuleContext* cast operation !AnalyzedOperation.secondary_module
+                0 1 - operation !AnalyzedOperation.secondary_index
+                type-none operation !AnalyzedOperation.value_type
+                IntrinsicOperation:none operation !AnalyzedOperation.intrinsic
+                PrivateOperation:none operation !AnalyzedOperation.private_operation
                 cc @CompileContext.type_count cc !CompileContext.operation_minimum_type_count
+                false cc !CompileContext.operation_identity_set
+                false cc !CompileContext.operation_macro_lock
                 true cc !CompileContext.operation_active
             end
         end
@@ -3785,6 +3910,9 @@ proc finish-analyzed-operation CompileContext* int -- do
                 do
                     "internal invalid analyzed operation stack minimum" fail
                 end
+                if cc @CompileContext.operation_identity_set ! do
+                    "internal unresolved analyzed operation" fail
+                end
                 token-end operation !AnalyzedOperation.token_end
                 analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
                 operation !AnalyzedOperation.after_type_start
@@ -3792,6 +3920,8 @@ proc finish-analyzed-operation CompileContext* int -- do
                 cc @CompileContext.operation_minimum_type_count operation !AnalyzedOperation.minimum_type_count
                 analysis @ProcedureAnalysis.operation_count 1 + analysis !ProcedureAnalysis.operation_count
                 false cc !CompileContext.operation_active
+                false cc !CompileContext.operation_identity_set
+                false cc !CompileContext.operation_macro_lock
             end
         end
     end
@@ -4053,6 +4183,7 @@ proc add-local CompileContext* int int -- int do
         let local do
             cc @CompileContext.defining_module name-token token-at @TokenEntry.start local !LocalEntry.name_start
             cc @CompileContext.defining_module name-token token-at @TokenEntry.length local !LocalEntry.name_length
+            name-token local !LocalEntry.name_token
             value-type local !LocalEntry.value_type
             cc @CompileContext.next_local local !LocalEntry.id
             cc @CompileContext.defining_module local !LocalEntry.module
@@ -8242,6 +8373,21 @@ proc private-operation-is-integer-binary PrivateOperation -- bool do
     end
 end
 
+proc private-operation-supported PrivateOperation int -- bool do
+    let operation value-type do
+        operation PrivateOperation:load == operation PrivateOperation:store == ||
+        value-type type-is-integer operation PrivateOperation:not == && ||
+        value-type type-is-integer operation PrivateOperation:shl == operation PrivateOperation:shr == || && ||
+        value-type type-is-integer operation PrivateOperation:divmod == && ||
+        value-type type-is-integer operation private-operation-is-comparison && ||
+        value-type type-is-integer operation private-operation-is-integer-binary && ||
+        value-type type-bool == operation PrivateOperation:not == && ||
+        value-type type-bool == operation PrivateOperation:and == operation PrivateOperation:or == || && ||
+        value-type type-ptr == operation PrivateOperation:add == operation PrivateOperation:sub == || && ||
+        value-type type-ptr == operation PrivateOperation:eq == operation PrivateOperation:ne == || && ||
+    end
+end
+
 proc emit-private-operation PrivateOperation -- do
     let operation do
         if operation PrivateOperation:add == do "add" emit
@@ -8394,7 +8540,9 @@ proc compile-private-intrinsic CompileContext* int -- bool do
                     cc @CompileContext.defining_module token-index value-type private-intrinsic-operation
                     let operation do
                         if operation PrivateOperation:none == do false
-                        elif operation PrivateOperation:load == do cc value-type compile-private-load true
+                        elif operation value-type private-operation-supported do
+                            cc IntrinsicOperation:private value-type operation set-operation-intrinsic
+                            if operation PrivateOperation:load == do cc value-type compile-private-load true
                         elif operation PrivateOperation:store == do cc value-type compile-private-store true
                         elif value-type type-is-integer do
                             if operation PrivateOperation:not == do cc operation value-type value-type compile-private-unary true
@@ -8411,6 +8559,7 @@ proc compile-private-intrinsic CompileContext* int -- bool do
                             if operation PrivateOperation:add == operation PrivateOperation:sub == || do cc operation compile-private-pointer-arithmetic true
                             elif operation PrivateOperation:eq == operation PrivateOperation:ne == || do cc operation type-ptr type-bool compile-private-binary true
                             else false end
+                        else false end
                         else false end
                     end
                 end
@@ -8433,6 +8582,7 @@ end
 
 proc compile-primitive-type-literal CompileContext* int -- bool do
     let cc value-type do
+        cc OperationKind:type_literal value-type set-operation-type
         type-literal-base value-type +
         let literal-type do
             cc literal-type type-push
@@ -8488,8 +8638,10 @@ end
 proc compile-memory-io-intrinsic CompileContext* int -- bool do
     let cc token-index do
         if cc @CompileContext.defining_module token-index "cast" token-equals do
+            cc IntrinsicOperation:cast type-none PrivateOperation:none set-operation-intrinsic
             cc compile-cast-intrinsic true
         elif cc @CompileContext.defining_module token-index "args" token-equals do
+            cc IntrinsicOperation:args type-none PrivateOperation:none set-operation-intrinsic
             cc type-ptr type-push
             cc type-int type-push
             if cc @CompileContext.emitting do
@@ -8503,6 +8655,7 @@ proc compile-memory-io-intrinsic CompileContext* int -- bool do
         elif cc @CompileContext.defining_module token-index "print" token-equals do
             cc type-pop
             let value-type do
+                cc IntrinsicOperation:print value-type PrivateOperation:none set-operation-intrinsic
                 if value-type type-int == do
                     if cc @CompileContext.emitting do
                         cc emit-indent "printf(\"%lld\\n\", (long long)" emit
@@ -8519,6 +8672,7 @@ proc compile-memory-io-intrinsic CompileContext* int -- bool do
             end
             true
         elif cc @CompileContext.defining_module token-index "?" token-equals do
+            cc IntrinsicOperation:noop type-none PrivateOperation:none set-operation-intrinsic
             true
         else
             false
@@ -8582,8 +8736,14 @@ proc compile-generic-pointer-memory CompileContext* int -- bool do
             let pointer-type do
                 if cc @CompileContext.defining_module token-index "@" token-equals do
                     cc pointer-type compile-generic-pointer-load
+                    peek success do
+                        if success do cc IntrinsicOperation:pointer_load pointer-type PrivateOperation:none set-operation-intrinsic end
+                    end
                 elif cc @CompileContext.defining_module token-index "!" token-equals do
                     cc pointer-type compile-generic-pointer-store
+                    peek success do
+                        if success do cc IntrinsicOperation:pointer_store pointer-type PrivateOperation:none set-operation-intrinsic end
+                    end
                 else
                     false
                 end
@@ -8992,7 +9152,9 @@ end
 proc compile-local-reference CompileContext* int int -- do
     let cc token-index local-index do
         cc local-index local-address
-        peek local do @LocalEntry.value_type cc swap type-push
+        peek local do
+            cc OperationKind:local local @LocalEntry.module local @LocalEntry.name_token set-operation-target
+            @LocalEntry.value_type cc swap type-push
             cc local @LocalEntry.id emit-local-load
         end
     end
@@ -9000,6 +9162,7 @@ end
 
 proc compile-procedure-call CompileContext* int ModuleContext* int -- do
     let cc token-index module proc-index do
+        cc OperationKind:procedure_call module proc-index set-operation-target
         cc module proc-index apply-proc-contract
         cc module proc-index emit-call
     end
@@ -9110,6 +9273,10 @@ proc compile-inferred-record-field CompileContext* ptr int bool -- bool do
                             module record-index record-type-at
                             module field-index record-field-at
                             let record-entry field do
+                                if setter do OperationKind:record_field_write else OperationKind:record_field_read end
+                                let operation-kind do
+                                    cc operation-kind module field-index set-operation-target
+                                end
                                 cc record-entry field
                                 field-index record-entry @RecordTypeEntry.field_start -
                                 pointer-receiver setter compile-resolved-record-field
@@ -9348,6 +9515,7 @@ proc compile-record-type-word CompileContext* int -- bool do
             if found do
                 module record-index record-type-at @RecordTypeEntry.record_type
                 let value-type do
+                    cc OperationKind:type_literal value-type set-operation-type
                     0 value-type -
                     let literal-type do
                         cc literal-type type-push
@@ -9371,6 +9539,7 @@ proc compile-union-type-word CompileContext* int -- bool do
             if found do
                 module union-index union-type-at @UnionTypeEntry.union_type
                 let value-type do
+                    cc OperationKind:type_literal value-type set-operation-type
                     0 value-type -
                     let literal-type do
                         cc literal-type type-push
@@ -9394,6 +9563,7 @@ proc compile-function-type-word CompileContext* int -- bool do
             if found do
                 module function-index function-type-at @FunctionTypeEntry.function_type
                 let value-type do
+                    cc OperationKind:type_literal value-type set-operation-type
                     0 value-type -
                     let literal-type do
                         cc literal-type type-push
@@ -9453,10 +9623,12 @@ proc compile-record-special CompileContext* ptr int int -- bool do
                         module record-index record-type-at @RecordTypeEntry.record_type
                         let record-type do
                         if operation operation-length "new" bytes-equal-string do
+                            cc OperationKind:record_new module record-index set-operation-target
                             cc record-type type-push
                             cc record-type emit-record-zero-value
                             true
                         elif operation operation-length "alloc" bytes-equal-string do
+                            cc OperationKind:record_alloc module record-index set-operation-target
                             cc @CompileContext.program record-type program-intern-pointer-type
                             let pointer-type do
                                 cc pointer-type type-push
@@ -9464,6 +9636,7 @@ proc compile-record-special CompileContext* ptr int int -- bool do
                             end
                             true
                         elif operation operation-length "sizeof" bytes-equal-string do
+                            cc OperationKind:record_sizeof module record-index set-operation-target
                             cc type-int type-push
                             cc record-type emit-record-sizeof
                             true
@@ -9605,6 +9778,10 @@ proc compile-record-field CompileContext* ptr int int bool -- bool do
                                 let record-entry do
                                     module field-index record-field-at
                                     let field do
+                                        if setter do OperationKind:record_field_write else OperationKind:record_field_read end
+                                        let operation-kind do
+                                            cc operation-kind module field-index set-operation-target
+                                        end
                                         cc record-entry @RecordTypeEntry.record_type record-receiver-is-pointer
                                         let pointer-receiver do
                                             cc record-entry field
@@ -9738,6 +9915,7 @@ proc compile-union-constructor CompileContext* ptr int int -- bool do
                         end
                         module case-index union-case-at @UnionCaseEntry.payload_type
                         let payload-type do
+                            cc OperationKind:union_construct module case-index set-operation-target
                             if payload-type type-none != do
                                 cc payload-type type-expect
                             end
@@ -9783,6 +9961,10 @@ proc compile-union-instance CompileContext* ptr int int -- bool do
                                     end
                                     module union-index union-type-at @UnionTypeEntry.union_type
                                     let union-type do
+                                        if predicate do OperationKind:union_test else OperationKind:union_project end
+                                        let operation-kind do
+                                            cc operation-kind module case-index set-operation-target
+                                        end
                                         cc union-type type-expect
                                         if predicate do
                                             cc type-bool type-push
@@ -9933,6 +10115,7 @@ proc compile-function-operation CompileContext* ptr int int -- bool do
                     length separator 1 + -
                     let operation operation-length do
                         if operation operation-length "call" bytes-equal-string do
+                            cc OperationKind:function_call function-module function-index set-operation-target
                             cc function-module function-index apply-function-contract
                             cc function-module function-index emit-function-call
                             true
@@ -9971,6 +10154,8 @@ proc compile-function-operation CompileContext* ptr int int -- bool do
                                         end
                                     end
                                 end
+                                cc OperationKind:function_reference function-module function-index set-operation-target
+                                cc proc-module proc-index set-operation-secondary-target
                                 cc function-module function-index function-type-at @FunctionTypeEntry.function_type type-push
                                 cc proc-module proc-index procedure-at @ProcedureEntry.global_id emit-push-integer
                                 true
@@ -10004,6 +10189,7 @@ end
 proc compile-string-word CompileContext* int -- bool do
     let cc token-index do
         if cc @CompileContext.defining_module token-index "String.bytes" token-equals do
+            cc IntrinsicOperation:string_bytes type-string PrivateOperation:none set-operation-intrinsic
             cc type-string type-expect
             cc type-ptr register-replaced-stack-slot
             cc type-ptr type-push
@@ -10015,6 +10201,7 @@ proc compile-string-word CompileContext* int -- bool do
             end
             true
         elif cc @CompileContext.defining_module token-index "String.len" token-equals do
+            cc IntrinsicOperation:string_len type-string PrivateOperation:none set-operation-intrinsic
             cc type-string type-expect
             cc type-int register-replaced-stack-slot
             cc type-int type-push
@@ -10043,6 +10230,8 @@ proc compile-type-word CompileContext* int -- bool do
                 end
                 0 swap -
                 let literal-type do
+                    if literal-type 0 < do 0 literal-type - else literal-type end
+                    let resolved-type do cc OperationKind:type_literal resolved-type set-operation-type end
                     cc literal-type type-push
                     cc literal-type emit-push-integer
                 end
@@ -10105,7 +10294,9 @@ proc compile-constant-values-from CompileContext* ModuleContext* int int -- do
 end
 
 proc compile-constant CompileContext* ModuleContext* int -- do
-    peek cc module constant-index do 0 compile-constant-values-from
+    peek cc module constant-index do
+        cc OperationKind:constant module constant-index set-operation-target
+        0 compile-constant-values-from
     end
 end
 
@@ -10147,6 +10338,7 @@ proc compile-ordinary-word CompileContext* int -- do
                         visible-macro-definition
                         let macro-module macro-index found do
                             if found ! do "internal macro resolution failed" fail end
+                            cc macro-module macro-index set-operation-macro
                             cc macro-module macro-index compile-macro
                         end
                     elif cc token-index compile-type-word do
@@ -10261,18 +10453,22 @@ proc compile-token-inner CompileContext* int -- int do
         cc @CompileContext.defining_module token-index token-at @TokenEntry.kind
         let kind do
             if kind TokenKind:int == do
+                cc OperationKind:literal type-int set-operation-type
                 cc type-int type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
             elif kind TokenKind:bool == do
+                cc OperationKind:literal type-bool set-operation-type
                 cc type-bool type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
             elif kind TokenKind:char == do
+                cc OperationKind:literal type-int set-operation-type
                 cc type-int type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
             elif kind TokenKind:string == do
+                cc OperationKind:literal type-string set-operation-type
                 cc type-string type-push
                 cc token-index emit-push-string
                 token-index 1 +
@@ -10494,6 +10690,8 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             false cc !CompileContext.record_operations
             false cc !CompileContext.operation_active
             0 cc !CompileContext.operation_minimum_type_count
+            false cc !CompileContext.operation_identity_set
+            false cc !CompileContext.operation_macro_lock
             cc
         end
     end
@@ -10927,6 +11125,7 @@ proc compile-implicit-builtin-call CompileContext* int ModuleContext* int -- do
             module ptr cast int cast cc @CompileContext.program @Program.builtins_module ptr cast int cast == &&
             proc-index cc @CompileContext.program @Program.builtins_assert_proc == &&
         do
+            cc OperationKind:procedure_call module proc-index set-operation-target
             cc module proc-index apply-proc-contract
         else
             cc token-index module proc-index compile-procedure-call
@@ -10957,6 +11156,7 @@ proc compile-builtins-word CompileContext* int -- bool do
         let compiling-builtins do
             if compiling-builtins do
                 if cc @CompileContext.defining_module token-index "builtins-assert-fail" token-equals do
+                    cc IntrinsicOperation:builtins_assert_fail type-string PrivateOperation:none set-operation-intrinsic
                     cc type-string type-expect
                     if cc @CompileContext.emitting do
                         cc @CompileContext.type_count
@@ -10978,6 +11178,7 @@ proc compile-builtins-word CompileContext* int -- bool do
                         builtins bytes length visible-macro-definition
                         let macro-module macro-index macro-found do
                             if macro-found do
+                                cc macro-module macro-index set-operation-macro
                                 cc macro-module macro-index compile-macro
                                 true
                             else
