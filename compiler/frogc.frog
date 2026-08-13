@@ -2557,6 +2557,12 @@ proc allocate-proc ModuleContext* int -- int do
                 0 ptr cast analysis !ProcedureAnalysis.stack_slots
                 0 analysis !ProcedureAnalysis.stack_slot_count
                 0 analysis !ProcedureAnalysis.stack_slot_capacity
+                16 AnalyzedOperation:sizeof * alloc analysis !ProcedureAnalysis.operations
+                0 analysis !ProcedureAnalysis.operation_count
+                16 analysis !ProcedureAnalysis.operation_capacity
+                16 cell-bytes * alloc analysis !ProcedureAnalysis.operation_types
+                0 analysis !ProcedureAnalysis.operation_type_count
+                16 analysis !ProcedureAnalysis.operation_type_capacity
                 analysis ctx proc-index procedure-at !ProcedureEntry.analysis
             end
             proc-index
@@ -3085,11 +3091,28 @@ record StackSlotEntry
     value_type int
 end
 
+record AnalyzedOperation
+    source_module ModuleContext*
+    token_start int
+    token_end int
+    before_type_start int
+    before_type_count int
+    after_type_start int
+    after_type_count int
+    minimum_type_count int
+end
+
 record ProcedureAnalysis
     max_type_count int
     stack_slots ptr
     stack_slot_count int
     stack_slot_capacity int
+    operations ptr
+    operation_count int
+    operation_capacity int
+    operation_types ptr
+    operation_type_count int
+    operation_type_capacity int
 end
 
 record ResultTypeEntry
@@ -3195,6 +3218,9 @@ record CompileContext
     diagnostic_token int
     diagnostic_active bool
     diagnostic_word bool
+    record_operations bool
+    operation_active bool
+    operation_minimum_type_count int
 end
 
 record TokenEntry
@@ -3647,6 +3673,168 @@ proc cc-type-address CompileContext* int -- ptr do
     end
 end
 
+proc compile-context-analysis CompileContext* -- ProcedureAnalysis* do
+    let cc do
+        cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.analysis
+    end
+end
+
+proc analyzed-operation-at ProcedureAnalysis* int -- AnalyzedOperation* do
+    let analysis index do
+        analysis @ProcedureAnalysis.operations index AnalyzedOperation:sizeof * + AnalyzedOperation* cast
+    end
+end
+
+proc grow-analyzed-operations ProcedureAnalysis* -- do
+    let analysis do
+        if analysis @ProcedureAnalysis.operation_capacity max-int AnalyzedOperation:sizeof 2 * / > do
+            "internal analyzed operation capacity overflow" fail
+        end
+        analysis @ProcedureAnalysis.operation_capacity 2 *
+        let capacity do
+            capacity AnalyzedOperation:sizeof * alloc
+            let operations do
+                analysis @ProcedureAnalysis.operations operations
+                analysis @ProcedureAnalysis.operation_count AnalyzedOperation:sizeof * memory-copy
+                operations analysis !ProcedureAnalysis.operations
+                capacity analysis !ProcedureAnalysis.operation_capacity
+            end
+        end
+    end
+end
+
+proc ensure-operation-type-capacity ProcedureAnalysis* int -- do
+    let analysis additional do
+        if additional 0 < do "internal negative analyzed operation type count" fail end
+        if analysis @ProcedureAnalysis.operation_type_count max-int additional - > do
+            "internal analyzed operation type count overflow" fail
+        end
+        analysis @ProcedureAnalysis.operation_type_count additional +
+        let required do
+            while required analysis @ProcedureAnalysis.operation_type_capacity > do
+                if analysis @ProcedureAnalysis.operation_type_capacity max-int cell-bytes 2 * / > do
+                    "internal analyzed operation type capacity overflow" fail
+                end
+                analysis @ProcedureAnalysis.operation_type_capacity 2 *
+                let capacity do
+                    capacity cell-bytes * alloc
+                    let operation-types do
+                        analysis @ProcedureAnalysis.operation_types operation-types
+                        analysis @ProcedureAnalysis.operation_type_count cell-bytes * memory-copy
+                        operation-types analysis !ProcedureAnalysis.operation_types
+                        capacity analysis !ProcedureAnalysis.operation_type_capacity
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc append-operation-types ProcedureAnalysis* ptr int -- int do
+    let analysis types count do
+        analysis count ensure-operation-type-capacity
+        analysis @ProcedureAnalysis.operation_type_count
+        let start do
+            types analysis @ProcedureAnalysis.operation_types start cell-bytes * + count cell-bytes * memory-copy
+            start count + analysis !ProcedureAnalysis.operation_type_count
+            start
+        end
+    end
+end
+
+proc begin-analyzed-operation CompileContext* int -- do
+    let cc token-index do
+        if cc @CompileContext.operation_active do "internal nested analyzed operation" fail end
+        cc compile-context-analysis
+        let analysis do
+            if analysis @ProcedureAnalysis.operation_count analysis @ProcedureAnalysis.operation_capacity == do
+                analysis grow-analyzed-operations
+            end
+            analysis analysis @ProcedureAnalysis.operation_count analyzed-operation-at
+            let operation do
+                cc @CompileContext.defining_module operation !AnalyzedOperation.source_module
+                token-index operation !AnalyzedOperation.token_start
+                0 1 - operation !AnalyzedOperation.token_end
+                analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                operation !AnalyzedOperation.before_type_start
+                cc @CompileContext.type_count operation !AnalyzedOperation.before_type_count
+                0 1 - operation !AnalyzedOperation.after_type_start
+                0 1 - operation !AnalyzedOperation.after_type_count
+                cc @CompileContext.type_count operation !AnalyzedOperation.minimum_type_count
+                cc @CompileContext.type_count cc !CompileContext.operation_minimum_type_count
+                true cc !CompileContext.operation_active
+            end
+        end
+    end
+end
+
+proc finish-analyzed-operation CompileContext* int -- do
+    let cc token-end do
+        if cc @CompileContext.operation_active ! do "internal missing analyzed operation" fail end
+        cc compile-context-analysis
+        let analysis do
+            analysis analysis @ProcedureAnalysis.operation_count analyzed-operation-at
+            let operation do
+                if token-end operation @AnalyzedOperation.token_start <= do
+                    "internal invalid analyzed operation token range" fail
+                end
+                if
+                    cc @CompileContext.operation_minimum_type_count 0 <
+                    cc @CompileContext.operation_minimum_type_count operation @AnalyzedOperation.before_type_count > ||
+                    cc @CompileContext.operation_minimum_type_count cc @CompileContext.type_count > ||
+                do
+                    "internal invalid analyzed operation stack minimum" fail
+                end
+                token-end operation !AnalyzedOperation.token_end
+                analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                operation !AnalyzedOperation.after_type_start
+                cc @CompileContext.type_count operation !AnalyzedOperation.after_type_count
+                cc @CompileContext.operation_minimum_type_count operation !AnalyzedOperation.minimum_type_count
+                analysis @ProcedureAnalysis.operation_count 1 + analysis !ProcedureAnalysis.operation_count
+                false cc !CompileContext.operation_active
+            end
+        end
+    end
+end
+
+proc reset-procedure-operations ProcedureAnalysis* -- do
+    let analysis do
+        if
+            analysis @ProcedureAnalysis.operation_capacity 0 <=
+            analysis @ProcedureAnalysis.operation_type_capacity 0 <= ||
+            analysis @ProcedureAnalysis.operation_count 0 < ||
+            analysis @ProcedureAnalysis.operation_count analysis @ProcedureAnalysis.operation_capacity > ||
+            analysis @ProcedureAnalysis.operation_type_count 0 < ||
+            analysis @ProcedureAnalysis.operation_type_count analysis @ProcedureAnalysis.operation_type_capacity > ||
+            analysis @ProcedureAnalysis.operations int cast 0 == ||
+            analysis @ProcedureAnalysis.operation_types int cast 0 == ||
+        do
+            "internal invalid procedure operation storage" fail
+        end
+        0 analysis !ProcedureAnalysis.operation_count
+        0 analysis !ProcedureAnalysis.operation_type_count
+    end
+end
+
+proc consume-type-count CompileContext* int -- do
+    let cc count do
+        if count 0 < count cc @CompileContext.type_count > || do
+            "internal invalid compile-time stack consumption" fail
+        end
+        cc @CompileContext.type_count count -
+        let type-count do
+            type-count cc !CompileContext.type_count
+            if
+                cc @CompileContext.record_operations
+                cc @CompileContext.operation_active &&
+                type-count cc @CompileContext.operation_minimum_type_count < &&
+            do
+                type-count cc !CompileContext.operation_minimum_type_count
+            end
+        end
+    end
+end
+
 proc stack-slot-at CompileContext* int -- StackSlotEntry* do
     let cc index do
         cc @CompileContext.stack_slots index StackSlotEntry:sizeof * + StackSlotEntry* cast
@@ -3752,10 +3940,8 @@ proc type-pop CompileContext* -- int do
         if cc @CompileContext.type_count 0 <= do
             cc "compile-time stack underflow" fail-compile-word
         end
-        cc @CompileContext.type_count 1 -
-        peek index do cc !CompileContext.type_count
-            cc index cc-type-address 0 field-read
-        end
+        cc 1 consume-type-count
+        cc cc @CompileContext.type_count cc-type-address 0 field-read
     end
 end
 
@@ -7840,7 +8026,7 @@ proc fail-function-call-contract CompileContext* ModuleContext* int -- do
 end
 
 proc consume-types CompileContext* int -- do
-    let cc count do cc @CompileContext.type_count count - cc !CompileContext.type_count end
+    consume-type-count
 end
 
 proc push-proc-outputs CompileContext* ModuleContext* int int -- do
@@ -10100,10 +10286,31 @@ proc compile-token-inner CompileContext* int -- int do
     end
 end
 
+proc token-is-structured-word CompileContext* int -- bool do
+    let cc token-index do
+        if cc @CompileContext.defining_module token-index token-at @TokenEntry.kind TokenKind:word != do
+            false
+        else
+            cc @CompileContext.defining_module token-index "if" token-equals
+            cc @CompileContext.defining_module token-index "elif" token-equals ||
+            cc @CompileContext.defining_module token-index "else" token-equals ||
+            cc @CompileContext.defining_module token-index "while" token-equals ||
+            cc @CompileContext.defining_module token-index "do" token-equals ||
+            cc @CompileContext.defining_module token-index "end" token-equals ||
+            cc @CompileContext.defining_module token-index "let" token-equals ||
+            cc @CompileContext.defining_module token-index "peek" token-equals ||
+        end
+    end
+end
+
 proc compile-token CompileContext* int -- int do
     let cc token-index do
         cc @CompileContext.diagnostic_active
-        let was-active do
+        cc @CompileContext.record_operations
+        cc @CompileContext.operation_active ! &&
+        cc token-index token-is-structured-word ! &&
+        let was-active begin-operation do
+            if begin-operation do cc token-index begin-analyzed-operation end
             if was-active ! do
                 cc @CompileContext.defining_module cc !CompileContext.diagnostic_module
                 token-index cc !CompileContext.diagnostic_token
@@ -10113,6 +10320,7 @@ proc compile-token CompileContext* int -- int do
             cc token-index compile-token-inner
             let next-token do
                 if was-active ! do false cc !CompileContext.diagnostic_active end
+                if begin-operation do cc next-token finish-analyzed-operation end
                 next-token
             end
         end
@@ -10151,7 +10359,7 @@ proc try-compile-constant-add CompileContext* int int -- bool do
                 end
                 let fits do
                     if fits do
-                        if cc cc-debug-tracing do
+                        if cc cc-debug-tracing cc @CompileContext.record_operations || do
                             cc @CompileContext.stack_slot_count
                             let previous-slot-count do
                                 cc token-index compile-token drop
@@ -10283,6 +10491,9 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             16 cc !CompileContext.stack_slot_capacity
             false cc !CompileContext.diagnostic_active
             false cc !CompileContext.diagnostic_word
+            false cc !CompileContext.record_operations
+            false cc !CompileContext.operation_active
+            0 cc !CompileContext.operation_minimum_type_count
             cc
         end
     end
@@ -10436,9 +10647,17 @@ end
 proc analyze-procedure Program* ModuleContext* int -- do
     let program ctx proc-index do
         if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none == do
+            ctx proc-index procedure-at @ProcedureEntry.analysis
+            let analysis do
+                analysis reset-procedure-operations
+            end
             program ctx proc-index create-compile-context
             let measurement do
+                true measurement !CompileContext.record_operations
                 measurement ctx proc-index compile-procedure-body
+                if measurement @CompileContext.operation_active do
+                    "internal unclosed analyzed operation" fail
+                end
                 ctx proc-index procedure-at @ProcedureEntry.analysis
                 let analysis do
                     measurement @CompileContext.max_type_count analysis !ProcedureAnalysis.max_type_count
