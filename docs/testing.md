@@ -20,8 +20,8 @@ status, and also check selected generated-C properties.
 CLI cases also verify that `frogc check [FILE]` analyzes every procedure without
 emitting C, using standard input when `FILE` is omitted. The tests pin the
 current version of `frogc inspect [FILE]` output, including standard input,
-relative imports and resolved cross-module targets, and require semantic
-failures to leave standard output empty.
+relative imports, resolved cross-module targets, and typed control-flow blocks,
+and require semantic failures to leave standard output empty.
 
 The case manifests are:
 

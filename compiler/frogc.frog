@@ -2527,6 +2527,9 @@ proc allocate-proc ModuleContext* int -- int do
                 16 AnalyzedBindingLocal:sizeof * alloc analysis !ProcedureAnalysis.binding_locals
                 0 analysis !ProcedureAnalysis.binding_local_count
                 16 analysis !ProcedureAnalysis.binding_local_capacity
+                16 AnalyzedBlock:sizeof * alloc analysis !ProcedureAnalysis.cfg_blocks
+                0 analysis !ProcedureAnalysis.cfg_block_count
+                16 analysis !ProcedureAnalysis.cfg_block_capacity
                 analysis ctx proc-index procedure-at !ProcedureEntry.analysis
             end
             proc-index
@@ -3040,6 +3043,12 @@ record BlockFrame
     has_else bool
     has_do bool
     elif_parent bool
+    cfg_condition_block int
+    cfg_loop_header int
+    cfg_pending_merge_sources ptr
+    cfg_pending_merge_count int
+    elif_result_types ptr
+    elif_result_count int
 end
 
 record LocalEntry
@@ -3085,6 +3094,22 @@ record AnalyzedOperation
     private_operation PrivateOperation
 end
 
+record AnalyzedBlock
+    operation_start int
+    operation_count int
+    entry_type_start int
+    entry_type_count int
+    exit_type_start int
+    exit_type_count int
+    source_module ModuleContext*
+    token_start int
+    terminator_kind CFGTerminatorKind
+    terminator_module ModuleContext*
+    terminator_token int
+    first_target int
+    second_target int
+end
+
 record ProcedureAnalysis
     max_type_count int
     stack_slots ptr
@@ -3099,6 +3124,9 @@ record ProcedureAnalysis
     binding_locals ptr
     binding_local_count int
     binding_local_capacity int
+    cfg_blocks ptr
+    cfg_block_count int
+    cfg_block_capacity int
 end
 
 record ResultTypeEntry
@@ -3210,6 +3238,8 @@ record CompileContext
     operation_identity_set bool
     operation_identity_locked bool
     operation_binding_active bool
+    cfg_recording_suppressed int
+    cfg_current_block int
 end
 
 record TokenEntry
@@ -3384,6 +3414,13 @@ union OperationKind
     case function_call
     case function_reference
     case intrinsic
+end
+
+union CFGTerminatorKind
+    case unresolved
+    case jump
+    case branch
+    case return
 end
 
 union IntrinsicOperation
@@ -3726,6 +3763,115 @@ proc analyzed-binding-local-at ProcedureAnalysis* int -- AnalyzedBindingLocal* d
     end
 end
 
+proc analyzed-block-at ProcedureAnalysis* int -- AnalyzedBlock* do
+    let analysis index do
+        analysis @ProcedureAnalysis.cfg_blocks index AnalyzedBlock:sizeof * + AnalyzedBlock* cast
+    end
+end
+
+proc analyzed-types-match ProcedureAnalysis* int int int int -- bool do
+    let analysis first-start first-count second-start second-count do
+        if first-count second-count != do false
+        else
+            analysis @ProcedureAnalysis.operation_types first-start cell-bytes * + first-count cell-bytes *
+            analysis @ProcedureAnalysis.operation_types second-start cell-bytes * + second-count cell-bytes *
+            bytes-equal
+        end
+    end
+end
+
+proc operation-before-matches-block ProcedureAnalysis* AnalyzedOperation* AnalyzedBlock* -- bool do
+    let analysis operation block do
+        analysis
+        operation @AnalyzedOperation.before_type_start operation @AnalyzedOperation.before_type_count
+        block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count
+        analyzed-types-match
+    end
+end
+
+proc operations-are-adjacent ProcedureAnalysis* AnalyzedOperation* AnalyzedOperation* -- bool do
+    let analysis first second do
+        analysis
+        first @AnalyzedOperation.after_type_start first @AnalyzedOperation.after_type_count
+        second @AnalyzedOperation.before_type_start second @AnalyzedOperation.before_type_count
+        analyzed-types-match
+    end
+end
+
+proc block-exit-types ProcedureAnalysis* AnalyzedBlock* -- ptr int do
+    let analysis block do
+        analysis @ProcedureAnalysis.operation_types block @AnalyzedBlock.exit_type_start cell-bytes * +
+        block @AnalyzedBlock.exit_type_count
+    end
+end
+
+proc block-entry-matches-types ProcedureAnalysis* AnalyzedBlock* ptr int -- bool do
+    let analysis block types count do
+        analysis @ProcedureAnalysis.operation_types block @AnalyzedBlock.entry_type_start cell-bytes * +
+        block @AnalyzedBlock.entry_type_count
+        types count bytes-equal
+    end
+end
+
+proc verify-analyzed-target ModuleContext* int ProcedureAnalysis* int -- AnalyzedBlock* do
+    let module procedure-index analysis target do
+        if target 0 < target analysis @ProcedureAnalysis.cfg_block_count >= || do
+            "internal analyzed block target out of range: " emit-error
+            module @ModuleContext.source module procedure-index procedure-at @ProcedureEntry.name_start +
+            module procedure-index procedure-at @ProcedureEntry.name_length emit-error-bytes
+            ", target=" emit-error target emit-integer-error 10 eputc 1 exit
+        end
+        analysis target analyzed-block-at
+    end
+end
+
+proc verify-analyzed-block-operations ProcedureAnalysis* AnalyzedBlock* -- do
+    let analysis block do
+        if block @AnalyzedBlock.operation_count 0 == do
+            if
+                analysis
+                block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count
+                block @AnalyzedBlock.exit_type_start block @AnalyzedBlock.exit_type_count
+                analyzed-types-match !
+            do
+                "internal empty analyzed block changes stack" fail
+            end
+        else
+            analysis block @AnalyzedBlock.operation_start analyzed-operation-at
+            let first do
+                if analysis first block operation-before-matches-block ! do
+                    "internal analyzed block entry stack mismatch" fail
+                end
+            end
+            1
+            while dup block @AnalyzedBlock.operation_count < do
+                dup let offset do
+                    analysis block @AnalyzedBlock.operation_start offset + 1 - analyzed-operation-at
+                    analysis block @AnalyzedBlock.operation_start offset + analyzed-operation-at
+                    let previous current do
+                        if analysis previous current operations-are-adjacent ! do
+                            "internal analyzed operation stack discontinuity" fail
+                        end
+                    end
+                end
+                1 +
+            end
+            drop
+            analysis block @AnalyzedBlock.operation_start block @AnalyzedBlock.operation_count + 1 - analyzed-operation-at
+            let last do
+                if
+                    analysis
+                    last @AnalyzedOperation.after_type_start last @AnalyzedOperation.after_type_count
+                    block @AnalyzedBlock.exit_type_start block @AnalyzedBlock.exit_type_count
+                    analyzed-types-match !
+                do
+                    "internal analyzed block exit stack mismatch" fail
+                end
+            end
+        end
+    end
+end
+
 proc set-operation-target CompileContext* OperationKind ModuleContext* int -- do
     let cc kind module index do
         if cc @CompileContext.record_operations cc @CompileContext.operation_active && do
@@ -3910,6 +4056,146 @@ proc append-operation-types ProcedureAnalysis* ptr int -- int do
     end
 end
 
+proc grow-analyzed-blocks ProcedureAnalysis* -- do
+    let analysis do
+        if analysis @ProcedureAnalysis.cfg_block_capacity max-int AnalyzedBlock:sizeof 2 * / > do
+            "internal analyzed block capacity overflow" fail
+        end
+        analysis @ProcedureAnalysis.cfg_block_capacity 2 *
+        let capacity do
+            capacity AnalyzedBlock:sizeof * alloc
+            let blocks do
+                analysis @ProcedureAnalysis.cfg_blocks blocks
+                analysis @ProcedureAnalysis.cfg_block_count AnalyzedBlock:sizeof * bytes-copy
+                blocks analysis !ProcedureAnalysis.cfg_blocks
+                capacity analysis !ProcedureAnalysis.cfg_block_capacity
+            end
+        end
+    end
+end
+
+proc cfg-recording CompileContext* -- bool do
+    let cc do
+        cc @CompileContext.record_operations cc @CompileContext.cfg_recording_suppressed 0 == &&
+    end
+end
+
+proc active-analyzed-block CompileContext* -- AnalyzedBlock* do
+    let cc do
+        if cc @CompileContext.cfg_current_block 0 < do "internal missing current analyzed block" fail end
+        cc compile-context-analysis cc @CompileContext.cfg_current_block analyzed-block-at
+    end
+end
+
+proc begin-analyzed-block CompileContext* ModuleContext* int -- int do
+    let cc source-module token-start do
+        if cc cfg-recording ! do 0 1 - else
+            if cc @CompileContext.cfg_current_block 0 >= do "internal analyzed block already active" fail end
+            cc compile-context-analysis
+            let analysis do
+                if analysis @ProcedureAnalysis.cfg_block_count analysis @ProcedureAnalysis.cfg_block_capacity == do
+                    analysis grow-analyzed-blocks
+                end
+                analysis @ProcedureAnalysis.cfg_block_count
+                let index do
+                    analysis index analyzed-block-at
+                    let block do
+                        analysis @ProcedureAnalysis.operation_count block !AnalyzedBlock.operation_start
+                        0 block !AnalyzedBlock.operation_count
+                        analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                        block !AnalyzedBlock.entry_type_start
+                        cc @CompileContext.type_count block !AnalyzedBlock.entry_type_count
+                        0 1 - block !AnalyzedBlock.exit_type_start
+                        0 block !AnalyzedBlock.exit_type_count
+                        source-module block !AnalyzedBlock.source_module
+                        token-start block !AnalyzedBlock.token_start
+                        CFGTerminatorKind:unresolved block !AnalyzedBlock.terminator_kind
+                        0 ptr cast ModuleContext* cast block !AnalyzedBlock.terminator_module
+                        0 1 - block !AnalyzedBlock.terminator_token
+                        0 1 - block !AnalyzedBlock.first_target
+                        0 1 - block !AnalyzedBlock.second_target
+                        analysis @ProcedureAnalysis.cfg_block_count 1 + analysis !ProcedureAnalysis.cfg_block_count
+                        index cc !CompileContext.cfg_current_block
+                        index
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc begin-analyzed-branch-target CompileContext* ModuleContext* int int -- int do
+    let cc source-module token-start condition-block do
+        cc source-module token-start begin-analyzed-block
+        let target do
+            cc condition-block false target patch-analyzed-block-target
+            target
+        end
+    end
+end
+
+proc finish-analyzed-block-with-types CompileContext* ModuleContext* int CFGTerminatorKind int int ptr int -- int do
+    let cc terminator-module terminator-token kind first-target second-target exit-types exit-count do
+        if cc cfg-recording ! do 0 1 - else
+            cc active-analyzed-block
+            let block do
+                cc compile-context-analysis
+                let analysis do
+                    analysis @ProcedureAnalysis.operation_count block @AnalyzedBlock.operation_start -
+                    block !AnalyzedBlock.operation_count
+                    analysis exit-types exit-count append-operation-types block !AnalyzedBlock.exit_type_start
+                    exit-count block !AnalyzedBlock.exit_type_count
+                    terminator-module block !AnalyzedBlock.terminator_module
+                    terminator-token block !AnalyzedBlock.terminator_token
+                    kind block !AnalyzedBlock.terminator_kind
+                    first-target block !AnalyzedBlock.first_target
+                    second-target block !AnalyzedBlock.second_target
+                    cc @CompileContext.cfg_current_block
+                    0 1 - cc !CompileContext.cfg_current_block
+                end
+            end
+        end
+    end
+end
+
+proc finish-analyzed-block CompileContext* ModuleContext* int CFGTerminatorKind int int -- int do
+    let cc terminator-module terminator-token kind first-target second-target do
+        cc terminator-module terminator-token kind first-target second-target
+        cc @CompileContext.type_stack cc @CompileContext.type_count
+        finish-analyzed-block-with-types
+    end
+end
+
+proc patch-analyzed-block-target CompileContext* int bool int -- do
+    let cc block-index second target do
+        if cc cfg-recording do
+            cc compile-context-analysis block-index analyzed-block-at
+            let block do
+                if second do
+                    if block @AnalyzedBlock.terminator_kind CFGTerminatorKind.branch? ! do
+                        "internal second target on non-branch analyzed block" fail
+                    end
+                    if block @AnalyzedBlock.second_target 0 >= do
+                        "internal analyzed block second target already set" fail
+                    end
+                    target block !AnalyzedBlock.second_target
+                else
+                    if
+                        block @AnalyzedBlock.terminator_kind CFGTerminatorKind.jump?
+                        block @AnalyzedBlock.terminator_kind CFGTerminatorKind.branch? || !
+                    do
+                        "internal first target on non-control-flow analyzed block" fail
+                    end
+                    if block @AnalyzedBlock.first_target 0 >= do
+                        "internal analyzed block first target already set" fail
+                    end
+                    target block !AnalyzedBlock.first_target
+                end
+            end
+        end
+    end
+end
+
 proc begin-analyzed-operation CompileContext* int -- do
     let cc token-index do
         if cc @CompileContext.operation_active do "internal nested analyzed operation" fail end
@@ -3997,15 +4283,233 @@ proc reset-procedure-operations ProcedureAnalysis* -- do
             analysis @ProcedureAnalysis.binding_local_capacity 0 <= ||
             analysis @ProcedureAnalysis.binding_local_count 0 < ||
             analysis @ProcedureAnalysis.binding_local_count analysis @ProcedureAnalysis.binding_local_capacity > ||
+            analysis @ProcedureAnalysis.cfg_block_capacity 0 <= ||
+            analysis @ProcedureAnalysis.cfg_block_count 0 < ||
+            analysis @ProcedureAnalysis.cfg_block_count analysis @ProcedureAnalysis.cfg_block_capacity > ||
             analysis @ProcedureAnalysis.operations int cast 0 == ||
             analysis @ProcedureAnalysis.operation_types int cast 0 == ||
             analysis @ProcedureAnalysis.binding_locals int cast 0 == ||
+            analysis @ProcedureAnalysis.cfg_blocks int cast 0 == ||
         do
             "internal invalid procedure operation storage" fail
         end
         0 analysis !ProcedureAnalysis.operation_count
         0 analysis !ProcedureAnalysis.operation_type_count
         0 analysis !ProcedureAnalysis.binding_local_count
+        0 analysis !ProcedureAnalysis.cfg_block_count
+    end
+end
+
+proc valid-block-source-range AnalyzedBlock* -- bool do
+    let block do
+        if block @AnalyzedBlock.source_module ptr cast int cast 0 == do false
+        elif block @AnalyzedBlock.terminator_module ptr cast int cast 0 == do false
+        elif block @AnalyzedBlock.token_start 0 < do false
+        elif block @AnalyzedBlock.token_start block @AnalyzedBlock.source_module @ModuleContext.token_count > do false
+        elif block @AnalyzedBlock.terminator_token 0 < do false
+        elif block @AnalyzedBlock.terminator_token block @AnalyzedBlock.terminator_module @ModuleContext.token_count >= do false
+        else true end
+    end
+end
+
+proc verify-analyzed-jump ModuleContext* int ProcedureAnalysis* AnalyzedBlock* ptr int -- do
+    let module procedure-index analysis block exit-types exit-count do
+        if block @AnalyzedBlock.second_target 0 1 - != do
+            "internal analyzed jump has a second target" fail
+        end
+        module procedure-index analysis block @AnalyzedBlock.first_target verify-analyzed-target
+        let target do
+            if analysis target exit-types exit-count block-entry-matches-types ! do
+                "internal analyzed jump stack mismatch" fail
+            end
+        end
+    end
+end
+
+proc verify-analyzed-branch ModuleContext* int ProcedureAnalysis* AnalyzedBlock* ptr int -- do
+    let module procedure-index analysis block exit-types exit-count do
+        if exit-count 0 <= do "internal analyzed branch is missing its condition" fail end
+        if exit-types exit-count 1 - cell-bytes * + 0 field-read type-bool != do
+            "internal analyzed branch condition is not bool" fail
+        end
+        module procedure-index analysis block @AnalyzedBlock.first_target verify-analyzed-target
+        module procedure-index analysis block @AnalyzedBlock.second_target verify-analyzed-target
+        let first-target second-target do
+            if
+                analysis first-target
+                analysis @ProcedureAnalysis.operation_types second-target @AnalyzedBlock.entry_type_start cell-bytes * +
+                second-target @AnalyzedBlock.entry_type_count
+                block-entry-matches-types !
+            do
+                "internal analyzed branch target stack mismatch: " emit-error
+                "procedure " emit-error
+                module @ModuleContext.source module procedure-index procedure-at @ProcedureEntry.name_start +
+                module procedure-index procedure-at @ProcedureEntry.name_length emit-error-bytes
+                ", " emit-error
+                block @AnalyzedBlock.terminator_module block @AnalyzedBlock.terminator_token token-slice emit-error-bytes
+                " at token " emit-error block @AnalyzedBlock.terminator_token emit-integer-error
+                ", first=" emit-error
+                "block " emit-error block @AnalyzedBlock.first_target emit-integer-error " " emit-error
+                analysis @ProcedureAnalysis.operation_types first-target @AnalyzedBlock.entry_type_start cell-bytes * +
+                first-target @AnalyzedBlock.entry_type_count
+                let types count do
+                    block @AnalyzedBlock.terminator_module @ModuleContext.program types 0 count emit-error-type-array
+                end
+                ", second=" emit-error
+                "block " emit-error block @AnalyzedBlock.second_target emit-integer-error " " emit-error
+                analysis @ProcedureAnalysis.operation_types second-target @AnalyzedBlock.entry_type_start cell-bytes * +
+                second-target @AnalyzedBlock.entry_type_count
+                let types count do
+                    block @AnalyzedBlock.terminator_module @ModuleContext.program types 0 count emit-error-type-array
+                end
+                10 eputc
+                1 exit
+            end
+            if analysis first-target exit-types exit-count 1 - block-entry-matches-types ! do
+                "internal analyzed branch exit stack mismatch" fail
+            end
+        end
+    end
+end
+
+proc verify-analyzed-return ModuleContext* int AnalyzedBlock* ptr int -- do
+    let module procedure-index block exit-types exit-count do
+        if block @AnalyzedBlock.first_target 0 1 - != block @AnalyzedBlock.second_target 0 1 - != || do
+            "internal analyzed return has a target" fail
+        end
+        if exit-count module procedure-index procedure-at @ProcedureEntry.output_count != do
+            "internal analyzed return stack depth mismatch" fail
+        end
+        if
+            exit-types exit-count cell-bytes *
+            module @ModuleContext.types module procedure-index procedure-at @ProcedureEntry.output_start cell-bytes * +
+            module procedure-index procedure-at @ProcedureEntry.output_count cell-bytes *
+            bytes-equal !
+        do
+            "internal analyzed return stack type mismatch" fail
+        end
+    end
+end
+
+proc verify-analyzed-block-terminator ModuleContext* int ProcedureAnalysis* AnalyzedBlock* -- do
+    let module procedure-index analysis block do
+        analysis block block-exit-types
+        let exit-types exit-count do
+            block @AnalyzedBlock.terminator_kind
+            let kind do
+                if kind CFGTerminatorKind.jump? do
+                    if block @AnalyzedBlock.first_target 0 < do "internal unresolved analyzed jump" fail end
+                    module procedure-index analysis block exit-types exit-count verify-analyzed-jump
+                elif kind CFGTerminatorKind.branch? do module procedure-index analysis block exit-types exit-count verify-analyzed-branch
+                elif kind CFGTerminatorKind.return? do module procedure-index block exit-types exit-count verify-analyzed-return
+                else "internal unresolved analyzed block terminator" fail end
+            end
+        end
+    end
+end
+
+proc enqueue-unvisited-analyzed-block ptr ptr int int -- int do
+    let reachable pending pending-count target do
+        if reachable target byte-read 0 == do
+            1 reachable target byte-write
+            target pending pending-count cell-bytes * field-write
+            pending-count 1 +
+        else
+            pending-count
+        end
+    end
+end
+
+proc verify-procedure-cfg-reachability ProcedureAnalysis* -- do
+    let analysis do
+        analysis @ProcedureAnalysis.cfg_block_count
+        let block-count do
+            block-count alloc
+            let reachable do
+                0
+                while dup block-count < do
+                    dup let block-index do 0 reachable block-index byte-write end
+                    1 +
+                end
+                drop
+
+                block-count cell-bytes * alloc
+                let pending do
+                    1 reachable 0 byte-write
+                    0 pending 0 field-write
+                    1
+                    while dup 0 > do
+                        1 -
+                        let pending-count do
+                            pending pending-count cell-bytes * field-read
+                            let block-index do
+                                analysis block-index analyzed-block-at
+                                let block do
+                                    if block @AnalyzedBlock.terminator_kind CFGTerminatorKind.jump? do
+                                        reachable pending pending-count block @AnalyzedBlock.first_target
+                                        enqueue-unvisited-analyzed-block
+                                    elif block @AnalyzedBlock.terminator_kind CFGTerminatorKind.branch? do
+                                        reachable pending
+                                        reachable pending pending-count block @AnalyzedBlock.first_target
+                                        enqueue-unvisited-analyzed-block
+                                        block @AnalyzedBlock.second_target enqueue-unvisited-analyzed-block
+                                    else
+                                        pending-count
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    drop
+                end
+
+                0
+                while dup block-count < do
+                    dup let block-index do
+                        if reachable block-index byte-read 0 == do
+                            "internal unreachable analyzed block" fail
+                        end
+                    end
+                    1 +
+                end
+                drop
+            end
+        end
+    end
+end
+
+proc verify-procedure-cfg ModuleContext* int ProcedureAnalysis* -- do
+    let module procedure-index analysis do
+        if analysis @ProcedureAnalysis.cfg_block_count 0 <= do "internal empty procedure CFG" fail end
+        0 0
+        while peek block-index next-operation do block-index analysis @ProcedureAnalysis.cfg_block_count < end do
+            let block-index next-operation do
+                analysis block-index analyzed-block-at
+                let block do
+                    if block @AnalyzedBlock.operation_start next-operation != do
+                        "internal analyzed block operation range is not contiguous" fail
+                    end
+                    if
+                        block @AnalyzedBlock.operation_count 0 <
+                        block @AnalyzedBlock.operation_start analysis @ProcedureAnalysis.operation_count > ||
+                        block @AnalyzedBlock.operation_count
+                        analysis @ProcedureAnalysis.operation_count block @AnalyzedBlock.operation_start - > ||
+                    do
+                        "internal analyzed block operation range is invalid" fail
+                    end
+                    if block valid-block-source-range ! do "internal analyzed block source range is invalid" fail end
+                    analysis block verify-analyzed-block-operations
+                    module procedure-index analysis block verify-analyzed-block-terminator
+                    block-index 1 + next-operation block @AnalyzedBlock.operation_count +
+                end
+            end
+        end
+        let block-index next-operation do
+            if next-operation analysis @ProcedureAnalysis.operation_count != do
+                "internal analyzed blocks do not cover all operations" fail
+            end
+        end
+        analysis verify-procedure-cfg-reachability
     end
 end
 
@@ -4208,11 +4712,17 @@ proc push-block CompileContext* BlockKind -- BlockFrame* do
                 count block !BlockFrame.base_count
             end
             0 ptr cast block !BlockFrame.then_types
-            0 block !BlockFrame.then_count
+            0 1 - block !BlockFrame.then_count
             cc @CompileContext.local_count block !BlockFrame.local_base
             false block !BlockFrame.has_else
             false block !BlockFrame.has_do
             false block !BlockFrame.elif_parent
+            0 1 - block !BlockFrame.cfg_condition_block
+            0 1 - block !BlockFrame.cfg_loop_header
+            0 ptr cast block !BlockFrame.cfg_pending_merge_sources
+            0 block !BlockFrame.cfg_pending_merge_count
+            0 ptr cast block !BlockFrame.elif_result_types
+            0 1 - block !BlockFrame.elif_result_count
             cc @CompileContext.block_count 1 + cc !CompileContext.block_count
             block
         end
@@ -8928,12 +9438,28 @@ proc emit-local-load CompileContext* int -- do
     end
 end
 
-proc compile-if CompileContext* -- do
-    BlockKind:conditional push-block drop
+proc compile-if CompileContext* int -- do
+    let cc token-index do
+        cc BlockKind:conditional push-block drop
+    end
 end
 
-proc compile-while CompileContext* -- do
-    peek cc do BlockKind:loop push-block drop
+proc compile-while CompileContext* int -- do
+    let cc token-index do cc BlockKind:loop push-block
+        let block do
+            if cc cfg-recording do
+                cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
+                let preheader do
+                    cc cc @CompileContext.defining_module token-index begin-analyzed-block
+                    let header do
+                        header block !BlockFrame.cfg_loop_header
+                        cc preheader false header patch-analyzed-block-target
+                    end
+                end
+            else
+                0 1 - block !BlockFrame.cfg_loop_header
+            end
+        end
         cc "while (1) {" emit-line
         cc indent-more
     end
@@ -8952,8 +9478,8 @@ proc require-block-types CompileContext* BlockFrame* -- do
     end
 end
 
-proc compile-do CompileContext* -- do
-    peek cc do top-block
+proc compile-do CompileContext* int -- do
+    let cc token-index do cc top-block
         let block do
             if block @BlockFrame.has_do do
                 cc "duplicate do in control-flow block" fail-compile-word
@@ -8965,11 +9491,22 @@ proc compile-do CompileContext* -- do
                     cc "if or while requires a condition before do" fail-compile-word
                 end
             end
-            cc type-bool type-expect
-            cc block require-block-types
-            block @BlockFrame.kind
-            let kind do
+            cc @CompileContext.type_count
+            let condition-count do
+                cc type-bool type-expect
+                cc block require-block-types
+                block @BlockFrame.kind
+                let kind do
                 if kind BlockKind:conditional == do
+                    if cc cfg-recording do
+                        cc cc @CompileContext.defining_module token-index CFGTerminatorKind:branch 0 1 - 0 1 -
+                        cc @CompileContext.type_stack condition-count finish-analyzed-block-with-types
+                        let condition-block do
+                            cc cc @CompileContext.defining_module token-index 1 + condition-block
+                            begin-analyzed-branch-target drop
+                            condition-block block !BlockFrame.cfg_condition_block
+                        end
+                    end
                     cc @CompileContext.type_count
                     let condition-index do
                         if cc @CompileContext.emitting do
@@ -8979,6 +9516,15 @@ proc compile-do CompileContext* -- do
                     cc indent-more
                 else
                     if kind BlockKind:loop == do
+                        if cc cfg-recording do
+                            cc cc @CompileContext.defining_module token-index CFGTerminatorKind:branch 0 1 - 0 1 -
+                            cc @CompileContext.type_stack condition-count finish-analyzed-block-with-types
+                            let condition-block do
+                                condition-block block !BlockFrame.cfg_condition_block
+                                cc cc @CompileContext.defining_module token-index 1 + condition-block
+                                begin-analyzed-branch-target drop
+                            end
+                        end
                         cc @CompileContext.type_count
                         let condition-index do
                             if cc @CompileContext.emitting do
@@ -8989,14 +9535,15 @@ proc compile-do CompileContext* -- do
                         cc "do does not close an if or while condition" fail-compile-word
                     end
                 end
+                end
+                true block !BlockFrame.has_do
             end
-            true block !BlockFrame.has_do
         end
     end
 end
 
-proc compile-else CompileContext* -- do
-    peek cc do top-block
+proc compile-else CompileContext* int -- do
+    let cc token-index do cc top-block
         let block do
             if block @BlockFrame.kind BlockKind:conditional != do
                 cc "else outside if" fail-compile-word
@@ -9007,15 +9554,26 @@ proc compile-else CompileContext* -- do
             if block @BlockFrame.has_do ! do
                 cc "else requires a preceding if arm and do" fail-compile-word
             end
-            cc type-snapshot
-            let then-types then-count do
-                then-types block !BlockFrame.then_types
-                then-count block !BlockFrame.then_count
+            if block @BlockFrame.then_count 0 < do
+                cc type-snapshot
+                let then-types then-count do
+                    then-types block !BlockFrame.then_types
+                    then-count block !BlockFrame.then_count
+                end
+            elif cc block @BlockFrame.then_types block @BlockFrame.then_count types-match ! do
+                cc "if branches leave different stack shapes" fail-compile-word
             end
-            cc
-            block @BlockFrame.base_types
-            block @BlockFrame.base_count
-            restore-type-snapshot
+            if cc cfg-recording do
+                cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
+                let arm-block do block arm-block append-pending-merge-source end
+            end
+            cc block @BlockFrame.base_types block @BlockFrame.base_count restore-type-snapshot
+            if cc cfg-recording do
+                cc cc @CompileContext.defining_module token-index 1 + begin-analyzed-block
+                let else-block do
+                    cc block @BlockFrame.cfg_condition_block true else-block patch-analyzed-block-target
+                end
+            end
             true block !BlockFrame.has_else
             cc indent-less
             cc "} else {" emit-line
@@ -9024,8 +9582,21 @@ proc compile-else CompileContext* -- do
     end
 end
 
-proc compile-elif CompileContext* -- do
-    peek cc do top-block
+proc append-pending-merge-source BlockFrame* int -- do
+    let block source do
+        block @BlockFrame.cfg_pending_merge_count 1 + cell-bytes * alloc
+        let sources do
+            block @BlockFrame.cfg_pending_merge_sources sources
+            block @BlockFrame.cfg_pending_merge_count cell-bytes * bytes-copy
+            source sources block @BlockFrame.cfg_pending_merge_count cell-bytes * + 0 field-write
+            sources block !BlockFrame.cfg_pending_merge_sources
+            block @BlockFrame.cfg_pending_merge_count 1 + block !BlockFrame.cfg_pending_merge_count
+        end
+    end
+end
+
+proc compile-elif CompileContext* int -- do
+    let cc token-index do cc top-block
         let block do
             if block @BlockFrame.kind BlockKind:conditional != do
                 cc "elif outside if" fail-compile-word
@@ -9036,21 +9607,44 @@ proc compile-elif CompileContext* -- do
             if block @BlockFrame.has_else do
                 cc "elif after else" fail-compile-word
             end
-            cc compile-else
+            block @BlockFrame.then_count 0 <
+            let first-elif do
+            cc token-index compile-else
+            if first-elif do
+                block @BlockFrame.then_types block @BlockFrame.then_count
+            else
+                block @BlockFrame.elif_result_types block @BlockFrame.elif_result_count
+            end
+            let result-types result-count do
             cc BlockKind:conditional push-block
             let nested do
                 true nested !BlockFrame.elif_parent
+                block @BlockFrame.then_types nested !BlockFrame.then_types
+                block @BlockFrame.then_count nested !BlockFrame.then_count
+                result-types nested !BlockFrame.elif_result_types
+                result-count nested !BlockFrame.elif_result_count
+                block @BlockFrame.cfg_pending_merge_sources nested !BlockFrame.cfg_pending_merge_sources
+                block @BlockFrame.cfg_pending_merge_count nested !BlockFrame.cfg_pending_merge_count
+                0 ptr cast block !BlockFrame.cfg_pending_merge_sources
+                0 block !BlockFrame.cfg_pending_merge_count
+            end
+            end
             end
         end
     end
 end
 
-proc close-if-block CompileContext* BlockFrame* -- do
-    let cc block do
+proc close-if-block CompileContext* BlockFrame* int -- do
+    let cc block token-index do
         if block @BlockFrame.has_do ! do
             cc "if requires do before end" fail-compile-word
         end
-        if block @BlockFrame.has_else ! do
+        if block @BlockFrame.elif_parent do
+            if cc block @BlockFrame.elif_result_types block @BlockFrame.elif_result_count types-match ! do
+                cc "if branches leave different stack shapes" fail-compile-word
+            end
+            if block @BlockFrame.has_else ! do cc block require-block-types end
+        elif block @BlockFrame.then_count 0 < do
             cc block require-block-types
         else
             block @BlockFrame.then_types
@@ -9059,7 +9653,27 @@ proc close-if-block CompileContext* BlockFrame* -- do
                 if cc then-types then-count types-match ! do
                     cc "if branches leave different stack shapes" fail-compile-word
                 end
-                cc then-types then-count restore-type-snapshot
+            end
+        end
+        if cc cfg-recording do
+            cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
+            let final-arm do
+                block final-arm append-pending-merge-source
+                cc cc @CompileContext.defining_module token-index begin-analyzed-block
+                let merge-block do
+                    0
+                    while dup block @BlockFrame.cfg_pending_merge_count < do
+                        dup let index do
+                            block @BlockFrame.cfg_pending_merge_sources index cell-bytes * + 0 field-read
+                            let source do cc source false merge-block patch-analyzed-block-target end
+                        end
+                        1 +
+                    end
+                    drop
+                    if block @BlockFrame.has_else ! do
+                        cc block @BlockFrame.cfg_condition_block true merge-block patch-analyzed-block-target
+                    end
+                end
             end
         end
         cc indent-less
@@ -9067,12 +9681,32 @@ proc close-if-block CompileContext* BlockFrame* -- do
     end
 end
 
-proc close-while-block CompileContext* BlockFrame* -- do
-    let cc block do
+proc close-elif-parent-types CompileContext* BlockFrame* int -- do
+    let cc block token-index do
+        if block @BlockFrame.has_do ! do cc "if requires do before end" fail-compile-word end
+        if block @BlockFrame.has_else ! do "internal elif parent without else" fail end
+        cc indent-less
+        cc "}" emit-line
+        if block @BlockFrame.elif_parent do
+            cc pop-block
+            let parent do cc parent token-index close-elif-parent-types end
+        end
+    end
+end
+
+proc close-while-block CompileContext* BlockFrame* int -- do
+    let cc block token-index do
         if block @BlockFrame.has_do ! do
             cc "while requires do before end" fail-compile-word
         end
         cc block require-block-types
+        if cc cfg-recording do
+            cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump block @BlockFrame.cfg_loop_header 0 1 - finish-analyzed-block drop
+            cc cc @CompileContext.defining_module token-index begin-analyzed-block
+            let exit-block do
+                cc block @BlockFrame.cfg_condition_block true exit-block patch-analyzed-block-target
+            end
+        end
         cc indent-less
         cc "}" emit-line
     end
@@ -9086,14 +9720,14 @@ proc close-let-block CompileContext* BlockFrame* -- do
     end
 end
 
-proc close-end-chain CompileContext* BlockFrame* -- do
-    let cc block do
+proc close-end-chain CompileContext* BlockFrame* int -- do
+    let cc block token-index do
         block @BlockFrame.kind
         let kind do
             if kind BlockKind:conditional == do
-                cc block close-if-block
+                cc block token-index close-if-block
             elif kind BlockKind:loop == do
-                cc block close-while-block
+                cc block token-index close-while-block
             elif kind BlockKind:local_scope == do
                 cc block close-let-block
             else
@@ -9102,17 +9736,15 @@ proc close-end-chain CompileContext* BlockFrame* -- do
         end
         if block @BlockFrame.elif_parent do
             cc pop-block
-            let parent do
-                cc parent close-end-chain
-            end
+            let parent do cc parent token-index close-elif-parent-types end
         end
     end
 end
 
-proc compile-end CompileContext* -- do
-    peek cc do pop-block
+proc compile-end CompileContext* int -- do
+    let cc token-index do cc pop-block
         let block do
-            cc block close-end-chain
+            cc block token-index close-end-chain
         end
     end
 end
@@ -10391,6 +11023,7 @@ proc compile-macro CompileContext* ModuleContext* int -- do
             cc "recursive macro expansion" fail-compile-word
         end
         true module macro-index macro-at !MacroEntry.expanding
+        cc @CompileContext.cfg_recording_suppressed 1 + cc !CompileContext.cfg_recording_suppressed
         cc @CompileContext.defining_module
         cc @CompileContext.scope_module
         let previous-defining-module previous-scope-module do
@@ -10403,6 +11036,7 @@ proc compile-macro CompileContext* ModuleContext* int -- do
             previous-defining-module cc !CompileContext.defining_module
             previous-scope-module cc !CompileContext.scope_module
         end
+        cc @CompileContext.cfg_recording_suppressed 1 - cc !CompileContext.cfg_recording_suppressed
         false module macro-index macro-at !MacroEntry.expanding
     end
 end
@@ -10511,17 +11145,17 @@ end
 proc compile-word-token CompileContext* int -- int do
     let cc token-index do
         if cc @CompileContext.defining_module token-index "if" token-equals do
-            cc compile-if token-index 1 +
+            cc token-index compile-if token-index 1 +
         elif cc @CompileContext.defining_module token-index "while" token-equals do
-            cc compile-while token-index 1 +
+            cc token-index compile-while token-index 1 +
         elif cc @CompileContext.defining_module token-index "do" token-equals do
-            cc compile-do token-index 1 +
+            cc token-index compile-do token-index 1 +
         elif cc @CompileContext.defining_module token-index "else" token-equals do
-            cc compile-else token-index 1 +
+            cc token-index compile-else token-index 1 +
         elif cc @CompileContext.defining_module token-index "elif" token-equals do
-            cc compile-elif token-index 1 +
+            cc token-index compile-elif token-index 1 +
         elif cc @CompileContext.defining_module token-index "end" token-equals do
-            cc compile-end token-index 1 +
+            cc token-index compile-end token-index 1 +
         elif cc @CompileContext.defining_module token-index "let" token-equals do
             cc token-index compile-let
         elif cc @CompileContext.defining_module token-index "peek" token-equals do
@@ -10776,6 +11410,8 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             false cc !CompileContext.operation_identity_set
             false cc !CompileContext.operation_identity_locked
             false cc !CompileContext.operation_binding_active
+            0 cc !CompileContext.cfg_recording_suppressed
+            0 1 - cc !CompileContext.cfg_current_block
             cc
         end
     end
@@ -10856,6 +11492,7 @@ end
 proc compile-procedure-body CompileContext* ModuleContext* int -- do
     let cc ctx proc-index do
         cc 0 initialize-proc-inputs
+        cc ctx ctx proc-index procedure-at @ProcedureEntry.body_start begin-analyzed-block drop
         cc
         ctx proc-index procedure-at @ProcedureEntry.body_start
         ctx proc-index procedure-at @ProcedureEntry.body_end
@@ -10865,6 +11502,7 @@ proc compile-procedure-body CompileContext* ModuleContext* int -- do
         true cc !CompileContext.diagnostic_active
         false cc !CompileContext.diagnostic_word
         cc validate-compiled-procedure
+        cc ctx ctx proc-index procedure-at @ProcedureEntry.body_end CFGTerminatorKind:return 0 1 - 0 1 - finish-analyzed-block drop
         false cc !CompileContext.diagnostic_active
     end
 end
@@ -10946,6 +11584,7 @@ proc analyze-procedure Program* ModuleContext* int -- do
                     measurement @CompileContext.stack_slots analysis !ProcedureAnalysis.stack_slots
                     measurement @CompileContext.stack_slot_count analysis !ProcedureAnalysis.stack_slot_count
                     measurement @CompileContext.stack_slot_capacity analysis !ProcedureAnalysis.stack_slot_capacity
+                    ctx proc-index analysis verify-procedure-cfg
                 end
             end
         end
@@ -11015,7 +11654,7 @@ end
 
 proc analyze-all-procedures Program* -- do
     let program do
-        if program @Program.phase ProgramPhase:resolved != do
+        if program @Program.phase ProgramPhase.resolved? ! do
             "internal program must be resolved before analysis" fail
         end
         program @Program.module_head
@@ -11103,7 +11742,7 @@ end
 
 proc load-program-source Program* ptr int ptr int -- do
     let program source source-length diagnostic-path diagnostic-path-length do
-        if program @Program.phase ProgramPhase:allocated != do
+        if program @Program.phase ProgramPhase.allocated? ! do
             "internal program must be allocated before loading" fail
         end
         ModuleContext:alloc
@@ -11133,7 +11772,7 @@ end
 
 proc resolve-program Program* -- do
     let program do
-        if program @Program.phase ProgramPhase:loaded != do
+        if program @Program.phase ProgramPhase.loaded? ! do
             "internal program must be loaded before resolution" fail
         end
         program resolve-all-module-scopes
@@ -11146,7 +11785,7 @@ end
 
 proc emit-program Program* -- do
     let program do
-        if program @Program.phase ProgramPhase:analyzed != do
+        if program @Program.phase ProgramPhase.analyzed? ! do
             "internal program must be analyzed before emission" fail
         end
         program emit-c-emitter-support
@@ -11244,6 +11883,15 @@ proc emit-inspect-operation-kind OperationKind -- do
         elif kind OperationKind.function_call? do "function_call" emit
         elif kind OperationKind.function_reference? do "function_reference" emit
         elif kind OperationKind.intrinsic? do "intrinsic" emit
+        else "unresolved" emit end
+    end
+end
+
+proc emit-inspect-cfg-terminator CFGTerminatorKind -- do
+    let kind do
+        if kind CFGTerminatorKind.jump? do "jump" emit
+        elif kind CFGTerminatorKind.branch? do "branch" emit
+        elif kind CFGTerminatorKind.return? do "return" emit
         else "unresolved" emit end
     end
 end
@@ -11421,6 +12069,30 @@ proc emit-inspect-operation Program* ModuleContext* int ProcedureAnalysis* int -
     end
 end
 
+proc emit-inspect-block Program* ModuleContext* int ProcedureAnalysis* int -- do
+    let program procedure-module procedure-index analysis block-index do
+        analysis block-index analyzed-block-at
+        let block do
+            "block\t" emit
+            procedure-module @ModuleContext.module_id emit-unsigned 9 putc
+            procedure-index emit-unsigned 9 putc
+            block-index emit-unsigned 9 putc
+            block @AnalyzedBlock.source_module @ModuleContext.module_id emit-unsigned 9 putc
+            block @AnalyzedBlock.token_start emit-unsigned 9 putc
+            block @AnalyzedBlock.operation_start emit-unsigned 9 putc
+            block @AnalyzedBlock.operation_count emit-unsigned 9 putc
+            block @AnalyzedBlock.terminator_kind emit-inspect-cfg-terminator 9 putc
+            block @AnalyzedBlock.terminator_module @ModuleContext.module_id emit-unsigned 9 putc
+            block @AnalyzedBlock.terminator_token emit-unsigned 9 putc
+            block @AnalyzedBlock.first_target emit-integer 9 putc
+            block @AnalyzedBlock.second_target emit-integer 9 putc
+            program analysis @ProcedureAnalysis.operation_types block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count emit-inspect-type-list 9 putc
+            program analysis @ProcedureAnalysis.operation_types block @AnalyzedBlock.exit_type_start block @AnalyzedBlock.exit_type_count emit-inspect-type-list
+            10 putc
+        end
+    end
+end
+
 proc emit-inspect-procedure Program* ModuleContext* int -- do
     let program module procedure-index do
         module procedure-index procedure-at
@@ -11432,7 +12104,8 @@ proc emit-inspect-procedure Program* ModuleContext* int -- do
                     procedure-index emit-unsigned 9 putc
                     module @ModuleContext.source procedure @ProcedureEntry.name_start + procedure @ProcedureEntry.name_length emit-inspect-bytes
                     9 putc analysis @ProcedureAnalysis.operation_count emit-unsigned
-                    9 putc analysis @ProcedureAnalysis.binding_local_count emit-unsigned 10 putc
+                    9 putc analysis @ProcedureAnalysis.binding_local_count emit-unsigned
+                    9 putc analysis @ProcedureAnalysis.cfg_block_count emit-unsigned 10 putc
                     0
                     while dup analysis @ProcedureAnalysis.operation_count < do
                         dup let operation-index do
@@ -11449,6 +12122,14 @@ proc emit-inspect-procedure Program* ModuleContext* int -- do
                         1 +
                     end
                     drop
+                    0
+                    while dup analysis @ProcedureAnalysis.cfg_block_count < do
+                        dup let block-index do
+                            program module procedure-index analysis block-index emit-inspect-block
+                        end
+                        1 +
+                    end
+                    drop
                 end
             end
         end
@@ -11457,12 +12138,13 @@ end
 
 proc emit-inspect-program Program* bool -- do
     let program include-builtins do
-        if program @Program.phase ProgramPhase:analyzed != do "internal program must be analyzed before inspection" fail end
-        "frogc-inspect\t2\n" emit
+        if program @Program.phase ProgramPhase.analyzed? ! do "internal program must be analyzed before inspection" fail end
+        "frogc-inspect\t3\n" emit
         "fields\tmodule\tid\troot\tbuiltins\tpath\n" emit
-        "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\n" emit
+        "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tblock_count\n" emit
         "fields\toperation\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\tbefore_depth\tminimum_depth\tafter_depth\tinput_count\toutput_count\tkind\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tbinding_local_start\tbinding_local_count\tvalue_type\tintrinsic\tprivate_operation\tbefore_types\tafter_types\n" emit
         "fields\tbinding_local\tprocedure_module\tprocedure_index\tindex\tsource_module\tname_token\tname\tlocal_id\tvalue_type\n" emit
+        "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\toperation_start\toperation_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types\n" emit
         program @Program.module_head
         while dup ptr cast int cast 0 != do
             let module do

@@ -1,0 +1,39 @@
+macro opaque-flow
+    if dup 0 > do 1 + else 1 - end
+end
+
+proc straight -- int do
+    1 2 +
+end
+
+proc if-else -- int do
+    if true do 10 else 20 end
+end
+
+proc no-else -- int do
+    30 if false do end
+end
+
+proc empty-arms -- int do
+    40 if true do else end
+end
+
+proc elif-chain -- int do
+    if false do 1 elif true do 2 else 3 end
+end
+
+proc loop -- int do
+    0 while dup 2 < do 1 + end
+end
+
+proc nested -- int do
+    0 while dup 2 < do
+        if dup 0 == do 1 + else 2 + end
+    end
+end
+
+proc macro-flow int -- int do
+    opaque-flow
+end
+
+proc main -- do end

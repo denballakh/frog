@@ -1,5 +1,8 @@
-from "framework.frog" import ( FrogTestContext frog-check frog-process-equals )
-from "stdlib/string.frog" import ( bytes-contain bytes-equal )
+from "framework.frog" import (
+    FrogTestContext frog-check frog-process-equals
+    frog-line-length frog-bytes-contain-line frog-count-lines-starting-with
+)
+from "stdlib/string.frog" import ( bytes-contain bytes-equal bytes-starts-with )
 from "stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
@@ -121,6 +124,594 @@ proc frog-cli-inspect-stdin String String String int String FrogTestContext* -- 
     end
 end
 
+proc frog-cli-tsv-field ptr int int -- ptr int bool do
+    let line length requested do
+        if requested 0 < do
+            line 0 false
+        else
+            0 0
+            while
+                peek index field do
+                    index length < field requested < &&
+                end
+            do
+                let index field do
+                    if line index + u8* cast @ int cast 9 == do
+                        index 1 + field 1 +
+                    else
+                        index 1 + field
+                    end
+                end
+            end
+            let start field do
+                if field requested != do
+                    line 0 false
+                else
+                    start
+                    while
+                        peek finish do
+                            if finish length < do
+                                line finish + u8* cast @ int cast 9 !=
+                            else
+                                false
+                            end
+                        end
+                    do
+                        1 +
+                    end
+                    let finish do
+                        line start + finish start - true
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-tsv-field-equals ptr int int String -- bool do
+    let line length index expected do
+        line length index frog-cli-tsv-field
+        let field field-length found do
+            if found do
+                field field-length expected String.bytes expected String.len bytes-equal
+            else
+                false
+            end
+        end
+    end
+end
+
+proc frog-cli-parse-inspect-int ptr int -- int bool do
+    let bytes length do
+        if length 0 == do
+            0 false
+        else
+            bytes u8* cast @ int cast 45 ==
+            let negative do
+                if negative do 1 else 0 end
+                let start do
+                    if start length >= do
+                        0 false
+                    else
+                        start 0 true
+                        while
+                            peek index value valid do
+                                index length < valid &&
+                            end
+                        do
+                            let index value valid do
+                                bytes index + u8* cast @ int cast
+                                let byte do
+                                    if byte 48 < byte 57 > || do
+                                        length value false
+                                    else
+                                        index 1 + value 10 * byte 48 - + true
+                                    end
+                                end
+                            end
+                        end
+                        let index value valid do
+                            if valid index length == && do
+                                if negative do 0 value - else value end true
+                            else
+                                0 false
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-tsv-int ptr int int -- int bool do
+    let line length index do
+        line length index frog-cli-tsv-field
+        let field field-length found do
+            if found do field field-length frog-cli-parse-inspect-int else 0 false end
+        end
+    end
+end
+
+proc frog-cli-find-inspect-procedure-line ptr int String -- ptr int bool do
+    let bytes length name do
+        0 0 ptr cast 0 false
+        while
+            peek offset result result-length found do
+                offset length < found ! &&
+            end
+        do
+            let offset result result-length found do
+                bytes offset + length offset - frog-line-length
+                let line-length do
+                    offset line-length 1 + +
+                    if
+                        bytes offset + line-length 0 "procedure" frog-cli-tsv-field-equals
+                        bytes offset + line-length 3 name frog-cli-tsv-field-equals &&
+                    do
+                        bytes offset + line-length true
+                    else
+                        result result-length found
+                    end
+                end
+            end
+        end
+        let offset result result-length found do result result-length found end
+    end
+end
+
+proc frog-cli-inspect-procedure-info ptr int String -- int int int int bool do
+    let bytes length name do
+        bytes length name frog-cli-find-inspect-procedure-line
+        let line line-length found do
+            if found ! do
+                0 0 0 0 false
+            else
+                line line-length 1 frog-cli-tsv-int
+                line line-length 2 frog-cli-tsv-int
+                line line-length 4 frog-cli-tsv-int
+                line line-length 6 frog-cli-tsv-int
+                let module module-valid procedure procedure-valid operation-count operation-count-valid block-count block-count-valid do
+                    module procedure operation-count block-count
+                    module-valid procedure-valid && operation-count-valid && block-count-valid &&
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-row-ids-match ptr int String int int int -- bool do
+    let line length kind module procedure index do
+        if line length 0 kind frog-cli-tsv-field-equals ! do
+            false
+        else
+            line length 1 frog-cli-tsv-int
+            line length 2 frog-cli-tsv-int
+            line length 3 frog-cli-tsv-int
+            let actual-module module-valid actual-procedure procedure-valid actual-index index-valid do
+                module-valid procedure-valid && index-valid &&
+                actual-module module == &&
+                actual-procedure procedure == &&
+                actual-index index == &&
+            end
+        end
+    end
+end
+
+proc frog-cli-find-inspect-indexed-line ptr int String int int int -- ptr int bool do
+    let bytes length kind module procedure index do
+        0 0 ptr cast 0 false
+        while
+            peek offset result result-length found do
+                offset length < found ! &&
+            end
+        do
+            let offset result result-length found do
+                bytes offset + length offset - frog-line-length
+                let line-length do
+                    offset line-length 1 + +
+                    if
+                        bytes offset + line-length kind module procedure index
+                        frog-cli-inspect-row-ids-match
+                    do
+                        bytes offset + line-length true
+                    else
+                        result result-length found
+                    end
+                end
+            end
+        end
+        let offset result result-length found do result result-length found end
+    end
+end
+
+proc frog-cli-inspect-block-int ptr int int int int int -- int bool do
+    let bytes length module procedure block-index field-index do
+        bytes length "block" module procedure block-index frog-cli-find-inspect-indexed-line
+        let line line-length found do
+            if found do line line-length field-index frog-cli-tsv-int else 0 false end
+        end
+    end
+end
+
+proc frog-cli-inspect-block-field-equals ptr int int int int int String -- bool do
+    let bytes length module procedure block-index field-index expected do
+        bytes length "block" module procedure block-index frog-cli-find-inspect-indexed-line
+        let line line-length found do
+            if found do
+                line line-length field-index expected frog-cli-tsv-field-equals
+            else
+                false
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-target-valid int int -- bool do
+    let target block-count do target 0 >= target block-count < && end
+end
+
+proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
+    let line length next-operation procedure-operation-count block-count do
+        line length 6 frog-cli-tsv-int
+        line length 7 frog-cli-tsv-int
+        line length 11 frog-cli-tsv-int
+        line length 12 frog-cli-tsv-int
+        let operation-start operation-start-valid block-operation-count block-operation-count-valid first-target first-target-valid second-target second-target-valid do
+            operation-start-valid block-operation-count-valid &&
+            first-target-valid && second-target-valid &&
+            operation-start next-operation == &&
+            operation-start 0 >= &&
+            operation-start procedure-operation-count <= &&
+            block-operation-count 0 >= &&
+            block-operation-count procedure-operation-count operation-start - <= &&
+            let range-valid do
+                line length 8 "jump" frog-cli-tsv-field-equals
+                line length 8 "branch" frog-cli-tsv-field-equals
+                line length 8 "return" frog-cli-tsv-field-equals
+                let jump branch return do
+                    if jump do
+                        first-target block-count frog-cli-inspect-target-valid
+                        second-target 0 1 - == &&
+                    elif branch do
+                        first-target block-count frog-cli-inspect-target-valid
+                        second-target block-count frog-cli-inspect-target-valid &&
+                        first-target second-target != &&
+                    elif return do
+                        first-target 0 1 - == second-target 0 1 - == &&
+                    else
+                        false
+                    end
+                    let terminator-valid do
+                        next-operation block-operation-count +
+                        range-valid terminator-valid &&
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-procedure-generic ptr int int int int int -- bool do
+    let bytes length module procedure operation-count block-count do
+        0 0 true
+        while
+            peek block-index next-operation valid do
+                block-index block-count < valid &&
+            end
+        do
+            let block-index next-operation valid do
+                bytes length "block" module procedure block-index frog-cli-find-inspect-indexed-line
+                let line line-length found do
+                    if found do
+                        line line-length next-operation operation-count block-count frog-cli-inspect-block-valid
+                    else
+                        next-operation false
+                    end
+                    let next valid-block do
+                        block-index 1 + next valid valid-block &&
+                    end
+                end
+            end
+        end
+        let block-index next-operation valid do
+            valid next-operation operation-count == &&
+        end
+    end
+end
+
+proc frog-cli-inspect-procedure-base ptr int String int -- int int int bool do
+    let bytes length name expected-block-count do
+        bytes length name frog-cli-inspect-procedure-info
+        let module procedure operation-count block-count found do
+            if found block-count expected-block-count == && do
+                module procedure operation-count
+                bytes length module procedure operation-count block-count
+                frog-cli-inspect-procedure-generic
+            else
+                module procedure operation-count false
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-block-is ptr int int int int String -- bool do
+    let bytes length module procedure block-index terminator do
+        bytes length module procedure block-index 8 terminator frog-cli-inspect-block-field-equals
+    end
+end
+
+proc frog-cli-inspect-block-types-are ptr int int int int String String -- bool do
+    let bytes length module procedure block-index entry-types exit-types do
+        bytes length module procedure block-index 13 entry-types frog-cli-inspect-block-field-equals
+        bytes length module procedure block-index 14 exit-types frog-cli-inspect-block-field-equals &&
+    end
+end
+
+proc frog-cli-inspect-block-operation-count-is ptr int int int int int -- bool do
+    let bytes length module procedure block-index expected do
+        bytes length module procedure block-index 7 frog-cli-inspect-block-int
+        let actual found do found actual expected == && end
+    end
+end
+
+proc frog-cli-inspect-jump-target ptr int int int int -- int bool do
+    let bytes length module procedure block-index do
+        bytes length module procedure block-index 11 frog-cli-inspect-block-int
+        let target found do
+            target found
+            bytes length module procedure block-index "jump" frog-cli-inspect-block-is &&
+        end
+    end
+end
+
+proc frog-cli-inspect-branch-targets ptr int int int int -- int int bool do
+    let bytes length module procedure block-index do
+        bytes length module procedure block-index 11 frog-cli-inspect-block-int
+        bytes length module procedure block-index 12 frog-cli-inspect-block-int
+        let first first-found second second-found do
+            first second first-found second-found &&
+            bytes length module procedure block-index "branch" frog-cli-inspect-block-is &&
+        end
+    end
+end
+
+proc frog-cli-inspect-straight ptr int -- bool do
+    let bytes length do
+        bytes length "straight" 1 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            valid
+            bytes length module procedure 0 "return" frog-cli-inspect-block-is &&
+            bytes length module procedure 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
+        end
+    end
+end
+
+proc frog-cli-inspect-if-else ptr int -- bool do
+    let bytes length do
+        bytes length "if-else" 4 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            bytes length module procedure 0 frog-cli-inspect-branch-targets
+            let then-block else-block branch-valid do
+                bytes length module procedure then-block frog-cli-inspect-jump-target
+                bytes length module procedure else-block frog-cli-inspect-jump-target
+                let then-merge then-valid else-merge else-valid do
+                    valid branch-valid && then-valid && else-valid &&
+                    then-merge else-merge == &&
+                    bytes length module procedure then-merge "return" frog-cli-inspect-block-is &&
+                    bytes length module procedure 0 "[]" "[bool]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure then-block "[]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure else-block "[]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-no-else ptr int -- bool do
+    let bytes length do
+        bytes length "no-else" 3 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            bytes length module procedure 0 frog-cli-inspect-branch-targets
+            let then-block merge-block branch-valid do
+                bytes length module procedure then-block frog-cli-inspect-jump-target
+                let then-merge then-valid do
+                    valid branch-valid && then-valid &&
+                    then-merge merge-block == &&
+                    bytes length module procedure merge-block "return" frog-cli-inspect-block-is &&
+                    bytes length module procedure then-block 0 frog-cli-inspect-block-operation-count-is &&
+                    bytes length module procedure 0 "[]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure merge-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-empty-arms ptr int -- bool do
+    let bytes length do
+        bytes length "empty-arms" 4 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            bytes length module procedure 0 frog-cli-inspect-branch-targets
+            let then-block else-block branch-valid do
+                bytes length module procedure then-block frog-cli-inspect-jump-target
+                bytes length module procedure else-block frog-cli-inspect-jump-target
+                let then-merge then-valid else-merge else-valid do
+                    valid branch-valid && then-valid && else-valid &&
+                    then-merge else-merge == &&
+                    bytes length module procedure then-merge "return" frog-cli-inspect-block-is &&
+                    bytes length module procedure then-block 0 frog-cli-inspect-block-operation-count-is &&
+                    bytes length module procedure else-block 0 frog-cli-inspect-block-operation-count-is &&
+                    bytes length module procedure 0 "[]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure else-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module procedure then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-elif ptr int -- bool do
+    let bytes length do
+        bytes length "elif-chain" 6 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            bytes length module procedure 0 frog-cli-inspect-branch-targets
+            let first-arm next-condition first-branch-valid do
+                bytes length module procedure first-arm frog-cli-inspect-jump-target
+                bytes length module procedure next-condition frog-cli-inspect-branch-targets
+                let first-merge first-arm-valid second-arm third-arm second-branch-valid do
+                    bytes length module procedure second-arm frog-cli-inspect-jump-target
+                    bytes length module procedure third-arm frog-cli-inspect-jump-target
+                    let second-merge second-arm-valid third-merge third-arm-valid do
+                        valid first-branch-valid && first-arm-valid && second-branch-valid &&
+                        second-arm-valid && third-arm-valid &&
+                        first-merge second-merge == && first-merge third-merge == &&
+                        bytes length module procedure first-merge "return" frog-cli-inspect-block-is &&
+                        bytes length module procedure 0 "[]" "[bool]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure next-condition "[]" "[bool]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure first-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure second-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure third-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure first-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-loop ptr int -- bool do
+    let bytes length do
+        bytes length "loop" 4 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            bytes length module procedure 0 frog-cli-inspect-jump-target
+            let header entry-valid do
+                bytes length module procedure header frog-cli-inspect-branch-targets
+                let body exit-block header-valid do
+                    bytes length module procedure body frog-cli-inspect-jump-target
+                    let back-edge body-valid do
+                        valid entry-valid && header-valid && body-valid &&
+                        back-edge header == &&
+                        bytes length module procedure exit-block "return" frog-cli-inspect-block-is &&
+                        bytes length module procedure 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure header "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure body "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module procedure exit-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-nested ptr int -- bool do
+    let bytes length do
+        bytes length "nested" 7 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            bytes length module procedure 0 frog-cli-inspect-jump-target
+            let loop-header entry-valid do
+                bytes length module procedure loop-header frog-cli-inspect-branch-targets
+                let inner-condition exit-block loop-valid do
+                    bytes length module procedure inner-condition frog-cli-inspect-branch-targets
+                    let then-block else-block inner-valid do
+                        bytes length module procedure then-block frog-cli-inspect-jump-target
+                        bytes length module procedure else-block frog-cli-inspect-jump-target
+                        let then-merge then-valid else-merge else-valid do
+                            bytes length module procedure then-merge frog-cli-inspect-jump-target
+                            let back-edge merge-valid do
+                                valid entry-valid && loop-valid && inner-valid && then-valid && else-valid && merge-valid &&
+                                then-merge else-merge == && back-edge loop-header == &&
+                                bytes length module procedure exit-block "return" frog-cli-inspect-block-is &&
+                                bytes length module procedure 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module procedure loop-header "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                                bytes length module procedure inner-condition "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                                bytes length module procedure then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module procedure else-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module procedure then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module procedure exit-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-operation-kind-is ptr int int int int String -- bool do
+    let bytes length module procedure operation-index kind do
+        bytes length "operation" module procedure operation-index frog-cli-find-inspect-indexed-line
+        let line line-length found do
+            if found do line line-length 16 kind frog-cli-tsv-field-equals else false end
+        end
+    end
+end
+
+proc frog-cli-inspect-macro-flow ptr int -- bool do
+    let bytes length do
+        bytes length "macro-flow" 1 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            valid operation-count 1 == &&
+            bytes length module procedure 0 "return" frog-cli-inspect-block-is &&
+            bytes length module procedure 0 "[int]" "[int]" frog-cli-inspect-block-types-are &&
+            bytes length module procedure 0 1 frog-cli-inspect-block-operation-count-is &&
+            bytes length module procedure 0 "macro_call" frog-cli-inspect-operation-kind-is &&
+        end
+    end
+end
+
+proc frog-cli-inspect-main-cfg ptr int -- bool do
+    let bytes length do
+        bytes length "main" 1 frog-cli-inspect-procedure-base
+        let module procedure operation-count valid do
+            valid operation-count 0 == &&
+            bytes length module procedure 0 "return" frog-cli-inspect-block-is &&
+            bytes length module procedure 0 "[]" "[]" frog-cli-inspect-block-types-are &&
+        end
+    end
+end
+
+proc frog-cli-inspect-cfg FrogTestContext* -- do
+    let context do
+        2 context frog-cli-argv
+        let arguments do
+            "inspect" arguments 1 subprocess-arg
+            "test/cases/cli/inspect_cfg.frog" arguments 2 subprocess-arg
+            arguments "" subprocess-run
+            let result do
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                let bytes length do
+                    result @CompletedProcess.returncode 0 ==
+                    result @CompletedProcess.stderr_len 0 == &&
+                    bytes length "frogc-inspect\t3\n" String.bytes "frogc-inspect\t3\n" String.len bytes-starts-with &&
+                    bytes length
+                    "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tblock_count"
+                    frog-bytes-contain-line &&
+                    bytes length
+                    "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\toperation_start\toperation_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types"
+                    frog-bytes-contain-line &&
+                    bytes length "block\t" frog-count-lines-starting-with 31 == &&
+                    bytes length frog-cli-inspect-straight &&
+                    bytes length frog-cli-inspect-if-else &&
+                    bytes length frog-cli-inspect-no-else &&
+                    bytes length frog-cli-inspect-empty-arms &&
+                    bytes length frog-cli-inspect-elif &&
+                    bytes length frog-cli-inspect-loop &&
+                    bytes length frog-cli-inspect-nested &&
+                    bytes length frog-cli-inspect-macro-flow &&
+                    bytes length frog-cli-inspect-main-cfg &&
+                    "cli/inspect-cfg" context frog-check
+                end
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
 proc frog-cli-inspect-builtins FrogTestContext* -- do
     let context do
         3 context frog-cli-argv
@@ -166,8 +757,8 @@ proc frog-cli-inspect-bindings FrogTestContext* -- do
                 "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\nbinding_local\t0\t0\t2\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t3\t0\t27\tfirst\t4\tint\nbinding_local\t0\t0\t4\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t5\t0\t42\tleft\t11\tint\n" String.bytes
                 "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\nbinding_local\t0\t0\t2\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t3\t0\t27\tfirst\t4\tint\nbinding_local\t0\t0\t4\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t5\t0\t42\tleft\t11\tint\n" String.len bytes-contain &&
                 result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "procedure\t0\t1\tsecondary\t4\t1\n" String.bytes
-                "procedure\t0\t1\tsecondary\t4\t1\n" String.len bytes-contain &&
+                "procedure\t0\t1\tsecondary\t4\t1\t1\n" String.bytes
+                "procedure\t0\t1\tsecondary\t4\t1\t1\n" String.len bytes-contain &&
                 result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                 "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.bytes
                 "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.len bytes-contain &&
@@ -289,20 +880,23 @@ Try `frogc --help`.
         "macro twice dup + end
 proc helper int -- int do 1 + end
 proc main -- do 20 twice helper drop end
-" "frogc-inspect	2
+" "frogc-inspect	3
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count	binding_local_count
+fields	procedure	module	index	name	operation_count	binding_local_count	block_count
 fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
 fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
+fields	block	procedure_module	procedure_index	index	source_module	start_token	operation_start	operation_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
 module	0	1	0	<stdin>
-procedure	0	0	helper	2	0
+procedure	0	0	helper	2	0	1
 operation	0	0	0	0	11	12	48	49	2	27	1	1	2	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[int]	[int,int]
 operation	0	0	1	0	12	13	50	51	2	29	2	0	1	2	1	procedure_call	1	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
-procedure	0	1	main	4	0
+block	0	0	0	0	11	0	2	return	0	13	-1	-1	[int]	[int]
+procedure	0	1	main	4	0	1
 operation	0	1	0	0	18	19	72	74	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[]	[int]
 operation	0	1	1	0	19	20	75	80	3	20	1	0	1	1	1	macro_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
 operation	0	1	2	0	20	21	81	87	3	26	1	0	1	1	1	procedure_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
 operation	0	1	3	0	21	22	88	92	3	33	1	0	0	1	0	macro_call	1	2	-1	-1	-1	-1	0	none	none	none	[int]	[]
+block	0	1	0	0	18	0	4	return	0	22	-1	-1	[]	[]
 module	1	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-stdin" context frog-cli-inspect-stdin
 
@@ -315,20 +909,23 @@ proc late -- do nope end
 error: unknown word: nope
 " 1 "cli/inspect-stdin-late-error" context frog-cli-inspect-stdin
 
-        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	2
+        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	3
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count	binding_local_count
+fields	procedure	module	index	name	operation_count	binding_local_count	block_count
 fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
 fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
+fields	block	procedure_module	procedure_index	index	source_module	start_token	operation_start	operation_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
 module	0	1	0	test/cases/cli/inspect_relative/main.frog
-procedure	0	0	main	3	0
+procedure	0	0	main	3	0	1
 operation	0	0	0	0	8	9	53	55	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[]	[int]
 operation	0	0	1	0	9	10	56	65	3	20	1	0	1	1	1	procedure_call	1	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
 operation	0	0	2	0	10	11	66	70	3	30	1	0	0	1	0	macro_call	2	2	-1	-1	-1	-1	0	none	none	none	[int]	[]
+block	0	0	0	0	8	0	3	return	0	11	-1	-1	[]	[]
 module	1	0	0	helper.frog
-procedure	1	0	increment	2	0
+procedure	1	0	increment	2	0	1
 operation	1	0	0	1	6	7	29	30	1	30	1	1	2	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[int]	[int,int]
 operation	1	0	1	1	7	8	31	32	1	32	2	0	1	2	1	procedure_call	2	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
+block	1	0	0	1	6	0	2	return	1	8	-1	-1	[int]	[int]
 module	2	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-file-relative-import" context frog-cli-case-2
 
@@ -342,6 +939,7 @@ Try `frogc --help`.
 
         context frog-cli-inspect-builtins
         context frog-cli-inspect-bindings
+        context frog-cli-inspect-cfg
 
         "run" "test/cases/cli/missing.frog" ""
         "frogc: unable to read source: test/cases/cli/missing.frog
