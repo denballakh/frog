@@ -8,6 +8,7 @@ from "stdlib/libc.frog" import (
     fork create-file dup2 close chdir get-current-directory execv execvp
     ensure-directory wait-child finish-child reset-child-signals
 )
+from "stdlib/string.frog" import ( bytes-copy bytes-equal bytes-starts-with )
 
 const cell-bytes 8 end
 
@@ -168,25 +169,11 @@ proc byte-write int ptr int -- do
     let value base offset do value u8 cast base offset + u8* cast ! end
 end
 
-proc memory-copy ptr ptr int -- do
-    let source destination count do
-        0
-        while dup count < do
-            dup let index do
-                source index byte-read
-                destination index byte-write
-            end
-            1 +
-        end
-        drop
-    end
-end
-
 proc copy-bytes ptr int -- ptr do
     let bytes length do
         length 1 + alloc
         let result do
-            bytes result length memory-copy
+            bytes result length bytes-copy
             0 result length byte-write
             result
         end
@@ -311,28 +298,6 @@ proc hex-value int -- int do
     end
 end
 
-proc bytes-equal ptr int ptr int -- bool do
-    let first first-length second second-length do
-        if first-length second-length != do
-            false
-        else
-            0 true
-            while
-                peek index equal do
-                    index first-length < equal &&
-                end
-            do
-                let index equal do
-                    index 1 +
-                    equal
-                    first index byte-read second index byte-read == &&
-                end
-            end
-            let index equal do equal end
-        end
-    end
-end
-
 proc bytes-equal-string ptr int String -- bool do
     peek bytes length value do String.bytes value String.len bytes-equal
     end
@@ -340,11 +305,7 @@ end
 
 macro bytes-starts-with-string
     let bytes length prefix do
-        if prefix String.len length > do
-            false
-        else
-            bytes prefix String.len prefix String.bytes prefix String.len bytes-equal
-        end
+        bytes length prefix String.bytes prefix String.len bytes-starts-with
     end
 end
 
@@ -409,7 +370,7 @@ proc program-grow-pointer-types Program* -- do
         let capacity do
             capacity PointerTypeEntry:sizeof * alloc
             let entries do
-                program @Program.pointer_types entries program @Program.pointer_type_count PointerTypeEntry:sizeof * memory-copy
+                program @Program.pointer_types entries program @Program.pointer_type_count PointerTypeEntry:sizeof * bytes-copy
                 entries program !Program.pointer_types
                 capacity program !Program.pointer_type_capacity
             end
@@ -460,7 +421,7 @@ proc program-grow-unresolved-pointer-types Program* -- do
         let capacity do
             capacity UnresolvedPointerTypeEntry:sizeof * alloc
             let entries do
-                program @Program.unresolved_pointer_types entries program @Program.unresolved_pointer_type_count UnresolvedPointerTypeEntry:sizeof * memory-copy
+                program @Program.unresolved_pointer_types entries program @Program.unresolved_pointer_type_count UnresolvedPointerTypeEntry:sizeof * bytes-copy
                 entries program !Program.unresolved_pointer_types
                 capacity program !Program.unresolved_pointer_type_capacity
             end
@@ -3835,7 +3796,7 @@ proc grow-analyzed-binding-locals ProcedureAnalysis* -- do
             capacity AnalyzedBindingLocal:sizeof * alloc
             let binding-locals do
                 analysis @ProcedureAnalysis.binding_locals binding-locals
-                analysis @ProcedureAnalysis.binding_local_count AnalyzedBindingLocal:sizeof * memory-copy
+                analysis @ProcedureAnalysis.binding_local_count AnalyzedBindingLocal:sizeof * bytes-copy
                 binding-locals analysis !ProcedureAnalysis.binding_locals
                 capacity analysis !ProcedureAnalysis.binding_local_capacity
             end
@@ -3902,7 +3863,7 @@ proc grow-analyzed-operations ProcedureAnalysis* -- do
             capacity AnalyzedOperation:sizeof * alloc
             let operations do
                 analysis @ProcedureAnalysis.operations operations
-                analysis @ProcedureAnalysis.operation_count AnalyzedOperation:sizeof * memory-copy
+                analysis @ProcedureAnalysis.operation_count AnalyzedOperation:sizeof * bytes-copy
                 operations analysis !ProcedureAnalysis.operations
                 capacity analysis !ProcedureAnalysis.operation_capacity
             end
@@ -3927,7 +3888,7 @@ proc ensure-operation-type-capacity ProcedureAnalysis* int -- do
                     capacity cell-bytes * alloc
                     let operation-types do
                         analysis @ProcedureAnalysis.operation_types operation-types
-                        analysis @ProcedureAnalysis.operation_type_count cell-bytes * memory-copy
+                        analysis @ProcedureAnalysis.operation_type_count cell-bytes * bytes-copy
                         operation-types analysis !ProcedureAnalysis.operation_types
                         capacity analysis !ProcedureAnalysis.operation_type_capacity
                     end
@@ -3942,7 +3903,7 @@ proc append-operation-types ProcedureAnalysis* ptr int -- int do
         analysis count ensure-operation-type-capacity
         analysis @ProcedureAnalysis.operation_type_count
         let start do
-            types analysis @ProcedureAnalysis.operation_types start cell-bytes * + count cell-bytes * memory-copy
+            types analysis @ProcedureAnalysis.operation_types start cell-bytes * + count cell-bytes * bytes-copy
             start count + analysis !ProcedureAnalysis.operation_type_count
             start
         end
@@ -4096,7 +4057,7 @@ proc grow-stack-slots CompileContext* -- do
         let capacity do
             capacity StackSlotEntry:sizeof * alloc
             let entries do
-                cc @CompileContext.stack_slots entries cc @CompileContext.stack_slot_count StackSlotEntry:sizeof * memory-copy
+                cc @CompileContext.stack_slots entries cc @CompileContext.stack_slot_count StackSlotEntry:sizeof * bytes-copy
                 entries cc !CompileContext.stack_slots
                 capacity cc !CompileContext.stack_slot_capacity
             end
@@ -4139,7 +4100,7 @@ proc ensure-type-capacity CompileContext* -- do
             cc @CompileContext.type_capacity 2 *
             peek new-capacity do cell-bytes * alloc
                 let new-stack do
-                    cc @CompileContext.type_stack new-stack cc @CompileContext.type_count cell-bytes * memory-copy
+                    cc @CompileContext.type_stack new-stack cc @CompileContext.type_count cell-bytes * bytes-copy
                     new-stack cc !CompileContext.type_stack
                     new-capacity cc !CompileContext.type_capacity
                 end
@@ -4193,7 +4154,7 @@ end
 proc type-snapshot CompileContext* -- ptr int do
     peek cc do @CompileContext.type_count cell-bytes * alloc
         let snapshot do
-            cc @CompileContext.type_stack snapshot cc @CompileContext.type_count cell-bytes * memory-copy
+            cc @CompileContext.type_stack snapshot cc @CompileContext.type_count cell-bytes * bytes-copy
             snapshot cc @CompileContext.type_count
         end
     end
@@ -4201,7 +4162,7 @@ end
 
 proc restore-type-snapshot CompileContext* ptr int -- do
     let cc snapshot count do
-        snapshot cc @CompileContext.type_stack count cell-bytes * memory-copy
+        snapshot cc @CompileContext.type_stack count cell-bytes * bytes-copy
         count cc !CompileContext.type_count
     end
 end
@@ -4951,7 +4912,7 @@ proc write-path-components ptr ptr int ptr int int -- int do
                         bytes component-start +
                         output destination-index +
                         component-length
-                        memory-copy
+                        bytes-copy
                         bytes components count output component-index 1 + destination-index component-length +
                         write-path-components
                     end
@@ -4991,10 +4952,10 @@ proc standard-library-import-path ModuleContext* ptr int -- ptr int do
             let root-length do
                 root-length decoded-length + 1 + alloc
                 let bytes do
-                    root bytes root-length memory-copy
+                    root bytes root-length bytes-copy
                     bytes root-length append-path-separator
                     let decoded-start do
-                        decoded bytes decoded-start + decoded-length memory-copy
+                        decoded bytes decoded-start + decoded-length bytes-copy
                         bytes decoded-start decoded-length +
                     end
                 end
@@ -5026,13 +4987,13 @@ proc decoded-import-path ModuleContext* int -- ptr int do
                         directory-length decoded-length + 1 + alloc
                         let bytes do
                             if directory-length 0 > do
-                                ctx @ModuleContext.canonical_path bytes directory-length memory-copy
+                                ctx @ModuleContext.canonical_path bytes directory-length bytes-copy
                                 bytes directory-length append-path-separator
                             else
                                 0
                             end
                             let decoded-start do
-                                decoded bytes decoded-start + decoded-length memory-copy
+                                decoded bytes decoded-start + decoded-length bytes-copy
                                 bytes decoded-start decoded-length +
                             end
                         end
@@ -5631,7 +5592,7 @@ proc ensure-constant-evaluator-capacity ConstantEvaluator* -- do
                     evaluator @ConstantEvaluator.values
                     new-values
                     evaluator @ConstantEvaluator.count ConstantValue:sizeof *
-                    memory-copy
+                    bytes-copy
                     new-values evaluator !ConstantEvaluator.values
                     new-capacity evaluator !ConstantEvaluator.capacity
                 end
@@ -6516,7 +6477,7 @@ proc evaluate-constant ModuleContext* int -- do
                             evaluator @ConstantEvaluator.values
                             values
                             value-count ConstantValue:sizeof *
-                            memory-copy
+                            bytes-copy
                             values module constant-index constant-at !ConstantEntry.values
                             value-count module constant-index constant-at !ConstantEntry.value_count
                             ConstantState:evaluated module constant-index constant-at !ConstantEntry.state
@@ -7767,7 +7728,7 @@ proc grow-result-types Program* -- do
         let capacity do
             capacity ResultTypeEntry:sizeof * alloc
             let entries do
-                program @Program.result_types entries program @Program.result_type_count ResultTypeEntry:sizeof * memory-copy
+                program @Program.result_types entries program @Program.result_type_count ResultTypeEntry:sizeof * bytes-copy
                 entries program !Program.result_types
                 capacity program !Program.result_type_capacity
             end
@@ -11763,10 +11724,10 @@ proc compiler-distribution-root ptr -- ptr int do
                                 let cwd-length do
                                     cwd-length executable-length + 2 + alloc
                                     let absolute-executable do
-                                        cwd absolute-executable cwd-length memory-copy
+                                        cwd absolute-executable cwd-length bytes-copy
                                         absolute-executable cwd-length append-path-separator
                                         let executable-start do
-                                            executable absolute-executable executable-start + executable-length memory-copy
+                                            executable absolute-executable executable-start + executable-length bytes-copy
                                             0 absolute-executable executable-start executable-length + byte-write
                                             absolute-executable distribution-root-from-absolute-executable
                                         end
@@ -11793,8 +11754,8 @@ proc replace-path-suffix ptr String -- ptr do
                     if dot base > do dot else path-length end
                     peek prefix-length do suffix-length + 1 + alloc
                         let result do
-                            path result prefix-length memory-copy
-                            suffix String.bytes result prefix-length + suffix-length memory-copy
+                            path result prefix-length bytes-copy
+                            suffix String.bytes result prefix-length + suffix-length bytes-copy
                             0 result prefix-length suffix-length + byte-write
                             result
                         end
