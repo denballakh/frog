@@ -135,3 +135,39 @@ overloaded procedures and macros. Literals and other producers have effect
 `-- value`. A formatter should report an unresolved or invalid stack program
 instead of guessing its columns. Comments and literal contents must remain
 unchanged.
+
+# Developer tooling
+
+The compiler should expose reusable frontend, semantic-analysis, typed-IR, and
+backend boundaries. Developer tools should consume the same source spans,
+symbols, types, stack effects, and resolved operations as normal compilation
+instead of implementing Frog semantics independently.
+
+Possible tools and compiler capabilities include:
+
+- a code optimizer operating on backend-independent typed IR;
+- an LSP providing diagnostics, completion, hover information, definitions,
+  references, symbols, rename support, and semantic tokens for syntax
+  highlighting;
+- the stack-aware formatter described above;
+- a debugger that executes code interactively, steps by source operation, and
+  exposes the current typed stack, locals, memory, and call stack;
+- a REPL using the same execution engine as the debugger;
+- an LLVM backend as an alternative to the C backend.
+
+Additional useful tools enabled by the same compiler model:
+
+- a stack and dataflow explainer showing the typed stack before and after each
+  source word and the producer of every consumed value;
+- compiler inspection commands for dumping tokens, resolved symbols, typed IR,
+  control-flow graphs, and backend output;
+- call graphs, module-dependency graphs, unused-symbol detection, and other
+  semantic checks;
+- stack-aware source refactoring, including safe rename and extraction of a
+  selected flow region into a procedure with an inferred stack effect;
+- test coverage and profiling reported in terms of Frog procedures and source
+  operations rather than generated C;
+- API documentation generated from exported declarations, stack effects,
+  records, unions, C bindings, and source comments;
+- a WebAssembly backend and browser playground, once backend-independent IR and
+  execution are established.

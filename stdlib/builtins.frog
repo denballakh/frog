@@ -5,6 +5,9 @@ macro swap let a b do b a end end
 macro swap2 let a b c d do c d a b end end
 macro rot let a b c do b c a end end
 
+// in the future we might implement boolean negation as macro instead of intrinsic:
+// macro not let x do if x do false else true end end end
+
 proc assert bool String -- do
     let condition message do
         if condition do
@@ -13,6 +16,8 @@ proc assert bool String -- do
         end
     end
 end
+
+
 
 proc + int int -- int do __intrinsic_add_int end
 proc - int int -- int do __intrinsic_sub_int end
