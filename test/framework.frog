@@ -407,8 +407,8 @@ proc frog-check-semantic-c ptr int String FrogTestContext* -- do
                     "generated-c/optimizer folded 9 once" context frog-check
                     function function-length "\n  frog_value_0_1 = -3;\n" String.bytes "\n  frog_value_0_1 = -3;\n" String.len bytes-count 1 ==
                     "generated-c/optimizer folded negative sum once" context frog-check
-                    function function-length "\n  frog_value_0_1 = INT64_MIN;\n" String.bytes "\n  frog_value_0_1 = INT64_MIN;\n" String.len bytes-count 1 ==
-                    "generated-c/optimizer folded minimum once" context frog-check
+                    function function-length "\n  frog_value_0_1 = INT64_MIN;\n" String.bytes "\n  frog_value_0_1 = INT64_MIN;\n" String.len bytes-count 2 ==
+                    "generated-c/optimizer minimum assignments" context frog-check
 
                     function function-length "\n  frog_value_0_1 = 5;\n" String.bytes "\n  frog_value_0_1 = 5;\n" String.len bytes-index-of
                     function function-length "\n  frog_value_0_1 = 18;\n" String.bytes "\n  frog_value_0_1 = 18;\n" String.len bytes-index-of

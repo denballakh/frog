@@ -2527,6 +2527,12 @@ proc allocate-proc ModuleContext* int -- int do
                 16 AnalyzedBindingLocal:sizeof * alloc analysis !ProcedureAnalysis.binding_locals
                 0 analysis !ProcedureAnalysis.binding_local_count
                 16 analysis !ProcedureAnalysis.binding_local_capacity
+                16 MacroExpansion:sizeof * alloc analysis !ProcedureAnalysis.macro_expansions
+                0 analysis !ProcedureAnalysis.macro_expansion_count
+                16 analysis !ProcedureAnalysis.macro_expansion_capacity
+                16 TypedInstruction:sizeof * alloc analysis !ProcedureAnalysis.instructions
+                0 analysis !ProcedureAnalysis.instruction_count
+                16 analysis !ProcedureAnalysis.instruction_capacity
                 16 AnalyzedBlock:sizeof * alloc analysis !ProcedureAnalysis.cfg_blocks
                 0 analysis !ProcedureAnalysis.cfg_block_count
                 16 analysis !ProcedureAnalysis.cfg_block_capacity
@@ -3081,6 +3087,8 @@ record AnalyzedOperation
     after_type_start int
     after_type_count int
     minimum_type_count int
+    expansion_id int
+    root_expansion_id int
     kind OperationKind
     target_module ModuleContext*
     target_index int
@@ -3090,22 +3098,64 @@ record AnalyzedOperation
     binding_local_start int
     binding_local_count int
     value_type int
+    payload int
     intrinsic IntrinsicOperation
     private_operation PrivateOperation
 end
 
+record TypedInstruction
+    source_module ModuleContext*
+    token_start int
+    token_end int
+    expansion_id int
+    before_type_start int
+    before_type_count int
+    after_type_start int
+    after_type_count int
+    minimum_type_count int
+    operation RuntimeOperation
+    target_module ModuleContext*
+    target_index int
+    secondary_module ModuleContext*
+    secondary_index int
+    local_id int
+    binding_local_start int
+    binding_local_count int
+    value_type int
+    secondary_type int
+    payload int
+    private_operation PrivateOperation
+end
+
+record MacroExpansion
+    invocation_module ModuleContext*
+    invocation_token int
+    macro_module ModuleContext*
+    macro_index int
+    parent_expansion_id int
+    instruction_start int
+    instruction_count int
+    before_type_start int
+    before_type_count int
+    after_type_start int
+    after_type_count int
+    minimum_type_count int
+end
+
 record AnalyzedBlock
-    operation_start int
-    operation_count int
+    instruction_start int
+    instruction_count int
     entry_type_start int
     entry_type_count int
     exit_type_start int
     exit_type_count int
     source_module ModuleContext*
     token_start int
+    source_expansion_id int
     terminator_kind CFGTerminatorKind
     terminator_module ModuleContext*
     terminator_token int
+    terminator_expansion_id int
     first_target int
     second_target int
 end
@@ -3124,6 +3174,12 @@ record ProcedureAnalysis
     binding_locals ptr
     binding_local_count int
     binding_local_capacity int
+    macro_expansions ptr
+    macro_expansion_count int
+    macro_expansion_capacity int
+    instructions ptr
+    instruction_count int
+    instruction_capacity int
     cfg_blocks ptr
     cfg_block_count int
     cfg_block_capacity int
@@ -3215,8 +3271,10 @@ record CompileContext
     type_count int
     blocks ptr
     block_count int
+    block_capacity int
     locals ptr
     local_count int
+    local_capacity int
     next_local int
     indent int
     program Program*
@@ -3238,7 +3296,9 @@ record CompileContext
     operation_identity_set bool
     operation_identity_locked bool
     operation_binding_active bool
-    cfg_recording_suppressed int
+    current_expansion_id int
+    instruction_active bool
+    instruction_minimum_type_count int
     cfg_current_block int
 end
 
@@ -3414,6 +3474,37 @@ union OperationKind
     case function_call
     case function_reference
     case intrinsic
+end
+
+union RuntimeOperation
+    case none
+    case literal
+    case local_load
+    case constant
+    case procedure_call
+    case bind_locals
+    case restore_peek_locals
+    case type_literal
+    case record_new
+    case record_alloc
+    case record_sizeof
+    case record_field_read
+    case record_field_write
+    case union_construct
+    case union_test
+    case union_project
+    case function_call
+    case function_reference
+    case private_intrinsic
+    case cast
+    case args
+    case print
+    case noop
+    case string_bytes
+    case string_len
+    case pointer_load
+    case pointer_store
+    case builtins_assert_fail
 end
 
 union CFGTerminatorKind
@@ -3763,9 +3854,103 @@ proc analyzed-binding-local-at ProcedureAnalysis* int -- AnalyzedBindingLocal* d
     end
 end
 
-proc analyzed-block-at ProcedureAnalysis* int -- AnalyzedBlock* do
+proc macro-expansion-at ProcedureAnalysis* int -- MacroExpansion* do
     let analysis index do
-        analysis @ProcedureAnalysis.cfg_blocks index AnalyzedBlock:sizeof * + AnalyzedBlock* cast
+        analysis @ProcedureAnalysis.macro_expansions index MacroExpansion:sizeof * + MacroExpansion* cast
+    end
+end
+
+proc grow-macro-expansions ProcedureAnalysis* -- do
+    let analysis do
+        analysis @ProcedureAnalysis.macro_expansion_capacity 2 *
+        let capacity do
+            capacity MacroExpansion:sizeof * alloc
+            let expansions do
+                analysis @ProcedureAnalysis.macro_expansions expansions
+                analysis @ProcedureAnalysis.macro_expansion_count MacroExpansion:sizeof * bytes-copy
+                expansions analysis !ProcedureAnalysis.macro_expansions
+                capacity analysis !ProcedureAnalysis.macro_expansion_capacity
+            end
+        end
+    end
+end
+
+proc begin-macro-expansion CompileContext* ModuleContext* int ModuleContext* int -- int do
+    let cc invocation-module invocation-token macro-module macro-index do
+        cc compile-context-analysis
+        let analysis do
+            if analysis @ProcedureAnalysis.macro_expansion_count analysis @ProcedureAnalysis.macro_expansion_capacity == do
+                analysis grow-macro-expansions
+            end
+            analysis @ProcedureAnalysis.macro_expansion_count
+            let index do
+                analysis index macro-expansion-at
+                let expansion do
+                    invocation-module expansion !MacroExpansion.invocation_module
+                    invocation-token expansion !MacroExpansion.invocation_token
+                    macro-module expansion !MacroExpansion.macro_module
+                    macro-index expansion !MacroExpansion.macro_index
+                    cc @CompileContext.current_expansion_id expansion !MacroExpansion.parent_expansion_id
+                    analysis @ProcedureAnalysis.instruction_count expansion !MacroExpansion.instruction_start
+                    0 expansion !MacroExpansion.instruction_count
+                    analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                    expansion !MacroExpansion.before_type_start
+                    cc @CompileContext.type_count expansion !MacroExpansion.before_type_count
+                    0 1 - expansion !MacroExpansion.after_type_start
+                    0 expansion !MacroExpansion.after_type_count
+                    cc @CompileContext.type_count expansion !MacroExpansion.minimum_type_count
+                    analysis @ProcedureAnalysis.macro_expansion_count 1 + analysis !ProcedureAnalysis.macro_expansion_count
+                    index cc !CompileContext.current_expansion_id
+                    index
+                end
+            end
+        end
+    end
+end
+
+proc finish-macro-expansion CompileContext* int -- do
+    let cc expansion-id do
+        cc compile-context-analysis
+        let analysis do
+            analysis expansion-id macro-expansion-at
+            let expansion do
+                analysis @ProcedureAnalysis.instruction_count expansion @MacroExpansion.instruction_start -
+                expansion !MacroExpansion.instruction_count
+                analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                expansion !MacroExpansion.after_type_start
+                cc @CompileContext.type_count expansion !MacroExpansion.after_type_count
+                expansion @MacroExpansion.parent_expansion_id cc !CompileContext.current_expansion_id
+            end
+        end
+    end
+end
+
+proc update-macro-expansion-minimum ProcedureAnalysis* int int -- do
+    let analysis expansion-id type-count do
+        if expansion-id 0 >= do
+            analysis expansion-id macro-expansion-at
+            let expansion do
+                if type-count expansion @MacroExpansion.minimum_type_count < do
+                    type-count expansion !MacroExpansion.minimum_type_count
+                end
+                analysis expansion @MacroExpansion.parent_expansion_id type-count update-macro-expansion-minimum
+            end
+        end
+    end
+end
+
+proc typed-instruction-at ProcedureAnalysis* int -- TypedInstruction* do
+    let analysis index do
+        analysis @ProcedureAnalysis.instructions index TypedInstruction:sizeof * + TypedInstruction* cast
+    end
+end
+
+proc valid-analyzed-type-range ProcedureAnalysis* int int -- bool do
+    let analysis start count do
+        start 0 >=
+        count 0 >= &&
+        start analysis @ProcedureAnalysis.operation_type_count <= &&
+        count analysis @ProcedureAnalysis.operation_type_count start - <= &&
     end
 end
 
@@ -3780,21 +3965,607 @@ proc analyzed-types-match ProcedureAnalysis* int int int int -- bool do
     end
 end
 
-proc operation-before-matches-block ProcedureAnalysis* AnalyzedOperation* AnalyzedBlock* -- bool do
-    let analysis operation block do
+proc valid-instruction-source TypedInstruction* -- bool do
+    let instruction do
+        if instruction @TypedInstruction.source_module ptr cast int cast 0 == do false
+        elif instruction @TypedInstruction.token_start 0 < do false
+        elif instruction @TypedInstruction.token_end instruction @TypedInstruction.token_start <= do false
+        elif instruction @TypedInstruction.token_end instruction @TypedInstruction.source_module @ModuleContext.token_count > do false
+        else true end
+    end
+end
+
+proc valid-typed-target TypedInstruction* RuntimeOperation -- bool do
+    let instruction operation do
+        if instruction @TypedInstruction.target_module ptr cast int cast 0 == instruction @TypedInstruction.target_index 0 < || do
+            false
+        elif operation RuntimeOperation.procedure_call? do
+            instruction @TypedInstruction.target_index instruction @TypedInstruction.target_module @ModuleContext.proc_count <
+        elif operation RuntimeOperation.constant? do
+            instruction @TypedInstruction.target_index instruction @TypedInstruction.target_module @ModuleContext.constant_count <
+        elif
+            operation RuntimeOperation.record_new?
+            operation RuntimeOperation.record_alloc? ||
+            operation RuntimeOperation.record_sizeof? ||
+        do
+            instruction @TypedInstruction.target_index instruction @TypedInstruction.target_module @ModuleContext.record_count <
+        elif operation RuntimeOperation.record_field_read? operation RuntimeOperation.record_field_write? || do
+            instruction @TypedInstruction.target_index instruction @TypedInstruction.target_module @ModuleContext.record_field_count <
+        elif
+            operation RuntimeOperation.union_construct?
+            operation RuntimeOperation.union_test? ||
+            operation RuntimeOperation.union_project? ||
+        do
+            instruction @TypedInstruction.target_index instruction @TypedInstruction.target_module @ModuleContext.union_case_count <
+        elif operation RuntimeOperation.function_call? operation RuntimeOperation.function_reference? || do
+            instruction @TypedInstruction.target_index instruction @TypedInstruction.target_module @ModuleContext.function_count <
+        else true end
+    end
+end
+
+proc instruction-type-at ProcedureAnalysis* TypedInstruction* bool int -- int do
+    let analysis instruction after index do
+        if after do
+            analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.after_type_start index + cell-bytes * field-read
+        else
+            analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.before_type_start index + cell-bytes * field-read
+        end
+    end
+end
+
+proc instruction-prefix-matches ProcedureAnalysis* TypedInstruction* int -- bool do
+    let analysis instruction count do
         analysis
-        operation @AnalyzedOperation.before_type_start operation @AnalyzedOperation.before_type_count
+        instruction @TypedInstruction.before_type_start count
+        instruction @TypedInstruction.after_type_start count
+        analyzed-types-match
+    end
+end
+
+proc verify-instruction-depth-effect ProcedureAnalysis* TypedInstruction* int int -- do
+    let analysis instruction inputs outputs do
+        if
+            instruction @TypedInstruction.before_type_count inputs <
+            instruction @TypedInstruction.minimum_type_count instruction @TypedInstruction.before_type_count inputs - != ||
+            instruction @TypedInstruction.after_type_count instruction @TypedInstruction.before_type_count inputs - outputs + != ||
+            analysis instruction instruction @TypedInstruction.minimum_type_count instruction-prefix-matches ! ||
+        do
+            "internal typed instruction stack effect mismatch" fail
+        end
+    end
+end
+
+proc verify-instruction-unary-replacement ProcedureAnalysis* TypedInstruction* int int -- do
+    let analysis instruction input-type output-type do
+        analysis instruction 1 1 verify-instruction-depth-effect
+        if
+            analysis instruction false instruction @TypedInstruction.before_type_count 1 - instruction-type-at input-type !=
+            analysis instruction true instruction @TypedInstruction.after_type_count 1 - instruction-type-at output-type != ||
+        do
+            "internal typed unary instruction type mismatch: " emit-error
+            instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
+            ", expected=" emit-error input-type emit-integer-error "/" emit-error output-type emit-integer-error
+            10 eputc 1 exit
+        end
+    end
+end
+
+proc instruction-contract-matches ProcedureAnalysis* TypedInstruction* ptr int ptr int -- bool do
+    let analysis instruction inputs input-count outputs output-count do
+        if instruction @TypedInstruction.before_type_count input-count < do false else
+            instruction @TypedInstruction.before_type_count input-count -
+            let prefix-count do
+                instruction @TypedInstruction.minimum_type_count prefix-count ==
+                instruction @TypedInstruction.after_type_count prefix-count output-count + == &&
+                analysis instruction prefix-count instruction-prefix-matches &&
+                analysis @ProcedureAnalysis.operation_types
+                instruction @TypedInstruction.before_type_start prefix-count + cell-bytes * +
+                input-count cell-bytes * inputs input-count cell-bytes * bytes-equal &&
+                analysis @ProcedureAnalysis.operation_types
+                instruction @TypedInstruction.after_type_start prefix-count + cell-bytes * +
+                output-count cell-bytes * outputs output-count cell-bytes * bytes-equal &&
+            end
+        end
+    end
+end
+
+proc instruction-procedure-contract-matches ProcedureAnalysis* TypedInstruction* -- bool do
+    let analysis instruction do
+        instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index procedure-at
+        let procedure do
+            analysis instruction
+            instruction @TypedInstruction.target_module @ModuleContext.types procedure @ProcedureEntry.input_start cell-bytes * +
+            procedure @ProcedureEntry.input_count
+            instruction @TypedInstruction.target_module @ModuleContext.types procedure @ProcedureEntry.output_start cell-bytes * +
+            procedure @ProcedureEntry.output_count
+            instruction-contract-matches
+        end
+    end
+end
+
+proc instruction-function-inputs-match-from ProcedureAnalysis* TypedInstruction* ModuleContext* int int int -- bool do
+    let analysis instruction module function-index input-index prefix-count do
+        if input-index module function-index function-type-at @FunctionTypeEntry.input_count >= do true
+        elif
+            analysis instruction false prefix-count input-index + instruction-type-at
+            module function-index input-index function-input-type-at ==
+        do
+            analysis instruction module function-index input-index 1 + prefix-count instruction-function-inputs-match-from
+        else false end
+    end
+end
+
+proc instruction-function-outputs-match-from ProcedureAnalysis* TypedInstruction* ModuleContext* int int int -- bool do
+    let analysis instruction module function-index output-index prefix-count do
+        if output-index module function-index function-type-at @FunctionTypeEntry.output_count >= do true
+        elif
+            analysis instruction true prefix-count output-index + instruction-type-at
+            module function-index output-index function-output-type-at ==
+        do
+            analysis instruction module function-index output-index 1 + prefix-count instruction-function-outputs-match-from
+        else false end
+    end
+end
+
+proc instruction-function-contract-matches ProcedureAnalysis* TypedInstruction* -- bool do
+    let analysis instruction do
+        instruction @TypedInstruction.target_module
+        instruction @TypedInstruction.target_index
+        let module function-index do
+            module function-index function-type-at
+            let function do
+                function @FunctionTypeEntry.input_count 1 +
+                let input-count do
+                    if instruction @TypedInstruction.before_type_count input-count < do false else
+                        instruction @TypedInstruction.before_type_count input-count -
+                        let prefix-count do
+                            instruction @TypedInstruction.minimum_type_count prefix-count ==
+                            instruction @TypedInstruction.after_type_count prefix-count function @FunctionTypeEntry.output_count + == &&
+                            analysis instruction prefix-count instruction-prefix-matches &&
+                            analysis instruction module function-index 0 prefix-count instruction-function-inputs-match-from &&
+                            analysis instruction false prefix-count function @FunctionTypeEntry.input_count + instruction-type-at
+                            function @FunctionTypeEntry.function_type == &&
+                            analysis instruction module function-index 0 prefix-count instruction-function-outputs-match-from &&
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc analysis-binding-local-id-has-type ProcedureAnalysis* int int int -- bool do
+    let analysis local-id value-type index do
+        if index analysis @ProcedureAnalysis.binding_local_count >= do false
+        else analysis index analyzed-binding-local-at
+            let local do
+                if local @AnalyzedBindingLocal.local_id local-id == do local @AnalyzedBindingLocal.value_type value-type ==
+                else analysis local-id value-type index 1 + analysis-binding-local-id-has-type end
+            end
+        end
+    end
+end
+
+proc verify-binding-instruction ProcedureAnalysis* TypedInstruction* bool -- do
+    let analysis instruction restore do
+        if
+            instruction @TypedInstruction.binding_local_start 0 <
+            instruction @TypedInstruction.binding_local_count 0 <= ||
+            instruction @TypedInstruction.binding_local_start analysis @ProcedureAnalysis.binding_local_count > ||
+            instruction @TypedInstruction.binding_local_count
+            analysis @ProcedureAnalysis.binding_local_count instruction @TypedInstruction.binding_local_start - > ||
+        do
+            "internal typed binding range is invalid" fail
+        end
+        if restore do
+            analysis instruction 0 instruction @TypedInstruction.binding_local_count verify-instruction-depth-effect
+        else
+            analysis instruction instruction @TypedInstruction.binding_local_count 0 verify-instruction-depth-effect
+        end
+        0
+        while dup instruction @TypedInstruction.binding_local_count < do
+            dup let offset do
+                analysis instruction @TypedInstruction.binding_local_start offset + analyzed-binding-local-at
+                let local do
+                    if restore do
+                        analysis instruction true
+                        instruction @TypedInstruction.after_type_count 1 - offset -
+                        instruction-type-at
+                    else
+                        analysis instruction false
+                        instruction @TypedInstruction.before_type_count 1 - offset -
+                        instruction-type-at
+                    end
+                    peek actual-type do
+                    local @AnalyzedBindingLocal.value_type !=
+                    if dup do
+                        "internal typed binding local type mismatch: " emit-error
+                        instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
+                        ", local=" emit-error local @AnalyzedBindingLocal.value_type emit-integer-error
+                        ", actual=" emit-error actual-type emit-integer-error
+                        10 eputc 1 exit
+                    end
+                    drop
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc verify-private-instruction-effect ProcedureAnalysis* TypedInstruction* -- do
+    let analysis instruction do
+        instruction @TypedInstruction.private_operation
+        let operation do
+            if operation PrivateOperation.none? do "internal typed private intrinsic is unresolved" fail
+            elif operation PrivateOperation.load? do
+                analysis instruction 1 1 verify-instruction-depth-effect
+                if
+                    analysis instruction true instruction @TypedInstruction.after_type_count 1 - instruction-type-at
+                    instruction @TypedInstruction.value_type !=
+                do "internal typed private load result type mismatch" fail end
+            elif operation PrivateOperation.store? do analysis instruction 2 0 verify-instruction-depth-effect
+            elif operation PrivateOperation.not? do
+                analysis instruction instruction @TypedInstruction.value_type instruction @TypedInstruction.value_type
+                verify-instruction-unary-replacement
+            elif operation PrivateOperation.divmod? do analysis instruction 2 2 verify-instruction-depth-effect
+            elif operation PrivateOperation.shl? operation PrivateOperation.shr? || do analysis instruction 2 1 verify-instruction-depth-effect
+            else analysis instruction 2 1 verify-instruction-depth-effect end
+        end
+    end
+end
+
+proc verify-typed-instruction-storage ProcedureAnalysis* TypedInstruction* -- do
+    let analysis instruction do
+        if instruction valid-instruction-source ! do "internal typed instruction source range is invalid" fail end
+        if
+            analysis instruction @TypedInstruction.before_type_start instruction @TypedInstruction.before_type_count valid-analyzed-type-range !
+            analysis instruction @TypedInstruction.after_type_start instruction @TypedInstruction.after_type_count valid-analyzed-type-range ! ||
+        do
+            "internal typed instruction stack range is invalid" fail
+        end
+        if
+            instruction @TypedInstruction.minimum_type_count 0 <
+            instruction @TypedInstruction.minimum_type_count instruction @TypedInstruction.before_type_count > ||
+            instruction @TypedInstruction.minimum_type_count instruction @TypedInstruction.after_type_count > ||
+        do
+            "internal typed instruction stack minimum is invalid" fail
+        end
+        if instruction @TypedInstruction.operation RuntimeOperation.none? do "internal unresolved typed instruction" fail end
+        if instruction @TypedInstruction.expansion_id 0 >= do
+            if instruction @TypedInstruction.expansion_id analysis @ProcedureAnalysis.macro_expansion_count >= do
+                "internal typed instruction expansion is out of range" fail
+            end
+        end
+        instruction @TypedInstruction.operation
+        let operation do
+            if
+                operation RuntimeOperation.procedure_call?
+                operation RuntimeOperation.constant? ||
+                operation RuntimeOperation.record_new? ||
+                operation RuntimeOperation.record_alloc? ||
+                operation RuntimeOperation.record_sizeof? ||
+                operation RuntimeOperation.record_field_read? ||
+                operation RuntimeOperation.record_field_write? ||
+                operation RuntimeOperation.union_construct? ||
+                operation RuntimeOperation.union_test? ||
+                operation RuntimeOperation.union_project? ||
+                operation RuntimeOperation.function_call? ||
+                operation RuntimeOperation.function_reference? ||
+            do
+                if instruction operation valid-typed-target ! do "internal typed instruction target is invalid" fail end
+            end
+            if operation RuntimeOperation.literal? operation RuntimeOperation.type_literal? || operation RuntimeOperation.function_reference? || do
+                analysis instruction 0 1 verify-instruction-depth-effect
+                if operation RuntimeOperation.literal? do
+                    if
+                        analysis instruction true instruction @TypedInstruction.after_type_count 1 - instruction-type-at
+                        instruction @TypedInstruction.value_type !=
+                    do
+                        "internal typed literal result type mismatch: " emit-error
+                        instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
+                        10 eputc 1 exit
+                    end
+                end
+            elif operation RuntimeOperation.local_load? do
+                if
+                    instruction @TypedInstruction.local_id 0 <
+                    analysis instruction @TypedInstruction.local_id instruction @TypedInstruction.value_type 0 analysis-binding-local-id-has-type ! ||
+                do "internal typed local load is invalid" fail end
+                analysis instruction 0 1 verify-instruction-depth-effect
+                if
+                    analysis instruction true instruction @TypedInstruction.after_type_count 1 - instruction-type-at
+                    instruction @TypedInstruction.value_type !=
+                do "internal typed local load result type mismatch" fail end
+            elif operation RuntimeOperation.constant? do
+                instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index constant-at
+                let constant do
+                    analysis instruction 0 constant @ConstantEntry.value_count verify-instruction-depth-effect
+                end
+            elif operation RuntimeOperation.procedure_call? do
+                if analysis instruction instruction-procedure-contract-matches ! do
+                    "internal typed procedure call contract mismatch" fail
+                end
+                if instruction @TypedInstruction.payload 0 != do
+                    if
+                        instruction @TypedInstruction.payload 1 !=
+                        instruction @TypedInstruction.target_module @ModuleContext.program @Program.release ! ||
+                        instruction @TypedInstruction.target_module ptr cast int cast
+                        instruction @TypedInstruction.target_module @ModuleContext.program @Program.builtins_module ptr cast int cast != ||
+                        instruction @TypedInstruction.target_index
+                        instruction @TypedInstruction.target_module @ModuleContext.program @Program.builtins_assert_proc != ||
+                    do "internal typed suppressed call is invalid" fail end
+                end
+            elif operation RuntimeOperation.bind_locals? do analysis instruction false verify-binding-instruction
+            elif operation RuntimeOperation.restore_peek_locals? do analysis instruction true verify-binding-instruction
+            elif operation RuntimeOperation.record_new? operation RuntimeOperation.record_alloc? || operation RuntimeOperation.record_sizeof? || do
+                analysis instruction 0 1 verify-instruction-depth-effect
+            elif operation RuntimeOperation.record_field_read? do
+                if
+                    instruction @TypedInstruction.secondary_module ptr cast int cast 0 ==
+                    instruction @TypedInstruction.secondary_index 0 < ||
+                    instruction @TypedInstruction.secondary_index instruction @TypedInstruction.secondary_module @ModuleContext.record_count >= ||
+                do "internal typed record field owner is invalid" fail end
+                analysis instruction false instruction @TypedInstruction.before_type_count 1 - instruction-type-at
+                drop
+                analysis instruction 1 1 verify-instruction-depth-effect
+            elif operation RuntimeOperation.record_field_write? do
+                if
+                    instruction @TypedInstruction.secondary_module ptr cast int cast 0 ==
+                    instruction @TypedInstruction.secondary_index 0 < ||
+                    instruction @TypedInstruction.secondary_index instruction @TypedInstruction.secondary_module @ModuleContext.record_count >= ||
+                do "internal typed record field owner is invalid" fail end
+                if instruction @TypedInstruction.payload 0 != do analysis instruction 2 0 verify-instruction-depth-effect
+                else analysis instruction 2 1 verify-instruction-depth-effect end
+            elif operation RuntimeOperation.union_construct? do
+                if
+                    instruction @TypedInstruction.secondary_module ptr cast int cast 0 ==
+                    instruction @TypedInstruction.secondary_index 0 < ||
+                    instruction @TypedInstruction.secondary_index instruction @TypedInstruction.secondary_module @ModuleContext.union_count >= ||
+                do "internal typed union owner is invalid" fail end
+                if instruction @TypedInstruction.secondary_type type-none == do analysis instruction 0 1 verify-instruction-depth-effect
+                else analysis instruction 1 1 verify-instruction-depth-effect end
+            elif operation RuntimeOperation.union_test? do analysis instruction 1 1 verify-instruction-depth-effect
+            elif operation RuntimeOperation.union_project? do
+                if
+                    instruction @TypedInstruction.secondary_module ptr cast int cast 0 ==
+                    instruction @TypedInstruction.secondary_index 0 < ||
+                    instruction @TypedInstruction.secondary_index instruction @TypedInstruction.secondary_module @ModuleContext.union_count >= ||
+                do "internal typed union owner is invalid" fail end
+                if instruction @TypedInstruction.secondary_type type-none == do analysis instruction 1 0 verify-instruction-depth-effect
+                else analysis instruction 1 1 verify-instruction-depth-effect end
+            elif operation RuntimeOperation.function_call? do
+                if analysis instruction instruction-function-contract-matches ! do
+                    "internal typed function call contract mismatch" fail
+                end
+            elif operation RuntimeOperation.private_intrinsic? do analysis instruction verify-private-instruction-effect
+            elif operation RuntimeOperation.cast? do analysis instruction 2 1 verify-instruction-depth-effect
+            elif operation RuntimeOperation.args? do analysis instruction 0 2 verify-instruction-depth-effect
+            elif operation RuntimeOperation.print? do analysis instruction 1 0 verify-instruction-depth-effect
+            elif operation RuntimeOperation.noop? do analysis instruction 0 0 verify-instruction-depth-effect
+            elif operation RuntimeOperation.string_bytes? do analysis instruction type-string type-ptr verify-instruction-unary-replacement
+            elif operation RuntimeOperation.string_len? do analysis instruction type-string type-int verify-instruction-unary-replacement
+            elif operation RuntimeOperation.pointer_load? do analysis instruction 1 1 verify-instruction-depth-effect
+            elif operation RuntimeOperation.pointer_store? do analysis instruction 2 0 verify-instruction-depth-effect
+            elif operation RuntimeOperation.builtins_assert_fail? do analysis instruction 1 0 verify-instruction-depth-effect
+            else "internal unknown typed instruction operation" fail end
+            if operation RuntimeOperation.function_reference? do
+                if
+                    instruction @TypedInstruction.secondary_module ptr cast int cast 0 ==
+                    instruction @TypedInstruction.secondary_index 0 < ||
+                    instruction @TypedInstruction.secondary_index instruction @TypedInstruction.secondary_module @ModuleContext.proc_count >= ||
+                    instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index
+                    instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index function-proc-contracts-equal ! ||
+                do
+                    "internal typed function reference target is invalid" fail
+                end
+            end
+        end
+    end
+end
+
+proc verify-typed-instructions ProcedureAnalysis* -- do
+    let analysis do
+        0
+        while dup analysis @ProcedureAnalysis.instruction_count < do
+            dup let index do analysis analysis index typed-instruction-at verify-typed-instruction-storage end
+            1 +
+        end
+        drop
+    end
+end
+
+proc expansion-contains-instruction MacroExpansion* int -- bool do
+    let expansion instruction-index do
+        instruction-index expansion @MacroExpansion.instruction_start >=
+        instruction-index expansion @MacroExpansion.instruction_start expansion @MacroExpansion.instruction_count + < &&
+    end
+end
+
+proc expansion-descends-from ProcedureAnalysis* int int -- bool do
+    let analysis expansion-id ancestor-id do
+        if expansion-id 0 < do false
+        elif expansion-id ancestor-id == do true
+        else
+            analysis analysis expansion-id macro-expansion-at @MacroExpansion.parent_expansion_id ancestor-id
+            expansion-descends-from
+        end
+    end
+end
+
+proc verify-macro-expansion ProcedureAnalysis* int -- do
+    let analysis expansion-id do
+        analysis expansion-id macro-expansion-at
+        let expansion do
+            if
+                expansion @MacroExpansion.invocation_module ptr cast int cast 0 ==
+                expansion @MacroExpansion.macro_module ptr cast int cast 0 == ||
+                expansion @MacroExpansion.invocation_token 0 < ||
+                expansion @MacroExpansion.invocation_token expansion @MacroExpansion.invocation_module @ModuleContext.token_count >= ||
+                expansion @MacroExpansion.macro_index 0 < ||
+                expansion @MacroExpansion.macro_index expansion @MacroExpansion.macro_module @ModuleContext.macro_count >= ||
+            do
+                "internal macro expansion origin is invalid" fail
+            end
+            if
+                expansion @MacroExpansion.instruction_start 0 <
+                expansion @MacroExpansion.instruction_count 0 < ||
+                expansion @MacroExpansion.instruction_start analysis @ProcedureAnalysis.instruction_count > ||
+                expansion @MacroExpansion.instruction_count
+                analysis @ProcedureAnalysis.instruction_count expansion @MacroExpansion.instruction_start - > ||
+            do
+                "internal macro expansion instruction range is invalid" fail
+            end
+            if
+                analysis expansion @MacroExpansion.before_type_start expansion @MacroExpansion.before_type_count valid-analyzed-type-range !
+                analysis expansion @MacroExpansion.after_type_start expansion @MacroExpansion.after_type_count valid-analyzed-type-range ! ||
+            do
+                "internal macro expansion stack range is invalid" fail
+            end
+            if
+                expansion @MacroExpansion.minimum_type_count 0 <
+                expansion @MacroExpansion.minimum_type_count expansion @MacroExpansion.before_type_count > ||
+                expansion @MacroExpansion.minimum_type_count expansion @MacroExpansion.after_type_count > ||
+            do
+                "internal macro expansion stack minimum is invalid" fail
+            end
+            expansion @MacroExpansion.parent_expansion_id
+            let parent-id do
+                if parent-id expansion-id >= do "internal macro expansion parent is invalid" fail end
+                if parent-id 0 >= do
+                    analysis parent-id macro-expansion-at
+                    let parent do
+                        if expansion @MacroExpansion.instruction_start parent @MacroExpansion.instruction_start < do
+                            "internal nested macro expansion is outside its parent" fail
+                        end
+                        if
+                            expansion @MacroExpansion.instruction_start expansion @MacroExpansion.instruction_count +
+                            parent @MacroExpansion.instruction_start parent @MacroExpansion.instruction_count + >
+                        do
+                            "internal nested macro expansion exceeds its parent" fail
+                        end
+                    end
+                end
+            end
+            expansion @MacroExpansion.instruction_start
+            while dup expansion @MacroExpansion.instruction_start expansion @MacroExpansion.instruction_count + < do
+                dup let instruction-index do
+                    analysis instruction-index typed-instruction-at @TypedInstruction.expansion_id
+                    let instruction-expansion do
+                        if analysis instruction-expansion expansion-id expansion-descends-from ! do
+                            "internal macro expansion contains an unrelated instruction" fail
+                        end
+                    end
+                end
+                1 +
+            end
+            drop
+        end
+    end
+end
+
+proc verify-macro-expansions ProcedureAnalysis* -- do
+    let analysis do
+        0
+        while dup analysis @ProcedureAnalysis.macro_expansion_count < do
+            dup let expansion-id do analysis expansion-id verify-macro-expansion end
+            1 +
+        end
+        drop
+        0
+        while dup analysis @ProcedureAnalysis.operation_count < do
+            dup let operation-index do
+                analysis operation-index analyzed-operation-at
+                let operation do
+                    if operation @AnalyzedOperation.kind OperationKind.macro_call? do
+                        operation @AnalyzedOperation.root_expansion_id
+                        let expansion-id do
+                            if expansion-id 0 < expansion-id analysis @ProcedureAnalysis.macro_expansion_count >= || do
+                                "internal macro operation expansion is missing" fail
+                            end
+                            analysis expansion-id macro-expansion-at
+                            let expansion do
+                                if expansion @MacroExpansion.parent_expansion_id 0 1 - != do
+                                    "internal macro operation expansion is nested" fail
+                                end
+                                if
+                                    operation @AnalyzedOperation.source_module ptr cast int cast
+                                    expansion @MacroExpansion.invocation_module ptr cast int cast !=
+                                    operation @AnalyzedOperation.token_start expansion @MacroExpansion.invocation_token != ||
+                                    operation @AnalyzedOperation.target_module ptr cast int cast expansion @MacroExpansion.macro_module ptr cast int cast != ||
+                                    operation @AnalyzedOperation.target_index expansion @MacroExpansion.macro_index != ||
+                                do
+                                    "internal macro operation expansion origin mismatch" fail
+                                end
+                                if
+                                    analysis
+                                    operation @AnalyzedOperation.before_type_start operation @AnalyzedOperation.before_type_count
+                                    expansion @MacroExpansion.before_type_start expansion @MacroExpansion.before_type_count
+                                    analyzed-types-match !
+                                    analysis
+                                    operation @AnalyzedOperation.after_type_start operation @AnalyzedOperation.after_type_count
+                                    expansion @MacroExpansion.after_type_start expansion @MacroExpansion.after_type_count
+                                    analyzed-types-match ! ||
+                                    operation @AnalyzedOperation.minimum_type_count expansion @MacroExpansion.minimum_type_count != ||
+                                do
+                                    "internal macro operation expansion stack mismatch" fail
+                                end
+                            end
+                        end
+                    elif operation @AnalyzedOperation.root_expansion_id 0 1 - != do
+                        "internal non-macro operation has a root expansion" fail
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc analyzed-block-at ProcedureAnalysis* int -- AnalyzedBlock* do
+    let analysis index do
+        analysis @ProcedureAnalysis.cfg_blocks index AnalyzedBlock:sizeof * + AnalyzedBlock* cast
+    end
+end
+
+proc instruction-before-matches-block ProcedureAnalysis* TypedInstruction* AnalyzedBlock* -- bool do
+    let analysis instruction block do
+        analysis
+        instruction @TypedInstruction.before_type_start instruction @TypedInstruction.before_type_count
         block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count
         analyzed-types-match
     end
 end
 
-proc operations-are-adjacent ProcedureAnalysis* AnalyzedOperation* AnalyzedOperation* -- bool do
+proc instructions-are-adjacent ProcedureAnalysis* TypedInstruction* TypedInstruction* -- bool do
     let analysis first second do
         analysis
-        first @AnalyzedOperation.after_type_start first @AnalyzedOperation.after_type_count
-        second @AnalyzedOperation.before_type_start second @AnalyzedOperation.before_type_count
+        first @TypedInstruction.after_type_start first @TypedInstruction.after_type_count
+        second @TypedInstruction.before_type_start second @TypedInstruction.before_type_count
         analyzed-types-match
+    end
+end
+
+proc emit-instruction-debug ProcedureAnalysis* TypedInstruction* -- do
+    let analysis instruction do
+        instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
+        " " emit-error
+        analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.before_type_start cell-bytes * +
+        instruction @TypedInstruction.before_type_count let types count do
+            "[" emit-error 0 while dup count < do
+                dup let index do if index 0 > do "," emit-error end types index cell-bytes * field-read emit-integer-error end 1 +
+            end drop "]" emit-error
+        end
+        " -> " emit-error
+        analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.after_type_start cell-bytes * +
+        instruction @TypedInstruction.after_type_count let types count do
+            "[" emit-error 0 while dup count < do
+                dup let index do if index 0 > do "," emit-error end types index cell-bytes * field-read emit-integer-error end 1 +
+            end drop "]" emit-error
+        end
     end
 end
 
@@ -3825,9 +4596,9 @@ proc verify-analyzed-target ModuleContext* int ProcedureAnalysis* int -- Analyze
     end
 end
 
-proc verify-analyzed-block-operations ProcedureAnalysis* AnalyzedBlock* -- do
+proc verify-analyzed-block-instructions ProcedureAnalysis* AnalyzedBlock* -- do
     let analysis block do
-        if block @AnalyzedBlock.operation_count 0 == do
+        if block @AnalyzedBlock.instruction_count 0 == do
             if
                 analysis
                 block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count
@@ -3837,35 +4608,37 @@ proc verify-analyzed-block-operations ProcedureAnalysis* AnalyzedBlock* -- do
                 "internal empty analyzed block changes stack" fail
             end
         else
-            analysis block @AnalyzedBlock.operation_start analyzed-operation-at
+            analysis block @AnalyzedBlock.instruction_start typed-instruction-at
             let first do
-                if analysis first block operation-before-matches-block ! do
-                    "internal analyzed block entry stack mismatch" fail
+                if analysis first block instruction-before-matches-block ! do
+                    "internal typed block entry stack mismatch" fail
                 end
             end
             1
-            while dup block @AnalyzedBlock.operation_count < do
+            while dup block @AnalyzedBlock.instruction_count < do
                 dup let offset do
-                    analysis block @AnalyzedBlock.operation_start offset + 1 - analyzed-operation-at
-                    analysis block @AnalyzedBlock.operation_start offset + analyzed-operation-at
+                    analysis block @AnalyzedBlock.instruction_start offset + 1 - typed-instruction-at
+                    analysis block @AnalyzedBlock.instruction_start offset + typed-instruction-at
                     let previous current do
-                        if analysis previous current operations-are-adjacent ! do
-                            "internal analyzed operation stack discontinuity" fail
+                        if analysis previous current instructions-are-adjacent ! do
+                            "internal typed instruction stack discontinuity: " emit-error analysis previous emit-instruction-debug
+                            " / " emit-error analysis current emit-instruction-debug
+                            10 eputc 1 exit
                         end
                     end
                 end
                 1 +
             end
             drop
-            analysis block @AnalyzedBlock.operation_start block @AnalyzedBlock.operation_count + 1 - analyzed-operation-at
+            analysis block @AnalyzedBlock.instruction_start block @AnalyzedBlock.instruction_count + 1 - typed-instruction-at
             let last do
                 if
                     analysis
-                    last @AnalyzedOperation.after_type_start last @AnalyzedOperation.after_type_count
+                    last @TypedInstruction.after_type_start last @TypedInstruction.after_type_count
                     block @AnalyzedBlock.exit_type_start block @AnalyzedBlock.exit_type_count
                     analyzed-types-match !
                 do
-                    "internal analyzed block exit stack mismatch" fail
+                    "internal typed block exit stack mismatch" fail
                 end
             end
         end
@@ -3888,6 +4661,32 @@ proc set-operation-target CompileContext* OperationKind ModuleContext* int -- do
                 end
             end
         end
+        if cc @CompileContext.instruction_active do
+            kind
+            let operation-kind do
+                if operation-kind OperationKind.local? do RuntimeOperation:local_load
+                elif operation-kind OperationKind.constant? do RuntimeOperation:constant
+                elif operation-kind OperationKind.procedure_call? do RuntimeOperation:procedure_call
+                elif operation-kind OperationKind.let_binding? do RuntimeOperation:bind_locals
+                elif operation-kind OperationKind.peek_binding? do RuntimeOperation:bind_locals
+                elif operation-kind OperationKind.record_new? do RuntimeOperation:record_new
+                elif operation-kind OperationKind.record_alloc? do RuntimeOperation:record_alloc
+                elif operation-kind OperationKind.record_sizeof? do RuntimeOperation:record_sizeof
+                elif operation-kind OperationKind.record_field_read? do RuntimeOperation:record_field_read
+                elif operation-kind OperationKind.record_field_write? do RuntimeOperation:record_field_write
+                elif operation-kind OperationKind.union_construct? do RuntimeOperation:union_construct
+                elif operation-kind OperationKind.union_test? do RuntimeOperation:union_test
+                elif operation-kind OperationKind.union_project? do RuntimeOperation:union_project
+                elif operation-kind OperationKind.function_call? do RuntimeOperation:function_call
+                elif operation-kind OperationKind.function_reference? do RuntimeOperation:function_reference
+                else RuntimeOperation:none end
+            end
+            let runtime-operation do
+                if runtime-operation RuntimeOperation.none? ! do
+                    cc runtime-operation module index set-typed-target drop
+                end
+            end
+        end
     end
 end
 
@@ -3897,6 +4696,49 @@ proc set-operation-type CompileContext* OperationKind int -- do
         if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
             value-type cc active-analyzed-operation !AnalyzedOperation.value_type
         end
+        if cc @CompileContext.instruction_active do
+            if kind OperationKind.literal? do cc RuntimeOperation:literal value-type set-typed-type drop
+            elif kind OperationKind.type_literal? do cc RuntimeOperation:type_literal value-type set-typed-type drop
+            end
+        end
+    end
+end
+
+proc set-operation-payload CompileContext* int -- do
+    let cc payload do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
+            if cc @CompileContext.operation_identity_set ! do "internal missing analyzed operation identity" fail end
+            payload cc active-analyzed-operation !AnalyzedOperation.payload
+        end
+        if cc @CompileContext.instruction_active do payload cc active-typed-instruction !TypedInstruction.payload end
+    end
+end
+
+proc set-typed-target CompileContext* RuntimeOperation ModuleContext* int -- TypedInstruction* do
+    let cc runtime-operation module index do
+        cc runtime-operation set-typed-instruction
+        let instruction do
+            module instruction !TypedInstruction.target_module
+            index instruction !TypedInstruction.target_index
+            instruction
+        end
+    end
+end
+
+proc set-typed-type CompileContext* RuntimeOperation int -- TypedInstruction* do
+    let cc runtime-operation value-type do
+        cc runtime-operation 0 ptr cast ModuleContext* cast 0 1 - set-typed-target
+        let instruction do
+            value-type instruction !TypedInstruction.value_type
+            instruction
+        end
+    end
+end
+
+proc typed-instruction-for-analyzed-operation CompileContext* -- TypedInstruction* do
+    let cc do
+        if cc @CompileContext.instruction_active ! do "internal missing typed instruction" fail end
+        cc active-typed-instruction
     end
 end
 
@@ -3907,6 +4749,10 @@ proc set-operation-secondary-target CompileContext* ModuleContext* int -- do
             module cc active-analyzed-operation !AnalyzedOperation.secondary_module
             index cc active-analyzed-operation !AnalyzedOperation.secondary_index
         end
+        if cc @CompileContext.instruction_active do
+            module cc active-typed-instruction !TypedInstruction.secondary_module
+            index cc active-typed-instruction !TypedInstruction.secondary_index
+        end
     end
 end
 
@@ -3915,6 +4761,10 @@ proc set-operation-local CompileContext* LocalEntry* -- do
         cc OperationKind:local local @LocalEntry.module local @LocalEntry.name_token set-operation-target
         if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
             local @LocalEntry.id cc active-analyzed-operation !AnalyzedOperation.local_id
+        end
+        if cc @CompileContext.instruction_active do
+            local @LocalEntry.id cc active-typed-instruction !TypedInstruction.local_id
+            local @LocalEntry.value_type cc active-typed-instruction !TypedInstruction.value_type
         end
     end
 end
@@ -3928,6 +4778,10 @@ proc set-operation-binding CompileContext* OperationKind -- do
             0 cc active-analyzed-operation !AnalyzedOperation.binding_local_count
             true cc !CompileContext.operation_identity_locked
             true cc !CompileContext.operation_binding_active
+        end
+        if cc @CompileContext.instruction_active do
+            cc compile-context-analysis @ProcedureAnalysis.binding_local_count
+            cc active-typed-instruction !TypedInstruction.binding_local_start
         end
     end
 end
@@ -3954,8 +4808,7 @@ proc record-binding-local CompileContext* LocalEntry* -- do
     let cc local do
         if
             cc @CompileContext.record_operations
-            cc @CompileContext.operation_active &&
-            cc @CompileContext.operation_binding_active &&
+            cc @CompileContext.instruction_active &&
         do
             cc compile-context-analysis
             let analysis do
@@ -3968,11 +4821,17 @@ proc record-binding-local CompileContext* LocalEntry* -- do
                     local @LocalEntry.name_token binding-local !AnalyzedBindingLocal.name_token
                     local @LocalEntry.id binding-local !AnalyzedBindingLocal.local_id
                     local @LocalEntry.value_type binding-local !AnalyzedBindingLocal.value_type
-                    analysis @ProcedureAnalysis.binding_local_count 1 + analysis !ProcedureAnalysis.binding_local_count
-                    cc active-analyzed-operation @AnalyzedOperation.binding_local_count 1 +
-                    cc active-analyzed-operation !AnalyzedOperation.binding_local_count
+                analysis @ProcedureAnalysis.binding_local_count 1 + analysis !ProcedureAnalysis.binding_local_count
+                    if cc @CompileContext.operation_active cc @CompileContext.operation_binding_active && do
+                        cc active-analyzed-operation @AnalyzedOperation.binding_local_count 1 +
+                        cc active-analyzed-operation !AnalyzedOperation.binding_local_count
+                    end
                 end
             end
+        end
+        if cc @CompileContext.instruction_active do
+            cc active-typed-instruction @TypedInstruction.binding_local_count 1 +
+            cc active-typed-instruction !TypedInstruction.binding_local_count
         end
     end
 end
@@ -3984,6 +4843,25 @@ proc set-operation-intrinsic CompileContext* IntrinsicOperation int PrivateOpera
             intrinsic cc active-analyzed-operation !AnalyzedOperation.intrinsic
             value-type cc active-analyzed-operation !AnalyzedOperation.value_type
             private-operation cc active-analyzed-operation !AnalyzedOperation.private_operation
+        end
+        if cc @CompileContext.instruction_active do
+            intrinsic
+            let operation do
+                if operation IntrinsicOperation.private? do RuntimeOperation:private_intrinsic
+                elif operation IntrinsicOperation.cast? do RuntimeOperation:cast
+                elif operation IntrinsicOperation.args? do RuntimeOperation:args
+                elif operation IntrinsicOperation.print? do RuntimeOperation:print
+                elif operation IntrinsicOperation.noop? do RuntimeOperation:noop
+                elif operation IntrinsicOperation.string_bytes? do RuntimeOperation:string_bytes
+                elif operation IntrinsicOperation.string_len? do RuntimeOperation:string_len
+                elif operation IntrinsicOperation.pointer_load? do RuntimeOperation:pointer_load
+                elif operation IntrinsicOperation.pointer_store? do RuntimeOperation:pointer_store
+                else RuntimeOperation:builtins_assert_fail end
+            end
+            let runtime-operation do
+                cc runtime-operation value-type set-typed-type
+                let instruction do private-operation instruction !TypedInstruction.private_operation end
+            end
         end
     end
 end
@@ -4056,6 +4934,108 @@ proc append-operation-types ProcedureAnalysis* ptr int -- int do
     end
 end
 
+proc grow-typed-instructions ProcedureAnalysis* -- do
+    let analysis do
+        if analysis @ProcedureAnalysis.instruction_capacity max-int TypedInstruction:sizeof 2 * / > do
+            "internal typed instruction capacity overflow" fail
+        end
+        analysis @ProcedureAnalysis.instruction_capacity 2 *
+        let capacity do
+            capacity TypedInstruction:sizeof * alloc
+            let instructions do
+                analysis @ProcedureAnalysis.instructions instructions
+                analysis @ProcedureAnalysis.instruction_count TypedInstruction:sizeof * bytes-copy
+                instructions analysis !ProcedureAnalysis.instructions
+                capacity analysis !ProcedureAnalysis.instruction_capacity
+            end
+        end
+    end
+end
+
+proc begin-typed-instruction CompileContext* int -- do
+    let cc token-index do
+        if cc @CompileContext.instruction_active do "internal nested typed instruction" fail end
+        cc compile-context-analysis
+        let analysis do
+            if analysis @ProcedureAnalysis.instruction_count analysis @ProcedureAnalysis.instruction_capacity == do
+                analysis grow-typed-instructions
+            end
+            analysis analysis @ProcedureAnalysis.instruction_count typed-instruction-at
+            let instruction do
+                cc @CompileContext.defining_module instruction !TypedInstruction.source_module
+                token-index instruction !TypedInstruction.token_start
+                0 1 - instruction !TypedInstruction.token_end
+                cc @CompileContext.current_expansion_id instruction !TypedInstruction.expansion_id
+                analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                instruction !TypedInstruction.before_type_start
+                cc @CompileContext.type_count instruction !TypedInstruction.before_type_count
+                0 1 - instruction !TypedInstruction.after_type_start
+                0 instruction !TypedInstruction.after_type_count
+                cc @CompileContext.type_count instruction !TypedInstruction.minimum_type_count
+                RuntimeOperation:none instruction !TypedInstruction.operation
+                0 ptr cast ModuleContext* cast instruction !TypedInstruction.target_module
+                0 1 - instruction !TypedInstruction.target_index
+                0 ptr cast ModuleContext* cast instruction !TypedInstruction.secondary_module
+                0 1 - instruction !TypedInstruction.secondary_index
+                0 1 - instruction !TypedInstruction.local_id
+                0 1 - instruction !TypedInstruction.binding_local_start
+                0 instruction !TypedInstruction.binding_local_count
+                type-none instruction !TypedInstruction.value_type
+                type-none instruction !TypedInstruction.secondary_type
+                0 instruction !TypedInstruction.payload
+                PrivateOperation:none instruction !TypedInstruction.private_operation
+                cc @CompileContext.type_count cc !CompileContext.instruction_minimum_type_count
+                true cc !CompileContext.instruction_active
+            end
+        end
+    end
+end
+
+proc active-typed-instruction CompileContext* -- TypedInstruction* do
+    let cc do
+        cc compile-context-analysis
+        let analysis do analysis analysis @ProcedureAnalysis.instruction_count typed-instruction-at end
+    end
+end
+
+proc finish-typed-instruction CompileContext* int -- do
+    let cc token-end do
+        if cc @CompileContext.instruction_active ! do "internal missing typed instruction" fail end
+        cc compile-context-analysis
+        let analysis do
+            cc active-typed-instruction
+            let instruction do
+                if instruction @TypedInstruction.operation RuntimeOperation.none? do
+                    "internal unresolved typed instruction" fail
+                end
+                token-end instruction !TypedInstruction.token_end
+                analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
+                instruction !TypedInstruction.after_type_start
+                cc @CompileContext.type_count instruction !TypedInstruction.after_type_count
+                cc @CompileContext.instruction_minimum_type_count instruction !TypedInstruction.minimum_type_count
+                analysis @ProcedureAnalysis.instruction_count 1 + analysis !ProcedureAnalysis.instruction_count
+                false cc !CompileContext.instruction_active
+            end
+        end
+    end
+end
+
+proc set-typed-instruction CompileContext* RuntimeOperation -- TypedInstruction* do
+    let cc operation do
+        if cc @CompileContext.instruction_active ! do "internal missing active typed instruction" fail end
+        cc active-typed-instruction
+        let instruction do
+            if instruction @TypedInstruction.operation RuntimeOperation.none? ! do
+                "internal duplicate typed instruction operation: " emit-error
+                instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
+                10 eputc 1 exit
+            end
+            operation instruction !TypedInstruction.operation
+            instruction
+        end
+    end
+end
+
 proc grow-analyzed-blocks ProcedureAnalysis* -- do
     let analysis do
         if analysis @ProcedureAnalysis.cfg_block_capacity max-int AnalyzedBlock:sizeof 2 * / > do
@@ -4076,7 +5056,7 @@ end
 
 proc cfg-recording CompileContext* -- bool do
     let cc do
-        cc @CompileContext.record_operations cc @CompileContext.cfg_recording_suppressed 0 == &&
+        cc @CompileContext.record_operations
     end
 end
 
@@ -4100,8 +5080,8 @@ proc begin-analyzed-block CompileContext* ModuleContext* int -- int do
                 let index do
                     analysis index analyzed-block-at
                     let block do
-                        analysis @ProcedureAnalysis.operation_count block !AnalyzedBlock.operation_start
-                        0 block !AnalyzedBlock.operation_count
+                        analysis @ProcedureAnalysis.instruction_count block !AnalyzedBlock.instruction_start
+                        0 block !AnalyzedBlock.instruction_count
                         analysis cc @CompileContext.type_stack cc @CompileContext.type_count append-operation-types
                         block !AnalyzedBlock.entry_type_start
                         cc @CompileContext.type_count block !AnalyzedBlock.entry_type_count
@@ -4109,9 +5089,11 @@ proc begin-analyzed-block CompileContext* ModuleContext* int -- int do
                         0 block !AnalyzedBlock.exit_type_count
                         source-module block !AnalyzedBlock.source_module
                         token-start block !AnalyzedBlock.token_start
+                        cc @CompileContext.current_expansion_id block !AnalyzedBlock.source_expansion_id
                         CFGTerminatorKind:unresolved block !AnalyzedBlock.terminator_kind
                         0 ptr cast ModuleContext* cast block !AnalyzedBlock.terminator_module
                         0 1 - block !AnalyzedBlock.terminator_token
+                        0 1 - block !AnalyzedBlock.terminator_expansion_id
                         0 1 - block !AnalyzedBlock.first_target
                         0 1 - block !AnalyzedBlock.second_target
                         analysis @ProcedureAnalysis.cfg_block_count 1 + analysis !ProcedureAnalysis.cfg_block_count
@@ -4141,12 +5123,13 @@ proc finish-analyzed-block-with-types CompileContext* ModuleContext* int CFGTerm
             let block do
                 cc compile-context-analysis
                 let analysis do
-                    analysis @ProcedureAnalysis.operation_count block @AnalyzedBlock.operation_start -
-                    block !AnalyzedBlock.operation_count
+                    analysis @ProcedureAnalysis.instruction_count block @AnalyzedBlock.instruction_start -
+                    block !AnalyzedBlock.instruction_count
                     analysis exit-types exit-count append-operation-types block !AnalyzedBlock.exit_type_start
                     exit-count block !AnalyzedBlock.exit_type_count
                     terminator-module block !AnalyzedBlock.terminator_module
                     terminator-token block !AnalyzedBlock.terminator_token
+                    cc @CompileContext.current_expansion_id block !AnalyzedBlock.terminator_expansion_id
                     kind block !AnalyzedBlock.terminator_kind
                     first-target block !AnalyzedBlock.first_target
                     second-target block !AnalyzedBlock.second_target
@@ -4215,6 +5198,8 @@ proc begin-analyzed-operation CompileContext* int -- do
                 0 1 - operation !AnalyzedOperation.after_type_start
                 0 1 - operation !AnalyzedOperation.after_type_count
                 cc @CompileContext.type_count operation !AnalyzedOperation.minimum_type_count
+                cc @CompileContext.current_expansion_id operation !AnalyzedOperation.expansion_id
+                0 1 - operation !AnalyzedOperation.root_expansion_id
                 OperationKind:unresolved operation !AnalyzedOperation.kind
                 0 ptr cast ModuleContext* cast operation !AnalyzedOperation.target_module
                 0 1 - operation !AnalyzedOperation.target_index
@@ -4224,6 +5209,7 @@ proc begin-analyzed-operation CompileContext* int -- do
                 0 1 - operation !AnalyzedOperation.binding_local_start
                 0 operation !AnalyzedOperation.binding_local_count
                 type-none operation !AnalyzedOperation.value_type
+                0 operation !AnalyzedOperation.payload
                 IntrinsicOperation:none operation !AnalyzedOperation.intrinsic
                 PrivateOperation:none operation !AnalyzedOperation.private_operation
                 cc @CompileContext.type_count cc !CompileContext.operation_minimum_type_count
@@ -4283,12 +5269,20 @@ proc reset-procedure-operations ProcedureAnalysis* -- do
             analysis @ProcedureAnalysis.binding_local_capacity 0 <= ||
             analysis @ProcedureAnalysis.binding_local_count 0 < ||
             analysis @ProcedureAnalysis.binding_local_count analysis @ProcedureAnalysis.binding_local_capacity > ||
+            analysis @ProcedureAnalysis.macro_expansion_capacity 0 <= ||
+            analysis @ProcedureAnalysis.macro_expansion_count 0 < ||
+            analysis @ProcedureAnalysis.macro_expansion_count analysis @ProcedureAnalysis.macro_expansion_capacity > ||
+            analysis @ProcedureAnalysis.instruction_capacity 0 <= ||
+            analysis @ProcedureAnalysis.instruction_count 0 < ||
+            analysis @ProcedureAnalysis.instruction_count analysis @ProcedureAnalysis.instruction_capacity > ||
             analysis @ProcedureAnalysis.cfg_block_capacity 0 <= ||
             analysis @ProcedureAnalysis.cfg_block_count 0 < ||
             analysis @ProcedureAnalysis.cfg_block_count analysis @ProcedureAnalysis.cfg_block_capacity > ||
             analysis @ProcedureAnalysis.operations int cast 0 == ||
             analysis @ProcedureAnalysis.operation_types int cast 0 == ||
             analysis @ProcedureAnalysis.binding_locals int cast 0 == ||
+            analysis @ProcedureAnalysis.macro_expansions int cast 0 == ||
+            analysis @ProcedureAnalysis.instructions int cast 0 == ||
             analysis @ProcedureAnalysis.cfg_blocks int cast 0 == ||
         do
             "internal invalid procedure operation storage" fail
@@ -4296,6 +5290,8 @@ proc reset-procedure-operations ProcedureAnalysis* -- do
         0 analysis !ProcedureAnalysis.operation_count
         0 analysis !ProcedureAnalysis.operation_type_count
         0 analysis !ProcedureAnalysis.binding_local_count
+        0 analysis !ProcedureAnalysis.macro_expansion_count
+        0 analysis !ProcedureAnalysis.instruction_count
         0 analysis !ProcedureAnalysis.cfg_block_count
     end
 end
@@ -4309,6 +5305,25 @@ proc valid-block-source-range AnalyzedBlock* -- bool do
         elif block @AnalyzedBlock.terminator_token 0 < do false
         elif block @AnalyzedBlock.terminator_token block @AnalyzedBlock.terminator_module @ModuleContext.token_count >= do false
         else true end
+    end
+end
+
+proc verify-block-expansion-provenance ProcedureAnalysis* AnalyzedBlock* -- do
+    let analysis block do
+        block @AnalyzedBlock.source_expansion_id
+        let source-expansion do
+            if source-expansion 0 >= do
+                if source-expansion analysis @ProcedureAnalysis.macro_expansion_count >= do
+                    "internal analyzed block source expansion is invalid" fail
+                end
+            end
+        end
+        block @AnalyzedBlock.terminator_expansion_id
+        let terminator-expansion do
+            if terminator-expansion 0 >= terminator-expansion analysis @ProcedureAnalysis.macro_expansion_count >= && do
+                "internal analyzed block terminator expansion is invalid" fail
+            end
+        end
     end
 end
 
@@ -4481,32 +5496,45 @@ end
 proc verify-procedure-cfg ModuleContext* int ProcedureAnalysis* -- do
     let module procedure-index analysis do
         if analysis @ProcedureAnalysis.cfg_block_count 0 <= do "internal empty procedure CFG" fail end
+        analysis 0 analyzed-block-at
+        let entry do
+            if
+                entry @AnalyzedBlock.entry_type_count module procedure-index procedure-at @ProcedureEntry.input_count !=
+                analysis @ProcedureAnalysis.operation_types entry @AnalyzedBlock.entry_type_start cell-bytes * +
+                entry @AnalyzedBlock.entry_type_count cell-bytes *
+                module @ModuleContext.types module procedure-index procedure-at @ProcedureEntry.input_start cell-bytes * +
+                module procedure-index procedure-at @ProcedureEntry.input_count cell-bytes * bytes-equal ! ||
+            do
+                "internal procedure CFG entry stack mismatch" fail
+            end
+        end
         0 0
-        while peek block-index next-operation do block-index analysis @ProcedureAnalysis.cfg_block_count < end do
-            let block-index next-operation do
+        while peek block-index next-instruction do block-index analysis @ProcedureAnalysis.cfg_block_count < end do
+            let block-index next-instruction do
                 analysis block-index analyzed-block-at
                 let block do
-                    if block @AnalyzedBlock.operation_start next-operation != do
-                        "internal analyzed block operation range is not contiguous" fail
+                    if block @AnalyzedBlock.instruction_start next-instruction != do
+                        "internal typed block instruction range is not contiguous" fail
                     end
                     if
-                        block @AnalyzedBlock.operation_count 0 <
-                        block @AnalyzedBlock.operation_start analysis @ProcedureAnalysis.operation_count > ||
-                        block @AnalyzedBlock.operation_count
-                        analysis @ProcedureAnalysis.operation_count block @AnalyzedBlock.operation_start - > ||
+                        block @AnalyzedBlock.instruction_count 0 <
+                        block @AnalyzedBlock.instruction_start analysis @ProcedureAnalysis.instruction_count > ||
+                        block @AnalyzedBlock.instruction_count
+                        analysis @ProcedureAnalysis.instruction_count block @AnalyzedBlock.instruction_start - > ||
                     do
-                        "internal analyzed block operation range is invalid" fail
+                        "internal typed block instruction range is invalid" fail
                     end
                     if block valid-block-source-range ! do "internal analyzed block source range is invalid" fail end
-                    analysis block verify-analyzed-block-operations
+                    analysis block verify-block-expansion-provenance
+                    analysis block verify-analyzed-block-instructions
                     module procedure-index analysis block verify-analyzed-block-terminator
-                    block-index 1 + next-operation block @AnalyzedBlock.operation_count +
+                    block-index 1 + next-instruction block @AnalyzedBlock.instruction_count +
                 end
             end
         end
-        let block-index next-operation do
-            if next-operation analysis @ProcedureAnalysis.operation_count != do
-                "internal analyzed blocks do not cover all operations" fail
+        let block-index next-instruction do
+            if next-instruction analysis @ProcedureAnalysis.instruction_count != do
+                "internal analyzed blocks do not cover all typed instructions" fail
             end
         end
         analysis verify-procedure-cfg-reachability
@@ -4527,6 +5555,17 @@ proc consume-type-count CompileContext* int -- do
                 type-count cc @CompileContext.operation_minimum_type_count < &&
             do
                 type-count cc !CompileContext.operation_minimum_type_count
+            end
+            if
+                cc @CompileContext.record_operations
+                cc @CompileContext.instruction_active &&
+                type-count cc @CompileContext.instruction_minimum_type_count < &&
+            do
+                type-count cc !CompileContext.instruction_minimum_type_count
+            end
+            if cc @CompileContext.record_operations cc @CompileContext.current_expansion_id 0 >= && do
+                cc compile-context-analysis cc @CompileContext.current_expansion_id type-count
+                update-macro-expansion-minimum
             end
         end
     end
@@ -4701,8 +5740,26 @@ proc block-address CompileContext* int -- BlockFrame* do
     end
 end
 
+proc grow-blocks CompileContext* -- do
+    let cc do
+        if cc @CompileContext.block_capacity max-int BlockFrame:sizeof 2 * / > do
+            "internal control-flow block stack capacity overflow" fail
+        end
+        cc @CompileContext.block_capacity 2 *
+        let capacity do
+            capacity BlockFrame:sizeof * alloc
+            let blocks do
+                cc @CompileContext.blocks blocks cc @CompileContext.block_count BlockFrame:sizeof * bytes-copy
+                blocks cc !CompileContext.blocks
+                capacity cc !CompileContext.block_capacity
+            end
+        end
+    end
+end
+
 proc push-block CompileContext* BlockKind -- BlockFrame* do
     let cc kind do
+        if cc @CompileContext.block_count cc @CompileContext.block_capacity == do cc grow-blocks end
         cc cc @CompileContext.block_count block-address
         let block do
             kind block !BlockFrame.kind
@@ -4750,8 +5807,26 @@ proc local-address CompileContext* int -- LocalEntry* do
     end
 end
 
+proc grow-locals CompileContext* -- do
+    let cc do
+        if cc @CompileContext.local_capacity max-int LocalEntry:sizeof 2 * / > do
+            "internal local stack capacity overflow" fail
+        end
+        cc @CompileContext.local_capacity 2 *
+        let capacity do
+            capacity LocalEntry:sizeof * alloc
+            let locals do
+                cc @CompileContext.locals locals cc @CompileContext.local_count LocalEntry:sizeof * bytes-copy
+                locals cc !CompileContext.locals
+                capacity cc !CompileContext.local_capacity
+            end
+        end
+    end
+end
+
 proc add-local CompileContext* int int -- int do
     let cc name-token value-type do
+        if cc @CompileContext.local_count cc @CompileContext.local_capacity == do cc grow-locals end
         cc cc @CompileContext.local_count local-address
         let local do
             cc @CompileContext.defining_module name-token token-at @TokenEntry.start local !LocalEntry.name_start
@@ -8555,7 +9630,8 @@ proc emit-slot-as CompileContext* int int -- do
     let cc index value-type do
         if cc index value-type find-stack-slot 0 < do
             "frogc: internal missing typed stack slot type " emit-error
-            cc @CompileContext.program value-type emit-error-type-name
+            value-type emit-integer-error " at depth " emit-error index emit-integer-error
+            " in " emit-error cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-slice emit-error-bytes
             10 eputc 1 exit
         end
         "frog_value_" emit index emit-unsigned "_" emit
@@ -8565,6 +9641,30 @@ end
 
 proc emit-slot CompileContext* int -- do
     let cc index do cc index cc index type-at-depth emit-slot-as end
+end
+
+proc load-ir-before-types CompileContext* ProcedureAnalysis* TypedInstruction* -- do
+    let cc analysis instruction do
+        analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.before_type_start cell-bytes * +
+        cc @CompileContext.type_stack instruction @TypedInstruction.before_type_count cell-bytes * bytes-copy
+        instruction @TypedInstruction.before_type_count cc !CompileContext.type_count
+    end
+end
+
+proc load-ir-after-types CompileContext* ProcedureAnalysis* TypedInstruction* -- do
+    let cc analysis instruction do
+        analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.after_type_start cell-bytes * +
+        cc @CompileContext.type_stack instruction @TypedInstruction.after_type_count cell-bytes * bytes-copy
+        instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+    end
+end
+
+proc load-ir-block-exit-types CompileContext* ProcedureAnalysis* AnalyzedBlock* -- do
+    let cc analysis block do
+        analysis @ProcedureAnalysis.operation_types block @AnalyzedBlock.exit_type_start cell-bytes * +
+        cc @CompileContext.type_stack block @AnalyzedBlock.exit_type_count cell-bytes * bytes-copy
+        block @AnalyzedBlock.exit_type_count cc !CompileContext.type_count
+    end
 end
 
 proc emit-top-slot CompileContext* -- do
@@ -8993,6 +10093,24 @@ proc emit-private-helper PrivateOperation int -- do
     end
 end
 
+proc emit-ir-private-instruction CompileContext* TypedInstruction* -- do
+    let cc instruction do
+        instruction @TypedInstruction.private_operation let operation do
+        instruction @TypedInstruction.value_type let value-type do
+            if operation PrivateOperation.load? do cc value-type compile-private-load
+            elif operation PrivateOperation.store? do cc value-type compile-private-store
+            elif operation PrivateOperation.not? do cc operation value-type value-type compile-private-unary
+            elif operation PrivateOperation.shl? operation PrivateOperation.shr? || do cc operation value-type compile-private-shift
+            elif operation PrivateOperation.divmod? do cc value-type compile-private-divmod
+            elif operation private-operation-is-comparison do cc operation value-type type-bool compile-private-binary
+            elif value-type type-ptr == operation PrivateOperation.add? operation PrivateOperation.sub? || && do cc operation compile-private-pointer-arithmetic
+            else cc operation value-type value-type compile-private-binary
+            end
+        end
+        end
+    end
+end
+
 proc compile-private-binary CompileContext* PrivateOperation int int -- do
     let cc operation input-type output-type do
         cc input-type type-expect cc input-type type-expect cc output-type type-push
@@ -9158,6 +10276,7 @@ proc compile-primitive-type-literal CompileContext* int -- bool do
         cc OperationKind:type_literal value-type set-operation-type
         type-literal-base value-type +
         let literal-type do
+            cc literal-type set-operation-payload
             cc literal-type type-push
             cc literal-type emit-push-integer
             true
@@ -9175,6 +10294,10 @@ proc compile-cast-intrinsic CompileContext* -- do
                 target-literal type-literal-base -
             end
             let target-type do
+                if cc @CompileContext.instruction_active do
+                    source-type cc active-typed-instruction !TypedInstruction.value_type
+                    target-type cc active-typed-instruction !TypedInstruction.secondary_type
+                end
                 if target-type type-is-cast-target ! do
                     cc "cast target is not a type literal" fail-compile-word
                 end
@@ -9434,6 +10557,157 @@ proc emit-local-load CompileContext* int -- do
         if cc @CompileContext.emitting do
             cc emit-indent
             cc emit-top-slot " = " emit local-id emit-local-name ";" emit 10 putc
+        end
+    end
+end
+
+proc emit-ir-bind-locals CompileContext* ProcedureAnalysis* TypedInstruction* -- do
+    let cc analysis instruction do
+        if instruction @TypedInstruction.binding_local_count 0 <= do
+            "internal empty typed binding at " emit-error
+            instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
+            10 eputc 1 exit
+        end
+        0
+        while dup instruction @TypedInstruction.binding_local_count < do
+            dup let offset do
+                instruction @TypedInstruction.binding_local_count offset 1 + -
+                let reverse-offset do
+                    analysis instruction @TypedInstruction.binding_local_start reverse-offset + analyzed-binding-local-at
+                    let local do
+                        instruction @TypedInstruction.before_type_count reverse-offset 1 + -
+                        let source-index do
+                            cc emit-indent cc @CompileContext.program local @AnalyzedBindingLocal.value_type emit-c-value-type
+                            " " emit local @AnalyzedBindingLocal.local_id emit-local-name " = " emit
+                            cc source-index local @AnalyzedBindingLocal.value_type emit-slot-as ";" emit 10 putc
+                            cc emit-indent "(void)" emit local @AnalyzedBindingLocal.local_id emit-local-name ";" emit 10 putc
+                        end
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-ir-restore-peek-locals CompileContext* ProcedureAnalysis* TypedInstruction* -- do
+    let cc analysis instruction do
+        0
+        while dup instruction @TypedInstruction.binding_local_count < do
+            dup let offset do
+                instruction @TypedInstruction.binding_local_count offset 1 + -
+                let reverse-offset do
+                    analysis instruction @TypedInstruction.binding_local_start reverse-offset + analyzed-binding-local-at
+                    let local do
+                    cc instruction @TypedInstruction.before_type_count offset + local @AnalyzedBindingLocal.value_type emit-slot-as
+                    " = " emit local @AnalyzedBindingLocal.local_id emit-local-name ";" emit 10 putc
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-ir-record-field CompileContext* TypedInstruction* -- do
+    let cc instruction do
+        instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index record-field-at
+        let field do
+            instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index record-type-at
+                let record-entry do
+                    instruction @TypedInstruction.target_index record-entry @RecordTypeEntry.field_start -
+                    let field-offset do
+                        instruction @TypedInstruction.operation
+                        let operation do
+                            if operation RuntimeOperation.record_field_read? do
+                                instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+                                cc record-entry field field-offset instruction @TypedInstruction.payload 0 != emit-record-field-read
+                            elif instruction @TypedInstruction.payload 0 != do
+                                instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+                                cc record-entry field field-offset emit-record-pointer-field-write
+                            else
+                                instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+                                cc record-entry field field-offset emit-record-value-field-write
+                            end
+                        end
+                    end
+            end
+        end
+    end
+end
+
+proc emit-ir-union CompileContext* TypedInstruction* -- do
+    let cc instruction do
+        instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index
+        let union-module union-index do
+                instruction @TypedInstruction.operation
+                let operation do
+                    if operation RuntimeOperation.union_construct? do
+                        cc instruction @TypedInstruction.payload instruction @TypedInstruction.secondary_type instruction @TypedInstruction.value_type emit-union-constructor
+                    elif operation RuntimeOperation.union_test? do
+                        cc instruction @TypedInstruction.value_type instruction @TypedInstruction.payload
+                        union-module union-index union-type-at @UnionTypeEntry.case_count emit-union-predicate
+                    else
+                        cc instruction @TypedInstruction.value_type instruction @TypedInstruction.secondary_type instruction @TypedInstruction.payload
+                        union-module union-index union-type-at @UnionTypeEntry.case_count emit-union-projection
+                    end
+                end
+        end
+    end
+end
+
+proc emit-ir-cast CompileContext* TypedInstruction* -- do
+    let cc instruction do
+        instruction @TypedInstruction.before_type_count 2 - let index do
+            cc emit-indent cc index instruction @TypedInstruction.secondary_type emit-slot-as " = " emit
+            if instruction @TypedInstruction.secondary_type instruction @TypedInstruction.value_type == do
+                cc index instruction @TypedInstruction.value_type emit-slot-as
+            elif instruction @TypedInstruction.secondary_type type-bool == do
+                "(" emit cc index instruction @TypedInstruction.value_type emit-slot-as " != 0)" emit
+            else
+                "(" emit cc @CompileContext.program instruction @TypedInstruction.secondary_type emit-c-value-type ")" emit
+                cc index instruction @TypedInstruction.value_type emit-slot-as
+            end
+            ";" emit 10 putc
+        end
+    end
+end
+
+proc emit-ir-simple-intrinsic CompileContext* TypedInstruction* -- do
+    let cc instruction do
+        instruction @TypedInstruction.operation let operation do
+            if operation RuntimeOperation.args? do
+                instruction @TypedInstruction.before_type_count let index do
+                    cc emit-indent cc index type-ptr emit-slot-as " = (void *)frog_argv;" emit 10 putc
+                    cc emit-indent cc index 1 + type-int emit-slot-as " = (intptr_t)frog_argc;" emit 10 putc
+                end
+            elif operation RuntimeOperation.print? do
+                instruction @TypedInstruction.before_type_count 1 - let index do
+                    if instruction @TypedInstruction.value_type type-int == do
+                        cc emit-indent "printf(\"%lld\\n\", (long long)" emit cc index type-int emit-slot-as ");" emit 10 putc
+                    else
+                        cc emit-indent "fputs(" emit cc index type-bool emit-slot-as " ? \"true\\n\" : \"false\\n\", stdout);" emit 10 putc
+                    end
+                end
+            elif operation RuntimeOperation.string_bytes? do
+                instruction @TypedInstruction.before_type_count 1 - let index do
+                    cc emit-indent cc index type-ptr emit-slot-as " = (void *)" emit cc index type-string emit-slot-as ".bytes;" emit 10 putc
+                end
+            elif operation RuntimeOperation.string_len? do
+                instruction @TypedInstruction.before_type_count 1 - let index do
+                    cc emit-indent cc index type-int emit-slot-as " = " emit cc index type-string emit-slot-as ".len;" emit 10 putc
+                end
+            elif operation RuntimeOperation.pointer_load? do cc instruction @TypedInstruction.value_type compile-generic-pointer-load drop
+            elif operation RuntimeOperation.pointer_store? do cc instruction @TypedInstruction.value_type compile-generic-pointer-store drop
+            elif operation RuntimeOperation.noop? do
+            elif operation RuntimeOperation.builtins_assert_fail? do
+                instruction @TypedInstruction.before_type_count 1 - let index do
+                    cc emit-indent "{ FrogString value = " emit cc index type-string emit-slot-as
+                    "; (void)fwrite(value.bytes, 1, (size_t)value.len, stderr); (void)fputc(10, stderr); exit(1); }" emit 10 putc
+                end
+            else "internal unsupported simple typed instruction" fail end
         end
     end
 end
@@ -9809,7 +11083,11 @@ proc restore-peek-names CompileContext* int int -- do
                 if local-index 0 < do
                     "internal peek binding not found" fail
                 end
-                cc first-token local-index compile-local-reference
+                cc local-index local-address
+                let local do
+                    local @LocalEntry.value_type cc swap type-push
+                    cc local @LocalEntry.id emit-local-load
+                end
                 cc first-token 1 + name-count 1 - restore-peek-names
             end
         end
@@ -9823,8 +11101,10 @@ proc compile-let CompileContext* int -- int do
                 if name-count 0 <= do
                     cc "let requires at least one name" fail-compile-word
                 end
+                cc let-token begin-typed-instruction
                 cc OperationKind:let_binding set-operation-binding
                 cc let-token 1 + name-count begin-binding-block
+                cc do-token 1 + finish-typed-instruction
                 do-token 1 +
             end
         end
@@ -9838,9 +11118,19 @@ proc compile-peek CompileContext* int -- int do
                 if name-count 0 <= do
                     cc "peek requires at least one name" fail-compile-word
                 end
+                cc peek-token begin-typed-instruction
                 cc OperationKind:peek_binding set-operation-binding
                 cc peek-token 1 + name-count begin-binding-block
+                cc do-token 1 + finish-typed-instruction
+                cc peek-token begin-typed-instruction
+                cc RuntimeOperation:restore_peek_locals set-typed-instruction
+                let restore-instruction do
+                    cc compile-context-analysis @ProcedureAnalysis.binding_local_count name-count -
+                    restore-instruction !TypedInstruction.binding_local_start
+                    name-count restore-instruction !TypedInstruction.binding_local_count
+                end
                 cc peek-token 1 + name-count restore-peek-names
+                cc do-token 1 + finish-typed-instruction
                 do-token 1 +
             end
         end
@@ -9993,6 +11283,13 @@ proc compile-inferred-record-field CompileContext* ptr int bool -- bool do
                                 if setter do OperationKind:record_field_write else OperationKind:record_field_read end
                                 let operation-kind do
                                     cc operation-kind module field-index set-operation-target
+                                end
+                                if cc @CompileContext.instruction_active do
+                                    record-type cc active-typed-instruction !TypedInstruction.value_type
+                                    field @RecordFieldEntry.field_type cc active-typed-instruction !TypedInstruction.secondary_type
+                                    module cc active-typed-instruction !TypedInstruction.secondary_module
+                                    record-index cc active-typed-instruction !TypedInstruction.secondary_index
+                                    if pointer-receiver do 1 else 0 end cc active-typed-instruction !TypedInstruction.payload
                                 end
                                 cc record-entry field
                                 field-index record-entry @RecordTypeEntry.field_start -
@@ -10235,6 +11532,7 @@ proc compile-record-type-word CompileContext* int -- bool do
                     cc OperationKind:type_literal value-type set-operation-type
                     0 value-type -
                     let literal-type do
+                        cc literal-type set-operation-payload
                         cc literal-type type-push
                         cc literal-type emit-push-integer
                         true
@@ -10259,6 +11557,7 @@ proc compile-union-type-word CompileContext* int -- bool do
                     cc OperationKind:type_literal value-type set-operation-type
                     0 value-type -
                     let literal-type do
+                        cc literal-type set-operation-payload
                         cc literal-type type-push
                         cc literal-type emit-push-integer
                         true
@@ -10283,6 +11582,7 @@ proc compile-function-type-word CompileContext* int -- bool do
                     cc OperationKind:type_literal value-type set-operation-type
                     0 value-type -
                     let literal-type do
+                        cc literal-type set-operation-payload
                         cc literal-type type-push
                         cc literal-type emit-push-integer
                         true
@@ -10298,7 +11598,7 @@ end
 proc emit-record-zero-value CompileContext* int -- do
     let cc record-type do
         if cc @CompileContext.emitting do
-            cc emit-indent cc emit-top-slot " = (" emit
+            cc emit-indent cc cc @CompileContext.type_count 1 - record-type emit-slot-as " = (" emit
             record-type emit-c-record-type-name "){ 0 };" emit 10 putc
         end
     end
@@ -10307,7 +11607,7 @@ end
 proc emit-record-allocation CompileContext* int int -- do
     let cc record-type pointer-type do
         if cc @CompileContext.emitting do
-            cc emit-indent cc emit-top-slot " = frog_alloc(sizeof(" emit
+            cc emit-indent cc cc @CompileContext.type_count 1 - pointer-type emit-slot-as " = frog_alloc(sizeof(" emit
             record-type emit-c-record-type-name "));" emit 10 putc
             cc emit-indent "*" emit cc cc @CompileContext.type_count 1 - pointer-type emit-slot-as
             " = (" emit record-type emit-c-record-type-name "){ 0 };" emit 10 putc
@@ -10318,7 +11618,7 @@ end
 proc emit-record-sizeof CompileContext* int -- do
     let cc record-type do
         if cc @CompileContext.emitting do
-            cc emit-indent cc emit-top-slot " = (intptr_t)sizeof(" emit
+            cc emit-indent cc cc @CompileContext.type_count 1 - type-int emit-slot-as " = (intptr_t)sizeof(" emit
             record-type emit-c-record-type-name ");" emit 10 putc
         end
     end
@@ -10341,6 +11641,7 @@ proc compile-record-special CompileContext* ptr int int -- bool do
                         let record-type do
                         if operation operation-length "new" bytes-equal-string do
                             cc OperationKind:record_new module record-index set-operation-target
+                            cc record-type set-operation-payload
                             cc record-type type-push
                             cc record-type emit-record-zero-value
                             true
@@ -10348,12 +11649,14 @@ proc compile-record-special CompileContext* ptr int int -- bool do
                             cc OperationKind:record_alloc module record-index set-operation-target
                             cc @CompileContext.program record-type program-intern-pointer-type
                             let pointer-type do
+                                cc pointer-type set-operation-payload
                                 cc pointer-type type-push
                                 cc record-type pointer-type emit-record-allocation
                             end
                             true
                         elif operation operation-length "sizeof" bytes-equal-string do
                             cc OperationKind:record_sizeof module record-index set-operation-target
+                            cc record-type set-operation-payload
                             cc type-int type-push
                             cc record-type emit-record-sizeof
                             true
@@ -10501,6 +11804,13 @@ proc compile-record-field CompileContext* ptr int int bool -- bool do
                                         end
                                         cc record-entry @RecordTypeEntry.record_type record-receiver-is-pointer
                                         let pointer-receiver do
+                                            if cc @CompileContext.instruction_active do
+                                                record-entry @RecordTypeEntry.record_type cc active-typed-instruction !TypedInstruction.value_type
+                                                field @RecordFieldEntry.field_type cc active-typed-instruction !TypedInstruction.secondary_type
+                                                module cc active-typed-instruction !TypedInstruction.secondary_module
+                                                record-index cc active-typed-instruction !TypedInstruction.secondary_index
+                                                if pointer-receiver do 1 else 0 end cc active-typed-instruction !TypedInstruction.payload
+                                            end
                                             cc record-entry field
                                             field-index record-entry @RecordTypeEntry.field_start -
                                             pointer-receiver setter compile-resolved-record-field
@@ -10633,6 +11943,13 @@ proc compile-union-constructor CompileContext* ptr int int -- bool do
                         module case-index union-case-at @UnionCaseEntry.payload_type
                         let payload-type do
                             cc OperationKind:union_construct module case-index set-operation-target
+                            if cc @CompileContext.instruction_active do
+                                module union-index union-type-at @UnionTypeEntry.union_type cc active-typed-instruction !TypedInstruction.value_type
+                                payload-type cc active-typed-instruction !TypedInstruction.secondary_type
+                                module cc active-typed-instruction !TypedInstruction.secondary_module
+                                union-index cc active-typed-instruction !TypedInstruction.secondary_index
+                                module case-index union-case-at @UnionCaseEntry.tag cc active-typed-instruction !TypedInstruction.payload
+                            end
                             if payload-type type-none != do
                                 cc payload-type type-expect
                             end
@@ -10681,6 +11998,13 @@ proc compile-union-instance CompileContext* ptr int int -- bool do
                                         if predicate do OperationKind:union_test else OperationKind:union_project end
                                         let operation-kind do
                                             cc operation-kind module case-index set-operation-target
+                                        end
+                                        if cc @CompileContext.instruction_active do
+                                            union-type cc active-typed-instruction !TypedInstruction.value_type
+                                            module case-index union-case-at @UnionCaseEntry.payload_type cc active-typed-instruction !TypedInstruction.secondary_type
+                                            module cc active-typed-instruction !TypedInstruction.secondary_module
+                                            union-index cc active-typed-instruction !TypedInstruction.secondary_index
+                                            module case-index union-case-at @UnionCaseEntry.tag cc active-typed-instruction !TypedInstruction.payload
                                         end
                                         cc union-type type-expect
                                         if predicate do
@@ -10873,6 +12197,7 @@ proc compile-function-operation CompileContext* ptr int int -- bool do
                                 end
                                 cc OperationKind:function_reference function-module function-index set-operation-target
                                 cc proc-module proc-index set-operation-secondary-target
+                                cc proc-module proc-index procedure-at @ProcedureEntry.global_id set-operation-payload
                                 cc function-module function-index function-type-at @FunctionTypeEntry.function_type type-push
                                 cc proc-module proc-index procedure-at @ProcedureEntry.global_id emit-push-integer
                                 true
@@ -10949,6 +12274,7 @@ proc compile-type-word CompileContext* int -- bool do
                 let literal-type do
                     if literal-type 0 < do 0 literal-type - else literal-type end
                     let resolved-type do cc OperationKind:type_literal resolved-type set-operation-type end
+                    cc literal-type set-operation-payload
                     cc literal-type type-push
                     cc literal-type emit-push-integer
                 end
@@ -11013,17 +12339,27 @@ end
 proc compile-constant CompileContext* ModuleContext* int -- do
     peek cc module constant-index do
         cc OperationKind:constant module constant-index set-operation-target
+        if cc @CompileContext.instruction_active do
+            module constant-index constant-at @ConstantEntry.value_count cc active-typed-instruction !TypedInstruction.payload
+        end
         0 compile-constant-values-from
     end
 end
 
-proc compile-macro CompileContext* ModuleContext* int -- do
-    let cc module macro-index do
+proc compile-macro CompileContext* int ModuleContext* int -- do
+    let cc invocation-token module macro-index do
         if module macro-index macro-at @MacroEntry.expanding do
             cc "recursive macro expansion" fail-compile-word
         end
         true module macro-index macro-at !MacroEntry.expanding
-        cc @CompileContext.cfg_recording_suppressed 1 + cc !CompileContext.cfg_recording_suppressed
+        if cc @CompileContext.instruction_active do false cc !CompileContext.instruction_active end
+        cc cc @CompileContext.defining_module invocation-token module macro-index begin-macro-expansion
+        let expansion-id do
+        if cc @CompileContext.operation_active do
+            if cc active-analyzed-operation @AnalyzedOperation.root_expansion_id 0 < do
+                expansion-id cc active-analyzed-operation !AnalyzedOperation.root_expansion_id
+            end
+        end
         cc @CompileContext.defining_module
         cc @CompileContext.scope_module
         let previous-defining-module previous-scope-module do
@@ -11036,7 +12372,8 @@ proc compile-macro CompileContext* ModuleContext* int -- do
             previous-defining-module cc !CompileContext.defining_module
             previous-scope-module cc !CompileContext.scope_module
         end
-        cc @CompileContext.cfg_recording_suppressed 1 - cc !CompileContext.cfg_recording_suppressed
+        cc expansion-id finish-macro-expansion
+        end
         false module macro-index macro-at !MacroEntry.expanding
     end
 end
@@ -11058,7 +12395,7 @@ proc compile-ordinary-word CompileContext* int -- do
                         let macro-module macro-index found do
                             if found ! do "internal macro resolution failed" fail end
                             cc macro-module macro-index set-operation-macro
-                            cc macro-module macro-index compile-macro
+                            cc token-index macro-module macro-index compile-macro
                         end
                     elif cc token-index compile-type-word do
                     elif cc token-index compile-string-word do
@@ -11173,21 +12510,25 @@ proc compile-token-inner CompileContext* int -- int do
         let kind do
             if kind TokenKind:int == do
                 cc OperationKind:literal type-int set-operation-type
+                cc cc @CompileContext.defining_module token-index token-at @TokenEntry.value set-operation-payload
                 cc type-int type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
             elif kind TokenKind:bool == do
                 cc OperationKind:literal type-bool set-operation-type
+                cc cc @CompileContext.defining_module token-index token-at @TokenEntry.value set-operation-payload
                 cc type-bool type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
             elif kind TokenKind:char == do
                 cc OperationKind:literal type-int set-operation-type
+                cc cc @CompileContext.defining_module token-index token-at @TokenEntry.value set-operation-payload
                 cc type-int type-push
                 cc @CompileContext.defining_module token-index token-at @TokenEntry.value cc swap emit-push-integer
                 token-index 1 +
             elif kind TokenKind:string == do
                 cc OperationKind:literal type-string set-operation-type
+                cc cc @CompileContext.defining_module token-index token-at @TokenEntry.value set-operation-payload
                 cc type-string type-push
                 cc token-index emit-push-string
                 token-index 1 +
@@ -11216,25 +12557,48 @@ proc token-is-structured-word CompileContext* int -- bool do
     end
 end
 
+proc token-starts-typed-instruction CompileContext* int -- bool do
+    let cc token-index do
+        if cc token-index token-is-structured-word do false
+        elif cc @CompileContext.defining_module token-index token-at @TokenEntry.kind TokenKind:word != do true
+        elif
+            cc @CompileContext.defining_module token-index "let" token-equals
+            cc @CompileContext.defining_module token-index "peek" token-equals ||
+        do false
+        else cc token-index token-resolves-to-macro !
+        end
+    end
+end
+
 proc compile-token CompileContext* int -- int do
     let cc token-index do
         cc @CompileContext.diagnostic_active
         cc @CompileContext.record_operations
         cc @CompileContext.operation_active ! &&
+        cc @CompileContext.current_expansion_id 0 < &&
         cc token-index token-is-structured-word ! &&
         let was-active begin-operation do
             if begin-operation do cc token-index begin-analyzed-operation end
+            if cc @CompileContext.instruction_active do
+                "internal leaked typed instruction before token: " emit-error
+                cc @CompileContext.defining_module token-index token-slice emit-error-bytes 10 eputc 1 exit
+            end
             if was-active ! do
                 cc @CompileContext.defining_module cc !CompileContext.diagnostic_module
                 token-index cc !CompileContext.diagnostic_token
                 true cc !CompileContext.diagnostic_active
                 false cc !CompileContext.diagnostic_word
             end
-            cc token-index compile-token-inner
-            let next-token do
-                if was-active ! do false cc !CompileContext.diagnostic_active end
-                if begin-operation do cc next-token finish-analyzed-operation end
-                next-token
+            cc token-index token-starts-typed-instruction
+            let begin-instruction do
+                if begin-instruction do cc token-index begin-typed-instruction end
+                cc token-index compile-token-inner
+                let next-token do
+                    if was-active ! do false cc !CompileContext.diagnostic_active end
+                    if cc @CompileContext.instruction_active do cc next-token finish-typed-instruction end
+                    if begin-operation do cc next-token finish-analyzed-operation end
+                    next-token
+                end
             end
         end
     end
@@ -11272,20 +12636,19 @@ proc try-compile-constant-add CompileContext* int int -- bool do
                 end
                 let fits do
                     if fits do
-                        if cc cc-debug-tracing cc @CompileContext.record_operations || do
-                            cc @CompileContext.stack_slot_count
-                            let previous-slot-count do
-                                cc token-index compile-token drop
-                                cc token-index 1 + compile-token drop
-                                cc token-index 2 + compile-token drop
-                                previous-slot-count cc !CompileContext.stack_slot_count
-                                cc cc @CompileContext.type_count 1 - type-int register-stack-slot
-                            end
-                        else
+                        if cc cc-debug-tracing do false else
+                            cc @CompileContext.operation_active !
+                            let begin-operation do
+                            if begin-operation do cc token-index begin-analyzed-operation end
+                            cc token-index begin-typed-instruction
+                            cc OperationKind:literal type-int set-operation-type
+                            cc left right + set-operation-payload
                             cc type-int type-push
-                            cc left right + emit-push-integer
+                            cc token-index 3 + finish-typed-instruction
+                            if begin-operation do cc token-index 3 + finish-analyzed-operation end
+                            end
+                            true
                         end
-                        true
                     else
                         false
                     end
@@ -11386,15 +12749,15 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             ctx cc !CompileContext.defining_module
             ctx cc !CompileContext.scope_module
             proc-index cc !CompileContext.procedure_index
-            program @Program.token_count 1 +
-            peek type-capacity do cell-bytes * alloc cc !CompileContext.type_stack
-                type-capacity cc !CompileContext.type_capacity
-            end
+            16 cell-bytes * alloc cc !CompileContext.type_stack
+            16 cc !CompileContext.type_capacity
             0 cc !CompileContext.type_count
-            program @Program.token_count 1 + BlockFrame:sizeof * alloc cc !CompileContext.blocks
+            16 BlockFrame:sizeof * alloc cc !CompileContext.blocks
             0 cc !CompileContext.block_count
-            program @Program.token_count 1 + LocalEntry:sizeof * alloc cc !CompileContext.locals
+            16 cc !CompileContext.block_capacity
+            16 LocalEntry:sizeof * alloc cc !CompileContext.locals
             0 cc !CompileContext.local_count
+            16 cc !CompileContext.local_capacity
             0 cc !CompileContext.next_local
             0 cc !CompileContext.indent
             false cc !CompileContext.emitting
@@ -11410,7 +12773,9 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             false cc !CompileContext.operation_identity_set
             false cc !CompileContext.operation_identity_locked
             false cc !CompileContext.operation_binding_active
-            0 cc !CompileContext.cfg_recording_suppressed
+            0 1 - cc !CompileContext.current_expansion_id
+            false cc !CompileContext.instruction_active
+            0 cc !CompileContext.instruction_minimum_type_count
             0 1 - cc !CompileContext.cfg_current_block
             cc
         end
@@ -11564,6 +12929,117 @@ proc emit-proc-return CompileContext* ModuleContext* int -- do
     end
 end
 
+proc emit-ir-instruction CompileContext* ProcedureAnalysis* TypedInstruction* -- do
+    let cc analysis instruction do
+        instruction @TypedInstruction.source_module cc !CompileContext.diagnostic_module
+        instruction @TypedInstruction.token_start cc !CompileContext.diagnostic_token
+        true cc !CompileContext.diagnostic_active
+        cc analysis instruction load-ir-before-types
+        instruction @TypedInstruction.operation
+        let operation do
+            if operation RuntimeOperation.literal? operation RuntimeOperation.type_literal? || operation RuntimeOperation.function_reference? || do
+                instruction @TypedInstruction.after_type_count 1 - let index do
+                    cc emit-indent cc index
+                    analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.after_type_start index + cell-bytes * field-read
+                    emit-slot-as " = " emit
+                    if instruction @TypedInstruction.value_type type-string == do
+                        cc @CompileContext.program instruction @TypedInstruction.payload emit-string-symbol
+                    else instruction @TypedInstruction.payload emit-integer end
+                    ";" emit 10 putc
+                end
+            elif operation RuntimeOperation.local_load? do
+                instruction @TypedInstruction.after_type_count 1 - let index do
+                    cc emit-indent cc index instruction @TypedInstruction.value_type emit-slot-as " = " emit
+                    instruction @TypedInstruction.local_id emit-local-name ";" emit 10 putc
+                end
+            elif operation RuntimeOperation.constant? do
+                cc instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 compile-constant-values-from
+            elif operation RuntimeOperation.procedure_call? do
+                if cc @CompileContext.program @Program.release instruction @TypedInstruction.payload 0 != && do
+                else
+                    cc analysis instruction load-ir-after-types
+                    cc instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index emit-call
+                end
+            elif operation RuntimeOperation.bind_locals? do cc analysis instruction emit-ir-bind-locals
+            elif operation RuntimeOperation.restore_peek_locals? do cc analysis instruction emit-ir-restore-peek-locals
+            elif operation RuntimeOperation.record_new? do
+                instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+                cc instruction @TypedInstruction.payload emit-record-zero-value
+            elif operation RuntimeOperation.record_alloc? do
+                instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index record-type-at @RecordTypeEntry.record_type
+                let record-type do
+                    instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+                    cc record-type instruction @TypedInstruction.payload emit-record-allocation
+                end
+            elif operation RuntimeOperation.record_sizeof? do
+                instruction @TypedInstruction.after_type_count cc !CompileContext.type_count
+                cc instruction @TypedInstruction.payload emit-record-sizeof
+            elif operation RuntimeOperation.record_field_read? operation RuntimeOperation.record_field_write? || do cc instruction emit-ir-record-field
+            elif operation RuntimeOperation.union_construct? operation RuntimeOperation.union_test? || operation RuntimeOperation.union_project? || do
+                cc analysis instruction load-ir-after-types
+                cc instruction emit-ir-union
+            elif operation RuntimeOperation.function_call? do
+                cc analysis instruction load-ir-after-types
+                cc instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index emit-function-call
+            elif operation RuntimeOperation.private_intrinsic? do cc instruction emit-ir-private-instruction
+            elif operation RuntimeOperation.cast? do cc instruction emit-ir-cast
+            elif
+                operation RuntimeOperation.args?
+                operation RuntimeOperation.print? ||
+                operation RuntimeOperation.noop? ||
+                operation RuntimeOperation.string_bytes? ||
+                operation RuntimeOperation.string_len? ||
+                operation RuntimeOperation.pointer_load? ||
+                operation RuntimeOperation.pointer_store? ||
+                operation RuntimeOperation.builtins_assert_fail? ||
+            do cc instruction emit-ir-simple-intrinsic
+            else "internal unsupported typed instruction emission" fail end
+        end
+    end
+end
+
+proc emit-ir-block CompileContext* ProcedureAnalysis* int -- do
+    let cc analysis block-index do
+        analysis block-index analyzed-block-at
+        let block do
+            if block-index 0 > do "frog_block_" emit block-index emit-unsigned ": ;" emit 10 putc end
+            0
+            while dup block @AnalyzedBlock.instruction_count < do
+                dup let offset do cc analysis analysis block @AnalyzedBlock.instruction_start offset + typed-instruction-at emit-ir-instruction end
+                1 +
+            end
+            drop
+            cc analysis block load-ir-block-exit-types
+            block @AnalyzedBlock.terminator_kind
+            let terminator do
+                if terminator CFGTerminatorKind.jump? do
+                    cc emit-indent "goto frog_block_" emit block @AnalyzedBlock.first_target emit-unsigned ";" emit 10 putc
+                elif terminator CFGTerminatorKind.branch? do
+                    block @AnalyzedBlock.exit_type_count 1 - let condition-index do
+                        cc emit-indent "if (" emit cc condition-index type-bool emit-slot-as ") goto frog_block_" emit
+                        block @AnalyzedBlock.first_target emit-unsigned "; else goto frog_block_" emit
+                        block @AnalyzedBlock.second_target emit-unsigned ";" emit 10 putc
+                    end
+                else
+                    cc cc @CompileContext.procedure_module cc @CompileContext.procedure_index emit-proc-return
+                    if cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.output_count 0 == do
+                        cc emit-indent "return;" emit 10 putc
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc emit-ir-procedure-body CompileContext* ProcedureAnalysis* -- do
+    let cc analysis do
+        0 while dup analysis @ProcedureAnalysis.cfg_block_count < do
+            dup let block-index do cc analysis block-index emit-ir-block end
+            1 +
+        end drop
+    end
+end
+
 proc analyze-procedure Program* ModuleContext* int -- do
     let program ctx proc-index do
         if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none == do
@@ -11584,6 +13060,8 @@ proc analyze-procedure Program* ModuleContext* int -- do
                     measurement @CompileContext.stack_slots analysis !ProcedureAnalysis.stack_slots
                     measurement @CompileContext.stack_slot_count analysis !ProcedureAnalysis.stack_slot_count
                     measurement @CompileContext.stack_slot_capacity analysis !ProcedureAnalysis.stack_slot_capacity
+                    analysis verify-typed-instructions
+                    analysis verify-macro-expansions
                     ctx proc-index analysis verify-procedure-cfg
                 end
             end
@@ -11607,8 +13085,7 @@ proc emit-procedure Program* ModuleContext* int -- do
                     1 cc !CompileContext.indent
                     cc emit-proc-slot-frame
                     cc ctx proc-index 0 emit-proc-input-slots
-                    cc ctx proc-index compile-procedure-body
-                    cc ctx proc-index emit-proc-return
+                    cc analysis emit-ir-procedure-body
                     "}" emit 10 putc
                 end
             end
@@ -11887,6 +13364,39 @@ proc emit-inspect-operation-kind OperationKind -- do
     end
 end
 
+proc emit-inspect-runtime-operation RuntimeOperation -- do
+    let operation do
+        if operation RuntimeOperation.literal? do "literal" emit
+        elif operation RuntimeOperation.local_load? do "local_load" emit
+        elif operation RuntimeOperation.constant? do "constant" emit
+        elif operation RuntimeOperation.procedure_call? do "procedure_call" emit
+        elif operation RuntimeOperation.bind_locals? do "bind_locals" emit
+        elif operation RuntimeOperation.restore_peek_locals? do "restore_peek_locals" emit
+        elif operation RuntimeOperation.type_literal? do "type_literal" emit
+        elif operation RuntimeOperation.record_new? do "record_new" emit
+        elif operation RuntimeOperation.record_alloc? do "record_alloc" emit
+        elif operation RuntimeOperation.record_sizeof? do "record_sizeof" emit
+        elif operation RuntimeOperation.record_field_read? do "record_field_read" emit
+        elif operation RuntimeOperation.record_field_write? do "record_field_write" emit
+        elif operation RuntimeOperation.union_construct? do "union_construct" emit
+        elif operation RuntimeOperation.union_test? do "union_test" emit
+        elif operation RuntimeOperation.union_project? do "union_project" emit
+        elif operation RuntimeOperation.function_call? do "function_call" emit
+        elif operation RuntimeOperation.function_reference? do "function_reference" emit
+        elif operation RuntimeOperation.private_intrinsic? do "private_intrinsic" emit
+        elif operation RuntimeOperation.cast? do "cast" emit
+        elif operation RuntimeOperation.args? do "args" emit
+        elif operation RuntimeOperation.print? do "print" emit
+        elif operation RuntimeOperation.noop? do "noop" emit
+        elif operation RuntimeOperation.string_bytes? do "string_bytes" emit
+        elif operation RuntimeOperation.string_len? do "string_len" emit
+        elif operation RuntimeOperation.pointer_load? do "pointer_load" emit
+        elif operation RuntimeOperation.pointer_store? do "pointer_store" emit
+        elif operation RuntimeOperation.builtins_assert_fail? do "builtins_assert_fail" emit
+        else "none" emit end
+    end
+end
+
 proc emit-inspect-cfg-terminator CFGTerminatorKind -- do
     let kind do
         if kind CFGTerminatorKind.jump? do "jump" emit
@@ -12069,6 +13579,80 @@ proc emit-inspect-operation Program* ModuleContext* int ProcedureAnalysis* int -
     end
 end
 
+proc instruction-end-byte TypedInstruction* -- int do
+    let instruction do
+        instruction @TypedInstruction.source_module
+        instruction @TypedInstruction.token_end 1 - token-at
+        let token do token @TokenEntry.start token @TokenEntry.length + end
+    end
+end
+
+proc emit-inspect-instruction Program* ModuleContext* int ProcedureAnalysis* int -- do
+    let program procedure-module procedure-index analysis instruction-index do
+        analysis instruction-index typed-instruction-at
+        let instruction do
+            instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-at
+            let token do
+                "instruction\t" emit
+                procedure-module @ModuleContext.module_id emit-unsigned 9 putc
+                procedure-index emit-unsigned 9 putc
+                instruction-index emit-unsigned 9 putc
+                instruction @TypedInstruction.source_module @ModuleContext.module_id emit-unsigned 9 putc
+                instruction @TypedInstruction.token_start emit-unsigned 9 putc
+                instruction @TypedInstruction.token_end emit-unsigned 9 putc
+                token @TokenEntry.start emit-unsigned 9 putc
+                instruction instruction-end-byte emit-unsigned 9 putc
+                token @TokenEntry.line emit-unsigned 9 putc
+                token @TokenEntry.column emit-unsigned 9 putc
+                instruction @TypedInstruction.expansion_id emit-integer 9 putc
+                instruction @TypedInstruction.before_type_count emit-unsigned 9 putc
+                instruction @TypedInstruction.minimum_type_count emit-unsigned 9 putc
+                instruction @TypedInstruction.after_type_count emit-unsigned 9 putc
+                instruction @TypedInstruction.operation emit-inspect-runtime-operation 9 putc
+                instruction @TypedInstruction.target_module emit-inspect-module-id 9 putc
+                instruction @TypedInstruction.target_index emit-integer 9 putc
+                instruction @TypedInstruction.secondary_module emit-inspect-module-id 9 putc
+                instruction @TypedInstruction.secondary_index emit-integer 9 putc
+                instruction @TypedInstruction.local_id emit-integer 9 putc
+                instruction @TypedInstruction.binding_local_start emit-integer 9 putc
+                instruction @TypedInstruction.binding_local_count emit-unsigned 9 putc
+                program instruction @TypedInstruction.value_type emit-inspect-type 9 putc
+                program instruction @TypedInstruction.secondary_type emit-inspect-type 9 putc
+                instruction @TypedInstruction.payload emit-integer 9 putc
+                instruction @TypedInstruction.private_operation emit-inspect-private-operation 9 putc
+                program analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.before_type_start instruction @TypedInstruction.before_type_count emit-inspect-type-list 9 putc
+                program analysis @ProcedureAnalysis.operation_types instruction @TypedInstruction.after_type_start instruction @TypedInstruction.after_type_count emit-inspect-type-list
+                10 putc
+            end
+        end
+    end
+end
+
+proc emit-inspect-macro-expansion Program* ModuleContext* int ProcedureAnalysis* int -- do
+    let program procedure-module procedure-index analysis expansion-id do
+        analysis expansion-id macro-expansion-at
+        let expansion do
+            "expansion\t" emit
+            procedure-module @ModuleContext.module_id emit-unsigned 9 putc
+            procedure-index emit-unsigned 9 putc
+            expansion-id emit-unsigned 9 putc
+            expansion @MacroExpansion.parent_expansion_id emit-integer 9 putc
+            expansion @MacroExpansion.invocation_module @ModuleContext.module_id emit-unsigned 9 putc
+            expansion @MacroExpansion.invocation_token emit-unsigned 9 putc
+            expansion @MacroExpansion.macro_module @ModuleContext.module_id emit-unsigned 9 putc
+            expansion @MacroExpansion.macro_index emit-unsigned 9 putc
+            expansion @MacroExpansion.instruction_start emit-unsigned 9 putc
+            expansion @MacroExpansion.instruction_count emit-unsigned 9 putc
+            expansion @MacroExpansion.before_type_count emit-unsigned 9 putc
+            expansion @MacroExpansion.minimum_type_count emit-unsigned 9 putc
+            expansion @MacroExpansion.after_type_count emit-unsigned 9 putc
+            program analysis @ProcedureAnalysis.operation_types expansion @MacroExpansion.before_type_start expansion @MacroExpansion.before_type_count emit-inspect-type-list 9 putc
+            program analysis @ProcedureAnalysis.operation_types expansion @MacroExpansion.after_type_start expansion @MacroExpansion.after_type_count emit-inspect-type-list
+            10 putc
+        end
+    end
+end
+
 proc emit-inspect-block Program* ModuleContext* int ProcedureAnalysis* int -- do
     let program procedure-module procedure-index analysis block-index do
         analysis block-index analyzed-block-at
@@ -12079,8 +13663,8 @@ proc emit-inspect-block Program* ModuleContext* int ProcedureAnalysis* int -- do
             block-index emit-unsigned 9 putc
             block @AnalyzedBlock.source_module @ModuleContext.module_id emit-unsigned 9 putc
             block @AnalyzedBlock.token_start emit-unsigned 9 putc
-            block @AnalyzedBlock.operation_start emit-unsigned 9 putc
-            block @AnalyzedBlock.operation_count emit-unsigned 9 putc
+            block @AnalyzedBlock.instruction_start emit-unsigned 9 putc
+            block @AnalyzedBlock.instruction_count emit-unsigned 9 putc
             block @AnalyzedBlock.terminator_kind emit-inspect-cfg-terminator 9 putc
             block @AnalyzedBlock.terminator_module @ModuleContext.module_id emit-unsigned 9 putc
             block @AnalyzedBlock.terminator_token emit-unsigned 9 putc
@@ -12105,11 +13689,29 @@ proc emit-inspect-procedure Program* ModuleContext* int -- do
                     module @ModuleContext.source procedure @ProcedureEntry.name_start + procedure @ProcedureEntry.name_length emit-inspect-bytes
                     9 putc analysis @ProcedureAnalysis.operation_count emit-unsigned
                     9 putc analysis @ProcedureAnalysis.binding_local_count emit-unsigned
+                    9 putc analysis @ProcedureAnalysis.instruction_count emit-unsigned
+                    9 putc analysis @ProcedureAnalysis.macro_expansion_count emit-unsigned
                     9 putc analysis @ProcedureAnalysis.cfg_block_count emit-unsigned 10 putc
                     0
                     while dup analysis @ProcedureAnalysis.operation_count < do
                         dup let operation-index do
                             program module procedure-index analysis operation-index emit-inspect-operation
+                        end
+                        1 +
+                    end
+                    drop
+                    0
+                    while dup analysis @ProcedureAnalysis.instruction_count < do
+                        dup let instruction-index do
+                            program module procedure-index analysis instruction-index emit-inspect-instruction
+                        end
+                        1 +
+                    end
+                    drop
+                    0
+                    while dup analysis @ProcedureAnalysis.macro_expansion_count < do
+                        dup let expansion-id do
+                            program module procedure-index analysis expansion-id emit-inspect-macro-expansion
                         end
                         1 +
                     end
@@ -12139,12 +13741,14 @@ end
 proc emit-inspect-program Program* bool -- do
     let program include-builtins do
         if program @Program.phase ProgramPhase.analyzed? ! do "internal program must be analyzed before inspection" fail end
-        "frogc-inspect\t3\n" emit
+        "frogc-inspect\t4\n" emit
         "fields\tmodule\tid\troot\tbuiltins\tpath\n" emit
-        "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tblock_count\n" emit
+        "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tinstruction_count\texpansion_count\tblock_count\n" emit
         "fields\toperation\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\tbefore_depth\tminimum_depth\tafter_depth\tinput_count\toutput_count\tkind\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tbinding_local_start\tbinding_local_count\tvalue_type\tintrinsic\tprivate_operation\tbefore_types\tafter_types\n" emit
         "fields\tbinding_local\tprocedure_module\tprocedure_index\tindex\tsource_module\tname_token\tname\tlocal_id\tvalue_type\n" emit
-        "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\toperation_start\toperation_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types\n" emit
+        "fields\tinstruction\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\texpansion\tbefore_depth\tminimum_depth\tafter_depth\toperation\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tbinding_local_start\tbinding_local_count\tvalue_type\tsecondary_type\tpayload\tprivate_operation\tbefore_types\tafter_types\n" emit
+        "fields\texpansion\tprocedure_module\tprocedure_index\tid\tparent\tinvocation_module\tinvocation_token\tmacro_module\tmacro_index\tinstruction_start\tinstruction_count\tbefore_depth\tminimum_depth\tafter_depth\tbefore_types\tafter_types\n" emit
+        "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tinstruction_start\tinstruction_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types\n" emit
         program @Program.module_head
         while dup ptr cast int cast 0 != do
             let module do
@@ -12215,6 +13819,7 @@ proc compile-implicit-builtin-call CompileContext* int ModuleContext* int -- do
             proc-index cc @CompileContext.program @Program.builtins_assert_proc == &&
         do
             cc OperationKind:procedure_call module proc-index set-operation-target
+            cc 1 set-operation-payload
             cc module proc-index apply-proc-contract
         else
             cc token-index module proc-index compile-procedure-call
@@ -12268,7 +13873,7 @@ proc compile-builtins-word CompileContext* int -- bool do
                         let macro-module macro-index macro-found do
                             if macro-found do
                                 cc macro-module macro-index set-operation-macro
-                                cc macro-module macro-index compile-macro
+                                cc token-index macro-module macro-index compile-macro
                                 true
                             else
                                 builtins bytes length 0 find-scope-symbol-from
