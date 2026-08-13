@@ -18,7 +18,10 @@ C11 warnings, and executed. Tests compare exact output, diagnostics, and exit
 status, and also check selected generated-C properties.
 
 CLI cases also verify that `frogc check [FILE]` analyzes every procedure without
-emitting C, using standard input when `FILE` is omitted.
+emitting C, using standard input when `FILE` is omitted. The tests pin the
+current version of `frogc inspect [FILE]` output, including standard input,
+relative imports and resolved cross-module targets, and require semantic
+failures to leave standard output empty.
 
 The case manifests are:
 

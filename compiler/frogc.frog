@@ -3106,6 +3106,7 @@ record AnalyzedOperation
     target_index int
     secondary_module ModuleContext*
     secondary_index int
+    local_id int
     value_type int
     intrinsic IntrinsicOperation
     private_operation PrivateOperation
@@ -3778,6 +3779,15 @@ proc set-operation-secondary-target CompileContext* ModuleContext* int -- do
     end
 end
 
+proc set-operation-local CompileContext* LocalEntry* -- do
+    let cc local do
+        cc OperationKind:local local @LocalEntry.module local @LocalEntry.name_token set-operation-target
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+            local @LocalEntry.id cc active-analyzed-operation !AnalyzedOperation.local_id
+        end
+    end
+end
+
 proc set-operation-intrinsic CompileContext* IntrinsicOperation int PrivateOperation -- do
     let cc intrinsic value-type private-operation do
         cc OperationKind:intrinsic 0 ptr cast ModuleContext* cast 0 1 - set-operation-target
@@ -3881,6 +3891,7 @@ proc begin-analyzed-operation CompileContext* int -- do
                 0 1 - operation !AnalyzedOperation.target_index
                 0 ptr cast ModuleContext* cast operation !AnalyzedOperation.secondary_module
                 0 1 - operation !AnalyzedOperation.secondary_index
+                0 1 - operation !AnalyzedOperation.local_id
                 type-none operation !AnalyzedOperation.value_type
                 IntrinsicOperation:none operation !AnalyzedOperation.intrinsic
                 PrivateOperation:none operation !AnalyzedOperation.private_operation
@@ -9153,7 +9164,7 @@ proc compile-local-reference CompileContext* int int -- do
     let cc token-index local-index do
         cc local-index local-address
         peek local do
-            cc OperationKind:local local @LocalEntry.module local @LocalEntry.name_token set-operation-target
+            cc local set-operation-local
             @LocalEntry.value_type cc swap type-push
             cc local @LocalEntry.id emit-local-load
         end
@@ -9235,6 +9246,25 @@ proc find-union-type-from ModuleContext* int int -- ModuleContext* int bool do
             module index true
         else
             module value-type index 1 + find-union-type-from
+        end
+    end
+end
+
+proc find-function-type-from ModuleContext* int int -- ModuleContext* int bool do
+    let module value-type index do
+        if index module @ModuleContext.function_count >= do
+            module @ModuleContext.next_module
+            let next do
+                if next ptr cast int cast 0 == do
+                    0 ptr cast ModuleContext* cast 0 1 - false
+                else
+                    next value-type 0 find-function-type-from
+                end
+            end
+        elif module index function-type-at @FunctionTypeEntry.function_type value-type == do
+            module index true
+        else
+            module value-type index 1 + find-function-type-from
         end
     end
 end
@@ -11082,6 +11112,297 @@ proc analyze-source ptr int ptr int bool bool ptr int -- Program* do
     end
 end
 
+proc emit-inspect-module-id ModuleContext* -- do
+    let module do
+        if module ptr cast int cast 0 == do 0 1 - emit-integer else module @ModuleContext.module_id emit-unsigned end
+    end
+end
+
+proc emit-inspect-bytes ptr int -- do
+    let bytes length do
+        0
+        while dup length < do
+            dup let index do
+                bytes index byte-read
+                let byte do
+                    if byte 9 == do "\\t" emit
+                    elif byte 10 == do "\\n" emit
+                    elif byte 13 == do "\\r" emit
+                    elif byte 92 == do "\\\\" emit
+                    elif byte 32 >= byte 126 <= && do byte putc
+                    else
+                        "\\x" emit
+                        byte 16 / emit-uppercase-hex-digit
+                        byte 16 % emit-uppercase-hex-digit
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc emit-inspect-module-path Program* ModuleContext* -- do
+    let program module do
+        if module @ModuleContext.is_root do
+            module @ModuleContext.diagnostic_path module @ModuleContext.diagnostic_path_length emit-inspect-bytes
+        else
+            if
+                module @ModuleContext.canonical_path_length program @Program.standard_library_root_length 1 + >
+            do
+                if
+                    module @ModuleContext.canonical_path program @Program.standard_library_root_length
+                    program @Program.standard_library_root program @Program.standard_library_root_length bytes-equal
+                    module @ModuleContext.canonical_path program @Program.standard_library_root_length byte-read 47 == &&
+                do
+                    module @ModuleContext.canonical_path program @Program.standard_library_root_length 1 + +
+                    module @ModuleContext.canonical_path_length program @Program.standard_library_root_length 1 + -
+                    emit-inspect-bytes
+                else
+                    module @ModuleContext.canonical_path module @ModuleContext.canonical_path_length emit-inspect-bytes
+                end
+            else
+                module @ModuleContext.canonical_path module @ModuleContext.canonical_path_length emit-inspect-bytes
+            end
+        end
+    end
+end
+
+proc emit-inspect-operation-kind OperationKind -- do
+    let kind do
+        if kind OperationKind.literal? do "literal" emit
+        elif kind OperationKind.local? do "local" emit
+        elif kind OperationKind.constant? do "constant" emit
+        elif kind OperationKind.procedure_call? do "procedure_call" emit
+        elif kind OperationKind.macro_call? do "macro_call" emit
+        elif kind OperationKind.type_literal? do "type_literal" emit
+        elif kind OperationKind.record_new? do "record_new" emit
+        elif kind OperationKind.record_alloc? do "record_alloc" emit
+        elif kind OperationKind.record_sizeof? do "record_sizeof" emit
+        elif kind OperationKind.record_field_read? do "record_field_read" emit
+        elif kind OperationKind.record_field_write? do "record_field_write" emit
+        elif kind OperationKind.union_construct? do "union_construct" emit
+        elif kind OperationKind.union_test? do "union_test" emit
+        elif kind OperationKind.union_project? do "union_project" emit
+        elif kind OperationKind.function_call? do "function_call" emit
+        elif kind OperationKind.function_reference? do "function_reference" emit
+        elif kind OperationKind.intrinsic? do "intrinsic" emit
+        else "unresolved" emit end
+    end
+end
+
+proc emit-inspect-intrinsic IntrinsicOperation -- do
+    let intrinsic do
+        if intrinsic IntrinsicOperation.private? do "private" emit
+        elif intrinsic IntrinsicOperation.cast? do "cast" emit
+        elif intrinsic IntrinsicOperation.args? do "args" emit
+        elif intrinsic IntrinsicOperation.print? do "print" emit
+        elif intrinsic IntrinsicOperation.noop? do "noop" emit
+        elif intrinsic IntrinsicOperation.string_bytes? do "string_bytes" emit
+        elif intrinsic IntrinsicOperation.string_len? do "string_len" emit
+        elif intrinsic IntrinsicOperation.pointer_load? do "pointer_load" emit
+        elif intrinsic IntrinsicOperation.pointer_store? do "pointer_store" emit
+        elif intrinsic IntrinsicOperation.builtins_assert_fail? do "builtins_assert_fail" emit
+        else "none" emit end
+    end
+end
+
+proc emit-inspect-private-operation PrivateOperation -- do
+    let operation do
+        if operation PrivateOperation.add? do "add" emit
+        elif operation PrivateOperation.sub? do "sub" emit
+        elif operation PrivateOperation.mul? do "mul" emit
+        elif operation PrivateOperation.div? do "div" emit
+        elif operation PrivateOperation.mod? do "mod" emit
+        elif operation PrivateOperation.divmod? do "divmod" emit
+        elif operation PrivateOperation.or? do "or" emit
+        elif operation PrivateOperation.and? do "and" emit
+        elif operation PrivateOperation.xor? do "xor" emit
+        elif operation PrivateOperation.not? do "not" emit
+        elif operation PrivateOperation.shl? do "shl" emit
+        elif operation PrivateOperation.shr? do "shr" emit
+        elif operation PrivateOperation.eq? do "eq" emit
+        elif operation PrivateOperation.ne? do "ne" emit
+        elif operation PrivateOperation.lt? do "lt" emit
+        elif operation PrivateOperation.gt? do "gt" emit
+        elif operation PrivateOperation.le? do "le" emit
+        elif operation PrivateOperation.ge? do "ge" emit
+        elif operation PrivateOperation.load? do "load" emit
+        elif operation PrivateOperation.store? do "store" emit
+        else "none" emit end
+    end
+end
+
+proc emit-inspect-type Program* int -- do
+    let program value-type do
+        if value-type 0 < do
+            "type:" emit program 0 value-type - emit-inspect-type
+        elif value-type type-literal-base > value-type type-nominal-base < && do
+            "type:" emit program value-type type-literal-base - emit-inspect-type
+        elif value-type type-int == do "int" emit
+        elif value-type type-bool == do "bool" emit
+        elif value-type type-ptr == do "ptr" emit
+        elif value-type type-type == do "type" emit
+        elif value-type type-string == do "String" emit
+        elif value-type type-i8 == do "i8" emit
+        elif value-type type-i16 == do "i16" emit
+        elif value-type type-i32 == do "i32" emit
+        elif value-type type-i64 == do "i64" emit
+        elif value-type type-u8 == do "u8" emit
+        elif value-type type-u16 == do "u16" emit
+        elif value-type type-u32 == do "u32" emit
+        elif value-type type-u64 == do "u64" emit
+        elif value-type type-none == do "none" emit
+        elif value-type type-is-typed-pointer do
+            program program value-type type-pointer-base - pointer-type-at @PointerTypeEntry.pointee_type emit-inspect-type
+            "*" emit
+        elif value-type type-is-function do
+            program @Program.module_head value-type 0 find-function-type-from
+            let module index found do
+                if found do
+                    "function:" emit module @ModuleContext.module_id emit-unsigned ":" emit index emit-unsigned
+                else "internal unknown inspected function type" fail end
+            end
+        elif value-type type-is-nominal do
+            program @Program.module_head value-type 0 find-record-type-from
+            let module index found do
+                if found do
+                    "record:" emit module @ModuleContext.module_id emit-unsigned ":" emit index emit-unsigned
+                else
+                    program @Program.module_head value-type 0 find-union-type-from
+                    let union-module union-index union-found do
+                        if union-found do
+                            "union:" emit union-module @ModuleContext.module_id emit-unsigned ":" emit union-index emit-unsigned
+                        else "internal unknown inspected nominal type" fail end
+                    end
+                end
+            end
+        else "internal unknown inspected type" fail end
+    end
+end
+
+proc emit-inspect-type-list Program* ptr int int -- do
+    let program types start count do
+        "[" emit
+        0
+        while dup count < do
+            dup let index do
+                if index 0 > do "," emit end
+                program types start index + cell-bytes * field-read emit-inspect-type
+            end
+            1 +
+        end
+        drop
+        "]" emit
+    end
+end
+
+proc operation-end-byte AnalyzedOperation* -- int do
+    let operation do
+        operation @AnalyzedOperation.source_module
+        operation @AnalyzedOperation.token_end 1 - token-at
+        let token do token @TokenEntry.start token @TokenEntry.length + end
+    end
+end
+
+proc emit-inspect-operation Program* ModuleContext* int ProcedureAnalysis* int -- do
+    let program procedure-module procedure-index analysis operation-index do
+        analysis operation-index analyzed-operation-at
+        let operation do
+            operation @AnalyzedOperation.source_module operation @AnalyzedOperation.token_start token-at
+            let token do
+                "operation\t" emit
+                procedure-module @ModuleContext.module_id emit-unsigned 9 putc
+                procedure-index emit-unsigned 9 putc
+                operation-index emit-unsigned 9 putc
+                operation @AnalyzedOperation.source_module @ModuleContext.module_id emit-unsigned 9 putc
+                operation @AnalyzedOperation.token_start emit-unsigned 9 putc
+                operation @AnalyzedOperation.token_end emit-unsigned 9 putc
+                token @TokenEntry.start emit-unsigned 9 putc
+                operation operation-end-byte emit-unsigned 9 putc
+                token @TokenEntry.line emit-unsigned 9 putc
+                token @TokenEntry.column emit-unsigned 9 putc
+                operation @AnalyzedOperation.before_type_count emit-unsigned 9 putc
+                operation @AnalyzedOperation.minimum_type_count emit-unsigned 9 putc
+                operation @AnalyzedOperation.after_type_count emit-unsigned 9 putc
+                operation @AnalyzedOperation.before_type_count operation @AnalyzedOperation.minimum_type_count - emit-unsigned 9 putc
+                operation @AnalyzedOperation.after_type_count operation @AnalyzedOperation.minimum_type_count - emit-unsigned 9 putc
+                operation @AnalyzedOperation.kind emit-inspect-operation-kind 9 putc
+                operation @AnalyzedOperation.target_module emit-inspect-module-id 9 putc
+                operation @AnalyzedOperation.target_index emit-integer 9 putc
+                operation @AnalyzedOperation.secondary_module emit-inspect-module-id 9 putc
+                operation @AnalyzedOperation.secondary_index emit-integer 9 putc
+                operation @AnalyzedOperation.local_id emit-integer 9 putc
+                program operation @AnalyzedOperation.value_type emit-inspect-type 9 putc
+                operation @AnalyzedOperation.intrinsic emit-inspect-intrinsic 9 putc
+                operation @AnalyzedOperation.private_operation emit-inspect-private-operation 9 putc
+                program analysis @ProcedureAnalysis.operation_types operation @AnalyzedOperation.before_type_start operation @AnalyzedOperation.before_type_count emit-inspect-type-list 9 putc
+                program analysis @ProcedureAnalysis.operation_types operation @AnalyzedOperation.after_type_start operation @AnalyzedOperation.after_type_count emit-inspect-type-list
+                10 putc
+            end
+        end
+    end
+end
+
+proc emit-inspect-procedure Program* ModuleContext* int -- do
+    let program module procedure-index do
+        module procedure-index procedure-at
+        let procedure do
+            if procedure @ProcedureEntry.c_binding CBinding:none == do
+                procedure @ProcedureEntry.analysis
+                let analysis do
+                    "procedure\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
+                    procedure-index emit-unsigned 9 putc
+                    module @ModuleContext.source procedure @ProcedureEntry.name_start + procedure @ProcedureEntry.name_length emit-inspect-bytes
+                    9 putc analysis @ProcedureAnalysis.operation_count emit-unsigned 10 putc
+                    0
+                    while dup analysis @ProcedureAnalysis.operation_count < do
+                        dup let operation-index do
+                            program module procedure-index analysis operation-index emit-inspect-operation
+                        end
+                        1 +
+                    end
+                    drop
+                end
+            end
+        end
+    end
+end
+
+proc emit-inspect-program Program* bool -- do
+    let program include-builtins do
+        if program @Program.phase ProgramPhase:analyzed != do "internal program must be analyzed before inspection" fail end
+        "frogc-inspect\t1\n" emit
+        "fields\tmodule\tid\troot\tbuiltins\tpath\n" emit
+        "fields\tprocedure\tmodule\tindex\tname\toperation_count\n" emit
+        "fields\toperation\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\tbefore_depth\tminimum_depth\tafter_depth\tinput_count\toutput_count\tkind\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tvalue_type\tintrinsic\tprivate_operation\tbefore_types\tafter_types\n" emit
+        program @Program.module_head
+        while dup ptr cast int cast 0 != do
+            let module do
+                "module\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
+                if module @ModuleContext.is_root do 1 else 0 end emit-unsigned 9 putc
+                if module ptr cast int cast program @Program.builtins_module ptr cast int cast == do 1 else 0 end emit-unsigned 9 putc
+                program module emit-inspect-module-path
+                10 putc
+                if
+                    include-builtins
+                    module ptr cast int cast program @Program.builtins_module ptr cast int cast != ||
+                do
+                    0
+                    while dup module @ModuleContext.proc_count < do
+                        dup program module rot emit-inspect-procedure
+                        1 +
+                    end
+                    drop
+                end
+                module @ModuleContext.next_module
+            end
+        end
+        drop
+    end
+end
+
 proc compile-source ptr int ptr int bool bool ptr int -- do
     let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
         source source-length diagnostic-path diagnostic-path-length debug release
@@ -11415,6 +11736,7 @@ proc cli-usage -- do
 
 Commands:
   check [FILE]               analyze Frog source without generating C
+  inspect [FILE]             print analyzed Frog operations
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -11627,6 +11949,46 @@ proc check-file ptr bool bool ptr int -- int do
     end
 end
 
+proc inspect-frog-source ptr int ptr int ptr bool bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory debug release include-builtins standard-library-root standard-library-root-length do
+        fork
+        let child do
+            if child 0 < do
+                "unable to fork compiler" cli-error
+                1
+            elif child 0 == do
+                reset-child-signals
+                if directory chdir 0 != do
+                    "unable to prepare compiler child" cli-error
+                    1 finish-child
+                    1
+                else
+                    source source-length diagnostic-path diagnostic-path-length debug release
+                    standard-library-root standard-library-root-length analyze-source
+                    include-builtins emit-inspect-program
+                    0 finish-child
+                    0
+                end
+            else
+                child wait-for-child
+            end
+        end
+    end
+end
+
+proc inspect-file ptr bool bool bool ptr int -- int do
+    let path debug release include-builtins standard-library-root standard-library-root-length do
+        path read-source-path
+        let source source-length do
+            path parent-path
+            let directory do
+                source source-length path path cstring-length directory debug release include-builtins
+                standard-library-root standard-library-root-length inspect-frog-source
+            end
+        end
+    end
+end
+
 proc build-file ptr ptr bool bool bool ptr int -- int do
     let path requested-output should-run debug release standard-library-root standard-library-root-length do
         path ".c" replace-path-suffix
@@ -11728,6 +12090,44 @@ proc check-command ptr int int bool bool ptr int -- do
     end
 end
 
+proc inspect-command ptr int int bool bool ptr int -- do
+    let argv argc command-index debug release standard-library-root standard-library-root-length do
+        command-index 1 +
+        let argument-index do
+            if argument-index argc >= do
+                read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release false
+                standard-library-root standard-library-root-length inspect-frog-source exit
+            end
+            argv argument-index argv-at
+            let argument do
+                if
+                    argc argument-index 1 + ==
+                    argument "-h" cstring-equals argument "--help" cstring-equals || &&
+                do
+                    "Usage: frogc [--debug] [--release] inspect [--builtins] [FILE]\n" emit
+                elif argument "--builtins" cstring-equals do
+                    if argument-index 1 + argc >= do
+                        read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release true
+                        standard-library-root standard-library-root-length inspect-frog-source exit
+                    end
+                    argv argument-index 1 + argv-at
+                    let path do
+                        if path u8* cast @ int cast 45 == do "unknown inspect option: " path cli-usage-error-value end
+                        if argument-index 2 + argc != do "inspect accepts at most one source file" cli-usage-error end
+                        path debug release true standard-library-root standard-library-root-length inspect-file exit
+                    end
+                elif argument u8* cast @ int cast 45 == do
+                    "unknown inspect option: " argument cli-usage-error-value
+                elif argc argument-index 1 + != do
+                    "inspect accepts at most one source file" cli-usage-error
+                else
+                    argument debug release false standard-library-root standard-library-root-length inspect-file exit
+                end
+            end
+        end
+    end
+end
+
 proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
     let argv argc index output should-run do
         if index argc >= do
@@ -11813,6 +12213,8 @@ proc main -- do
                         cli-usage
                     elif command "check" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length check-command
+                    elif command "inspect" cstring-equals do
+                        argv argc command-index debug release standard-library-root standard-library-root-length inspect-command
                     elif command "run" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length run-command
                     elif command "build" cstring-equals do

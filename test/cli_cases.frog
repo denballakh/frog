@@ -1,5 +1,5 @@
 from "framework.frog" import ( FrogTestContext frog-check frog-process-equals )
-from "stdlib/string.frog" import bytes-equal
+from "stdlib/string.frog" import ( bytes-contain bytes-equal )
 from "stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
@@ -104,6 +104,45 @@ proc frog-cli-check-stdin String String String int String FrogTestContext* -- do
     end
 end
 
+proc frog-cli-inspect-stdin String String String int String FrogTestContext* -- do
+    let source expected-stdout expected-stderr expected-status name context do
+        2 subprocess-argv
+        let arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+            "inspect" arguments 1 subprocess-arg
+            arguments source String.bytes source String.len "" subprocess-run-bytes-in
+            let result do
+                result expected-stdout expected-stderr expected-status frog-process-equals
+                name context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-builtins FrogTestContext* -- do
+    let context do
+        3 context frog-cli-argv
+        let arguments do
+            "inspect" arguments 1 subprocess-arg
+            "--builtins" arguments 2 subprocess-arg
+            "test/cases/cli/inspect_relative/main.frog" arguments 3 subprocess-arg
+            arguments "" subprocess-run
+            let result do
+                result @CompletedProcess.returncode 0 ==
+                result @CompletedProcess.stderr_len 0 == &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\tint\tprivate\tadd\t" String.bytes
+                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\tint\tprivate\tadd\t" String.len bytes-contain &&
+                "cli/inspect-builtins" context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
 proc frog-cli-filter-debug-invariant FrogTestContext* -- do
     let context do
         "proc main -- do 1 2 + print end
@@ -151,6 +190,7 @@ proc run-cli-cases FrogTestContext* -- do
 
 Commands:
   check [FILE]               analyze Frog source without generating C
+  inspect [FILE]             print analyzed Frog operations
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -165,6 +205,7 @@ Options:
 
 Commands:
   check [FILE]               analyze Frog source without generating C
+  inspect [FILE]             print analyzed Frog operations
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -181,6 +222,9 @@ Options:
 
         "check" "-h" "Usage: frogc [--debug] [--release] check [FILE]
 " "" 0 "cli/check-help" context frog-cli-case-2
+
+        "inspect" "-h" "Usage: frogc [--debug] [--release] inspect [--builtins] [FILE]
+" "" 0 "cli/inspect-help" context frog-cli-case-2
 
         "proc helper int -- int do 1 + end
 proc main -- do 41 helper drop end
@@ -205,6 +249,60 @@ Try `frogc --help`.
         "check" "first.frog" "second.frog" "" "frogc: check accepts at most one source file
 Try `frogc --help`.
 " 2 "cli/check-too-many-files" context frog-cli-case-3
+
+        "macro twice dup + end
+proc helper int -- int do 1 + end
+proc main -- do 20 twice helper drop end
+" "frogc-inspect	1
+fields	module	id	root	builtins	path
+fields	procedure	module	index	name	operation_count
+fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	value_type	intrinsic	private_operation	before_types	after_types
+module	0	1	0	<stdin>
+procedure	0	0	helper	2
+operation	0	0	0	0	11	12	48	49	2	27	1	1	2	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[int]	[int,int]
+operation	0	0	1	0	12	13	50	51	2	29	2	0	1	2	1	procedure_call	1	1	-1	-1	-1	none	none	none	[int,int]	[int]
+procedure	0	1	main	4
+operation	0	1	0	0	18	19	72	74	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[]	[int]
+operation	0	1	1	0	19	20	75	80	3	20	1	0	1	1	1	macro_call	0	0	-1	-1	-1	none	none	none	[int]	[int]
+operation	0	1	2	0	20	21	81	87	3	26	1	0	1	1	1	procedure_call	0	0	-1	-1	-1	none	none	none	[int]	[int]
+operation	0	1	3	0	21	22	88	92	3	33	1	0	0	1	0	macro_call	1	2	-1	-1	-1	none	none	none	[int]	[]
+module	1	0	1	stdlib/builtins.frog
+" "" 0 "cli/inspect-stdin" context frog-cli-inspect-stdin
+
+        "proc early -- do end
+proc main -- do end
+proc late -- do nope end
+" "" "<stdin>:3:17:
+  proc late -- do nope end
+                  ^^^^
+error: unknown word: nope
+" 1 "cli/inspect-stdin-late-error" context frog-cli-inspect-stdin
+
+        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	1
+fields	module	id	root	builtins	path
+fields	procedure	module	index	name	operation_count
+fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	value_type	intrinsic	private_operation	before_types	after_types
+module	0	1	0	test/cases/cli/inspect_relative/main.frog
+procedure	0	0	main	3
+operation	0	0	0	0	8	9	53	55	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[]	[int]
+operation	0	0	1	0	9	10	56	65	3	20	1	0	1	1	1	procedure_call	1	0	-1	-1	-1	none	none	none	[int]	[int]
+operation	0	0	2	0	10	11	66	70	3	30	1	0	0	1	0	macro_call	2	2	-1	-1	-1	none	none	none	[int]	[]
+module	1	0	0	helper.frog
+procedure	1	0	increment	2
+operation	1	0	0	1	6	7	29	30	1	30	1	1	2	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[int]	[int,int]
+operation	1	0	1	1	7	8	31	32	1	32	2	0	1	2	1	procedure_call	2	1	-1	-1	-1	none	none	none	[int,int]	[int]
+module	2	0	1	stdlib/builtins.frog
+" "" 0 "cli/inspect-file-relative-import" context frog-cli-case-2
+
+        "inspect" "--unknown" "" "frogc: unknown inspect option: --unknown
+Try `frogc --help`.
+" 2 "cli/inspect-unknown-option" context frog-cli-case-2
+
+        "inspect" "first.frog" "second.frog" "" "frogc: inspect accepts at most one source file
+Try `frogc --help`.
+" 2 "cli/inspect-too-many-files" context frog-cli-case-3
+
+        context frog-cli-inspect-builtins
 
         "run" "test/cases/cli/missing.frog" ""
         "frogc: unable to read source: test/cases/cli/missing.frog

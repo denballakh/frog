@@ -1,0 +1,3 @@
+from "helper.frog" import increment
+
+proc main -- do 41 increment drop end
