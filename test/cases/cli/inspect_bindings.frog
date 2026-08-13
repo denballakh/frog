@@ -1,0 +1,29 @@
+macro hidden-binding
+    9 let hidden do hidden drop end
+end
+
+proc main -- do
+    1 2
+    peek first second do
+        first second + drop
+        3 4
+        let first third do
+            first third + drop
+        end
+    end
+    drop drop
+
+    hidden-binding
+
+    5 6
+    let left right do
+        left right + drop
+    end
+end
+
+proc secondary -- do
+    7
+    let value do
+        value drop
+    end
+end

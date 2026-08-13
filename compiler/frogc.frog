@@ -2563,6 +2563,9 @@ proc allocate-proc ModuleContext* int -- int do
                 16 cell-bytes * alloc analysis !ProcedureAnalysis.operation_types
                 0 analysis !ProcedureAnalysis.operation_type_count
                 16 analysis !ProcedureAnalysis.operation_type_capacity
+                16 AnalyzedBindingLocal:sizeof * alloc analysis !ProcedureAnalysis.binding_locals
+                0 analysis !ProcedureAnalysis.binding_local_count
+                16 analysis !ProcedureAnalysis.binding_local_capacity
                 analysis ctx proc-index procedure-at !ProcedureEntry.analysis
             end
             proc-index
@@ -3087,6 +3090,13 @@ record LocalEntry
     module ModuleContext*
 end
 
+record AnalyzedBindingLocal
+    source_module ModuleContext*
+    name_token int
+    local_id int
+    value_type int
+end
+
 record StackSlotEntry
     depth int
     value_type int
@@ -3107,6 +3117,8 @@ record AnalyzedOperation
     secondary_module ModuleContext*
     secondary_index int
     local_id int
+    binding_local_start int
+    binding_local_count int
     value_type int
     intrinsic IntrinsicOperation
     private_operation PrivateOperation
@@ -3123,6 +3135,9 @@ record ProcedureAnalysis
     operation_types ptr
     operation_type_count int
     operation_type_capacity int
+    binding_locals ptr
+    binding_local_count int
+    binding_local_capacity int
 end
 
 record ResultTypeEntry
@@ -3232,7 +3247,8 @@ record CompileContext
     operation_active bool
     operation_minimum_type_count int
     operation_identity_set bool
-    operation_macro_lock bool
+    operation_identity_locked bool
+    operation_binding_active bool
 end
 
 record TokenEntry
@@ -3393,6 +3409,8 @@ union OperationKind
     case constant
     case procedure_call
     case macro_call
+    case let_binding
+    case peek_binding
     case type_literal
     case record_new
     case record_alloc
@@ -3741,10 +3759,16 @@ proc active-analyzed-operation CompileContext* -- AnalyzedOperation* do
     end
 end
 
+proc analyzed-binding-local-at ProcedureAnalysis* int -- AnalyzedBindingLocal* do
+    let analysis index do
+        analysis @ProcedureAnalysis.binding_locals index AnalyzedBindingLocal:sizeof * + AnalyzedBindingLocal* cast
+    end
+end
+
 proc set-operation-target CompileContext* OperationKind ModuleContext* int -- do
     let cc kind module index do
         if cc @CompileContext.record_operations cc @CompileContext.operation_active && do
-            if cc @CompileContext.operation_macro_lock ! do
+            if cc @CompileContext.operation_identity_locked ! do
                 if cc @CompileContext.operation_identity_set do
                     "internal duplicate analyzed operation identity" fail
                 end
@@ -3763,7 +3787,7 @@ end
 proc set-operation-type CompileContext* OperationKind int -- do
     let cc kind value-type do
         cc kind 0 ptr cast ModuleContext* cast 0 1 - set-operation-target
-        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
             value-type cc active-analyzed-operation !AnalyzedOperation.value_type
         end
     end
@@ -3771,7 +3795,7 @@ end
 
 proc set-operation-secondary-target CompileContext* ModuleContext* int -- do
     let cc module index do
-        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
             if cc @CompileContext.operation_identity_set ! do "internal missing analyzed operation identity" fail end
             module cc active-analyzed-operation !AnalyzedOperation.secondary_module
             index cc active-analyzed-operation !AnalyzedOperation.secondary_index
@@ -3782,8 +3806,66 @@ end
 proc set-operation-local CompileContext* LocalEntry* -- do
     let cc local do
         cc OperationKind:local local @LocalEntry.module local @LocalEntry.name_token set-operation-target
-        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
             local @LocalEntry.id cc active-analyzed-operation !AnalyzedOperation.local_id
+        end
+    end
+end
+
+proc set-operation-binding CompileContext* OperationKind -- do
+    let cc kind do
+        cc kind 0 ptr cast ModuleContext* cast 0 1 - set-operation-target
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
+            cc compile-context-analysis @ProcedureAnalysis.binding_local_count
+            cc active-analyzed-operation !AnalyzedOperation.binding_local_start
+            0 cc active-analyzed-operation !AnalyzedOperation.binding_local_count
+            true cc !CompileContext.operation_identity_locked
+            true cc !CompileContext.operation_binding_active
+        end
+    end
+end
+
+proc grow-analyzed-binding-locals ProcedureAnalysis* -- do
+    let analysis do
+        if analysis @ProcedureAnalysis.binding_local_capacity max-int AnalyzedBindingLocal:sizeof 2 * / > do
+            "internal analyzed binding local capacity overflow" fail
+        end
+        analysis @ProcedureAnalysis.binding_local_capacity 2 *
+        let capacity do
+            capacity AnalyzedBindingLocal:sizeof * alloc
+            let binding-locals do
+                analysis @ProcedureAnalysis.binding_locals binding-locals
+                analysis @ProcedureAnalysis.binding_local_count AnalyzedBindingLocal:sizeof * memory-copy
+                binding-locals analysis !ProcedureAnalysis.binding_locals
+                capacity analysis !ProcedureAnalysis.binding_local_capacity
+            end
+        end
+    end
+end
+
+proc record-binding-local CompileContext* LocalEntry* -- do
+    let cc local do
+        if
+            cc @CompileContext.record_operations
+            cc @CompileContext.operation_active &&
+            cc @CompileContext.operation_binding_active &&
+        do
+            cc compile-context-analysis
+            let analysis do
+                if analysis @ProcedureAnalysis.binding_local_count analysis @ProcedureAnalysis.binding_local_capacity == do
+                    analysis grow-analyzed-binding-locals
+                end
+                analysis analysis @ProcedureAnalysis.binding_local_count analyzed-binding-local-at
+                let binding-local do
+                    local @LocalEntry.module binding-local !AnalyzedBindingLocal.source_module
+                    local @LocalEntry.name_token binding-local !AnalyzedBindingLocal.name_token
+                    local @LocalEntry.id binding-local !AnalyzedBindingLocal.local_id
+                    local @LocalEntry.value_type binding-local !AnalyzedBindingLocal.value_type
+                    analysis @ProcedureAnalysis.binding_local_count 1 + analysis !ProcedureAnalysis.binding_local_count
+                    cc active-analyzed-operation @AnalyzedOperation.binding_local_count 1 +
+                    cc active-analyzed-operation !AnalyzedOperation.binding_local_count
+                end
+            end
         end
     end
 end
@@ -3791,7 +3873,7 @@ end
 proc set-operation-intrinsic CompileContext* IntrinsicOperation int PrivateOperation -- do
     let cc intrinsic value-type private-operation do
         cc OperationKind:intrinsic 0 ptr cast ModuleContext* cast 0 1 - set-operation-target
-        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_macro_lock ! && do
+        if cc @CompileContext.record_operations cc @CompileContext.operation_active && cc @CompileContext.operation_identity_locked ! && do
             intrinsic cc active-analyzed-operation !AnalyzedOperation.intrinsic
             value-type cc active-analyzed-operation !AnalyzedOperation.value_type
             private-operation cc active-analyzed-operation !AnalyzedOperation.private_operation
@@ -3802,9 +3884,9 @@ end
 proc set-operation-macro CompileContext* ModuleContext* int -- do
     let cc module index do
         if cc @CompileContext.record_operations cc @CompileContext.operation_active && do
-            if cc @CompileContext.operation_macro_lock ! do
+            if cc @CompileContext.operation_identity_locked ! do
                 cc OperationKind:macro_call module index set-operation-target
-                true cc !CompileContext.operation_macro_lock
+                true cc !CompileContext.operation_identity_locked
             end
         end
     end
@@ -3892,12 +3974,15 @@ proc begin-analyzed-operation CompileContext* int -- do
                 0 ptr cast ModuleContext* cast operation !AnalyzedOperation.secondary_module
                 0 1 - operation !AnalyzedOperation.secondary_index
                 0 1 - operation !AnalyzedOperation.local_id
+                0 1 - operation !AnalyzedOperation.binding_local_start
+                0 operation !AnalyzedOperation.binding_local_count
                 type-none operation !AnalyzedOperation.value_type
                 IntrinsicOperation:none operation !AnalyzedOperation.intrinsic
                 PrivateOperation:none operation !AnalyzedOperation.private_operation
                 cc @CompileContext.type_count cc !CompileContext.operation_minimum_type_count
                 false cc !CompileContext.operation_identity_set
-                false cc !CompileContext.operation_macro_lock
+                false cc !CompileContext.operation_identity_locked
+                false cc !CompileContext.operation_binding_active
                 true cc !CompileContext.operation_active
             end
         end
@@ -3932,7 +4017,8 @@ proc finish-analyzed-operation CompileContext* int -- do
                 analysis @ProcedureAnalysis.operation_count 1 + analysis !ProcedureAnalysis.operation_count
                 false cc !CompileContext.operation_active
                 false cc !CompileContext.operation_identity_set
-                false cc !CompileContext.operation_macro_lock
+                false cc !CompileContext.operation_identity_locked
+                false cc !CompileContext.operation_binding_active
             end
         end
     end
@@ -3947,13 +4033,18 @@ proc reset-procedure-operations ProcedureAnalysis* -- do
             analysis @ProcedureAnalysis.operation_count analysis @ProcedureAnalysis.operation_capacity > ||
             analysis @ProcedureAnalysis.operation_type_count 0 < ||
             analysis @ProcedureAnalysis.operation_type_count analysis @ProcedureAnalysis.operation_type_capacity > ||
+            analysis @ProcedureAnalysis.binding_local_capacity 0 <= ||
+            analysis @ProcedureAnalysis.binding_local_count 0 < ||
+            analysis @ProcedureAnalysis.binding_local_count analysis @ProcedureAnalysis.binding_local_capacity > ||
             analysis @ProcedureAnalysis.operations int cast 0 == ||
             analysis @ProcedureAnalysis.operation_types int cast 0 == ||
+            analysis @ProcedureAnalysis.binding_locals int cast 0 == ||
         do
             "internal invalid procedure operation storage" fail
         end
         0 analysis !ProcedureAnalysis.operation_count
         0 analysis !ProcedureAnalysis.operation_type_count
+        0 analysis !ProcedureAnalysis.binding_local_count
     end
 end
 
@@ -9091,6 +9182,7 @@ proc bind-let-names CompileContext* int int -- do
                 let value-type do
                     cc name-token value-type add-local
                     let local-id do
+                        cc cc cc @CompileContext.local_count 1 - local-address record-binding-local
                         if cc @CompileContext.emitting do
                             cc emit-indent
                             cc @CompileContext.program value-type emit-c-value-type
@@ -9138,6 +9230,7 @@ proc compile-let CompileContext* int -- int do
                 if name-count 0 <= do
                     cc "let requires at least one name" fail-compile-word
                 end
+                cc OperationKind:let_binding set-operation-binding
                 cc let-token 1 + name-count begin-binding-block
                 do-token 1 +
             end
@@ -9152,6 +9245,7 @@ proc compile-peek CompileContext* int -- int do
                 if name-count 0 <= do
                     cc "peek requires at least one name" fail-compile-word
                 end
+                cc OperationKind:peek_binding set-operation-binding
                 cc peek-token 1 + name-count begin-binding-block
                 cc peek-token 1 + name-count restore-peek-names
                 do-token 1 +
@@ -10523,8 +10617,6 @@ proc token-is-structured-word CompileContext* int -- bool do
             cc @CompileContext.defining_module token-index "while" token-equals ||
             cc @CompileContext.defining_module token-index "do" token-equals ||
             cc @CompileContext.defining_module token-index "end" token-equals ||
-            cc @CompileContext.defining_module token-index "let" token-equals ||
-            cc @CompileContext.defining_module token-index "peek" token-equals ||
         end
     end
 end
@@ -10721,7 +10813,8 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             false cc !CompileContext.operation_active
             0 cc !CompileContext.operation_minimum_type_count
             false cc !CompileContext.operation_identity_set
-            false cc !CompileContext.operation_macro_lock
+            false cc !CompileContext.operation_identity_locked
+            false cc !CompileContext.operation_binding_active
             cc
         end
     end
@@ -11176,6 +11269,8 @@ proc emit-inspect-operation-kind OperationKind -- do
         elif kind OperationKind.constant? do "constant" emit
         elif kind OperationKind.procedure_call? do "procedure_call" emit
         elif kind OperationKind.macro_call? do "macro_call" emit
+        elif kind OperationKind.let_binding? do "let_binding" emit
+        elif kind OperationKind.peek_binding? do "peek_binding" emit
         elif kind OperationKind.type_literal? do "type_literal" emit
         elif kind OperationKind.record_new? do "record_new" emit
         elif kind OperationKind.record_alloc? do "record_alloc" emit
@@ -11298,6 +11393,24 @@ proc emit-inspect-type-list Program* ptr int int -- do
     end
 end
 
+proc emit-inspect-binding-local Program* ModuleContext* int ProcedureAnalysis* int -- do
+    let program procedure-module procedure-index analysis index do
+        analysis index analyzed-binding-local-at
+        let local do
+            "binding_local\t" emit
+            procedure-module @ModuleContext.module_id emit-unsigned 9 putc
+            procedure-index emit-unsigned 9 putc
+            index emit-unsigned 9 putc
+            local @AnalyzedBindingLocal.source_module @ModuleContext.module_id emit-unsigned 9 putc
+            local @AnalyzedBindingLocal.name_token emit-unsigned 9 putc
+            local @AnalyzedBindingLocal.source_module local @AnalyzedBindingLocal.name_token token-slice emit-inspect-bytes 9 putc
+            local @AnalyzedBindingLocal.local_id emit-unsigned 9 putc
+            program local @AnalyzedBindingLocal.value_type emit-inspect-type
+            10 putc
+        end
+    end
+end
+
 proc operation-end-byte AnalyzedOperation* -- int do
     let operation do
         operation @AnalyzedOperation.source_module
@@ -11334,6 +11447,8 @@ proc emit-inspect-operation Program* ModuleContext* int ProcedureAnalysis* int -
                 operation @AnalyzedOperation.secondary_module emit-inspect-module-id 9 putc
                 operation @AnalyzedOperation.secondary_index emit-integer 9 putc
                 operation @AnalyzedOperation.local_id emit-integer 9 putc
+                operation @AnalyzedOperation.binding_local_start emit-integer 9 putc
+                operation @AnalyzedOperation.binding_local_count emit-unsigned 9 putc
                 program operation @AnalyzedOperation.value_type emit-inspect-type 9 putc
                 operation @AnalyzedOperation.intrinsic emit-inspect-intrinsic 9 putc
                 operation @AnalyzedOperation.private_operation emit-inspect-private-operation 9 putc
@@ -11355,11 +11470,20 @@ proc emit-inspect-procedure Program* ModuleContext* int -- do
                     "procedure\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
                     procedure-index emit-unsigned 9 putc
                     module @ModuleContext.source procedure @ProcedureEntry.name_start + procedure @ProcedureEntry.name_length emit-inspect-bytes
-                    9 putc analysis @ProcedureAnalysis.operation_count emit-unsigned 10 putc
+                    9 putc analysis @ProcedureAnalysis.operation_count emit-unsigned
+                    9 putc analysis @ProcedureAnalysis.binding_local_count emit-unsigned 10 putc
                     0
                     while dup analysis @ProcedureAnalysis.operation_count < do
                         dup let operation-index do
                             program module procedure-index analysis operation-index emit-inspect-operation
+                        end
+                        1 +
+                    end
+                    drop
+                    0
+                    while dup analysis @ProcedureAnalysis.binding_local_count < do
+                        dup let binding-local-index do
+                            program module procedure-index analysis binding-local-index emit-inspect-binding-local
                         end
                         1 +
                     end
@@ -11373,10 +11497,11 @@ end
 proc emit-inspect-program Program* bool -- do
     let program include-builtins do
         if program @Program.phase ProgramPhase:analyzed != do "internal program must be analyzed before inspection" fail end
-        "frogc-inspect\t1\n" emit
+        "frogc-inspect\t2\n" emit
         "fields\tmodule\tid\troot\tbuiltins\tpath\n" emit
-        "fields\tprocedure\tmodule\tindex\tname\toperation_count\n" emit
-        "fields\toperation\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\tbefore_depth\tminimum_depth\tafter_depth\tinput_count\toutput_count\tkind\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tvalue_type\tintrinsic\tprivate_operation\tbefore_types\tafter_types\n" emit
+        "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\n" emit
+        "fields\toperation\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\tbefore_depth\tminimum_depth\tafter_depth\tinput_count\toutput_count\tkind\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tbinding_local_start\tbinding_local_count\tvalue_type\tintrinsic\tprivate_operation\tbefore_types\tafter_types\n" emit
+        "fields\tbinding_local\tprocedure_module\tprocedure_index\tindex\tsource_module\tname_token\tname\tlocal_id\tvalue_type\n" emit
         program @Program.module_head
         while dup ptr cast int cast 0 != do
             let module do

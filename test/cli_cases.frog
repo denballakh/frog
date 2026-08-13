@@ -133,9 +133,45 @@ proc frog-cli-inspect-builtins FrogTestContext* -- do
                 result @CompletedProcess.returncode 0 ==
                 result @CompletedProcess.stderr_len 0 == &&
                 result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\tint\tprivate\tadd\t" String.bytes
-                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\tint\tprivate\tadd\t" String.len bytes-contain &&
+                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.bytes
+                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.len bytes-contain &&
                 "cli/inspect-builtins" context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
+proc frog-cli-inspect-bindings FrogTestContext* -- do
+    let context do
+        2 context frog-cli-argv
+        let arguments do
+            "inspect" arguments 1 subprocess-arg
+            "test/cases/cli/inspect_bindings.frog" arguments 2 subprocess-arg
+            arguments "" subprocess-run
+            let result do
+                result @CompletedProcess.returncode 0 ==
+                result @CompletedProcess.stderr_len 0 == &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\tpeek_binding\t-1\t-1\t-1\t-1\t-1\t0\t2\tnone\tnone\tnone\t[int,int]\t[int,int]\n" String.bytes
+                "\tpeek_binding\t-1\t-1\t-1\t-1\t-1\t0\t2\tnone\tnone\tnone\t[int,int]\t[int,int]\n" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\tlet_binding\t-1\t-1\t-1\t-1\t-1\t2\t2\tnone\tnone\tnone\t[int,int,int,int]\t[int,int]\n" String.bytes
+                "\tlet_binding\t-1\t-1\t-1\t-1\t-1\t2\t2\tnone\tnone\tnone\t[int,int,int,int]\t[int,int]\n" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\tmacro_call\t0\t0\t-1\t-1\t-1\t-1\t0\tnone\tnone\tnone\t[]\t[]\n" String.bytes
+                "\tmacro_call\t0\t0\t-1\t-1\t-1\t-1\t0\tnone\tnone\tnone\t[]\t[]\n" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\nbinding_local\t0\t0\t2\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t3\t0\t27\tfirst\t4\tint\nbinding_local\t0\t0\t4\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t5\t0\t42\tleft\t11\tint\n" String.bytes
+                "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\nbinding_local\t0\t0\t2\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t3\t0\t27\tfirst\t4\tint\nbinding_local\t0\t0\t4\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t5\t0\t42\tleft\t11\tint\n" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "procedure\t0\t1\tsecondary\t4\t1\n" String.bytes
+                "procedure\t0\t1\tsecondary\t4\t1\n" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.bytes
+                "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.len bytes-contain &&
+                "cli/inspect-bindings" context frog-check
                 result completed-process-free
                 arguments subprocess-argv-free
             end
@@ -253,19 +289,20 @@ Try `frogc --help`.
         "macro twice dup + end
 proc helper int -- int do 1 + end
 proc main -- do 20 twice helper drop end
-" "frogc-inspect	1
+" "frogc-inspect	2
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count
-fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	value_type	intrinsic	private_operation	before_types	after_types
+fields	procedure	module	index	name	operation_count	binding_local_count
+fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
+fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
 module	0	1	0	<stdin>
-procedure	0	0	helper	2
-operation	0	0	0	0	11	12	48	49	2	27	1	1	2	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[int]	[int,int]
-operation	0	0	1	0	12	13	50	51	2	29	2	0	1	2	1	procedure_call	1	1	-1	-1	-1	none	none	none	[int,int]	[int]
-procedure	0	1	main	4
-operation	0	1	0	0	18	19	72	74	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[]	[int]
-operation	0	1	1	0	19	20	75	80	3	20	1	0	1	1	1	macro_call	0	0	-1	-1	-1	none	none	none	[int]	[int]
-operation	0	1	2	0	20	21	81	87	3	26	1	0	1	1	1	procedure_call	0	0	-1	-1	-1	none	none	none	[int]	[int]
-operation	0	1	3	0	21	22	88	92	3	33	1	0	0	1	0	macro_call	1	2	-1	-1	-1	none	none	none	[int]	[]
+procedure	0	0	helper	2	0
+operation	0	0	0	0	11	12	48	49	2	27	1	1	2	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[int]	[int,int]
+operation	0	0	1	0	12	13	50	51	2	29	2	0	1	2	1	procedure_call	1	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
+procedure	0	1	main	4	0
+operation	0	1	0	0	18	19	72	74	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[]	[int]
+operation	0	1	1	0	19	20	75	80	3	20	1	0	1	1	1	macro_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
+operation	0	1	2	0	20	21	81	87	3	26	1	0	1	1	1	procedure_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
+operation	0	1	3	0	21	22	88	92	3	33	1	0	0	1	0	macro_call	1	2	-1	-1	-1	-1	0	none	none	none	[int]	[]
 module	1	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-stdin" context frog-cli-inspect-stdin
 
@@ -278,19 +315,20 @@ proc late -- do nope end
 error: unknown word: nope
 " 1 "cli/inspect-stdin-late-error" context frog-cli-inspect-stdin
 
-        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	1
+        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	2
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count
-fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	value_type	intrinsic	private_operation	before_types	after_types
+fields	procedure	module	index	name	operation_count	binding_local_count
+fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
+fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
 module	0	1	0	test/cases/cli/inspect_relative/main.frog
-procedure	0	0	main	3
-operation	0	0	0	0	8	9	53	55	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[]	[int]
-operation	0	0	1	0	9	10	56	65	3	20	1	0	1	1	1	procedure_call	1	0	-1	-1	-1	none	none	none	[int]	[int]
-operation	0	0	2	0	10	11	66	70	3	30	1	0	0	1	0	macro_call	2	2	-1	-1	-1	none	none	none	[int]	[]
+procedure	0	0	main	3	0
+operation	0	0	0	0	8	9	53	55	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[]	[int]
+operation	0	0	1	0	9	10	56	65	3	20	1	0	1	1	1	procedure_call	1	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
+operation	0	0	2	0	10	11	66	70	3	30	1	0	0	1	0	macro_call	2	2	-1	-1	-1	-1	0	none	none	none	[int]	[]
 module	1	0	0	helper.frog
-procedure	1	0	increment	2
-operation	1	0	0	1	6	7	29	30	1	30	1	1	2	0	1	literal	-1	-1	-1	-1	-1	int	none	none	[int]	[int,int]
-operation	1	0	1	1	7	8	31	32	1	32	2	0	1	2	1	procedure_call	2	1	-1	-1	-1	none	none	none	[int,int]	[int]
+procedure	1	0	increment	2	0
+operation	1	0	0	1	6	7	29	30	1	30	1	1	2	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[int]	[int,int]
+operation	1	0	1	1	7	8	31	32	1	32	2	0	1	2	1	procedure_call	2	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
 module	2	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-file-relative-import" context frog-cli-case-2
 
@@ -303,6 +341,7 @@ Try `frogc --help`.
 " 2 "cli/inspect-too-many-files" context frog-cli-case-3
 
         context frog-cli-inspect-builtins
+        context frog-cli-inspect-bindings
 
         "run" "test/cases/cli/missing.frog" ""
         "frogc: unable to read source: test/cases/cli/missing.frog
