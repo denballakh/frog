@@ -208,6 +208,7 @@ not in this maintenance guide.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 - `assert` is a shadowable procedure in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs. Release mode suppresses only implicit calls to that builtin identity; explicit imports, function references, and shadowing procedures retain normal behavior.
+- `NULL` is a shadowable procedure in the implicit builtins module with stack effect `-- ptr`. Compare pointers explicitly with `NULL ==` or `NULL !=`; `stdlib/libc.frog` does not provide a separate null-pointer predicate.
 - Character literals contain one raw Unicode codepoint; `\'` is the only
   character escape and represents a single quote. Preserve raw `'\'` as the
   backslash character and keep other backslash spellings invalid.

@@ -60,6 +60,11 @@ proc run-inline-cases FrogTestContext* -- do
         "1 2 <= print" "true\n" "" 0 "code/comparisons/05" context frog-inline-run-body
         "1 2 >= print" "false\n" "" 0 "code/comparisons/06" context frog-inline-run-body
 
+        // null_pointer (3)
+        "NULL int cast print" "0\n" "" 0 "code/null_pointer/01" context frog-inline-run-body
+        "NULL NULL == print" "true\n" "" 0 "code/null_pointer/02" context frog-inline-run-body
+        "1 ptr cast NULL != print" "true\n" "" 0 "code/null_pointer/03" context frog-inline-run-body
+
         // assertions (3)
         "true \"unused\" assert" "" "" 0 "code/assertions/01" context frog-inline-run-body
         "false \"something failed\" assert" "" "something failed\n" 1 "code/assertions/02" context frog-inline-run-body

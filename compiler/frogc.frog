@@ -18292,8 +18292,6 @@ proc compile-builtins-word CompileContext* int -- bool do
     end
 end
 
-proc null-pointer -- ptr do 0 ptr cast end
-
 proc cstring-length ptr -- int do
     let bytes do
         0
@@ -18394,19 +18392,19 @@ proc compiler-distribution-root ptr -- ptr int do
         executable cstring-length
         let executable-length do
             if executable-length max-import-path-bytes > do
-                null-pointer 0
+                NULL 0
             else
                 executable executable-length 47 last-index-of-byte
                 let slash do
                     if slash 0 < do
-                        null-pointer 0
+                        NULL 0
                     elif executable 0 byte-read 47 == do
                         executable distribution-root-from-absolute-executable
                     else
                         max-import-path-bytes 1 + alloc
                         let cwd do
                             if cwd max-import-path-bytes 1 + get-current-directory ! do
-                                null-pointer 0
+                                NULL 0
                             else
                                 cwd cstring-length
                                 let cwd-length do
@@ -18462,7 +18460,7 @@ end
 
 proc allocate-pointer-array int -- ptr do
     peek count do 1 + cell-bytes * alloc
-        peek array do count null-pointer set-pointer-at
+        peek array do count NULL set-pointer-at
             array
         end
     end
@@ -18531,7 +18529,7 @@ proc read-source-path ptr -- ptr int do
             else
                 "unable to read source" path cli-error-path
                 1 exit
-                null-pointer 0
+                NULL 0
             end
         end
     end
@@ -19119,7 +19117,7 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
     let argv argc index output should-run do
         if index argc >= do
             "build requires exactly one source file" cli-usage-error
-            null-pointer null-pointer false
+            NULL NULL false
         else
             argv index argv-at
             let argument do
@@ -19130,7 +19128,7 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
                     do
                         "Usage: frogc [--debug] [--release] build [-o FILE] [-r] FILE\n" emit
                         0 exit
-                        null-pointer null-pointer false
+                        NULL NULL false
                     elif argument "-r" cstring-equals do
                         argv argc index 1 + output true parse-build-options
                     elif argument "-o" cstring-equals do
@@ -19140,7 +19138,7 @@ proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
                         argv argc index 2 + argv index 1 + argv-at should-run parse-build-options
                     else
                         "unknown build option: " argument cli-usage-error-value
-                        null-pointer null-pointer false
+                        NULL NULL false
                     end
                 else
                     if argc index - 1 != do
@@ -19155,7 +19153,7 @@ end
 
 proc build-command ptr int int bool bool ptr int -- do
     let argv argc command-index debug release standard-library-root standard-library-root-length do
-        argv argc command-index 1 + null-pointer false parse-build-options
+        argv argc command-index 1 + NULL false parse-build-options
         let source output should-run do
             source output should-run debug release standard-library-root standard-library-root-length build-file exit
         end

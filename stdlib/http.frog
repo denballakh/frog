@@ -2,7 +2,6 @@ from "libc.frog" import (
     alloc
     free
     exit
-    null-pointer
     close
 )
 from "socket.frog" import (
@@ -65,7 +64,7 @@ proc http-response-bytes int ptr int -- HttpResponse* do
     let status bytes length do
         if status 200 < status 599 > || do 1 exit end
         if length 0 < do 1 exit end
-        if length 0 > bytes null-pointer && do 1 exit end
+        if length 0 > bytes NULL == && do 1 exit end
         if status http-response-forbids-body? length 0 != && do 1 exit end
         length alloc
         let body do

@@ -220,3 +220,5 @@ proc @ u64* -- u64 do __intrinsic_load_u64 end
 proc ! u64 u64* -- do __intrinsic_store_u64 end
 proc @ ptr* -- ptr do __intrinsic_load_ptr end
 proc ! ptr ptr* -- do __intrinsic_store_ptr end
+
+proc NULL -- ptr do 0 ptr cast end

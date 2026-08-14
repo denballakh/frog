@@ -89,15 +89,13 @@ c-call c-memcpy memcpy CPtr CConstPtr CSize -- CPtr end
 
 const libc-status-bytes 8 end
 
-proc null-pointer ptr -- bool do int cast 0 == end
-
 proc exit int -- do c-exit end
 
 proc alloc int -- ptr do
     let size do
         if size 0 < do 1 exit end
         size c-malloc
-        if dup null-pointer size 0 != && do 1 exit end
+        if dup NULL == size 0 != && do 1 exit end
     end
 end
 
@@ -117,7 +115,7 @@ end
 proc dup2 int int -- int do c-dup2 end
 proc close int -- int do c-close end
 proc chdir ptr -- int do c-chdir end
-proc get-current-directory ptr int -- bool do c-getcwd null-pointer ! end
+proc get-current-directory ptr int -- bool do c-getcwd NULL != end
 proc execv ptr ptr -- int do c-execv end
 proc execvp ptr ptr -- int do c-execvp end
 
@@ -128,7 +126,7 @@ proc ensure-directory ptr -- int do
         elif c-errno c-eexist == do
             drop
             path c-opendir
-            if dup null-pointer do
+            if dup NULL == do
                 drop 0 1 -
             else
                 c-closedir
@@ -198,13 +196,13 @@ proc read-file-path ptr int -- ptr bool do
     let bytes length do
         if length 0 < do
             0 ptr cast false
-        elif length 0 > bytes null-pointer && do
+        elif length 0 > bytes NULL == && do
             0 ptr cast false
-        elif length 0 > bytes 0 length c-memchr null-pointer ! && do
+        elif length 0 > bytes 0 length c-memchr NULL != && do
             0 ptr cast false
         else
             length 1 + c-malloc
-            if dup null-pointer do
+            if dup NULL == do
                 drop 0 ptr cast false
             else
                 let path do
@@ -245,7 +243,7 @@ proc read-open-file ptr -- ptr int bool do
                         file read-file-close-failure
                     else
                         if length 0 == do 1 else length end c-malloc
-                        if dup null-pointer do
+                        if dup NULL == do
                             drop
                             file read-file-close-failure
                         else
@@ -277,7 +275,7 @@ proc read-file ptr int -- ptr int bool do
             path "rb" String.bytes c-fopen
             let file do
                 path c-free
-                if file null-pointer do
+                if file NULL == do
                     read-file-failure
                 else
                     file read-open-file

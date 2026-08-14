@@ -27,7 +27,7 @@ the shell's `PATH` does not identify the accompanying standard library.
 
 `stdlib/builtins.frog` is loaded implicitly for every program. It defines the
 standard stack macros `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot`, plus
-the `assert` procedure documented in the
+the `NULL` and `assert` procedures documented in the
 [language reference](language.md#implicit-builtins-module). These declarations
 are available without an import and may be shadowed; explicit imports from the
 module are also supported.

@@ -264,7 +264,7 @@ Constants have whole-module scope, may refer forward to later constants, and are
 
 ## Implicit builtins module
 
-The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) from Frog source for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `assert` is an ordinary procedure.
+The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) from Frog source for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, `NULL`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `NULL` and `assert` are ordinary procedures.
 
 Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or matching procedure overload, and finally a matching builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
 
@@ -274,6 +274,7 @@ Builtins are fallback definitions. Resolution prefers a user-defined or imported
 - `swap`: `a b -- b a`
 - `swap2`: `a b x y -- x y a b`
 - `rot`: `a b c -- b c a`
+- `NULL`: `-- ptr`; produces the null untyped pointer. Test pointers explicitly with `value NULL ==` or `value NULL !=`.
 - `assert`: `bool String --`; a true condition does nothing. A false condition writes the message followed by a newline to standard error and terminates the program with status 1.
 
 In release mode, calls resolved implicitly to this builtin `assert` consume their operands without invoking the assertion procedure. Operand expressions are still evaluated in source order. User-defined assertions, explicit imports or aliases of the builtin procedure, and function-reference calls retain their normal behavior.
