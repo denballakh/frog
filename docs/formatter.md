@@ -25,26 +25,37 @@ imports from the input file's directory.
 ## Indentation rule
 
 Four spaces represent one syntax level. Two spaces represent one stack column.
-For an operation reached at stack depth `d` with effect `i -- o`, the operation
-touches stack floor `d - i` and leaves depth `d - i + o`.
+Procedure bodies, constant expressions, conditions, control-flow arms, loop
+bodies, and `let` or `peek` bodies are separate flow regions.
 
-Each flow region has a shared floor: the lowest boundary touched by any
-operation in the region. Procedure and macro bodies, constant expressions,
-conditions, control-flow arms, loop bodies, and `let` or `peek` bodies are
-separate regions. A flow line is indented as:
+For each region, `F` is the minimum stack depth at the region entry or at a
+boundary before or after one of its flow-owned physical lines. For one line,
+`B` is its stack depth before the line and `A` is its depth after the line. The
+formatter computes:
 
 ```text
-4 * syntax depth + 2 * (line floor - region floor)
+column = max(F, min(B, A - 1))
+indent = 4 * syntax depth + 2 * (column - F)
 ```
 
-All operations grouped on one physical line within the owning flow region
-contribute to that line's floor. This includes temporary stack consumption, so
-a folded line such as `+ dup` is aligned from its complete `2 -- 2` effect, not
-from its zero net depth change.
+If a line grows the stack, it aligns with the first column it adds. If it
+preserves or shrinks the stack, it aligns with the top value it leaves. A line
+that leaves no value above `F` stays at the syntax baseline. Temporary pushes,
+consumption, and shuffles inside a folded line do not affect its indentation.
+
+This makes lines that preserve a carried value align even if they create and
+discard temporary values:
+
+```frog
+entry @JsonObjectEntry.next
+entry @JsonObjectEntry.key json-text-free
+entry @JsonObjectEntry.value json-free
+entry ptr cast free
+```
 
 If one physical line crosses syntax or flow regions, its first token owns the
-line's indentation. Later regions cannot reclassify or move that line. This
-allows compact control flow to remain folded:
+line's syntax depth and region. The complete line still determines its final
+stack depth. This allows compact control flow to remain folded:
 
 ```frog
 proc choose -- int do
@@ -72,13 +83,15 @@ first source token is code. It preserves:
 - all tokens and their intra-line spacing;
 - comments, blank lines, and trailing whitespace;
 - literal bytes, including multiline literal continuation lines;
+- physical lines whose first code token belongs to a macro declaration;
 - LF, CRLF, and lone-CR line endings.
 
 The formatter does not wrap long lines or split, join, or reorder tokens.
+Macro declarations are preserved instead of formatted because their stack
+effects can depend on the types at each expansion site.
 
 Formatting requires one resolved stack effect for every executable source
-token it visits. This includes overloads and macro bodies. If an unused macro
-body has no analyzed specialization, formatting reports `formatter requires a
-resolved stack effect` instead of guessing its indentation. If callers resolve
-one macro-body token to different effects, formatting reports conflicting
-resolved stack effects.
+token it visits. Macro invocations inside procedures are formatted from the
+concrete net effect resolved while analyzing that procedure. Invalid source or
+an invalid loaded dependency produces a diagnostic instead of formatted
+output.

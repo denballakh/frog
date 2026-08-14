@@ -1,51 +1,32 @@
 # Formatter style
 
-Frog code can use its stack effects as a layout rule. Code flows downward. A
-value that continues through several operations forms a vertical spine, while
-additional operands are branches above and to the right of the operation that
-consumes them.
+Frog code can use the stack state between physical lines as a layout rule. Code
+flows downward, and indentation follows the result that one line leaves for the
+next line. A physical line is one folded formatting unit: temporary stack
+movement inside that line does not move it away from adjacent lines with the
+same boundary state.
 
 ## Stack columns
 
-For a token evaluated at stack depth `d` with stack effect `i -- o`, its stack
-column is the lower boundary of the stack slice that it replaces:
+Four spaces represent one syntax level. Two spaces represent one stack column.
+Procedure bodies, constant expressions, conditions, control-flow arms, loop
+bodies, and `let` or `peek` bodies are separate flow regions.
+
+For one flow region, let `F` be the minimum stack depth at its entry or at a
+boundary before or after one of its flow-owned physical lines. For a line, let
+`B` be its stack depth before the line and `A` its stack depth after the line.
+The line's column is:
 
 ```text
-column = d - i
-new depth = d - i + o
+column = max(F, min(B, A - 1))
+indent = 4 * syntax depth + 2 * (column - F)
 ```
 
-Stack columns are zero-based boundaries between stack depths. Immediately
-before the token, its inputs occupy `[d - i, d)`. Immediately afterward, its
-outputs occupy `[d - i, d - i + o)`. A producer with effect `0 -- 1` at depth
-`d` therefore places its result in column `d`. A `1 -- 2` word keeps its lower
-output in the consumed input's column and places its other output one column to
-the right.
-
-Therefore:
-
-- `0 -- 1` starts a branch in the next free column;
-- `1 -- 1` continues a column;
-- `2 -- 1` joins two columns at the lower one;
-- `1 -- 0` terminates a column;
-- `1 -- 2` splits a column;
-- multi-input and multi-output words occupy the lowest column they touch.
-
-Two spaces represent one stack column. Syntax nesting, such as a procedure or
-an `if` body, continues to use four spaces. Each surrounding code region has a
-shared stack floor: the lowest boundary touched by any executable token in the
-region, including values consumed from the region's entry stack. A physical
-line is placed using:
-
-```text
-visual stack column = line floor - region floor
-indent = syntax indent + 2 * visual stack column
-```
-
-The common region floor preserves the relative positions of all lines while
-preventing values below the region from shifting the entire region to the
-right. Procedure and macro bodies, constant expressions, conditions, control
-flow arms, loop bodies, and `let` or `peek` bodies are separate regions.
+If a line grows the stack, `A - 1` is at least `B`, so the line starts at `B`,
+the first column it adds. If a line preserves or shrinks the stack, it follows
+the top value it leaves at `A - 1`. A line that leaves no value above `F` stays
+at the region's syntax baseline. Initializing `F` from the region entry prevents
+ambient values below the region from shifting the whole region to the right.
 
 For example, fully expanding `a b + c *` produces:
 
@@ -75,31 +56,23 @@ end
 
 ## Tokens grouped on one line
 
-A physical line of stack code is a folded flow unit. Treat all of its tokens
-as one compound stack program and align the line with the lowest stack column
-touched anywhere in that program.
+A physical line of stack code is a folded flow unit. Analyze all of its tokens
+to obtain the validated final depth `A`, but do not use intermediate depths for
+indentation. This keeps implementation details such as a temporary conversion,
+cleanup call, `swap`, or `dup` from producing a zigzag that is not present at
+line boundaries.
 
-More precisely, let `D0` be the depth before the line. For every token `t`, let
-`d(t)` be its input depth and `i(t)` its input count. The line floor is:
+For example, a folded `+ dup` line entered and exited at depth two follows the
+top result column, even though `+` temporarily consumes both inputs:
 
-```text
-floor = min(D0, d(t) - i(t) for every token t on the line)
+```frog
+a
+  b
+  + dup
 ```
 
-If the depth after the line is `D1`, the composed effect of the line is:
-
-```text
-(D0 - floor) -- (D1 - floor)
-```
-
-Thus treating a line as one compound operation and using its lowest stack
-floor are equivalent, provided the compound effect is composed from every
-token. Merely using `D1 - D0` is wrong because it loses temporary consumption.
-For example, `+ dup` has no net depth change, but its composed effect is
-`2 -- 2` and it is anchored at the column of its lower input.
-
-Keeping tokens together folds their internal shape without changing the outer
-layout. These are the expanded and folded forms of the same flow:
+Keeping tokens together hides their internal shape. These are expanded and
+folded forms whose line-boundary columns remain the same:
 
 ```frog
 a
@@ -118,9 +91,9 @@ a
 Authors may keep short computations, conversions, loads, calls, and linear
 pipelines on one line. Splitting a line exposes more of its internal flow;
 joining adjacent tokens folds it. A formatter should preserve this deliberate
-grouping initially, normalize its indentation from the composed effect, and
-never reorder tokens. If a future formatter splits an overlong line, it must
-recompute the floor of every resulting line.
+grouping, normalize its indentation from the line's boundary depths, and never
+reorder tokens. If a future formatter splits an overlong line, it must
+recompute the boundary depths of every resulting line.
 
 ## Structured syntax
 
@@ -128,13 +101,18 @@ Stack columns apply to sequences of executable tokens. Declarations, imports,
 record and union members, and `if`, `elif`, `else`, `while`, `let`, `peek`,
 `do`, and `end` establish ordinary syntactic indentation and formatting
 regions. Multiline conditions and bodies apply the stack-column rule within
-their respective regions.
+their respective regions. If one physical line crosses regions, its first
+token owns the line's syntax depth and region; the complete line still
+determines its final boundary depth. A syntax token that starts a line keeps
+ordinary syntax indentation.
 
-Formatting requires the resolved stack effect of every source token, including
-overloaded procedures and macros. Literals and other producers have effect
-`-- value`. A formatter should report an unresolved or invalid stack program
-instead of guessing its columns. Comments and literal contents must remain
-unchanged.
+Formatting requires the resolved stack effect of every source token it formats,
+including overloaded procedure and macro invocation tokens. Literals and other
+producers have effect `-- value`. Macro declarations are not formatted because
+their effects can depend on expansion context; physical lines whose first code
+token belongs to a macro declaration remain byte-for-byte unchanged. A
+formatter should report an invalid stack program instead of guessing its
+columns. Comments and literal contents must remain unchanged.
 
 # Developer tooling
 

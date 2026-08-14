@@ -119,11 +119,14 @@ Useful direct commands:
 - Subcommands are `check`, `fmt`, `inspect`, `cursor`, `run`, and `build`; each has
   `-h`/`--help`.
 - `fmt [FILE]` analyzes a file, or standard input when omitted, and writes
-  stack-aware indentation to standard output. It preserves physical lines and
-  every byte except leading spaces and tabs on code lines; it never edits the
-  input file. Formatting accepts declaration-only root modules without `main`
-  but still requires every formatted operation to have one resolved stack
-  effect.
+  line-boundary stack indentation to standard output. It derives each flow
+  line's column from its stack depths before and after that physical line, not
+  from temporary stack movement within the line. It preserves physical lines
+  and every byte except leading spaces and tabs on code lines; it never edits
+  the input file. Formatting accepts declaration-only root modules without
+  `main` but still requires every formatted operation to have one resolved
+  stack effect. Macro declarations are preserved rather than formatted;
+  analyzed macro invocations in procedures use their concrete net effects.
 - `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
 - `build -r FILE` runs the resulting executable.

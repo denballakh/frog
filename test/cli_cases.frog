@@ -1676,9 +1676,163 @@ proc c -- int do 3 end
 proc formatted -- int int do
     a
       b c +
-    + dup
+      + dup
 end
-" "" 0 "cli/fmt-stdin-folded-stack-floor" context frog-cli-fmt-stdin
+" "" 0 "cli/fmt-stdin-folded-line-boundary" context frog-cli-fmt-stdin
+
+        "record Entry
+next ptr
+key ptr
+end
+proc release ptr -- do drop end
+proc formatted Entry* -- ptr do
+let entry do
+entry @Entry.next
+entry @Entry.key release
+entry ptr cast release
+end
+end
+" "record Entry
+    next ptr
+    key ptr
+end
+proc release ptr -- do drop end
+proc formatted Entry* -- ptr do
+    let entry do
+        entry @Entry.next
+        entry @Entry.key release
+        entry ptr cast release
+    end
+end
+" "" 0 "cli/fmt-stdin-carried-value-cleanup-alignment" context frog-cli-fmt-stdin
+
+        "proc formatted -- do
+1
+2
+3
+swap
+swap
+drop
+swap
+print
+1 +
+print
+end
+" "proc formatted -- do
+    1
+      2
+        3
+        swap
+        swap
+      drop
+      swap
+    print
+    1 +
+    print
+end
+" "" 0 "cli/fmt-stdin-shuffle-boundaries" context frog-cli-fmt-stdin
+
+        "proc formatted -- int do
+1
+2 if true do drop else drop end
+end
+" "proc formatted -- int do
+    1
+    2 if true do drop else drop end
+end
+" "" 0 "cli/fmt-stdin-flow-owned-structured-line-boundary" context frog-cli-fmt-stdin
+
+        "proc formatted -- int do
+1
+2 if true do
+drop
+else
+drop
+end
+end
+" "proc formatted -- int do
+    1
+      2 if true do
+        drop
+    else
+        drop
+    end
+end
+" "" 0 "cli/fmt-stdin-multiline-if-header-boundary" context frog-cli-fmt-stdin
+
+        "proc formatted -- int int do
+1
+2 let value do
+value
+end
+end
+" "proc formatted -- int int do
+    1
+    2 let value do
+        value
+    end
+end
+" "" 0 "cli/fmt-stdin-multiline-let-header-boundary" context frog-cli-fmt-stdin
+
+        "proc formatted -- int int do
+1
+2 while drop
+3 false do
+end
+end
+" "proc formatted -- int int do
+    1
+    2 while drop
+        3 false do
+    end
+end
+" "" 0 "cli/fmt-stdin-multiline-while-header-boundary" context frog-cli-fmt-stdin
+
+        "proc formatted -- int int do
+1
+dup
+end
+" "proc formatted -- int int do
+    1
+      dup
+end
+" "" 0 "cli/fmt-stdin-dup-boundary" context frog-cli-fmt-stdin
+
+        "proc pair -- int int do 1 2 end
+proc formatted -- int int do
+pair
+end
+" "proc pair -- int int do 1 2 end
+proc formatted -- int int do
+    pair
+end
+" "" 0 "cli/fmt-stdin-two-value-producer-floor" context frog-cli-fmt-stdin
+
+        "proc effect -- do end
+proc formatted -- do
+effect
+end
+" "proc effect -- do end
+proc formatted -- do
+    effect
+end
+" "" 0 "cli/fmt-stdin-zero-effect-floor" context frog-cli-fmt-stdin
+
+        "proc cond -- bool do true end
+proc formatted -- bool do
+cond
+cond &&
+cond &&
+cond &&
+end
+" "proc cond -- bool do true end
+proc formatted -- bool do
+    cond
+    cond &&
+    cond &&
+    cond &&
+end
+" "" 0 "cli/fmt-stdin-condition-chain" context frog-cli-fmt-stdin
 
         "const json-int-max
 1
@@ -1760,10 +1914,10 @@ end
         "proc formatted -- int do\n1\nlet value do\nvalue\nend\nend\n" "proc formatted -- int do\n    1\n    let value do\n        value\n    end\nend\n" "" 0
         "cli/fmt-stdin-let-keyword-syntax-indent" context frog-cli-fmt-stdin
 
-        "macro add-one
+        "  macro add-one
 1
-+
-end
+        +
+ end
 macro twice
 add-one
 add-one
@@ -1771,29 +1925,46 @@ end
 proc formatted int -- int do
 twice
 end
-" "macro add-one
-      1
-    +
-end
+" "  macro add-one
+1
+        +
+ end
 macro twice
-    add-one
-    add-one
+add-one
+add-one
 end
 proc formatted int -- int do
     twice
 end
-" "" 0 "cli/fmt-stdin-nested-macro-effects" context frog-cli-fmt-stdin
+" "" 0 "cli/fmt-stdin-preserved-macros" context frog-cli-fmt-stdin
 
         "proc op bool -- int do drop 1 end
 proc op int int -- int do + end
 macro m op end
-proc one bool -- int do m end
-proc two int int -- int do m end
-" "" "<stdin>:3:9:
-  macro m op end
-          ^^
-error: formatter found conflicting resolved stack effects
-" 1 "cli/fmt-stdin-conflicting-macro-effects" context frog-cli-fmt-stdin
+proc one -- int int do
+1
+true
+m
+end
+proc two -- int do
+1
+2
+m
+end
+" "proc op bool -- int do drop 1 end
+proc op int int -- int do + end
+macro m op end
+proc one -- int int do
+    1
+      true
+      m
+end
+proc two -- int do
+    1
+      2
+    m
+end
+" "" 0 "cli/fmt-stdin-polymorphic-macro-preserved" context frog-cli-fmt-stdin
 
         "proc expanded -- int do
 if false do
@@ -1882,11 +2053,17 @@ error: unknown word: nope
 
         "macro unused nope end
 proc main -- do end
-" "" "<stdin>:1:14:
-  macro unused nope end
-               ^^^^
-error: formatter requires a resolved stack effect
-" 1 "cli/fmt-stdin-unresolved-unused-macro" context frog-cli-fmt-stdin
+" "macro unused nope end
+proc main -- do end
+" "" 0 "cli/fmt-stdin-unused-macro-preserved" context frog-cli-fmt-stdin
+
+        "  macro unused nope end proc formatted -- int do
+1
+end
+" "  macro unused nope end proc formatted -- int do
+    1
+end
+" "" 0 "cli/fmt-stdin-macro-owned-shared-line" context frog-cli-fmt-stdin
 
         "macro twice dup + end
 proc helper int -- int do 1 + end

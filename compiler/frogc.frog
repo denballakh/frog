@@ -17,7 +17,6 @@ const cell-bytes 8 end
 
 const format-operation-unresolved 0 end
 const format-operation-resolved 1 end
-const format-operation-conflicting 2 end
 
 const format-line-unassigned 0 end
 const format-line-syntax 1 end
@@ -566,25 +565,13 @@ proc record-format-operation ModuleContext* int int int int int -- do
         before-count minimum-count -
         after-count minimum-count -
         let inputs outputs do
-            ctx token-start format-operation-state-at
-            let state do
-                if state format-operation-unresolved == do
-                    token-end ctx @ModuleContext.format_operation_ends token-start cell-bytes * field-write
-                    inputs ctx @ModuleContext.format_operation_inputs token-start cell-bytes * field-write
-                    outputs ctx @ModuleContext.format_operation_outputs token-start cell-bytes * field-write
-                    format-operation-resolved ctx @ModuleContext.format_operation_states token-start cell-bytes * field-write
-                elif state format-operation-resolved == do
-                    if
-                        ctx token-start format-operation-end-at token-end !=
-                        ctx token-start format-operation-inputs-at inputs != ||
-                        ctx token-start format-operation-outputs-at outputs != ||
-                    do
-                        format-operation-conflicting ctx @ModuleContext.format_operation_states token-start cell-bytes * field-write
-                    end
-                elif state format-operation-conflicting != do
-                    "internal invalid formatter operation state" fail
-                end
+            if ctx token-start format-operation-state-at format-operation-unresolved != do
+                "internal duplicate formatter operation" fail
             end
+            token-end ctx @ModuleContext.format_operation_ends token-start cell-bytes * field-write
+            inputs ctx @ModuleContext.format_operation_inputs token-start cell-bytes * field-write
+            outputs ctx @ModuleContext.format_operation_outputs token-start cell-bytes * field-write
+            format-operation-resolved ctx @ModuleContext.format_operation_states token-start cell-bytes * field-write
         end
     end
 end
@@ -4108,7 +4095,8 @@ record FormatLine
     state int
     syntax_depth int
     region int
-    floor int
+    before_depth int
+    after_depth int
     protected bool
 end
 
@@ -5176,6 +5164,7 @@ proc begin-format-operation CompileContext* int -- bool do
         if
             cc @CompileContext.record_operations
             cc @CompileContext.program @Program.record_format_operations &&
+            cc @CompileContext.current_expansion_id 0 < &&
         do
             if
                 cc @CompileContext.format_operation_frame_count
@@ -16265,14 +16254,15 @@ proc formatter-register-syntax-token Formatter* int int -- do
                 format-line-syntax line !FormatLine.state
                 syntax-depth line !FormatLine.syntax_depth
                 0 1 - line !FormatLine.region
-                0 line !FormatLine.floor
+                0 line !FormatLine.before_depth
+                0 line !FormatLine.after_depth
             end
         end
     end
 end
 
-proc formatter-register-operation-line Formatter* int int int -- do
-    let formatter token region-index floor do
+proc formatter-register-operation-line Formatter* int int int int -- do
+    let formatter token region-index before-depth after-depth do
         formatter @Formatter.module token token-at @TokenEntry.line
         formatter swap formatter-line-at
         let line do
@@ -16280,15 +16270,29 @@ proc formatter-register-operation-line Formatter* int int int -- do
                 format-line-flow line !FormatLine.state
                 formatter region-index formatter-region-at @FormatRegion.syntax_depth line !FormatLine.syntax_depth
                 region-index line !FormatLine.region
-                floor line !FormatLine.floor
-            elif
-                line @FormatLine.state format-line-flow ==
-                line @FormatLine.region region-index == &&
-                floor line @FormatLine.floor < &&
-            do
-                floor line !FormatLine.floor
+                before-depth line !FormatLine.before_depth
+                after-depth line !FormatLine.after_depth
+            elif line @FormatLine.state format-line-flow == do
+                after-depth line !FormatLine.after_depth
             end
         end
+    end
+end
+
+proc formatter-measure-region-floors Formatter* -- do
+    let formatter do
+        1
+        while dup formatter @Formatter.line_count <= do
+            dup formatter swap formatter-line-at
+            let line-number line do
+                if line @FormatLine.state format-line-flow == do
+                    formatter line @FormatLine.region line @FormatLine.before_depth formatter-touch-region
+                    formatter line @FormatLine.region line @FormatLine.after_depth formatter-touch-region
+                end
+                line-number 1 +
+            end
+        end
+        drop
     end
 end
 
@@ -16323,6 +16327,26 @@ proc formatter-protect-token-lines Formatter* int -- do
     end
 end
 
+proc formatter-protect-declaration-lines Formatter* int int -- do
+    let formatter start end-token do
+        start
+        while dup end-token < do
+            dup let token do
+                formatter @Formatter.module token token-at @TokenEntry.line
+                let line-number do
+                    if token 0 == do
+                        true formatter line-number formatter-line-at !FormatLine.protected
+                    elif formatter @Formatter.module token 1 - token-at @TokenEntry.line line-number != do
+                        true formatter line-number formatter-line-at !FormatLine.protected
+                    end
+                end
+            end
+            1 +
+        end
+        drop
+    end
+end
+
 proc create-formatter ModuleContext* -- Formatter* do
     let module do
         Formatter:alloc
@@ -16341,7 +16365,8 @@ proc create-formatter ModuleContext* -- Formatter* do
                     format-line-unassigned line !FormatLine.state
                     0 line !FormatLine.syntax_depth
                     0 1 - line !FormatLine.region
-                    0 line !FormatLine.floor
+                    0 line !FormatLine.before_depth
+                    0 line !FormatLine.after_depth
                     false line !FormatLine.protected
                     line-number 1 +
                 end
@@ -16395,9 +16420,6 @@ proc formatter-apply-operation Formatter* int int int -- int int do
             if state format-operation-unresolved == do
                 formatter token "formatter requires a resolved stack effect" formatter-operation-error
                 token 1 + depth
-            elif state format-operation-conflicting == do
-                formatter token "formatter found conflicting resolved stack effects" formatter-operation-error
-                token 1 + depth
             elif state format-operation-resolved != do
                 "internal invalid formatter operation state" fail
                 token 1 + depth
@@ -16411,9 +16433,11 @@ proc formatter-apply-operation Formatter* int int int -- int int do
                     end
                     depth inputs -
                     let floor do
-                        formatter region-index floor formatter-touch-region
-                        formatter token region-index floor formatter-register-operation-line
-                        token-end floor outputs +
+                        floor outputs +
+                        let after-depth do
+                            formatter token region-index depth after-depth formatter-register-operation-line
+                            token-end after-depth
+                        end
                     end
                 end
             end
@@ -16512,7 +16536,8 @@ proc formatter-format-if Formatter* int int int -- int int do
                                 formatter do-token syntax-depth formatter-register-syntax-token
                                 condition-depth 1 -
                                 let branch-depth do
-                                    formatter condition-region branch-depth formatter-touch-region
+                                    formatter do-token condition-region condition-depth branch-depth
+                                    formatter-register-operation-line
                                     formatter do-token 1 + end-token formatter-find-if-separator
                                     let separator do
                                         formatter do-token 1 + separator syntax-depth 1 + branch-depth formatter-format-flow-region
@@ -16546,7 +16571,9 @@ proc formatter-format-if Formatter* int int int -- int int do
                                                                         formatter elif-do syntax-depth formatter-register-syntax-token
                                                                         elif-condition-depth 1 -
                                                                         let elif-branch-depth do
-                                                                            formatter elif-condition-region elif-branch-depth formatter-touch-region
+                                                                            formatter elif-do elif-condition-region
+                                                                            elif-condition-depth elif-branch-depth
+                                                                            formatter-register-operation-line
                                                                             formatter elif-do 1 + end-token formatter-find-if-separator
                                                                             let next-separator do
                                                                                 formatter elif-do 1 + next-separator syntax-depth 1 + elif-branch-depth
@@ -16639,7 +16666,8 @@ proc formatter-format-while Formatter* int int int -- int int do
                                 formatter do-token syntax-depth formatter-register-syntax-token
                                 condition-depth 1 -
                                 let body-depth do
-                                    formatter condition-region body-depth formatter-touch-region
+                                    formatter do-token condition-region condition-depth body-depth
+                                    formatter-register-operation-line
                                     formatter do-token 1 + end-token syntax-depth 1 + body-depth formatter-format-flow-region
                                     let result-depth do
                                         if formatter @Formatter.module @ModuleContext.program program-failed do
@@ -16828,10 +16856,9 @@ proc formatter-layout-module Formatter* -- do
                     end
                     if formatter @Formatter.module declaration-token "proc" token-equals do
                         formatter declaration-token declaration-end formatter-format-procedure-declaration
-                    elif
-                        formatter @Formatter.module declaration-token "macro" token-equals
-                        formatter @Formatter.module declaration-token "const" token-equals ||
-                    do
+                    elif formatter @Formatter.module declaration-token "macro" token-equals do
+                        formatter declaration-token declaration-end formatter-protect-declaration-lines
+                    elif formatter @Formatter.module declaration-token "const" token-equals do
                         formatter declaration-token declaration-token 2 + declaration-end formatter-format-flow-declaration
                     elif formatter @Formatter.module declaration-token "from" token-equals do
                         formatter declaration-token declaration-end formatter-format-import-declaration
@@ -16843,6 +16870,7 @@ proc formatter-layout-module Formatter* -- do
             end
         end
         drop
+        formatter formatter-measure-region-floors
     end
 end
 
@@ -16889,11 +16917,24 @@ proc formatter-line-indent Formatter* FormatLine* -- int do
         elif line @FormatLine.state format-line-flow == do
             formatter line @FormatLine.region formatter-region-at @FormatRegion.floor
             let region-floor do
-                if line @FormatLine.floor region-floor < do
-                    "internal formatter line is below its region floor" fail
+                line @FormatLine.after_depth 1 -
+                let column do
+                    if column region-floor < do region-floor else column end
+                    let column do
+                        if line @FormatLine.before_depth column < do
+                            line @FormatLine.before_depth
+                        else
+                            column
+                        end
+                        let column do
+                            if column region-floor < do
+                                "internal formatter line is below its region floor" fail
+                            end
+                            line @FormatLine.syntax_depth 4 *
+                            column region-floor - 2 * +
+                        end
+                    end
                 end
-                line @FormatLine.syntax_depth 4 *
-                line @FormatLine.floor region-floor - 2 * +
             end
         else
             0
