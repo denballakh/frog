@@ -2,6 +2,7 @@
 
 - [Language reference](./language.md): syntax and semantics.
 - [Standard library](./stdlib.md): modules, APIs, and ownership rules.
+- [Stack-aware formatter](./formatter.md): indentation rules and `frogc fmt`.
 - [Compiler inspection output](./inspect.md): analyzed operations, typed IR,
   lossless lexemes, and syntax regions.
 - [Semantic cursor queries](./cursor.md): resolved identities, visible names,

@@ -18,8 +18,14 @@ C11 warnings, and executed. Tests compare exact output, diagnostics, and exit
 status, and also check selected generated-C properties.
 
 CLI cases also verify that `frogc check [FILE]` analyzes every procedure without
-emitting C, using standard input when `FILE` is omitted. The tests pin the
-current version of `frogc inspect [FILE]` output, including standard input,
+emitting C, using standard input when `FILE` is omitted. Formatter cases cover
+stack-column indentation, folded physical lines, structured regions, comments,
+multiline literals, LF/CRLF/lone-CR preservation, idempotence, file-relative
+imports, invalid input, unresolved macro effects, and the no-in-place-write
+contract. They also cover nested macro effects, conflicting specializations,
+and expanded and folded `elif` arms. The tests pin the current version of
+`frogc inspect [FILE]` output,
+including standard input,
 relative imports, resolved cross-module targets, and typed control-flow blocks,
 and require semantic failures to leave standard output empty. Format-5 cases
 also verify lossless token, comment, and whitespace coverage, explicit syntax

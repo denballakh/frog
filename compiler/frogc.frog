@@ -15,6 +15,14 @@ from "stdlib/string.frog" import (
 
 const cell-bytes 8 end
 
+const format-operation-unresolved 0 end
+const format-operation-resolved 1 end
+const format-operation-conflicting 2 end
+
+const format-line-unassigned 0 end
+const format-line-syntax 1 end
+const format-line-flow 2 end
+
 const type-int 1 end
 const type-bool 2 end
 const type-ptr 3 end
@@ -55,6 +63,10 @@ record ModuleContext
     lexeme_count int
     syntax_regions ptr
     syntax_region_count int
+    format_operation_ends ptr
+    format_operation_inputs ptr
+    format_operation_outputs ptr
+    format_operation_states ptr
     procs ptr
     proc_count int
     types ptr
@@ -107,6 +119,9 @@ record ConstantEvaluator
     token int
     constant_index int
     cursor_state int
+    format_operation_active bool
+    format_operation_before int
+    format_operation_minimum int
 end
 
 record ImportEntry
@@ -517,6 +532,60 @@ end
 proc syntax-region-at ModuleContext* int -- SyntaxRegion* do
     let ctx index do
         ctx @ModuleContext.syntax_regions index SyntaxRegion:sizeof * + SyntaxRegion* cast
+    end
+end
+
+proc format-operation-state-at ModuleContext* int -- int do
+    let ctx token do ctx @ModuleContext.format_operation_states token cell-bytes * field-read end
+end
+
+proc format-operation-end-at ModuleContext* int -- int do
+    let ctx token do ctx @ModuleContext.format_operation_ends token cell-bytes * field-read end
+end
+
+proc format-operation-inputs-at ModuleContext* int -- int do
+    let ctx token do ctx @ModuleContext.format_operation_inputs token cell-bytes * field-read end
+end
+
+proc format-operation-outputs-at ModuleContext* int -- int do
+    let ctx token do ctx @ModuleContext.format_operation_outputs token cell-bytes * field-read end
+end
+
+proc record-format-operation ModuleContext* int int int int int -- do
+    let ctx token-start token-end before-count minimum-count after-count do
+        if
+            token-start 0 <
+            token-start ctx @ModuleContext.token_count >= ||
+            token-end token-start <= ||
+            token-end ctx @ModuleContext.token_count > ||
+            minimum-count before-count > ||
+            minimum-count after-count > ||
+        do
+            "internal invalid formatter operation" fail
+        end
+        before-count minimum-count -
+        after-count minimum-count -
+        let inputs outputs do
+            ctx token-start format-operation-state-at
+            let state do
+                if state format-operation-unresolved == do
+                    token-end ctx @ModuleContext.format_operation_ends token-start cell-bytes * field-write
+                    inputs ctx @ModuleContext.format_operation_inputs token-start cell-bytes * field-write
+                    outputs ctx @ModuleContext.format_operation_outputs token-start cell-bytes * field-write
+                    format-operation-resolved ctx @ModuleContext.format_operation_states token-start cell-bytes * field-write
+                elif state format-operation-resolved == do
+                    if
+                        ctx token-start format-operation-end-at token-end !=
+                        ctx token-start format-operation-inputs-at inputs != ||
+                        ctx token-start format-operation-outputs-at outputs != ||
+                    do
+                        format-operation-conflicting ctx @ModuleContext.format_operation_states token-start cell-bytes * field-write
+                    end
+                elif state format-operation-conflicting != do
+                    "internal invalid formatter operation state" fail
+                end
+            end
+        end
     end
 end
 
@@ -3672,7 +3741,11 @@ proc scan-declarations ModuleContext* -- do
             end
         end
         drop
-        if ctx @ModuleContext.is_root ctx @ModuleContext.program program-failed ! && do
+        if
+            ctx @ModuleContext.is_root
+            ctx @ModuleContext.program @Program.require_main &&
+            ctx @ModuleContext.program program-failed ! &&
+        do
             if ctx @ModuleContext.main_proc 0 < do
                 ctx "missing main procedure" fail-eof
             end
@@ -3961,6 +4034,8 @@ record Program
     source_count int
     source_capacity int
     allow_filesystem_sources bool
+    require_main bool
+    record_format_operations bool
     semantic_occurrences ptr
     semantic_occurrence_count int
     semantic_occurrence_capacity int
@@ -4012,6 +4087,39 @@ record CompileContext
     instruction_minimum_type_count int
     cfg_current_block int
     current_cursor_state int
+    format_operation_frames ptr
+    format_operation_frame_count int
+    format_operation_frame_capacity int
+end
+
+record FormatOperationFrame
+    source_module ModuleContext*
+    token_start int
+    before_count int
+    minimum_count int
+end
+
+record FormatRegion
+    floor int
+    syntax_depth int
+end
+
+record FormatLine
+    state int
+    syntax_depth int
+    region int
+    floor int
+    protected bool
+end
+
+record Formatter
+    module ModuleContext*
+    lines ptr
+    line_count int
+    regions ptr
+    region_count int
+    block_ends ptr
+    declaration_ends ptr
 end
 
 record TokenEntry
@@ -5039,6 +5147,92 @@ end
 proc compile-context-analysis CompileContext* -- ProcedureAnalysis* do
     let cc do
         cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.analysis
+    end
+end
+
+proc format-operation-frame-at CompileContext* int -- FormatOperationFrame* do
+    let cc index do
+        cc @CompileContext.format_operation_frames index FormatOperationFrame:sizeof * + FormatOperationFrame* cast
+    end
+end
+
+proc grow-format-operation-frames CompileContext* -- do
+    let cc do
+        cc @CompileContext.format_operation_frame_capacity 2 *
+        let capacity do
+            capacity FormatOperationFrame:sizeof * alloc
+            let frames do
+                cc @CompileContext.format_operation_frames frames
+                cc @CompileContext.format_operation_frame_count FormatOperationFrame:sizeof * bytes-copy
+                frames cc !CompileContext.format_operation_frames
+                capacity cc !CompileContext.format_operation_frame_capacity
+            end
+        end
+    end
+end
+
+proc begin-format-operation CompileContext* int -- bool do
+    let cc token do
+        if
+            cc @CompileContext.record_operations
+            cc @CompileContext.program @Program.record_format_operations &&
+        do
+            if
+                cc @CompileContext.format_operation_frame_count
+                cc @CompileContext.format_operation_frame_capacity ==
+            do
+                cc grow-format-operation-frames
+            end
+            cc cc @CompileContext.format_operation_frame_count format-operation-frame-at
+            let frame do
+                cc @CompileContext.defining_module frame !FormatOperationFrame.source_module
+                token frame !FormatOperationFrame.token_start
+                cc @CompileContext.type_count frame !FormatOperationFrame.before_count
+                cc @CompileContext.type_count frame !FormatOperationFrame.minimum_count
+                cc @CompileContext.format_operation_frame_count 1 + cc !CompileContext.format_operation_frame_count
+            end
+            true
+        else
+            false
+        end
+    end
+end
+
+proc finish-format-operation CompileContext* int -- do
+    let cc token-end do
+        if cc @CompileContext.format_operation_frame_count 0 <= do
+            "internal missing formatter operation" fail
+        end
+        cc @CompileContext.format_operation_frame_count 1 -
+        peek index do index cc !CompileContext.format_operation_frame_count end
+        cc swap format-operation-frame-at
+        let frame do
+            frame @FormatOperationFrame.source_module
+            frame @FormatOperationFrame.token_start
+            token-end
+            frame @FormatOperationFrame.before_count
+            frame @FormatOperationFrame.minimum_count
+            cc @CompileContext.type_count
+            record-format-operation
+        end
+    end
+end
+
+proc update-format-operation-minimum CompileContext* int -- do
+    let cc type-count do
+        0
+        while dup cc @CompileContext.format_operation_frame_count < do
+            dup let index do
+                cc index format-operation-frame-at
+                let frame do
+                    if type-count frame @FormatOperationFrame.minimum_count < do
+                        type-count frame !FormatOperationFrame.minimum_count
+                    end
+                end
+            end
+            1 +
+        end
+        drop
     end
 end
 
@@ -6984,6 +7178,12 @@ proc consume-type-count CompileContext* int -- do
                 cc compile-context-analysis cc @CompileContext.current_expansion_id type-count
                 update-macro-expansion-minimum
             end
+            if
+                cc @CompileContext.record_operations
+                cc @CompileContext.program @Program.record_format_operations &&
+            do
+                cc type-count update-format-operation-minimum
+            end
         end
     end
 end
@@ -8081,6 +8281,26 @@ proc initialize-module-declarations ModuleContext* -- do
             ctx @ModuleContext.source_length ctx module-region syntax-region-at !SyntaxRegion.end_byte
         end
 
+        if ctx @ModuleContext.program @Program.record_format_operations do
+            ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.format_operation_ends
+            ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.format_operation_inputs
+            ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.format_operation_outputs
+            ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.format_operation_states
+            0
+            while dup ctx @ModuleContext.token_count <= do
+                dup let token do
+                    format-operation-unresolved ctx @ModuleContext.format_operation_states token cell-bytes * field-write
+                end
+                1 +
+            end
+            drop
+        else
+            0 ptr cast ctx !ModuleContext.format_operation_ends
+            0 ptr cast ctx !ModuleContext.format_operation_inputs
+            0 ptr cast ctx !ModuleContext.format_operation_outputs
+            0 ptr cast ctx !ModuleContext.format_operation_states
+        end
+
         ctx @ModuleContext.token_count 1 + ProcedureEntry:sizeof * alloc ctx !ModuleContext.procs
         ctx @ModuleContext.token_count 1 + MacroEntry:sizeof * alloc ctx !ModuleContext.macros
         ctx @ModuleContext.token_count 1 + ConstantEntry:sizeof * alloc ctx !ModuleContext.constants
@@ -8943,6 +9163,9 @@ proc create-constant-evaluator ModuleContext* int int -- ConstantEvaluator* do
         token evaluator !ConstantEvaluator.token
         constant-index evaluator !ConstantEvaluator.constant_index
         0 1 - evaluator !ConstantEvaluator.cursor_state
+        false evaluator !ConstantEvaluator.format_operation_active
+        0 evaluator !ConstantEvaluator.format_operation_before
+        0 evaluator !ConstantEvaluator.format_operation_minimum
         8
         peek capacity do ConstantValue:sizeof * alloc evaluator !ConstantEvaluator.values
             0 evaluator !ConstantEvaluator.count
@@ -9041,6 +9264,12 @@ proc constant-evaluator-pop ConstantEvaluator* -- int int do
         else
         evaluator @ConstantEvaluator.count 1 -
         peek index do evaluator !ConstantEvaluator.count
+            if
+                evaluator @ConstantEvaluator.format_operation_active
+                index evaluator @ConstantEvaluator.format_operation_minimum < &&
+            do
+                index evaluator !ConstantEvaluator.format_operation_minimum
+            end
             evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.value_type
             evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.payload
         end
@@ -10009,6 +10238,9 @@ proc evaluate-constant-token ConstantEvaluator* ModuleContext* int -- do
     let evaluator module token-index do
         module evaluator !ConstantEvaluator.module
         token-index evaluator !ConstantEvaluator.token
+        module @ModuleContext.program @Program.record_format_operations evaluator !ConstantEvaluator.format_operation_active
+        evaluator @ConstantEvaluator.count evaluator !ConstantEvaluator.format_operation_before
+        evaluator @ConstantEvaluator.count evaluator !ConstantEvaluator.format_operation_minimum
         evaluator module token-index record-constant-cursor-state drop
         module token-index token-at @TokenEntry.kind
         let kind do
@@ -10024,6 +10256,17 @@ proc evaluate-constant-token ConstantEvaluator* ModuleContext* int -- do
                 evaluator "unknown token kind" constant-fail
             end
         end
+        if
+            evaluator @ConstantEvaluator.format_operation_active
+            module @ModuleContext.program program-failed ! &&
+        do
+            module token-index token-index 1 +
+            evaluator @ConstantEvaluator.format_operation_before
+            evaluator @ConstantEvaluator.format_operation_minimum
+            evaluator @ConstantEvaluator.count
+            record-format-operation
+        end
+        false evaluator !ConstantEvaluator.format_operation_active
     end
 end
 
@@ -14848,6 +15091,8 @@ end
 proc compile-token CompileContext* int -- int do
     let cc token-index do
         cc token-index record-compile-cursor-state drop
+        if cc token-index token-is-structured-word do false else cc token-index begin-format-operation end
+        let begin-format do
         cc @CompileContext.diagnostic_active
         cc @CompileContext.record_operations
         cc @CompileContext.operation_active ! &&
@@ -14877,10 +15122,12 @@ proc compile-token CompileContext* int -- int do
                     else
                         if cc @CompileContext.instruction_active do cc next-token finish-typed-instruction end
                         if begin-operation do cc next-token finish-analyzed-operation end
+                        if begin-format do cc next-token finish-format-operation end
                     end
                     next-token
                 end
             end
+        end
         end
     end
 end
@@ -14896,6 +15143,10 @@ end
 proc try-compile-constant-add CompileContext* int int -- bool do
     let cc token-index body-end do
         if token-index 2 + body-end >= do
+            false
+        elif
+            cc @CompileContext.program @Program.record_format_operations
+        do
             false
         elif
             cc @CompileContext.defining_module token-index token-at @TokenEntry.kind TokenKind:int ==
@@ -15063,6 +15314,9 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             0 cc !CompileContext.instruction_minimum_type_count
             0 1 - cc !CompileContext.cfg_current_block
             0 1 - cc !CompileContext.current_cursor_state
+            16 FormatOperationFrame:sizeof * alloc cc !CompileContext.format_operation_frames
+            0 cc !CompileContext.format_operation_frame_count
+            16 cc !CompileContext.format_operation_frame_capacity
             cc
         end
     end
@@ -15335,6 +15589,9 @@ proc finish-procedure-analysis Program* ModuleContext* int CompileContext* -- do
     let program ctx proc-index measurement do
         if measurement @CompileContext.operation_active do
             "internal unclosed analyzed operation" fail
+        end
+        if measurement @CompileContext.format_operation_frame_count 0 != do
+            "internal unclosed formatter operation" fail
         end
         ctx proc-index procedure-at @ProcedureEntry.analysis
         let analysis do
@@ -15838,6 +16095,8 @@ proc allocate-program bool bool ptr int -- Program* do
             0 program !Program.source_count
             8 program !Program.source_capacity
             true program !Program.allow_filesystem_sources
+            true program !Program.require_main
+            false program !Program.record_format_operations
             32 SemanticOccurrence:sizeof * alloc program !Program.semantic_occurrences
             0 program !Program.semantic_occurrence_count
             32 program !Program.semantic_occurrence_capacity
@@ -15935,6 +16194,749 @@ proc analyze-source ptr int ptr int bool bool ptr int -- Program* do
     let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
         debug release standard-library-root standard-library-root-length allocate-program
         source source-length diagnostic-path diagnostic-path-length analyze-program
+    end
+end
+
+proc analyze-format-source ptr int ptr int bool bool ptr int -- Program* do
+    let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
+        debug release standard-library-root standard-library-root-length allocate-program
+        let program do
+            false program !Program.require_main
+            true program !Program.record_format_operations
+            program source source-length diagnostic-path diagnostic-path-length analyze-program
+        end
+    end
+end
+
+proc formatter-line-at Formatter* int -- FormatLine* do
+    let formatter line do
+        if line 1 < line formatter @Formatter.line_count > || do
+            "internal formatter line is out of range" fail
+        end
+        formatter @Formatter.lines line 1 - FormatLine:sizeof * + FormatLine* cast
+    end
+end
+
+proc formatter-region-at Formatter* int -- FormatRegion* do
+    let formatter index do formatter @Formatter.regions index FormatRegion:sizeof * + FormatRegion* cast end
+end
+
+proc formatter-block-end Formatter* int -- int do
+    let formatter token do formatter @Formatter.block_ends token cell-bytes * field-read end
+end
+
+proc formatter-declaration-end Formatter* int -- int do
+    let formatter token do formatter @Formatter.declaration_ends token cell-bytes * field-read end
+end
+
+proc formatter-add-region Formatter* int int -- int do
+    let formatter entry-depth syntax-depth do
+        if formatter @Formatter.region_count formatter @Formatter.module @ModuleContext.token_count > do
+            "internal too many formatter regions" fail
+        end
+        formatter @Formatter.region_count
+        let index do
+            formatter index formatter-region-at
+            let region do
+                entry-depth region !FormatRegion.floor
+                syntax-depth region !FormatRegion.syntax_depth
+                index 1 + formatter !Formatter.region_count
+                index
+            end
+        end
+    end
+end
+
+proc formatter-touch-region Formatter* int int -- do
+    let formatter index floor do
+        formatter index formatter-region-at
+        let region do
+            if floor region @FormatRegion.floor < do floor region !FormatRegion.floor end
+        end
+    end
+end
+
+proc formatter-register-syntax-token Formatter* int int -- do
+    let formatter token syntax-depth do
+        formatter @Formatter.module token token-at @TokenEntry.line
+        formatter swap formatter-line-at
+        let line do
+            if line @FormatLine.state format-line-unassigned == do
+                format-line-syntax line !FormatLine.state
+                syntax-depth line !FormatLine.syntax_depth
+                0 1 - line !FormatLine.region
+                0 line !FormatLine.floor
+            end
+        end
+    end
+end
+
+proc formatter-register-operation-line Formatter* int int int -- do
+    let formatter token region-index floor do
+        formatter @Formatter.module token token-at @TokenEntry.line
+        formatter swap formatter-line-at
+        let line do
+            if line @FormatLine.state format-line-unassigned == do
+                format-line-flow line !FormatLine.state
+                formatter region-index formatter-region-at @FormatRegion.syntax_depth line !FormatLine.syntax_depth
+                region-index line !FormatLine.region
+                floor line !FormatLine.floor
+            elif
+                line @FormatLine.state format-line-flow ==
+                line @FormatLine.region region-index == &&
+                floor line @FormatLine.floor < &&
+            do
+                floor line !FormatLine.floor
+            end
+        end
+    end
+end
+
+proc formatter-protect-token-lines Formatter* int -- do
+    let formatter token do
+        formatter @Formatter.module token token-at
+        let entry do
+            if entry @TokenEntry.kind TokenKind:string == do
+                entry @TokenEntry.start entry @TokenEntry.length + 1 +
+                let finish do
+                    entry @TokenEntry.line
+                    entry @TokenEntry.start 1 -
+                    while peek line offset do offset finish < end do
+                        let line offset do
+                            if formatter @Formatter.module offset source-byte-is-newline do
+                                line 1 +
+                                peek next-line do
+                                    if offset 1 + finish < do
+                                        true formatter next-line formatter-line-at !FormatLine.protected
+                                    end
+                                end
+                            else
+                                line
+                            end
+                            offset 1 +
+                        end
+                    end
+                    let line offset do end
+                end
+            end
+        end
+    end
+end
+
+proc create-formatter ModuleContext* -- Formatter* do
+    let module do
+        Formatter:alloc
+        let formatter do
+            module formatter !Formatter.module
+            module @ModuleContext.lex_line formatter !Formatter.line_count
+            module @ModuleContext.lex_line FormatLine:sizeof * alloc formatter !Formatter.lines
+            module @ModuleContext.token_count 1 + FormatRegion:sizeof * alloc formatter !Formatter.regions
+            0 formatter !Formatter.region_count
+            module @ModuleContext.token_count 1 + cell-bytes * alloc formatter !Formatter.block_ends
+            module @ModuleContext.token_count 1 + cell-bytes * alloc formatter !Formatter.declaration_ends
+            1
+            while dup formatter @Formatter.line_count <= do
+                dup formatter swap formatter-line-at
+                let line-number line do
+                    format-line-unassigned line !FormatLine.state
+                    0 line !FormatLine.syntax_depth
+                    0 1 - line !FormatLine.region
+                    0 line !FormatLine.floor
+                    false line !FormatLine.protected
+                    line-number 1 +
+                end
+            end
+            drop
+            0
+            while dup module @ModuleContext.token_count <= do
+                dup let token do
+                    0 formatter @Formatter.block_ends token cell-bytes * field-write
+                    0 formatter @Formatter.declaration_ends token cell-bytes * field-write
+                end
+                1 +
+            end
+            drop
+            0
+            while dup module @ModuleContext.syntax_region_count < do
+                dup let index do
+                    module index syntax-region-at
+                    let region do
+                        if region @SyntaxRegion.kind SyntaxRegionKind.block? do
+                            region @SyntaxRegion.end_token formatter @Formatter.block_ends
+                            region @SyntaxRegion.start_token cell-bytes * field-write
+                        elif region @SyntaxRegion.kind SyntaxRegionKind.declaration? do
+                            region @SyntaxRegion.end_token formatter @Formatter.declaration_ends
+                            region @SyntaxRegion.start_token cell-bytes * field-write
+                        end
+                    end
+                end
+                1 +
+            end
+            drop
+            0
+            while dup module @ModuleContext.token_count < do
+                dup let token do formatter token formatter-protect-token-lines end
+                1 +
+            end
+            drop
+            formatter
+        end
+    end
+end
+
+proc formatter-operation-error Formatter* int String -- do
+    let formatter token message do formatter @Formatter.module token message fail-at end
+end
+
+proc formatter-apply-operation Formatter* int int int -- int int do
+    let formatter token region-index depth do
+        formatter @Formatter.module token format-operation-state-at
+        let state do
+            if state format-operation-unresolved == do
+                formatter token "formatter requires a resolved stack effect" formatter-operation-error
+                token 1 + depth
+            elif state format-operation-conflicting == do
+                formatter token "formatter found conflicting resolved stack effects" formatter-operation-error
+                token 1 + depth
+            elif state format-operation-resolved != do
+                "internal invalid formatter operation state" fail
+                token 1 + depth
+            else
+                formatter @Formatter.module token format-operation-inputs-at
+                formatter @Formatter.module token format-operation-outputs-at
+                formatter @Formatter.module token format-operation-end-at
+                let inputs outputs token-end do
+                    if token-end token <= token-end formatter @Formatter.module @ModuleContext.token_count > || do
+                        "internal invalid formatter operation range" fail
+                    end
+                    depth inputs -
+                    let floor do
+                        formatter region-index floor formatter-touch-region
+                        formatter token region-index floor formatter-register-operation-line
+                        token-end floor outputs +
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc formatter-register-syntax-range Formatter* int int int -- do
+    let formatter start end-token syntax-depth do
+        start
+        while dup end-token < do
+            dup let token do formatter token syntax-depth formatter-register-syntax-token end
+            1 +
+        end
+        drop
+    end
+end
+
+proc formatter-find-token Formatter* int int String -- int do
+    let formatter token end-token expected do
+        if token end-token >= do
+            0 1 -
+        else
+            formatter token formatter-block-end
+            let block-end do
+                if block-end 0 > do
+                    formatter block-end end-token expected formatter-find-token
+                elif
+                    formatter @Formatter.module token token-at @TokenEntry.kind TokenKind:word ==
+                    formatter @Formatter.module token expected token-equals &&
+                do
+                    token
+                else
+                    formatter token 1 + end-token expected formatter-find-token
+                end
+            end
+        end
+    end
+end
+
+proc formatter-find-if-separator Formatter* int int -- int do
+    let formatter token end-token do
+        if token end-token >= do
+            end-token
+        else
+            formatter token formatter-block-end
+            let block-end do
+                if block-end 0 > do
+                    formatter block-end end-token formatter-find-if-separator
+                elif
+                    formatter @Formatter.module token token-at @TokenEntry.kind TokenKind:word ==
+                    formatter @Formatter.module token "elif" token-equals
+                    formatter @Formatter.module token "else" token-equals ||
+                    formatter @Formatter.module token "end" token-equals || &&
+                do
+                    token
+                else
+                    formatter token 1 + end-token formatter-find-if-separator
+                end
+            end
+        end
+    end
+end
+
+proc formatter-format-flow-region Formatter* int int int int -- int do
+    let formatter start end-token syntax-depth entry-depth do
+        formatter entry-depth syntax-depth formatter-add-region
+        let region-index do
+            formatter start end-token region-index entry-depth formatter-format-flow-range
+        end
+    end
+end
+
+proc formatter-format-if Formatter* int int int -- int int do
+    let formatter if-token parent-region depth do
+        formatter parent-region formatter-region-at @FormatRegion.syntax_depth
+        formatter if-token formatter-block-end
+        let syntax-depth block-end do
+            if block-end 0 <= do "internal formatter if region is missing" fail end
+            block-end 1 -
+            let end-token do
+                if formatter @Formatter.module end-token "end" token-equals ! do
+                    "internal formatter if region has no end" fail
+                end
+                formatter if-token syntax-depth formatter-register-syntax-token
+                formatter if-token 1 + end-token "do" formatter-find-token
+                let do-token do
+                    if do-token 0 < do "internal formatter if condition has no do" fail end
+                    formatter depth syntax-depth 1 + formatter-add-region
+                    let condition-region do
+                        formatter if-token 1 + do-token condition-region depth formatter-format-flow-range
+                        let condition-depth do
+                            if formatter @Formatter.module @ModuleContext.program program-failed do
+                                block-end depth
+                            else
+                                formatter do-token syntax-depth formatter-register-syntax-token
+                                condition-depth 1 -
+                                let branch-depth do
+                                    formatter condition-region branch-depth formatter-touch-region
+                                    formatter do-token 1 + end-token formatter-find-if-separator
+                                    let separator do
+                                        formatter do-token 1 + separator syntax-depth 1 + branch-depth formatter-format-flow-region
+                                        let result-depth do
+                                            if formatter @Formatter.module @ModuleContext.program program-failed do
+                                                block-end depth
+                                            else
+                                                separator
+                                                while
+                                                    peek current-separator do
+                                                        if current-separator end-token < do
+                                                            formatter @Formatter.module current-separator "elif" token-equals
+                                                        else
+                                                            false
+                                                        end
+                                                        formatter @Formatter.module @ModuleContext.program program-failed ! &&
+                                                    end
+                                                do
+                                                    let elif-token do
+                                                        formatter elif-token syntax-depth formatter-register-syntax-token
+                                                        formatter elif-token 1 + end-token "do" formatter-find-token
+                                                        let elif-do do
+                                                            if elif-do 0 < do "internal formatter elif condition has no do" fail end
+                                                            formatter branch-depth syntax-depth 1 + formatter-add-region
+                                                            let elif-condition-region do
+                                                                formatter elif-token 1 + elif-do elif-condition-region branch-depth formatter-format-flow-range
+                                                                let elif-condition-depth do
+                                                                    if formatter @Formatter.module @ModuleContext.program program-failed do
+                                                                        end-token
+                                                                    else
+                                                                        formatter elif-do syntax-depth formatter-register-syntax-token
+                                                                        elif-condition-depth 1 -
+                                                                        let elif-branch-depth do
+                                                                            formatter elif-condition-region elif-branch-depth formatter-touch-region
+                                                                            formatter elif-do 1 + end-token formatter-find-if-separator
+                                                                            let next-separator do
+                                                                                formatter elif-do 1 + next-separator syntax-depth 1 + elif-branch-depth
+                                                                                formatter-format-flow-region
+                                                                                let elif-result-depth do
+                                                                                    if formatter @Formatter.module @ModuleContext.program program-failed do
+                                                                                        end-token
+                                                                                    else
+                                                                                        if elif-result-depth result-depth != do
+                                                                                            "internal formatter if arm depth mismatch" fail
+                                                                                        end
+                                                                                        next-separator
+                                                                                    end
+                                                                                end
+                                                                            end
+                                                                        end
+                                                                    end
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                                let final-separator do
+                                                    if formatter @Formatter.module @ModuleContext.program program-failed do
+                                                        block-end depth
+                                                    elif
+                                                        final-separator end-token <
+                                                        formatter @Formatter.module final-separator "else" token-equals &&
+                                                    do
+                                                        formatter final-separator syntax-depth formatter-register-syntax-token
+                                                        formatter final-separator 1 + end-token syntax-depth 1 + branch-depth
+                                                        formatter-format-flow-region
+                                                        let else-result-depth do
+                                                            if formatter @Formatter.module @ModuleContext.program program-failed do
+                                                                block-end depth
+                                                            else
+                                                                if else-result-depth result-depth != do
+                                                                    "internal formatter else arm depth mismatch" fail
+                                                                end
+                                                                formatter end-token syntax-depth formatter-register-syntax-token
+                                                                block-end result-depth
+                                                            end
+                                                        end
+                                                    else
+                                                        if final-separator end-token != do
+                                                            formatter final-separator "internal formatter if separator is invalid"
+                                                            formatter-operation-error
+                                                            block-end depth
+                                                        else
+                                                            if result-depth branch-depth != do
+                                                                "internal formatter if without else changes stack depth" fail
+                                                            end
+                                                            formatter end-token syntax-depth formatter-register-syntax-token
+                                                            block-end result-depth
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc formatter-format-while Formatter* int int int -- int int do
+    let formatter while-token parent-region depth do
+        formatter parent-region formatter-region-at @FormatRegion.syntax_depth
+        formatter while-token formatter-block-end
+        let syntax-depth block-end do
+            if block-end 0 <= do "internal formatter while region is missing" fail end
+            block-end 1 -
+            let end-token do
+                formatter while-token syntax-depth formatter-register-syntax-token
+                formatter while-token 1 + end-token "do" formatter-find-token
+                let do-token do
+                    if do-token 0 < do "internal formatter while condition has no do" fail end
+                    formatter depth syntax-depth 1 + formatter-add-region
+                    let condition-region do
+                        formatter while-token 1 + do-token condition-region depth formatter-format-flow-range
+                        let condition-depth do
+                            if formatter @Formatter.module @ModuleContext.program program-failed do
+                                block-end depth
+                            else
+                                formatter do-token syntax-depth formatter-register-syntax-token
+                                condition-depth 1 -
+                                let body-depth do
+                                    formatter condition-region body-depth formatter-touch-region
+                                    formatter do-token 1 + end-token syntax-depth 1 + body-depth formatter-format-flow-region
+                                    let result-depth do
+                                        if formatter @Formatter.module @ModuleContext.program program-failed do
+                                            block-end depth
+                                        else
+                                            if body-depth depth != result-depth depth != || do
+                                                "internal formatter while body depth mismatch" fail
+                                            end
+                                            formatter end-token syntax-depth formatter-register-syntax-token
+                                            block-end depth
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc formatter-format-binding Formatter* int int int -- int int do
+    let formatter binding-token parent-region depth do
+        formatter parent-region formatter-region-at @FormatRegion.syntax_depth
+        formatter binding-token formatter-block-end
+        let syntax-depth block-end do
+            if block-end 0 <= do "internal formatter binding region is missing" fail end
+            formatter binding-token syntax-depth formatter-register-syntax-token
+            formatter binding-token parent-region depth formatter-apply-operation
+            let body-start body-depth do
+                if formatter @Formatter.module @ModuleContext.program program-failed do
+                    block-end depth
+                else
+                    if body-start binding-token 1 + <= do "internal formatter binding header is invalid" fail end
+                    formatter binding-token 1 + body-start 1 - syntax-depth 1 + formatter-register-syntax-range
+                    formatter body-start 1 - syntax-depth formatter-register-syntax-token
+                    formatter body-start block-end 1 - syntax-depth 1 + body-depth formatter-format-flow-region
+                    let result-depth do
+                        if formatter @Formatter.module @ModuleContext.program program-failed do
+                            block-end depth
+                        else
+                            formatter block-end 1 - syntax-depth formatter-register-syntax-token
+                            block-end result-depth
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc formatter-format-flow-range Formatter* int int int int -- int do
+    let formatter start end-token region-index entry-depth do
+        start entry-depth
+        while
+            peek token depth do
+                token end-token <
+                formatter @Formatter.module @ModuleContext.program program-failed ! &&
+            end
+        do
+            let token depth do
+                if formatter @Formatter.module token token-at @TokenEntry.kind TokenKind:word == do
+                    if formatter @Formatter.module token "if" token-equals do
+                        formatter token region-index depth formatter-format-if
+                    elif formatter @Formatter.module token "while" token-equals do
+                        formatter token region-index depth formatter-format-while
+                    elif
+                        formatter @Formatter.module token "let" token-equals
+                        formatter @Formatter.module token "peek" token-equals ||
+                    do
+                        formatter token region-index depth formatter-format-binding
+                    elif
+                        formatter @Formatter.module token "elif" token-equals
+                        formatter @Formatter.module token "else" token-equals ||
+                        formatter @Formatter.module token "do" token-equals ||
+                        formatter @Formatter.module token "end" token-equals ||
+                    do
+                        "internal unexpected structured formatter token" fail
+                        token 1 + depth
+                    else
+                        formatter token region-index depth formatter-apply-operation
+                    end
+                else
+                    formatter token region-index depth formatter-apply-operation
+                end
+            end
+        end
+        let token depth do depth end
+    end
+end
+
+proc formatter-format-flow-declaration Formatter* int int int -- do
+    let formatter declaration-token body-start declaration-end do
+        declaration-end 1 -
+        let end-token do
+            if formatter @Formatter.module end-token "end" token-equals ! do
+                "internal formatter flow declaration has no end" fail
+            end
+            formatter declaration-token 0 formatter-register-syntax-token
+            formatter declaration-token 1 + body-start 1 formatter-register-syntax-range
+            formatter body-start end-token 1 0 formatter-format-flow-region drop
+            if formatter @Formatter.module @ModuleContext.program program-failed ! do
+                formatter end-token 0 formatter-register-syntax-token
+            end
+        end
+    end
+end
+
+proc formatter-format-procedure-declaration Formatter* int int -- do
+    let formatter declaration-token declaration-end do
+        declaration-end 1 -
+        let end-token do
+            if formatter @Formatter.module end-token "end" token-equals ! do
+                "internal formatter procedure declaration has no end" fail
+            end
+            formatter declaration-token 1 + end-token "do" formatter-find-token
+            let do-token do
+                if do-token 0 < do "internal formatter procedure declaration has no do" fail end
+                formatter declaration-token 0 formatter-register-syntax-token
+                formatter declaration-token 1 + do-token 1 formatter-register-syntax-range
+                formatter do-token 0 formatter-register-syntax-token
+                formatter do-token 1 + end-token 1 0 formatter-format-flow-region drop
+                if formatter @Formatter.module @ModuleContext.program program-failed ! do
+                    formatter end-token 0 formatter-register-syntax-token
+                end
+            end
+        end
+    end
+end
+
+proc formatter-format-import-declaration Formatter* int int -- do
+    let formatter declaration-token declaration-end do
+        formatter declaration-token 0 formatter-register-syntax-token
+        formatter declaration-token 1 + declaration-end "(" formatter-find-token
+        let open-token do
+            if open-token 0 < do
+                formatter declaration-token 1 + declaration-end 1 formatter-register-syntax-range
+            else
+                formatter declaration-token 1 + open-token 1 formatter-register-syntax-range
+                formatter open-token 0 formatter-register-syntax-token
+                formatter open-token 1 + declaration-end ")" formatter-find-token
+                let close-token do
+                    if close-token 0 < do "internal formatter grouped import has no closing parenthesis" fail end
+                    formatter open-token 1 + close-token 1 formatter-register-syntax-range
+                    formatter close-token 0 formatter-register-syntax-token
+                    formatter close-token 1 + declaration-end 0 formatter-register-syntax-range
+                end
+            end
+        end
+    end
+end
+
+proc formatter-format-syntax-declaration Formatter* int int -- do
+    let formatter declaration-token declaration-end do
+        formatter declaration-token 0 formatter-register-syntax-token
+        declaration-end 1 -
+        let last-token do
+            if
+                last-token declaration-token >
+                formatter @Formatter.module last-token "end" token-equals &&
+            do
+                formatter declaration-token 1 + last-token 1 formatter-register-syntax-range
+                formatter last-token 0 formatter-register-syntax-token
+            else
+                formatter declaration-token 1 + declaration-end 1 formatter-register-syntax-range
+            end
+        end
+    end
+end
+
+proc formatter-layout-module Formatter* -- do
+    let formatter do
+        0
+        while
+            peek declaration-token do
+                declaration-token formatter @Formatter.module @ModuleContext.token_count <
+                formatter @Formatter.module @ModuleContext.program program-failed ! &&
+            end
+        do
+            let declaration-token do
+                formatter declaration-token formatter-declaration-end
+                let declaration-end do
+                    if declaration-end declaration-token <= do
+                        "internal formatter token is outside a declaration" fail
+                    end
+                    if formatter @Formatter.module declaration-token "proc" token-equals do
+                        formatter declaration-token declaration-end formatter-format-procedure-declaration
+                    elif
+                        formatter @Formatter.module declaration-token "macro" token-equals
+                        formatter @Formatter.module declaration-token "const" token-equals ||
+                    do
+                        formatter declaration-token declaration-token 2 + declaration-end formatter-format-flow-declaration
+                    elif formatter @Formatter.module declaration-token "from" token-equals do
+                        formatter declaration-token declaration-end formatter-format-import-declaration
+                    else
+                        formatter declaration-token declaration-end formatter-format-syntax-declaration
+                    end
+                    declaration-end
+                end
+            end
+        end
+        drop
+    end
+end
+
+proc formatter-line-end ModuleContext* int -- int do
+    let module start do
+        start false
+        while
+            peek finish found do
+                finish module @ModuleContext.source_length < found ! &&
+            end
+        do
+            let finish found do
+                if module finish source-byte-is-newline do
+                    finish 1 + true
+                else
+                    finish 1 + false
+                end
+            end
+        end
+        let finish found do finish end
+    end
+end
+
+proc formatter-line-content-start ModuleContext* int int -- int do
+    let module start finish do
+        start
+        while
+            dup finish <
+            if dup do
+                drop
+                dup module swap source-byte
+                let byte do byte 32 == byte 9 == || end
+            end
+        do
+            1 +
+        end
+    end
+end
+
+proc formatter-line-indent Formatter* FormatLine* -- int do
+    let formatter line do
+        if line @FormatLine.state format-line-syntax == do
+            line @FormatLine.syntax_depth 4 *
+        elif line @FormatLine.state format-line-flow == do
+            formatter line @FormatLine.region formatter-region-at @FormatRegion.floor
+            let region-floor do
+                if line @FormatLine.floor region-floor < do
+                    "internal formatter line is below its region floor" fail
+                end
+                line @FormatLine.syntax_depth 4 *
+                line @FormatLine.floor region-floor - 2 * +
+            end
+        else
+            0
+        end
+    end
+end
+
+proc formatter-emit-spaces int -- do
+    let count do
+        0 while dup count < do 32 putc 1 + end drop
+    end
+end
+
+proc formatter-emit-source Formatter* -- do
+    let formatter do
+        formatter @Formatter.module
+        let module do
+            0 1
+            while peek offset line-number do offset module @ModuleContext.source_length < end do
+                let offset line-number do
+                    module offset formatter-line-end
+                    let finish do
+                        formatter line-number formatter-line-at
+                        let line do
+                            if
+                                line @FormatLine.state format-line-unassigned ==
+                                line @FormatLine.protected ||
+                            do
+                                module @ModuleContext.source offset + finish offset - emit-bytes
+                            else
+                                module offset finish formatter-line-content-start
+                                let content-start do
+                                    formatter line formatter-line-indent formatter-emit-spaces
+                                    module @ModuleContext.source content-start + finish content-start - emit-bytes
+                                end
+                            end
+                            finish line-number 1 +
+                        end
+                    end
+                end
+            end
+            let offset line-number do end
+        end
     end
 end
 
@@ -17487,6 +18489,7 @@ proc cli-usage -- do
 
 Commands:
   check [FILE]               analyze Frog source without generating C
+  fmt [FILE]                 format Frog source to standard output
   inspect [FILE]             print analyzed Frog operations
   cursor --byte OFFSET [FILE]
                              query semantic data at a source byte
@@ -17705,6 +18708,64 @@ proc check-file ptr bool bool ptr int -- int do
             let directory do
                 source source-length path path cstring-length directory debug release
                 standard-library-root standard-library-root-length check-frog-source
+            end
+        end
+    end
+end
+
+proc fmt-frog-source ptr int ptr int ptr bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory debug release standard-library-root standard-library-root-length do
+        fork
+        let child do
+            if child 0 < do
+                "unable to fork compiler" cli-error
+                1
+            elif child 0 == do
+                reset-child-signals
+                if directory chdir 0 != do
+                    "unable to prepare compiler child" cli-error
+                    1 finish-child
+                    1
+                else
+                    source source-length diagnostic-path diagnostic-path-length debug release
+                    standard-library-root standard-library-root-length analyze-format-source
+                    let program do
+                        if program program-failed do
+                            program emit-program-diagnostics
+                            1 finish-child
+                            1
+                        else
+                            program @Program.root_module create-formatter
+                            let formatter do
+                                formatter formatter-layout-module
+                                if program program-failed do
+                                    program emit-program-diagnostics
+                                    1 finish-child
+                                    1
+                                else
+                                    formatter formatter-emit-source
+                                    0 finish-child
+                                    0
+                                end
+                            end
+                        end
+                    end
+                end
+            else
+                child wait-for-child
+            end
+        end
+    end
+end
+
+proc fmt-file ptr bool bool ptr int -- int do
+    let path debug release standard-library-root standard-library-root-length do
+        path read-source-path
+        let source source-length do
+            path parent-path
+            let directory do
+                source source-length path path cstring-length directory debug release
+                standard-library-root standard-library-root-length fmt-frog-source
             end
         end
     end
@@ -17931,6 +18992,33 @@ proc check-command ptr int int bool bool ptr int -- do
     end
 end
 
+proc fmt-command ptr int int bool bool ptr int -- do
+    let argv argc command-index debug release standard-library-root standard-library-root-length do
+        command-index 1 +
+        let argument-index do
+            if argument-index argc >= do
+                read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release
+                standard-library-root standard-library-root-length fmt-frog-source exit
+            end
+            argv argument-index argv-at
+            let argument do
+                if
+                    argc argument-index 1 + ==
+                    argument "-h" cstring-equals argument "--help" cstring-equals || &&
+                do
+                    "Usage: frogc [--debug] [--release] fmt [FILE]\n" emit
+                elif argument u8* cast @ int cast 45 == do
+                    "unknown fmt option: " argument cli-usage-error-value
+                elif argc argument-index 1 + != do
+                    "fmt accepts at most one source file" cli-usage-error
+                else
+                    argument debug release standard-library-root standard-library-root-length fmt-file exit
+                end
+            end
+        end
+    end
+end
+
 proc inspect-command ptr int int bool bool ptr int -- do
     let argv argc command-index debug release standard-library-root standard-library-root-length do
         argv argc command-index 1 + false false parse-inspect-options
@@ -18091,6 +19179,8 @@ proc main -- do
                         cli-usage
                     elif command "check" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length check-command
+                    elif command "fmt" cstring-equals do
+                        argv argc command-index debug release standard-library-root standard-library-root-length fmt-command
                     elif command "inspect" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length inspect-command
                     elif command "cursor" cstring-equals do

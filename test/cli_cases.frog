@@ -111,6 +111,46 @@ proc frog-cli-check-stdin String String String int String FrogTestContext* -- do
     end
 end
 
+proc frog-cli-fmt-stdin String String String int String FrogTestContext* -- do
+    let source expected-stdout expected-stderr expected-status name context do
+        2 subprocess-argv
+        let arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+            "fmt" arguments 1 subprocess-arg
+            arguments source String.bytes source String.len "" subprocess-run-bytes-in
+            let result do
+                result expected-stdout expected-stderr expected-status frog-process-equals
+                name context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
+proc frog-cli-fmt-file String String String String FrogTestContext* -- do
+    let path expected-stdout expected-source name context do
+        2 context frog-cli-argv
+        let arguments do
+            "fmt" arguments 1 subprocess-arg
+            path arguments 2 subprocess-arg
+            arguments "" subprocess-run
+            let result do
+                path String.bytes path String.len read-file
+                let source source-length success do
+                    success path assert
+                    result expected-stdout "" 0 frog-process-equals
+                    source source-length expected-source String.bytes expected-source String.len bytes-equal &&
+                    name context frog-check
+                    source free
+                    result completed-process-free
+                    arguments subprocess-argv-free
+                end
+            end
+        end
+    end
+end
+
 proc frog-cli-inspect-stdin String String String int String FrogTestContext* -- do
     let source expected-stdout expected-stderr expected-status name context do
         2 subprocess-argv
@@ -1494,6 +1534,7 @@ proc run-cli-cases FrogTestContext* -- do
 
 Commands:
   check [FILE]               analyze Frog source without generating C
+  fmt [FILE]                 format Frog source to standard output
   inspect [FILE]             print analyzed Frog operations
   cursor --byte OFFSET [FILE]
                              query semantic data at a source byte
@@ -1511,6 +1552,7 @@ Options:
 
 Commands:
   check [FILE]               analyze Frog source without generating C
+  fmt [FILE]                 format Frog source to standard output
   inspect [FILE]             print analyzed Frog operations
   cursor --byte OFFSET [FILE]
                              query semantic data at a source byte
@@ -1530,6 +1572,17 @@ Options:
 
         "check" "-h" "Usage: frogc [--debug] [--release] check [FILE]
 " "" 0 "cli/check-help" context frog-cli-case-2
+
+        "fmt" "-h" "Usage: frogc [--debug] [--release] fmt [FILE]
+" "" 0 "cli/fmt-help" context frog-cli-case-2
+
+        "fmt" "--unknown" "" "frogc: unknown fmt option: --unknown
+Try `frogc --help`.
+" 2 "cli/fmt-unknown-option" context frog-cli-case-2
+
+        "fmt" "first.frog" "second.frog" "" "frogc: fmt accepts at most one source file
+Try `frogc --help`.
+" 2 "cli/fmt-too-many-files" context frog-cli-case-3
 
         "inspect" "-h" "Usage: frogc [--debug] [--release] inspect [--builtins] [--lexemes] [FILE]
 " "" 0 "cli/inspect-help" context frog-cli-case-2
@@ -1586,6 +1639,254 @@ Try `frogc --help`.
         "check" "first.frog" "second.frog" "" "frogc: check accepts at most one source file
 Try `frogc --help`.
 " 2 "cli/check-too-many-files" context frog-cli-case-3
+
+        "proc a -- int do 1 end
+proc b -- int do 2 end
+proc c -- int do 3 end
+proc formatted -- int do
+   a
+b
+    +
+ c
+*
+end
+" "proc a -- int do 1 end
+proc b -- int do 2 end
+proc c -- int do 3 end
+proc formatted -- int do
+    a
+      b
+    +
+      c
+    *
+end
+" "" 0 "cli/fmt-stdin-expanded-stack" context frog-cli-fmt-stdin
+
+        "proc a -- int do 1 end
+proc b -- int do 2 end
+proc c -- int do 3 end
+proc formatted -- int int do
+a
+ b c +
+   + dup
+end
+" "proc a -- int do 1 end
+proc b -- int do 2 end
+proc c -- int do 3 end
+proc formatted -- int int do
+    a
+      b c +
+    + dup
+end
+" "" 0 "cli/fmt-stdin-folded-stack-floor" context frog-cli-fmt-stdin
+
+        "const json-int-max
+1
+62 u32 cast
+<<
+1
+62 u32 cast
+<<
+1
+-
++
+end
+" "const json-int-max
+    1
+      62 u32 cast
+    <<
+      1
+        62 u32 cast
+      <<
+        1
+      -
+    +
+end
+" "" 0 "cli/fmt-stdin-nested-constant" context frog-cli-fmt-stdin
+
+        "proc main -- do
+if true do
+1 drop
+else
+2 drop
+end
+while false do
+3 drop
+end
+4 let value do
+value drop
+end
+5 peek preserved do
+preserved drop
+end
+drop
+end
+" "proc main -- do
+    if true do
+        1 drop
+    else
+        2 drop
+    end
+    while false do
+        3 drop
+    end
+    4 let value do
+        value drop
+    end
+    5 peek preserved do
+        preserved drop
+    end
+    drop
+end
+" "" 0 "cli/fmt-stdin-structured-regions" context frog-cli-fmt-stdin
+
+        "proc formatted -- int do
+2 3 + if dup 5 == do drop 7 else drop 11 end
+end
+" "proc formatted -- int do
+    2 3 + if dup 5 == do drop 7 else drop 11 end
+end
+" "" 0 "cli/fmt-stdin-structured-line-preserved" context frog-cli-fmt-stdin
+
+        "proc main -- do\r\n// comment\t  \r\n  \"first\r\n  second\" drop  \r\n\r\nend\r\n" "proc main -- do\r\n// comment\t  \r\n    \"first\r\n  second\" drop  \r\n\r\nend\r\n" "" 0
+        "cli/fmt-stdin-comments-literal-crlf" context frog-cli-fmt-stdin
+
+        "proc main -- do\n\"first\n  second\n  \" drop\nend\n" "proc main -- do\n    \"first\n  second\n  \" drop\nend\n" "" 0
+        "cli/fmt-stdin-multiline-string-closing-lf" context frog-cli-fmt-stdin
+
+        "proc main -- do\r\"first\r  second\r  \" drop\rend\r" "proc main -- do\r    \"first\r  second\r  \" drop\rend\r" "" 0
+        "cli/fmt-stdin-multiline-string-lone-cr" context frog-cli-fmt-stdin
+
+        "proc formatted -- int do\n1\nlet value do\nvalue\nend\nend\n" "proc formatted -- int do\n    1\n    let value do\n        value\n    end\nend\n" "" 0
+        "cli/fmt-stdin-let-keyword-syntax-indent" context frog-cli-fmt-stdin
+
+        "macro add-one
+1
++
+end
+macro twice
+add-one
+add-one
+end
+proc formatted int -- int do
+twice
+end
+" "macro add-one
+      1
+    +
+end
+macro twice
+    add-one
+    add-one
+end
+proc formatted int -- int do
+    twice
+end
+" "" 0 "cli/fmt-stdin-nested-macro-effects" context frog-cli-fmt-stdin
+
+        "proc op bool -- int do drop 1 end
+proc op int int -- int do + end
+macro m op end
+proc one bool -- int do m end
+proc two int int -- int do m end
+" "" "<stdin>:3:9:
+  macro m op end
+          ^^
+error: formatter found conflicting resolved stack effects
+" 1 "cli/fmt-stdin-conflicting-macro-effects" context frog-cli-fmt-stdin
+
+        "proc expanded -- int do
+if false do
+if true do
+1
+else
+2
+end
+elif true do
+3
+else
+4
+end
+end
+proc folded -- int do
+if false do 1 elif true do 2 else 3 end
+end
+" "proc expanded -- int do
+    if false do
+        if true do
+            1
+        else
+            2
+        end
+    elif true do
+        3
+    else
+        4
+    end
+end
+proc folded -- int do
+    if false do 1 elif true do 2 else 3 end
+end
+" "" 0 "cli/fmt-stdin-elif-regions" context frog-cli-fmt-stdin
+
+        "proc formatted -- bool do
+if \"do\" drop true do
+\"end\" drop true
+else
+false
+end
+end
+" "proc formatted -- bool do
+    if \"do\" drop true do
+        \"end\" drop true
+    else
+        false
+    end
+end
+" "" 0 "cli/fmt-stdin-keyword-literals" context frog-cli-fmt-stdin
+
+        "proc main -- do
+    if true do
+        1 drop
+    else
+        2 drop
+    end
+end
+" "proc main -- do
+    if true do
+        1 drop
+    else
+        2 drop
+    end
+end
+" "" 0 "cli/fmt-stdin-idempotent" context frog-cli-fmt-stdin
+
+        "test/cases/cli/format_relative/main.frog" "from \"helper.frog\" import value
+
+const root
+    value
+end
+" "from \"helper.frog\" import value
+
+const root
+value
+end
+" "cli/fmt-file-relative-library" context frog-cli-fmt-file
+
+        "proc main -- do nope end
+" "" "<stdin>:1:17:
+  proc main -- do nope end
+                  ^^^^
+error: unknown word: nope
+" 1 "cli/fmt-stdin-invalid-source" context frog-cli-fmt-stdin
+
+        "macro unused nope end
+proc main -- do end
+" "" "<stdin>:1:14:
+  macro unused nope end
+               ^^^^
+error: formatter requires a resolved stack effect
+" 1 "cli/fmt-stdin-unresolved-unused-macro" context frog-cli-fmt-stdin
 
         "macro twice dup + end
 proc helper int -- int do 1 + end

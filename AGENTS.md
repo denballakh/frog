@@ -30,6 +30,8 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
   output.
 - `docs/cursor.md`: Developer-facing reference for versioned `frogc cursor`
   semantic queries.
+- `docs/formatter.md`: User-facing reference for stack-aware `frogc fmt`
+  indentation and source-preservation behavior.
 - `docs/testing.md`: Test suite layout and commands.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
@@ -81,6 +83,7 @@ Useful direct commands:
 
 - CLI help: `build/frogc -h`
 - Query source semantics: `build/frogc cursor --byte 0 examples/01_simple.frog`
+- Format a file to standard output: `build/frogc fmt examples/01_simple.frog`
 - Compile and run a file: `build/frogc run examples/01_simple.frog`
 - Compile and run inline source: `build/frogc run -c 'proc main -- do 1 2 + print end'`
 - Build a file: `build/frogc build examples/01_simple.frog`
@@ -113,8 +116,14 @@ Useful direct commands:
 
 - Entrypoint is `build/frogc` (or `just cli <args>`).
 - With no arguments, it is a compiler filter: it reads Frog source from standard input and writes generated C to standard output.
-- Subcommands are `check`, `inspect`, `cursor`, `run`, and `build`; each has
+- Subcommands are `check`, `fmt`, `inspect`, `cursor`, `run`, and `build`; each has
   `-h`/`--help`.
+- `fmt [FILE]` analyzes a file, or standard input when omitted, and writes
+  stack-aware indentation to standard output. It preserves physical lines and
+  every byte except leading spaces and tabs on code lines; it never edits the
+  input file. Formatting accepts declaration-only root modules without `main`
+  but still requires every formatted operation to have one resolved stack
+  effect.
 - `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
 - `build -r FILE` runs the resulting executable.
