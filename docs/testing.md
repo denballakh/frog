@@ -21,7 +21,9 @@ CLI cases also verify that `frogc check [FILE]` analyzes every procedure without
 emitting C, using standard input when `FILE` is omitted. The tests pin the
 current version of `frogc inspect [FILE]` output, including standard input,
 relative imports, resolved cross-module targets, and typed control-flow blocks,
-and require semantic failures to leave standard output empty.
+and require semantic failures to leave standard output empty. Format-5 cases
+also verify lossless token, comment, and whitespace coverage, explicit syntax
+regions, escaped lexeme text, and combined `--builtins --lexemes` inspection.
 
 The case manifests are:
 

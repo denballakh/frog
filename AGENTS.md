@@ -20,12 +20,14 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
 
 ## Repository Layout
 
-- `compiler/frogc.frog`: The Frog-written compiler, typechecker, deterministic C emitter, and CLI. It imports the libc words it uses from `stdlib/libc.frog`. Filter mode reads the root source from stdin; file commands preserve lexical source-relative import resolution.
+- `compiler/frogc.frog`: The Frog-written compiler, typechecker, deterministic C emitter, and CLI. It imports the libc words it uses from `stdlib/libc.frog`. Filter mode reads the root source from stdin; file commands preserve lexical source-relative import resolution. Compiler phases retain returned diagnostics, lossless source lexemes, syntax regions, resolved operations, typed instructions, macro expansions, and typed control-flow graphs.
 - `compiler/frogc.c`: Checked-in fixed-point C bootstrap seed generated from `compiler/frogc.frog`; this is an authoritative bootstrap artifact, not a disposable build output.
 - `examples/*.frog`: Example Frog programs documented in `examples/README.md`. Generated `examples/*.c` and `examples/*.exe` are build artifacts.
 - `docs/README.md`: Documentation index.
 - `docs/language.md`: User-facing FrogLang language reference.
 - `docs/stdlib.md`: User-facing standard-library module reference.
+- `docs/inspect.md`: Developer-facing reference for versioned `frogc inspect`
+  output.
 - `docs/testing.md`: Test suite layout and commands.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
@@ -108,11 +110,15 @@ Useful direct commands:
 
 - Entrypoint is `build/frogc` (or `just cli <args>`).
 - With no arguments, it is a compiler filter: it reads Frog source from standard input and writes generated C to standard output.
-- Subcommands are `run` and `build`; each has `-h`/`--help`.
+- Subcommands are `check`, `inspect`, `run`, and `build`; each has
+  `-h`/`--help`.
 - `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
 - `build -r FILE` runs the resulting executable.
 - CLI argument parsing, path construction, build policy, process setup, and exit-status forwarding are implemented in Frog in `compiler/frogc.frog` over the bindings in `stdlib/libc.frog`.
+- `inspect --lexemes` emits lossless lexemes and syntax regions in format 5.
+  It composes with `--builtins` in either order. Ordinary inspection remains
+  format 4.
 
 Use `build/frogc -h` for current CLI help. Exact help text belongs in CLI tests,
 not in this maintenance guide.
@@ -131,7 +137,19 @@ not in this maintenance guide.
 - Parsed `JsonValue` roots exclusively own every descendant. `json-free` recursively releases a root; scalar byte ranges and array/object children returned by lookup helpers are borrowed and must not be freed separately.
 - `http-serve-connection` owns and closes its connected descriptor; `http-serve-one` borrows its listener. HTTP handlers borrow the request only during the call and transfer an owned copied-body response back to the server.
 - Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
-- Typechecking occurs while procedures and expanded macros are compiled to C; failures include stack underflow, unknown words, contract mismatches, invalid control-flow stack shapes, and non-empty final stacks.
+- Loading, resolution, and procedure analysis finish before C emission. The
+  analyzer retains typed instructions and control-flow graphs; the C backend
+  emits procedure bodies from that IR rather than replaying source tokens.
+  Failures include stack underflow, unknown words, contract mismatches, invalid
+  control-flow stack shapes, and non-empty final stacks.
+- Diagnostics are owned records on `Program`; compiler phases add the first
+  diagnostic and return. CLI commands render it and choose the exit status.
+  `Program.sources` can supply owned source bytes by canonical path before
+  filesystem lookup, and filesystem lookup can be disabled for an embedding
+  that provides every source.
+- Each loaded module retains lossless token, comment, and whitespace lexemes
+  that partition its source bytes, plus explicit module, declaration, and
+  nested control-flow syntax regions with half-open token and byte ranges.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Global `--release` may be combined with it in either order and omits only implicitly resolved builtin assertion calls while preserving operand evaluation. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
 - Generated procedures use normal C parameters and return values. `int`, `bool`,
   exact-width integers, `ptr`, and typed pointers use their corresponding

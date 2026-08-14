@@ -8,7 +8,10 @@ from "stdlib/libc.frog" import (
     fork create-file dup2 close chdir get-current-directory execv execvp
     ensure-directory wait-child finish-child reset-child-signals
 )
-from "stdlib/string.frog" import ( bytes-copy bytes-equal bytes-starts-with )
+from "stdlib/string.frog" import (
+    bytes-copy bytes-equal bytes-starts-with
+    ByteBuffer byte-buffer-new byte-buffer-push byte-buffer-append-bytes byte-buffer-append-string byte-buffer-free
+)
 
 const cell-bytes 8 end
 
@@ -48,6 +51,10 @@ record ModuleContext
     diagnostic_path_length int
     tokens ptr
     token_count int
+    lexemes ptr
+    lexeme_count int
+    syntax_regions ptr
+    syntax_region_count int
     procs ptr
     proc_count int
     types ptr
@@ -150,6 +157,24 @@ record ScopeEntry
     kind ScopeKind
     definition_module ModuleContext*
     definition_index int
+end
+
+record Diagnostic
+    code DiagnosticCode
+    module ModuleContext*
+    start int
+    length int
+    message ptr
+    message_length int
+    subject ptr
+    subject_length int
+end
+
+record SourceEntry
+    path ptr
+    path_length int
+    source ptr
+    source_length int
 end
 
 const max-source-bytes 4194304 end
@@ -459,7 +484,148 @@ end
 
 proc token-at ModuleContext* int -- TokenEntry* do
     let ctx index do
-        ctx @ModuleContext.tokens index TokenEntry:sizeof * + TokenEntry* cast
+        if index ctx @ModuleContext.token_count > do ctx @ModuleContext.token_count else index end
+        let bounded-index do
+        ctx @ModuleContext.tokens bounded-index TokenEntry:sizeof * + TokenEntry* cast
+        end
+    end
+end
+
+proc lexeme-at ModuleContext* int -- LexemeEntry* do
+    let ctx index do
+        ctx @ModuleContext.lexemes index LexemeEntry:sizeof * + LexemeEntry* cast
+    end
+end
+
+proc add-lexeme ModuleContext* LexemeKind int int -- do
+    let ctx kind start length do
+        ctx @ModuleContext.lexeme_count
+        let index do
+            kind ctx index lexeme-at !LexemeEntry.kind
+            start ctx index lexeme-at !LexemeEntry.start
+            length ctx index lexeme-at !LexemeEntry.length
+            index 1 + ctx !ModuleContext.lexeme_count
+        end
+    end
+end
+
+proc syntax-region-at ModuleContext* int -- SyntaxRegion* do
+    let ctx index do
+        ctx @ModuleContext.syntax_regions index SyntaxRegion:sizeof * + SyntaxRegion* cast
+    end
+end
+
+proc syntax-region-start-byte ModuleContext* int -- int do
+    let ctx token do
+        if token ctx @ModuleContext.token_count >= do
+            ctx @ModuleContext.source_length
+        else
+            ctx token token-at @TokenEntry.start
+        end
+    end
+end
+
+proc syntax-region-end-byte ModuleContext* int -- int do
+    let ctx token do
+        if token 0 <= do
+            0
+        elif token ctx @ModuleContext.token_count > do
+            ctx @ModuleContext.source_length
+        else
+            ctx token 1 - token-at
+            let last-token do
+                last-token @TokenEntry.start last-token @TokenEntry.length +
+            end
+        end
+    end
+end
+
+proc add-syntax-region ModuleContext* SyntaxRegionKind int int int -- int do
+    let ctx kind parent start-token end-token do
+        if
+            start-token 0 <
+            end-token start-token < ||
+            end-token ctx @ModuleContext.token_count > ||
+        do
+            "internal invalid syntax region range" fail
+        end
+        ctx @ModuleContext.syntax_region_count
+        let index do
+            ctx index syntax-region-at
+            let region do
+                kind region !SyntaxRegion.kind
+                parent region !SyntaxRegion.parent
+                start-token region !SyntaxRegion.start_token
+                end-token region !SyntaxRegion.end_token
+                ctx start-token syntax-region-start-byte region !SyntaxRegion.start_byte
+                ctx end-token syntax-region-end-byte region !SyntaxRegion.end_byte
+                index 1 + ctx !ModuleContext.syntax_region_count
+                index
+            end
+        end
+    end
+end
+
+proc close-syntax-region ModuleContext* int int -- do
+    let ctx index end-token do
+        ctx index syntax-region-at
+        let region do
+            if end-token region @SyntaxRegion.start_token <= do
+                "internal invalid closed syntax region" fail
+            end
+            end-token region !SyntaxRegion.end_token
+            ctx end-token syntax-region-end-byte region !SyntaxRegion.end_byte
+        end
+    end
+end
+
+proc collect-block-syntax-regions ModuleContext* int int int -- do
+    let ctx parent start-token end-token do
+        end-token start-token - 1 + cell-bytes * alloc
+        let stack do
+            parent stack 0 field-write
+            start-token 1 + 1
+            while peek token depth do token end-token < end do
+                let token depth do
+                    if ctx token token-at @TokenEntry.kind TokenKind:word == do
+                        if ctx token token-starts-block do
+                            ctx SyntaxRegionKind:block stack depth 1 - cell-bytes * field-read token end-token add-syntax-region
+                            let region do
+                                region stack depth cell-bytes * field-write
+                                token 1 + depth 1 +
+                            end
+                        elif ctx token "end" token-equals depth 1 > && do
+                            ctx stack depth 1 - cell-bytes * field-read token 1 + close-syntax-region
+                            token 1 + depth 1 -
+                        else
+                            token 1 + depth
+                        end
+                    else
+                        token 1 + depth
+                    end
+                end
+            end
+            let token depth do end
+        end
+    end
+end
+
+proc add-declaration-syntax-region ModuleContext* int int -- do
+    let ctx start-token end-token do
+        if end-token ctx @ModuleContext.token_count > do ctx @ModuleContext.token_count else end-token end
+        let bounded-end-token do
+        if bounded-end-token start-token > do
+            ctx SyntaxRegionKind:declaration 0 start-token bounded-end-token add-syntax-region
+            let parent do
+                if
+                    ctx start-token "proc" token-equals
+                    ctx start-token "macro" token-equals ||
+                do
+                    ctx parent start-token bounded-end-token collect-block-syntax-regions
+                end
+            end
+        end
+        end
     end
 end
 
@@ -711,6 +877,292 @@ proc smaller-int int int -- int do
     let left right do if left right < do left else right end end
 end
 
+proc diagnostic-at Program* int -- Diagnostic* do
+    let program index do program @Program.diagnostics index Diagnostic:sizeof * + Diagnostic* cast end
+end
+
+proc grow-diagnostics Program* -- do
+    let program do
+        program @Program.diagnostic_capacity 2 *
+        let capacity do
+            capacity Diagnostic:sizeof * alloc
+            let diagnostics do
+                program @Program.diagnostics diagnostics program @Program.diagnostic_count Diagnostic:sizeof * bytes-copy
+                diagnostics program !Program.diagnostics
+                capacity program !Program.diagnostic_capacity
+            end
+        end
+    end
+end
+
+proc add-diagnostic ModuleContext* DiagnosticCode int int String ptr int -- do
+    let ctx code start length message subject subject-length do
+        ctx @ModuleContext.program
+        let program do
+            if program program-failed ! do
+                if program @Program.diagnostic_count program @Program.diagnostic_capacity == do program grow-diagnostics end
+                program @Program.diagnostic_count
+                let index do
+                    program index diagnostic-at
+                    let diagnostic do
+                        code diagnostic !Diagnostic.code
+                        ctx diagnostic !Diagnostic.module
+                        start diagnostic !Diagnostic.start
+                        length diagnostic !Diagnostic.length
+                        message String.bytes message String.len copy-bytes diagnostic !Diagnostic.message
+                        message String.len diagnostic !Diagnostic.message_length
+                        if subject-length 0 > do subject subject-length copy-bytes else 0 ptr cast end diagnostic !Diagnostic.subject
+                        subject-length diagnostic !Diagnostic.subject_length
+                        index 1 + program !Program.diagnostic_count
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc add-token-diagnostic ModuleContext* int DiagnosticCode String bool -- do
+    let ctx token code message with-subject do
+        if with-subject do ctx token token-slice else 0 ptr cast 0 end
+        let subject subject-length do
+            ctx code ctx token token-at @TokenEntry.start ctx token token-at @TokenEntry.length
+            message subject subject-length add-diagnostic
+        end
+    end
+end
+
+proc add-span-diagnostic ModuleContext* int int DiagnosticCode String -- do
+    let ctx start length code message do
+        ctx code start length message 0 ptr cast 0 add-diagnostic
+    end
+end
+
+proc program-failed Program* -- bool do @Program.diagnostic_count 0 > end
+
+proc add-compile-diagnostic CompileContext* DiagnosticCode String ptr int -- do
+    let cc code message subject subject-length do
+        if cc @CompileContext.diagnostic_active do
+            cc @CompileContext.diagnostic_module
+            code
+            cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-at @TokenEntry.start
+            cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-at @TokenEntry.length
+            message subject subject-length add-diagnostic
+        else
+            "internal compile diagnostic is missing a source location" fail
+        end
+    end
+end
+
+proc append-unsigned-buffer int ByteBuffer* -- do
+    let value buffer do
+        if value 10 >= do value 10 / buffer append-unsigned-buffer end
+        value 10 % 48 + buffer byte-buffer-push
+    end
+end
+
+proc append-integer-buffer int ByteBuffer* -- do
+    let value buffer do
+        if value min-int == do "INT64_MIN" buffer byte-buffer-append-string
+        elif value 0 < do 45 buffer byte-buffer-push 0 value - buffer append-unsigned-buffer
+        else value buffer append-unsigned-buffer end
+    end
+end
+
+proc append-type-module-prefix ModuleContext* ByteBuffer* -- do
+    let module buffer do
+        if module @ModuleContext.canonical_path_length 0 > do
+            module @ModuleContext.canonical_path module @ModuleContext.canonical_path_length buffer byte-buffer-append-bytes
+            58 buffer byte-buffer-push
+        end
+    end
+end
+
+proc append-record-type-name ModuleContext* int int ByteBuffer* -- bool do
+    let module value-type record-index buffer do
+        if record-index module @ModuleContext.record_count >= do false
+        elif module record-index record-type-at @RecordTypeEntry.record_type value-type == do
+            module buffer append-type-module-prefix
+            module @ModuleContext.source module record-index record-type-at @RecordTypeEntry.name_start +
+            module record-index record-type-at @RecordTypeEntry.name_length buffer byte-buffer-append-bytes
+            true
+        else module value-type record-index 1 + buffer append-record-type-name end
+    end
+end
+
+proc append-union-type-name ModuleContext* int int ByteBuffer* -- bool do
+    let module value-type union-index buffer do
+        if union-index module @ModuleContext.union_count >= do false
+        elif module union-index union-type-at @UnionTypeEntry.union_type value-type == do
+            module buffer append-type-module-prefix
+            module @ModuleContext.source module union-index union-type-at @UnionTypeEntry.name_start +
+            module union-index union-type-at @UnionTypeEntry.name_length buffer byte-buffer-append-bytes
+            true
+        else module value-type union-index 1 + buffer append-union-type-name end
+    end
+end
+
+proc append-function-type-name ModuleContext* int int ByteBuffer* -- bool do
+    let module value-type function-index buffer do
+        if function-index module @ModuleContext.function_count >= do false
+        elif module function-index function-type-at @FunctionTypeEntry.function_type value-type == do
+            module buffer append-type-module-prefix
+            module @ModuleContext.source module function-index function-type-at @FunctionTypeEntry.name_start +
+            module function-index function-type-at @FunctionTypeEntry.name_length buffer byte-buffer-append-bytes
+            true
+        else module value-type function-index 1 + buffer append-function-type-name end
+    end
+end
+
+proc append-module-type-name ModuleContext* int ByteBuffer* -- bool do
+    let module value-type buffer do
+        module value-type 0 buffer append-record-type-name
+        let found do
+            if found do true else
+                module value-type 0 buffer append-union-type-name
+                let found do if found do true else module value-type 0 buffer append-function-type-name end end
+            end
+        end
+    end
+end
+
+proc append-nominal-type-name ModuleContext* int ByteBuffer* -- bool do
+    let module value-type buffer do
+        if module ptr cast int cast 0 == do false else
+            module value-type buffer append-module-type-name
+            let found do if found do true else module @ModuleContext.next_module value-type buffer append-nominal-type-name end end
+        end
+    end
+end
+
+proc append-type-name-buffer Program* int ByteBuffer* -- do
+    let program value-type buffer do
+        if value-type 0 < value-type type-literal-base > value-type type-nominal-base < && || do "type" buffer byte-buffer-append-string
+        elif value-type type-int == do "int" buffer byte-buffer-append-string
+        elif value-type type-bool == do "bool" buffer byte-buffer-append-string
+        elif value-type type-ptr == do "ptr" buffer byte-buffer-append-string
+        elif value-type type-type == do "type" buffer byte-buffer-append-string
+        elif value-type type-string == do "String" buffer byte-buffer-append-string
+        elif value-type type-i8 == do "i8" buffer byte-buffer-append-string
+        elif value-type type-i16 == do "i16" buffer byte-buffer-append-string
+        elif value-type type-i32 == do "i32" buffer byte-buffer-append-string
+        elif value-type type-i64 == do "i64" buffer byte-buffer-append-string
+        elif value-type type-u8 == do "u8" buffer byte-buffer-append-string
+        elif value-type type-u16 == do "u16" buffer byte-buffer-append-string
+        elif value-type type-u32 == do "u32" buffer byte-buffer-append-string
+        elif value-type type-u64 == do "u64" buffer byte-buffer-append-string
+        elif value-type type-none == do "none" buffer byte-buffer-append-string
+        elif value-type type-is-typed-pointer do
+            program program value-type type-pointer-base - pointer-type-at @PointerTypeEntry.pointee_type buffer append-type-name-buffer
+            42 buffer byte-buffer-push
+        else
+            if program @Program.module_head value-type buffer append-nominal-type-name ! do "unknown" buffer byte-buffer-append-string end
+        end
+    end
+end
+
+proc append-type-array-items Program* ptr int int ByteBuffer* -- do
+    let program values start count buffer do
+        0 while dup count < do
+            dup let index do
+                if index 0 > do 32 buffer byte-buffer-push end
+                program values start index + cell-bytes * field-read buffer append-type-name-buffer
+            end
+            1 +
+        end drop
+    end
+end
+
+proc append-type-array Program* ptr int int ByteBuffer* -- do
+    let program values start count buffer do
+        91 buffer byte-buffer-push
+        program values start count buffer append-type-array-items
+        93 buffer byte-buffer-push
+    end
+end
+
+proc finish-compile-diagnostic CompileContext* DiagnosticCode ByteBuffer* -- do
+    let cc code message do
+        if cc @CompileContext.program program-failed do
+        else
+        if cc @CompileContext.diagnostic_word do
+            cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-slice
+        else 0 ptr cast 0 end
+        let subject subject-length do
+            cc @CompileContext.diagnostic_module
+            let module do
+                if module @ModuleContext.program @Program.diagnostic_count module @ModuleContext.program @Program.diagnostic_capacity == do
+                    module @ModuleContext.program grow-diagnostics
+                end
+                module @ModuleContext.program @Program.diagnostic_count
+                let index do
+                    module @ModuleContext.program index diagnostic-at
+                    let diagnostic do
+                        code diagnostic !Diagnostic.code
+                        module diagnostic !Diagnostic.module
+                        module cc @CompileContext.diagnostic_token token-at @TokenEntry.start diagnostic !Diagnostic.start
+                        module cc @CompileContext.diagnostic_token token-at @TokenEntry.length diagnostic !Diagnostic.length
+                        message @ByteBuffer.bytes message @ByteBuffer.len copy-bytes diagnostic !Diagnostic.message
+                        message @ByteBuffer.len diagnostic !Diagnostic.message_length
+                        if subject-length 0 > do subject subject-length copy-bytes else 0 ptr cast end diagnostic !Diagnostic.subject
+                        subject-length diagnostic !Diagnostic.subject_length
+                        index 1 + module @ModuleContext.program !Program.diagnostic_count
+                    end
+                end
+            end
+        end
+        message byte-buffer-free
+        end
+    end
+end
+
+proc emit-diagnostic Diagnostic* -- do
+    let diagnostic do
+        diagnostic @Diagnostic.module
+        let ctx do
+            ctx @ModuleContext.diagnostic_path ctx @ModuleContext.diagnostic_path_length emit-error-bytes
+            ":" emit-error ctx diagnostic @Diagnostic.start source-line-number emit-integer-error ":" emit-error
+            ctx diagnostic @Diagnostic.start source-line-start
+            let line-start do
+                ctx line-start diagnostic @Diagnostic.start 1 source-display-column-from emit-integer-error
+                ":\n  " emit-error
+                ctx diagnostic @Diagnostic.start source-line-end
+                let line-end do
+                    ctx line-start line-end 1 emit-source-display-from
+                    "\n  " emit-error
+                    ctx line-start diagnostic @Diagnostic.start 1 source-display-column-from 1 - emit-error-spaces
+                    diagnostic @Diagnostic.start diagnostic @Diagnostic.length + line-end smaller-int
+                    let span-end do ctx diagnostic @Diagnostic.start span-end source-display-width end
+                    let width do if width 0 <= do 1 else width end emit-error-carets end
+                    "\nerror: " emit-error
+                    if diagnostic @Diagnostic.subject_length 0 > do
+                        if diagnostic @Diagnostic.code DiagnosticCode.unresolved_name? do
+                            diagnostic @Diagnostic.message diagnostic @Diagnostic.message_length emit-error-bytes
+                            ": " emit-error
+                            diagnostic @Diagnostic.subject diagnostic @Diagnostic.subject_length emit-error-bytes
+                        else
+                            diagnostic @Diagnostic.subject diagnostic @Diagnostic.subject_length emit-error-bytes
+                            ": " emit-error
+                            diagnostic @Diagnostic.message diagnostic @Diagnostic.message_length emit-error-bytes
+                        end
+                    else
+                        diagnostic @Diagnostic.message diagnostic @Diagnostic.message_length emit-error-bytes
+                    end
+                    10 eputc
+                end
+            end
+        end
+    end
+end
+
+proc emit-program-diagnostics Program* -- do
+    let program do
+        0 while dup program @Program.diagnostic_count < do
+            dup let index do program index diagnostic-at emit-diagnostic end
+            1 +
+        end drop
+    end
+end
+
 proc emit-unsigned-error int -- do
     let value do
         if value 10 >= do value 10 / emit-unsigned-error end
@@ -753,44 +1205,19 @@ end
 
 proc fail-at ModuleContext* int String -- do
     let ctx token message do
-        ctx token emit-diagnostic-prefix
-        message emit-error
-        10 eputc
-        1 exit
+        ctx token DiagnosticCode:invalid_syntax message false add-token-diagnostic
     end
 end
 
 proc fail-name-at ModuleContext* int String -- do
     let ctx token message do
-        ctx token emit-diagnostic-prefix
-        message emit-error
-        ": " emit-error
-        ctx token token-slice emit-error-bytes
-        10 eputc
-        1 exit
+        ctx token DiagnosticCode:unresolved_name message true add-token-diagnostic
     end
 end
 
 proc fail-span-at ModuleContext* int int int String -- do
     let ctx start length line message do
-        ctx @ModuleContext.diagnostic_path ctx @ModuleContext.diagnostic_path_length emit-error-bytes
-        ":" emit-error line emit-integer-error ":" emit-error
-        ctx start source-line-start
-        let line-start do
-            ctx line-start start 1 source-display-column-from emit-integer-error
-            ":\n  " emit-error
-            ctx start source-line-end
-            let line-end do
-                ctx line-start line-end 1 emit-source-display-from
-                "\n  " emit-error
-                ctx line-start start 1 source-display-column-from 1 - emit-error-spaces
-                start length + line-end smaller-int
-                let span-end do ctx start span-end source-display-width end
-                let width do if width 0 <= do 1 else width end emit-error-carets end
-                "\nerror: " emit-error message emit-error 10 eputc
-                1 exit
-            end
-        end
+        ctx start length DiagnosticCode:invalid_syntax message add-span-diagnostic
     end
 end
 
@@ -942,8 +1369,8 @@ proc classify-word ModuleContext* int int int -- TokenKind int do
     end
 end
 
-proc skip-comment ModuleContext* -- do
-    let ctx do
+proc skip-comment ModuleContext* int -- do
+    let ctx start do
         while
             ctx @ModuleContext.lex_index ctx @ModuleContext.source_length <
             if dup do
@@ -952,6 +1379,7 @@ proc skip-comment ModuleContext* -- do
         do
             ctx lex-advance
         end
+        ctx LexemeKind:comment start ctx @ModuleContext.lex_index start - add-lexeme
     end
 end
 
@@ -960,39 +1388,50 @@ proc lex-string ModuleContext* int int int -- do
         ctx lex-advance
         ctx @ModuleContext.lex_index
         let content-start do
-            false
+            false false
             while
-                peek done do done !
+                peek done invalid do done ! invalid ! &&
                     ctx @ModuleContext.lex_index ctx @ModuleContext.source_length < &&
                 end
             do
-                let done do
+                let done invalid do
                     ctx ctx @ModuleContext.lex_index source-byte
                     let byte do
                         if byte '"' == do
-                            true
+                            true invalid
                         else
                             if byte 92 == do
                                 ctx lex-advance
                                 if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
                                     ctx start ctx @ModuleContext.lex_index start - line "unterminated string escape" fail-span-at
+                                    false true
+                                else
+                                    ctx lex-advance
+                                    false invalid
                                 end
+                            else
+                                ctx lex-advance
+                                false invalid
                             end
-                            ctx lex-advance
-                            false
                         end
                     end
                 end
             end
-            drop
-            if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
+            let done invalid do
+            if invalid do
+                ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+            elif done ! do
                 ctx start ctx @ModuleContext.lex_index start - line "unterminated string literal" fail-span-at
+                ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+            else
+                ctx @ModuleContext.lex_index content-start -
+                let content-length do
+                    ctx TokenKind:string content-start content-length 0 line column add-token
+                end
+                ctx lex-advance
+                ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
             end
-            ctx @ModuleContext.lex_index content-start -
-            let content-length do
-                ctx TokenKind:string content-start content-length 0 line column add-token
             end
-            ctx lex-advance
         end
     end
 end
@@ -1029,54 +1468,74 @@ proc lex-character ModuleContext* int int int -- do
         ctx lex-advance
         if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
             ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
-        end
-        if
+            ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+        elif
             ctx ctx @ModuleContext.lex_index source-byte 10 ==
             ctx ctx @ModuleContext.lex_index source-byte 13 == ||
         do
             ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
-        end
-        ctx @ModuleContext.lex_index 2 +
-        let closing-index do
-            if closing-index ctx @ModuleContext.source_length >= do
-                false
-            else
-                ctx ctx @ModuleContext.lex_index source-byte 92 ==
-                ctx ctx @ModuleContext.lex_index 1 + source-byte '\'' == &&
-                ctx closing-index source-byte '\'' == &&
-            end
-        end
-        let quote-escape do
-            if quote-escape do
-                ctx 3 lex-advance-count
-                ctx TokenKind:char start 4 '\'' line column add-token
-            else
-                if ctx ctx @ModuleContext.lex_index source-byte '\'' == do
-                    ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
-                end
-                ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-sequence-width
-                let width do
-                    if width 0 == do
-                        ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
-                    end
-                    ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
-                    let value ignored-width do
-                    ctx width lex-advance-count
-                    if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
-                        ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
-                    end
-                    if ctx ctx @ModuleContext.lex_index source-byte '\'' != do
-                        if
-                            ctx ctx @ModuleContext.lex_index source-byte 10 ==
-                            ctx ctx @ModuleContext.lex_index source-byte 13 == ||
-                        do
-                            ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
-                        else
-                            ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+            ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+        else
+            ctx ctx @ModuleContext.lex_index source-byte 92 ==
+            if dup do
+                drop
+                ctx @ModuleContext.lex_index 1 +
+                let escaped-index do
+                    if escaped-index ctx @ModuleContext.source_length >= do
+                        false
+                    elif ctx escaped-index source-byte '\'' != do
+                        false
+                    else
+                        escaped-index 1 +
+                        let closing-index do
+                            if closing-index ctx @ModuleContext.source_length >= do false
+                            else ctx closing-index source-byte '\'' == end
                         end
                     end
-                    ctx lex-advance
-                    ctx TokenKind:char start width 2 + value line column add-token
+                end
+            end
+            let quote-escape do
+                if quote-escape do
+                    ctx 3 lex-advance-count
+                    ctx TokenKind:char start 4 '\'' line column add-token
+                    ctx LexemeKind:token start 4 add-lexeme
+                else
+                    if ctx ctx @ModuleContext.lex_index source-byte '\'' == do
+                        ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                        ctx start character-literal-span-length let length do
+                            ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                            ctx LexemeKind:token start length add-lexeme
+                        end
+                    else
+                        ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-sequence-width
+                        let width do
+                            if width 0 == do
+                                ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                                ctx start character-literal-span-length let length do
+                                    ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                                    ctx LexemeKind:token start length add-lexeme
+                                end
+                            else
+                                ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
+                                let value ignored-width do
+                                    ctx width lex-advance-count
+                                    if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
+                                        ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
+                                        ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+                                    elif ctx ctx @ModuleContext.lex_index source-byte '\'' != do
+                                        ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                                        ctx start character-literal-span-length let length do
+                                            ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                                            ctx LexemeKind:token start length add-lexeme
+                                        end
+                                    else
+                                        ctx lex-advance
+                                        ctx TokenKind:char start width 2 + value line column add-token
+                                        ctx LexemeKind:token start width 2 + add-lexeme
+                                    end
+                                end
+                            end
+                        end
                     end
                 end
             end
@@ -1097,11 +1556,12 @@ proc lex-word ModuleContext* int int int -- do
         ctx @ModuleContext.lex_index start -
         let length do
             if ctx @ModuleContext.source start + length "//" bytes-equal-string do
-                ctx skip-comment
+                ctx start skip-comment
             else
                 ctx start length line classify-word
                 let kind value do
                     ctx kind start length value line column add-token
+                    ctx LexemeKind:token start length add-lexeme
                 end
             end
         end
@@ -1111,6 +1571,7 @@ end
 proc lex ModuleContext* -- do
     let ctx do
         0 ctx !ModuleContext.token_count
+        0 ctx !ModuleContext.lexeme_count
         0 ctx !ModuleContext.lex_index
         1 ctx !ModuleContext.lex_line
         1 ctx !ModuleContext.lex_column
@@ -1119,7 +1580,16 @@ proc lex ModuleContext* -- do
             ctx ctx @ModuleContext.lex_index source-byte
             let byte do
                 if byte is-space do
-                    ctx lex-advance
+                    ctx @ModuleContext.lex_index
+                    let start do
+                        while
+                            ctx @ModuleContext.lex_index ctx @ModuleContext.source_length <
+                            if dup do drop ctx ctx @ModuleContext.lex_index source-byte is-space end
+                        do
+                            ctx lex-advance
+                        end
+                        ctx LexemeKind:whitespace start ctx @ModuleContext.lex_index start - add-lexeme
+                    end
                 else
                     ctx @ModuleContext.lex_index
                     ctx @ModuleContext.lex_line
@@ -1138,6 +1608,12 @@ proc lex ModuleContext* -- do
                 end
             end
         end
+        TokenKind:word ctx ctx @ModuleContext.token_count token-at !TokenEntry.kind
+        ctx @ModuleContext.source_length ctx ctx @ModuleContext.token_count token-at !TokenEntry.start
+        0 ctx ctx @ModuleContext.token_count token-at !TokenEntry.length
+        0 ctx ctx @ModuleContext.token_count token-at !TokenEntry.value
+        ctx @ModuleContext.lex_line ctx ctx @ModuleContext.token_count token-at !TokenEntry.line
+        ctx @ModuleContext.lex_column ctx ctx @ModuleContext.token_count token-at !TokenEntry.column
     end
 end
 
@@ -1762,6 +2238,9 @@ proc scan-record-fields ModuleContext* int int -- int do
                 if ctx type-token reserved-name do
                     ctx type-token "unknown record field type" fail-name-at
                 end
+                if ctx @ModuleContext.program program-failed do
+                    ctx @ModuleContext.token_count
+                else
                 ctx @ModuleContext.record_field_count
                 let field-index do
                     ctx token-index token-at @TokenEntry.start ctx field-index record-field-at !RecordFieldEntry.name_start
@@ -1772,6 +2251,7 @@ proc scan-record-fields ModuleContext* int int -- int do
                     ctx record-index record-type-at @RecordTypeEntry.field_count 1 +
                     ctx record-index record-type-at !RecordTypeEntry.field_count
                     ctx record-index type-token 1 + scan-record-fields
+                end
                 end
             end
         end
@@ -1810,6 +2290,9 @@ proc scan-one-record ModuleContext* int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
+            if ctx @ModuleContext.program program-failed do
+                ctx @ModuleContext.token_count
+            else
             ctx @ModuleContext.record_count
             let record-index do
                 ctx name-token token-at @TokenEntry.start ctx record-index record-type-at !RecordTypeEntry.name_start
@@ -1824,6 +2307,7 @@ proc scan-one-record ModuleContext* int -- int do
                     record-index 1 + ctx !ModuleContext.record_count
                     next-token
                 end
+            end
             end
         end
     end
@@ -1866,6 +2350,9 @@ proc scan-union-cases ModuleContext* int int -- int do
                         ctx name-token "duplicate union variant" fail-name-at
                     end
                 end
+                if ctx @ModuleContext.program program-failed do
+                    ctx @ModuleContext.token_count
+                else
                 ctx @ModuleContext.union_case_count
                 let case-index do
                     ctx name-token token-at @TokenEntry.start ctx case-index union-case-at !UnionCaseEntry.name_start
@@ -1913,6 +2400,7 @@ proc scan-union-cases ModuleContext* int int -- int do
                         end
                     end
                 end
+                end
             end
         end
     end
@@ -1955,6 +2443,9 @@ proc scan-one-union ModuleContext* int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
+            if ctx @ModuleContext.program program-failed do
+                ctx @ModuleContext.token_count
+            else
             ctx @ModuleContext.union_count
             let union-index do
                 ctx name-token token-at @TokenEntry.start ctx union-index union-type-at !UnionTypeEntry.name_start
@@ -1969,6 +2460,7 @@ proc scan-one-union ModuleContext* int -- int do
                     union-index 1 + ctx !ModuleContext.union_count
                     next-token
                 end
+            end
             end
         end
     end
@@ -2020,6 +2512,9 @@ proc scan-one-function ModuleContext* int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
+            if ctx @ModuleContext.program program-failed do
+                ctx @ModuleContext.token_count
+            else
             ctx @ModuleContext.function_count
             let function-index do
                 ctx name-token token-at @TokenEntry.start ctx function-index function-type-at !FunctionTypeEntry.name_start
@@ -2049,6 +2544,9 @@ proc scan-one-function ModuleContext* int -- int do
                     if ctx token-index "--" token-equals ! do
                         ctx token-index "expected -- in function signature" fail-at
                     end
+                    if ctx @ModuleContext.program program-failed do
+                        ctx @ModuleContext.token_count
+                    else
                     input-count ctx function-index function-type-at !FunctionTypeEntry.input_count
                     ctx @ModuleContext.function_type_count ctx function-index function-type-at !FunctionTypeEntry.output_start
                     token-index 1 + 0
@@ -2069,11 +2567,17 @@ proc scan-one-function ModuleContext* int -- int do
                         if output-token ctx @ModuleContext.token_count >= do
                             ctx "expected end after function signature" fail-eof
                         end
+                        if ctx @ModuleContext.program program-failed do
+                            ctx @ModuleContext.token_count
+                        else
                         output-count ctx function-index function-type-at !FunctionTypeEntry.output_count
                         function-index 1 + ctx !ModuleContext.function_count
                         output-token 1 +
+                        end
+                    end
                     end
                 end
+            end
             end
         end
     end
@@ -2266,7 +2770,8 @@ proc scan-one-macro ModuleContext* int -- int do
         let name-token do
             if name-token ctx @ModuleContext.token_count >= do
                 ctx "expected macro name" fail-eof
-            end
+                name-token
+            else
             ctx name-token require-word
             if
                 ctx name-token reserved-name
@@ -2297,12 +2802,15 @@ proc scan-one-macro ModuleContext* int -- int do
                 false ctx macro-index macro-at !MacroEntry.expanding
                 ctx name-token 1 + scan-macro-body
                 let next-token do
-                    ctx name-token 1 + next-token 1 - validate-macro-body
-                    name-token 1 + ctx macro-index macro-at !MacroEntry.body_start
-                    next-token 1 - ctx macro-index macro-at !MacroEntry.body_end
-                    ctx @ModuleContext.macro_count 1 + ctx !ModuleContext.macro_count
+                    if ctx @ModuleContext.program program-failed ! do
+                        ctx name-token 1 + next-token 1 - validate-macro-body
+                        name-token 1 + ctx macro-index macro-at !MacroEntry.body_start
+                        next-token 1 - ctx macro-index macro-at !MacroEntry.body_end
+                        ctx @ModuleContext.macro_count 1 + ctx !ModuleContext.macro_count
+                    end
                     next-token
                 end
+            end
             end
         end
     end
@@ -2392,6 +2900,9 @@ proc scan-one-constant ModuleContext* int -- int do
             do
                 ctx name-token fail-duplicate-declaration
             end
+            if ctx @ModuleContext.program program-failed do
+                ctx @ModuleContext.token_count
+            else
             ctx @ModuleContext.constant_count
             let constant-index do
                 ctx name-token token-at @TokenEntry.start ctx constant-index constant-at !ConstantEntry.name_start
@@ -2406,6 +2917,7 @@ proc scan-one-constant ModuleContext* int -- int do
                     ctx @ModuleContext.constant_count 1 + ctx !ModuleContext.constant_count
                     next-token
                 end
+            end
             end
         end
     end
@@ -2547,8 +3059,15 @@ proc scan-one-proc ModuleContext* int -- int do
     let ctx proc-token do
         proc-token 1 +
         let name-token do
+            if name-token ctx @ModuleContext.token_count >= do
+                ctx "expected procedure name" fail-eof
+                ctx @ModuleContext.token_count
+            else
             ctx name-token allocate-proc
             let proc-index do
+            if ctx @ModuleContext.program program-failed do
+                ctx @ModuleContext.token_count
+            else
                 ctx @ModuleContext.type_count ctx proc-index procedure-at !ProcedureEntry.input_start
                 name-token 1 + 0
                 while
@@ -2597,6 +3116,9 @@ proc scan-one-proc ModuleContext* int -- int do
                 peek body-start do ctx proc-index procedure-at !ProcedureEntry.body_start
                     ctx body-start scan-block-end
                     peek next-token do 1 - ctx proc-index procedure-at !ProcedureEntry.body_end
+                        if ctx @ModuleContext.program program-failed do
+                            ctx @ModuleContext.token_count
+                        else
                         proc-index 1 + ctx !ModuleContext.proc_count
 
                         if ctx name-token "main" token-equals do
@@ -2612,8 +3134,11 @@ proc scan-one-proc ModuleContext* int -- int do
                             proc-index ctx !ModuleContext.main_proc
                         end
                         next-token
+                        end
                     end
                 end
+            end
+            end
             end
         end
     end
@@ -2632,11 +3157,15 @@ proc scan-one-c-include ModuleContext* int -- int do
                 path-token 1 + let end-token do
                     if end-token ctx @ModuleContext.token_count >= do ctx "expected end after C include" fail-eof end
                     if ctx end-token "end" token-equals ! do ctx end-token "expected end after C include" fail-at end
+                    if ctx @ModuleContext.program program-failed do
+                        ctx @ModuleContext.token_count
+                    else
                     ctx @ModuleContext.c_include_count dup ctx swap c-include-at let index entry do
                         kind entry !CIncludeEntry.kind
                         path-token entry !CIncludeEntry.token
                         index 1 + ctx !ModuleContext.c_include_count
                         end-token 1 +
+                    end
                     end
                 end
             end
@@ -2673,6 +3202,9 @@ proc scan-one-c-type ModuleContext* int -- int do
                     spelling 1 + let end-token do
                         if end-token ctx @ModuleContext.token_count >= do ctx "expected end after C type" fail-eof end
                         if ctx end-token "end" token-equals ! do ctx end-token "expected end after C type" fail-at end
+                        if ctx @ModuleContext.program program-failed do
+                            ctx @ModuleContext.token_count
+                        else
                         ctx @ModuleContext.c_type_count dup ctx swap c-type-at let index entry do
                             ctx name token-at @TokenEntry.start entry !CTypeEntry.name_start
                             ctx name token-at @TokenEntry.length entry !CTypeEntry.name_length
@@ -2680,6 +3212,7 @@ proc scan-one-c-type ModuleContext* int -- int do
                             spelling entry !CTypeEntry.type_token
                             index 1 + ctx !ModuleContext.c_type_count
                             end-token 1 +
+                        end
                         end
                     end
                 end
@@ -2722,6 +3255,9 @@ proc scan-one-c-call ModuleContext* int -- int do
     let ctx token do
         token 1 + let name do
             ctx name allocate-proc let index do
+                if ctx @ModuleContext.program program-failed do
+                    ctx @ModuleContext.token_count
+                else
                 CBinding:call ctx index procedure-at !ProcedureEntry.c_binding
                 if ctx name "main" token-equals do ctx name "main cannot be a C binding" fail-at end
                 name 1 + let symbol do
@@ -2739,12 +3275,17 @@ proc scan-one-c-call ModuleContext* int -- int do
                             if end-token ctx @ModuleContext.token_count >= do ctx "expected end after C call" fail-eof end
                             if ctx end-token "end" token-equals ! do ctx end-token "expected end after C call" fail-at end
                             if outputs 1 > do ctx end-token "C call may return at most one value" fail-at end
+                            if ctx @ModuleContext.program program-failed do
+                                ctx @ModuleContext.token_count
+                            else
                             outputs ctx index procedure-at !ProcedureEntry.output_count
                             index 1 + ctx !ModuleContext.proc_count
                             end-token 1 +
+                            end
                         end
                     end
                 end
+            end
             end
         end
     end
@@ -2754,6 +3295,9 @@ proc scan-one-c-value ModuleContext* int -- int do
     let ctx token do
         token 1 + let name do
             ctx name allocate-proc let index do
+                if ctx @ModuleContext.program program-failed do
+                    ctx @ModuleContext.token_count
+                else
                 CBinding:value ctx index procedure-at !ProcedureEntry.c_binding
                 if ctx name "main" token-equals do ctx name "main cannot be a C binding" fail-at end
                 name 1 + let symbol do
@@ -2771,12 +3315,17 @@ proc scan-one-c-value ModuleContext* int -- int do
                             if end-token ctx @ModuleContext.token_count >= do ctx "expected end after C value" fail-eof end
                             if ctx end-token "end" token-equals ! do ctx end-token "expected end after C value" fail-at end
                             if outputs 1 != do ctx end-token "C value must return exactly one value" fail-at end
+                            if ctx @ModuleContext.program program-failed do
+                                ctx @ModuleContext.token_count
+                            else
                             outputs ctx index procedure-at !ProcedureEntry.output_count
                             index 1 + ctx !ModuleContext.proc_count
                             end-token 1 +
+                            end
                         end
                     end
                 end
+            end
             end
         end
     end
@@ -2836,6 +3385,7 @@ end
 
 proc add-import ModuleContext* int int int ptr int -- do
     let ctx path-token name-token alias-token canonical canonical-length do
+        if ctx @ModuleContext.program program-failed ! do
         ctx ctx @ModuleContext.import_count import-at
         let entry do
             path-token entry !ImportEntry.path_token
@@ -2846,13 +3396,20 @@ proc add-import ModuleContext* int int int ptr int -- do
             canonical-length entry !ImportEntry.canonical_path_length
             ctx @ModuleContext.import_count 1 + ctx !ModuleContext.import_count
         end
+        end
     end
 end
 
 proc scan-import-item ModuleContext* int ptr int int -- int do
     let ctx path-token canonical canonical-length token do
-        if token ctx @ModuleContext.token_count >= do ctx "expected imported name" fail-eof end
+        if token ctx @ModuleContext.token_count >= do
+            ctx "expected imported name" fail-eof
+            ctx @ModuleContext.token_count
+        else
         ctx token require-import-name
+        if ctx @ModuleContext.program program-failed do
+            ctx @ModuleContext.token_count
+        else
         token let name-token do
             token 1 + let next-token do
                 if next-token ctx @ModuleContext.token_count >= do
@@ -2860,16 +3417,24 @@ proc scan-import-item ModuleContext* int ptr int int -- int do
                     next-token
                 elif ctx next-token "as" token-equals do
                     next-token 1 + let alias-token do
-                        if alias-token ctx @ModuleContext.token_count >= do ctx "expected import alias" fail-eof end
+                        if alias-token ctx @ModuleContext.token_count >= do
+                            ctx "expected import alias" fail-eof
+                        end
+                        if ctx @ModuleContext.program program-failed do
+                            ctx @ModuleContext.token_count
+                        else
                         ctx alias-token require-import-name
                         ctx path-token name-token alias-token canonical canonical-length add-import
                         alias-token 1 +
+                        end
                     end
                 else
                     ctx path-token name-token 0 1 - canonical canonical-length add-import
                     next-token
                 end
             end
+        end
+        end
         end
     end
 end
@@ -2887,36 +3452,62 @@ end
 proc scan-one-import ModuleContext* int -- int do
     let ctx token do
         token 1 + let path-token do
-            if path-token ctx @ModuleContext.token_count >= do ctx "expected import path string" fail-eof end
-            if ctx path-token token-at @TokenEntry.kind TokenKind:string != do ctx path-token "expected import path string" fail-at end
+            if path-token ctx @ModuleContext.token_count >= do
+                ctx "expected import path string" fail-eof
+                ctx @ModuleContext.token_count
+            else
+            if ctx path-token token-at @TokenEntry.kind TokenKind:string != do
+                ctx path-token "expected import path string" fail-at
+            end
+            if ctx @ModuleContext.program program-failed do
+                ctx @ModuleContext.token_count
+            else
             path-token 1 + let import-token do
                 if import-token ctx @ModuleContext.token_count >= do ctx "expected import after import path" fail-eof end
                 if ctx import-token "import" token-equals ! do ctx import-token "expected import after import path" fail-at end
+                if ctx @ModuleContext.program program-failed do
+                    ctx @ModuleContext.token_count
+                else
                 ctx path-token ctx path-token decoded-import-path normalize-path let canonical canonical-length do
                     import-token 1 + let item-token do
                         if item-token ctx @ModuleContext.token_count >= do ctx "expected imported name" fail-eof end
+                        if ctx @ModuleContext.program program-failed do
+                            ctx @ModuleContext.token_count
+                        else
                         if ctx item-token "(" token-equals do
                             item-token 1 + let next-token do
                                 if next-token ctx @ModuleContext.token_count >= do ctx "expected ) after import list" fail-eof end
                                 if ctx next-token ")" token-equals do ctx next-token "expected imported name" fail-at end
+                                if ctx @ModuleContext.program program-failed do
+                                    ctx @ModuleContext.token_count
+                                else
                                 next-token
                                 while dup ctx swap import-list-continues do
                                     let list-token do ctx path-token canonical canonical-length list-token scan-import-item end
                                 end
                                 let list-token do
                                     if list-token ctx @ModuleContext.token_count >= do ctx "expected ) after import list" fail-eof end
+                                    if ctx @ModuleContext.program program-failed do
+                                        ctx @ModuleContext.token_count
+                                    else
                                     if ctx list-token ")" token-equals ! do
                                         if ctx list-token 44 token-contains-byte do ctx list-token "commas are not valid in import lists" fail-at end
                                         ctx list-token "expected ) after import list" fail-at
                                     end
                                     list-token 1 +
+                                    end
+                                end
                                 end
                             end
                         else
                             ctx path-token canonical canonical-length item-token scan-import-item
                         end
+                        end
                     end
                 end
+                end
+            end
+            end
             end
         end
     end
@@ -2951,13 +3542,17 @@ proc scan-declarations ModuleContext* -- do
         0 ctx !ModuleContext.c_type_count
         0 ctx !ModuleContext.c_include_count
         0
-        while dup ctx @ModuleContext.token_count < do
+        while peek token-index do
+            token-index ctx @ModuleContext.token_count <
+            ctx @ModuleContext.program program-failed ! &&
+        end do
             let token-index do
                 if
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "from" token-equals &&
                 do
                     ctx token-index scan-one-import
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "import" token-equals &&
@@ -2969,51 +3564,61 @@ proc scan-declarations ModuleContext* -- do
                     ctx token-index "macro" token-equals &&
                 do
                     ctx token-index scan-one-macro
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "const" token-equals &&
                 do
                     ctx token-index scan-one-constant
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "proc" token-equals &&
                 do
                     ctx token-index scan-one-proc
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-include" token-equals &&
                 do
                     ctx token-index scan-one-c-include
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-type" token-equals &&
                 do
                     ctx token-index scan-one-c-type
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-call" token-equals &&
                 do
                     ctx token-index scan-one-c-call
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "c-value" token-equals &&
                 do
                     ctx token-index scan-one-c-value
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "record" token-equals &&
                 do
                     ctx token-index scan-one-record
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "union" token-equals &&
                 do
                     ctx token-index scan-one-union
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 elif
                     ctx token-index token-at @TokenEntry.kind TokenKind:word ==
                     ctx token-index "fn" token-equals &&
                 do
                     ctx token-index scan-one-function
+                    peek next-token do ctx token-index next-token add-declaration-syntax-region end
                 else
                     if ctx @ModuleContext.is_root do
                         if ctx token-index token-at @TokenEntry.kind TokenKind:word == do
@@ -3031,7 +3636,7 @@ proc scan-declarations ModuleContext* -- do
             end
         end
         drop
-        if ctx @ModuleContext.is_root do
+        if ctx @ModuleContext.is_root ctx @ModuleContext.program program-failed ! && do
             if ctx @ModuleContext.main_proc 0 < do
                 ctx "missing main procedure" fail-eof
             end
@@ -3262,6 +3867,13 @@ record Program
     standard_library_root ptr
     standard_library_root_length int
     phase ProgramPhase
+    diagnostics ptr
+    diagnostic_count int
+    diagnostic_capacity int
+    sources ptr
+    source_count int
+    source_capacity int
+    allow_filesystem_sources bool
 end
 
 record CompileContext
@@ -3309,6 +3921,21 @@ record TokenEntry
     value int
     line int
     column int
+end
+
+record LexemeEntry
+    kind LexemeKind
+    start int
+    length int
+end
+
+record SyntaxRegion
+    kind SyntaxRegionKind
+    parent int
+    start_token int
+    end_token int
+    start_byte int
+    end_byte int
 end
 
 record ProcedureEntry
@@ -3576,6 +4203,36 @@ union TokenKind
     case word
 end
 
+union LexemeKind
+    case token
+    case whitespace
+    case comment
+end
+
+union SyntaxRegionKind
+    case module
+    case declaration
+    case block
+end
+
+
+proc == LexemeKind LexemeKind -- bool do
+    let first second do
+        first LexemeKind.token? second LexemeKind.token? &&
+        first LexemeKind.whitespace? second LexemeKind.whitespace? && ||
+        first LexemeKind.comment? second LexemeKind.comment? && ||
+    end
+end
+
+proc != LexemeKind LexemeKind -- bool do == ! end
+
+union DiagnosticCode
+    case invalid_syntax
+    case unresolved_name
+    case type_error
+    case source_unavailable
+end
+
 proc == TokenKind TokenKind -- bool do
     let first second do
         first TokenKind.int? second TokenKind.int? &&
@@ -3626,20 +4283,21 @@ end
 
 proc fail-compile-word CompileContext* String -- do
     let cc message do
-        cc emit-compile-word-error-prefix
-        message emit-error
-        10 eputc
-        1 exit
+        if cc @CompileContext.diagnostic_word do
+            cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-slice
+        else 0 ptr cast 0 end
+        let subject subject-length do
+            cc DiagnosticCode:type_error message subject subject-length add-compile-diagnostic
+        end
     end
 end
 
 proc fail-unknown-word CompileContext* int -- do
     let cc token do
-        cc emit-source-error-prefix
-        "unknown word: " emit-error
-        cc @CompileContext.defining_module token token-slice emit-error-bytes
-        10 eputc
-        1 exit
+        cc @CompileContext.defining_module token token-slice
+        let subject subject-length do
+            cc DiagnosticCode:unresolved_name "unknown word" subject subject-length add-compile-diagnostic
+        end
     end
 end
 
@@ -5675,15 +6333,17 @@ proc type-pop CompileContext* -- int do
     let cc do
         if cc @CompileContext.type_count 0 <= do
             cc "compile-time stack underflow" fail-compile-word
+            type-none
+        else
+            cc 1 consume-type-count
+            cc cc @CompileContext.type_count cc-type-address 0 field-read
         end
-        cc 1 consume-type-count
-        cc cc @CompileContext.type_count cc-type-address 0 field-read
     end
 end
 
 proc type-expect CompileContext* int -- do
     let cc expected do
-        if cc type-pop expected != do
+        if cc type-pop expected != cc @CompileContext.program program-failed ! && do
             cc "compile-time stack type mismatch" fail-compile-word
         end
     end
@@ -5790,14 +6450,21 @@ proc top-block CompileContext* -- BlockFrame* do
     let cc do
         if cc @CompileContext.block_count 0 <= do
             cc "control-flow block stack underflow" fail-compile-word
+            cc 0 block-address
+        else
+            cc cc @CompileContext.block_count 1 - block-address
         end
-        cc cc @CompileContext.block_count 1 - block-address
     end
 end
 
 proc pop-block CompileContext* -- BlockFrame* do
-    peek cc do top-block
-        cc @CompileContext.block_count 1 - cc !CompileContext.block_count
+    let cc do
+        if cc @CompileContext.block_count 0 <= do
+            cc top-block
+        else
+            cc top-block
+            cc @CompileContext.block_count 1 - cc !CompileContext.block_count
+        end
     end
 end
 
@@ -5953,9 +6620,9 @@ proc decoded-string-unit ModuleContext* int int -- int int do
                         ctx token raw-index raw-string-line
                         "unterminated string escape"
                         fail-span-at
-                    end
-                    ctx token escape-index raw-string-byte
-                    let escaped do
+                        0 1
+                    else
+                    ctx token escape-index raw-string-byte let escaped do
                         if escaped 92 == do 92 2
                         elif escaped '"' == do '"' 2
                         elif escaped 110 == do 10 2
@@ -5970,7 +6637,8 @@ proc decoded-string-unit ModuleContext* int int -- int int do
                                 ctx token raw-index raw-string-line
                                 "incomplete hexadecimal string escape"
                                 fail-span-at
-                            end
+                                0 1
+                            else
                             ctx token escape-index 1 + raw-string-byte
                             ctx token escape-index 2 + raw-string-byte
                             let high low do
@@ -5981,8 +6649,11 @@ proc decoded-string-unit ModuleContext* int int -- int int do
                                     ctx token raw-index raw-string-line
                                     "invalid hexadecimal string escape"
                                     fail-span-at
+                                    0 1
+                                else
+                                    high hex-value 16 * low hex-value + 4
                                 end
-                                high hex-value 16 * low hex-value + 4
+                            end
                             end
                         else
                             ctx
@@ -5991,8 +6662,9 @@ proc decoded-string-unit ModuleContext* int int -- int int do
                             ctx token raw-index raw-string-line
                             "invalid string escape"
                             fail-span-at
-                            0 0
+                            0 1
                         end
+                    end
                     end
                 end
             end
@@ -6635,18 +7307,17 @@ proc normalize-path ModuleContext* int ptr int -- ptr int do
     end
 end
 
-proc initialize-module-source ModuleContext* ptr int -- do
-    let ctx source source-length do
-        if source-length max-source-bytes > do
-            "source exceeds max-source-bytes" fail
-        end
-        source ctx !ModuleContext.source
-        source-length ctx !ModuleContext.source_length
-        source-length 1 + TokenEntry:sizeof * alloc ctx !ModuleContext.tokens
-        0 ctx !ModuleContext.token_count
-        0 1 - ctx !ModuleContext.main_proc
-        ctx lex
+proc initialize-module-declarations ModuleContext* -- do
+    let ctx do
         ctx @ModuleContext.program @Program.token_count ctx @ModuleContext.token_count + ctx @ModuleContext.program !Program.token_count
+
+        ctx @ModuleContext.token_count 1 + SyntaxRegion:sizeof * alloc ctx !ModuleContext.syntax_regions
+        0 ctx !ModuleContext.syntax_region_count
+        ctx SyntaxRegionKind:module 0 1 - 0 ctx @ModuleContext.token_count add-syntax-region
+        let module-region do
+            0 ctx module-region syntax-region-at !SyntaxRegion.start_byte
+            ctx @ModuleContext.source_length ctx module-region syntax-region-at !SyntaxRegion.end_byte
+        end
 
         ctx @ModuleContext.token_count 1 + ProcedureEntry:sizeof * alloc ctx !ModuleContext.procs
         ctx @ModuleContext.token_count 1 + MacroEntry:sizeof * alloc ctx !ModuleContext.macros
@@ -6666,6 +7337,24 @@ proc initialize-module-source ModuleContext* ptr int -- do
         0 ctx !ModuleContext.scope_count
         ResolveState:new ctx !ModuleContext.resolve_state
         ctx scan-declarations
+    end
+end
+
+proc initialize-module-source ModuleContext* ptr int -- do
+    let ctx source source-length do
+        if source-length max-source-bytes > do
+            "source exceeds max-source-bytes" fail
+        end
+        source ctx !ModuleContext.source
+        source-length ctx !ModuleContext.source_length
+        source-length 1 + TokenEntry:sizeof * alloc ctx !ModuleContext.tokens
+        source-length 1 + LexemeEntry:sizeof * alloc ctx !ModuleContext.lexemes
+        0 ctx !ModuleContext.token_count
+        0 ctx !ModuleContext.lexeme_count
+        0 1 - ctx !ModuleContext.main_proc
+        ctx lex
+        ctx verify-module-lexemes
+        if ctx @ModuleContext.program program-failed ! do ctx initialize-module-declarations end
     end
 end
 
@@ -6694,10 +7383,73 @@ proc find-module-by-path Program* ptr int -- ModuleContext* do
     end
 end
 
+proc source-entry-at Program* int -- SourceEntry* do
+    let program index do program @Program.sources index SourceEntry:sizeof * + SourceEntry* cast end
+end
+
+proc grow-sources Program* -- do
+    let program do
+        program @Program.source_capacity 2 *
+        let capacity do
+            capacity SourceEntry:sizeof * alloc
+            let sources do
+                program @Program.sources sources program @Program.source_count SourceEntry:sizeof * bytes-copy
+                sources program !Program.sources
+                capacity program !Program.source_capacity
+            end
+        end
+    end
+end
+
+proc add-program-source Program* ptr int ptr int -- do
+    let program path path-length source source-length do
+        if program @Program.source_count program @Program.source_capacity == do program grow-sources end
+        program @Program.source_count
+        let index do
+            program index source-entry-at
+            let entry do
+                path path-length copy-bytes entry !SourceEntry.path
+                path-length entry !SourceEntry.path_length
+                source source-length copy-bytes entry !SourceEntry.source
+                source-length entry !SourceEntry.source_length
+                index 1 + program !Program.source_count
+            end
+        end
+    end
+end
+
+proc find-program-source-from Program* ptr int int -- ptr int bool do
+    let program path path-length index do
+        if index program @Program.source_count >= do
+            0 ptr cast 0 false
+        else
+            program index source-entry-at
+            let entry do
+                if entry @SourceEntry.path entry @SourceEntry.path_length path path-length bytes-equal do
+                    entry @SourceEntry.source entry @SourceEntry.source_length true
+                else program path path-length index 1 + find-program-source-from end
+            end
+        end
+    end
+end
+
+proc find-program-source Program* ptr int -- ptr int bool do 0 find-program-source-from end
+
+proc load-source Program* ptr int -- ptr int bool do
+    let program path path-length do
+        program path path-length find-program-source
+        let source source-length found do
+            if found do source source-length true
+            elif program @Program.allow_filesystem_sources do path path-length read-file
+            else 0 ptr cast 0 false end
+        end
+    end
+end
+
 proc load-module-imports Program* ModuleContext* -- do
     let program module do
         0
-        while dup module @ModuleContext.import_count < do
+        while peek index do index module @ModuleContext.import_count < program program-failed ! && end do
             dup let import-index do
                 module import-index import-at
                 let entry do
@@ -6723,14 +7475,15 @@ proc load-module-path Program* ModuleContext* int ptr int -- ModuleContext* do
                 end
                 existing
             else
-                canonical canonical-length read-file
+                program canonical canonical-length load-source
                 let source source-length success do
                     if success ! do
                         importer import-token "import file not found" fail-at
-                    end
-                    if source-length max-source-bytes > do
+                        0 ptr cast ModuleContext* cast
+                    elif source-length max-source-bytes > do
                         importer import-token "source exceeds max-source-bytes" fail-at
-                    end
+                        0 ptr cast ModuleContext* cast
+                    else
                     ModuleContext:alloc
                     let module do
                         canonical module !ModuleContext.canonical_path
@@ -6746,9 +7499,12 @@ proc load-module-path Program* ModuleContext* int ptr int -- ModuleContext* do
                         false module !ModuleContext.is_root
                         program module program-add-module
                         module source source-length initialize-module-source
-                        program module load-module-imports
-                        LoadState:loaded module !ModuleContext.load_state
+                        if program program-failed ! do
+                            program module load-module-imports
+                            if program program-failed ! do LoadState:loaded module !ModuleContext.load_state end
+                        end
                         module
+                    end
                     end
                 end
             end
@@ -6917,6 +7673,7 @@ proc add-imported-procedures-from ModuleContext* ModuleContext* int int int -- d
                         if
                             ctx symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
                             scope-has-procedure-identity !
+                            ctx @ModuleContext.program program-failed ! &&
                         do
                             ctx ctx visible-token ScopeKind:procedure
                             symbol @ScopeEntry.definition_module
@@ -6939,7 +7696,7 @@ proc resolve-one-import ModuleContext* int -- do
             let target do
                 if target ptr cast int cast 0 == do
                     ctx entry @ImportEntry.name_token "internal import target is missing" fail-at
-                end
+                else
                 target resolve-module-scope
                 target ctx entry @ImportEntry.name_token find-scope-macro
                 if dup 0 < do
@@ -6948,7 +7705,7 @@ proc resolve-one-import ModuleContext* int -- do
                 let target-symbol do
                     if target-symbol 0 < do
                         ctx entry @ImportEntry.name_token "imported name not found" fail-name-at
-                    end
+                    else
                     target target-symbol scope-at
                     let target-entry do
                         entry @ImportEntry.alias_token
@@ -6989,6 +7746,7 @@ proc resolve-one-import ModuleContext* int -- do
                             do
                                 ctx visible-token "import alias conflict" fail-at
                             end
+                            if ctx @ModuleContext.program program-failed ! do
                             ctx ctx visible-token find-scope-symbol
                             let existing do
                                 if existing 0 >= do
@@ -7005,8 +7763,11 @@ proc resolve-one-import ModuleContext* int -- do
                                     add-scope-symbol-from-token
                                 end
                             end
+                            end
                         end
                     end
+                    end
+                end
                 end
             end
         end
@@ -7038,7 +7799,7 @@ proc resolve-module-scope ModuleContext* -- do
             end
             drop
             0
-            while dup ctx @ModuleContext.import_count < do
+            while peek index do index ctx @ModuleContext.import_count < ctx @ModuleContext.program program-failed ! && end do
                 dup ctx swap resolve-one-import
                 1 +
             end
@@ -7131,14 +7892,14 @@ proc resolve-module-scope ModuleContext* -- do
                 1 +
             end
             drop
-            ResolveState:resolved ctx !ModuleContext.resolve_state
+            if ctx @ModuleContext.program program-failed ! do ResolveState:resolved ctx !ModuleContext.resolve_state end
         end
     end
 end
 
 proc resolve-all-module-scopes Program* -- do
     peek program do @Program.module_head
-        while dup ptr cast int cast 0 != do
+        while peek module do module ptr cast int cast 0 != program program-failed ! && end do
             dup resolve-module-scope
             @ModuleContext.next_module
         end
@@ -7202,11 +7963,13 @@ proc constant-evaluator-pop ConstantEvaluator* -- int int do
     let evaluator do
         if evaluator @ConstantEvaluator.count 0 <= do
             evaluator "constant expression stack underflow" constant-fail
-        end
+            0 0
+        else
         evaluator @ConstantEvaluator.count 1 -
         peek index do evaluator !ConstantEvaluator.count
             evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.value_type
             evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.payload
+        end
         end
     end
 end
@@ -7234,7 +7997,7 @@ proc checked-constant-add ConstantEvaluator* int int -- int do
                 evaluator "constant integer overflow" constant-fail
             end
         end
-        left right +
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else left right + end
     end
 end
 
@@ -7249,7 +8012,7 @@ proc checked-constant-subtract ConstantEvaluator* int int -- int do
                 evaluator "constant integer overflow" constant-fail
             end
         end
-        left right -
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else left right - end
     end
 end
 
@@ -7285,7 +8048,7 @@ proc checked-constant-multiply ConstantEvaluator* int int -- int do
                     end
                 end
             end
-            left right *
+            if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else left right * end
         end
     end
 end
@@ -7303,13 +8066,13 @@ end
 
 proc checked-constant-divide ConstantEvaluator* int int -- int do
     peek evaluator left right do require-constant-divisor
-        left right /
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else left right / end
     end
 end
 
 proc checked-constant-modulo ConstantEvaluator* int int -- int do
     peek evaluator left right do require-constant-divisor
-        left right %
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else left right % end
     end
 end
 
@@ -7326,13 +8089,13 @@ proc checked-constant-shift-left ConstantEvaluator* int int -- int do
         if value max-int count u32 cast >> > do
             evaluator "constant integer overflow" constant-fail
         end
-        value count u32 cast <<
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else value count u32 cast << end
     end
 end
 
 proc checked-constant-shift-right ConstantEvaluator* int int -- int do
     peek evaluator value count do require-constant-shift
-        value count u32 cast >>
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0 else value count u32 cast >> end
     end
 end
 
@@ -7551,8 +8314,10 @@ end
 
 proc constant-evaluator-top-type ConstantEvaluator* -- int do
     let evaluator do
-        if evaluator @ConstantEvaluator.count 0 <= do evaluator "constant expression stack underflow" constant-fail end
-        evaluator @ConstantEvaluator.values evaluator @ConstantEvaluator.count 1 - constant-value-at @ConstantValue.value_type
+        if evaluator @ConstantEvaluator.count 0 <= do
+            evaluator "constant expression stack underflow" constant-fail
+            0
+        else evaluator @ConstantEvaluator.values evaluator @ConstantEvaluator.count 1 - constant-value-at @ConstantValue.value_type end
     end
 end
 
@@ -7560,8 +8325,10 @@ proc constant-evaluator-type-from-top ConstantEvaluator* int -- int do
     let evaluator depth do
         evaluator @ConstantEvaluator.count 1 - depth -
         let index do
-            if index 0 < do evaluator "constant expression stack underflow" constant-fail end
-            evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.value_type
+            if index 0 < do
+                evaluator "constant expression stack underflow" constant-fail
+                0
+            else evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.value_type end
         end
     end
 end
@@ -7583,7 +8350,8 @@ proc evaluate-constant-exact-binary-value ConstantEvaluator* int int int ModuleC
         do
             if right 0 == do evaluator "constant division by zero" constant-fail end
         end
-        if module token-index "+" token-equals do
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0
+        elif module token-index "+" token-equals do
             left u64 cast right u64 cast + int cast
         elif module token-index "-" token-equals do
             left u64 cast right u64 cast - int cast
@@ -7615,7 +8383,8 @@ end
 proc evaluate-constant-exact-divmod-value ConstantEvaluator* int int int bool -- int do
     let evaluator left right value-type remainder do
         if right 0 == do evaluator "constant division by zero" constant-fail end
-        if value-type constant-type-is-unsigned do
+        if evaluator @ConstantEvaluator.module @ModuleContext.program program-failed do 0
+        elif value-type constant-type-is-unsigned do
             if remainder do left u64 cast right u64 cast % int cast
             else left u64 cast right u64 cast / int cast end
         else
@@ -7646,7 +8415,10 @@ end
 
 proc evaluate-constant-exact-shift-value int int int ModuleContext* int -- int do
     let left right value-type module token-index do
-        if module token-index "<<" token-equals do
+        if right 0 < right 63 >= || do
+            module token-index "invalid shift in constant expression" fail-at
+            0
+        elif module token-index "<<" token-equals do
             left u64 cast right u32 cast << int cast
         elif value-type constant-type-is-unsigned do
             left u64 cast right u32 cast >> int cast
@@ -8052,20 +8824,24 @@ proc evaluate-constant ModuleContext* int -- do
                     module constant-index constant-at @ConstantEntry.body_start
                     module constant-index constant-at @ConstantEntry.body_end
                     evaluate-constant-range
-                    evaluator @ConstantEvaluator.count
-                    let value-count do
-                        if value-count 0 == do
-                            evaluator "constant must produce at least one value" constant-fail
-                        end
-                        value-count ConstantValue:sizeof * alloc
-                        let values do
-                            evaluator @ConstantEvaluator.values
-                            values
-                            value-count ConstantValue:sizeof *
-                            bytes-copy
-                            values module constant-index constant-at !ConstantEntry.values
-                            value-count module constant-index constant-at !ConstantEntry.value_count
-                            ConstantState:evaluated module constant-index constant-at !ConstantEntry.state
+                    if module @ModuleContext.program program-failed ! do
+                        evaluator @ConstantEvaluator.count
+                        let value-count do
+                            if value-count 0 == do
+                                evaluator "constant must produce at least one value" constant-fail
+                            end
+                            if module @ModuleContext.program program-failed ! do
+                                value-count ConstantValue:sizeof * alloc
+                                let values do
+                                    evaluator @ConstantEvaluator.values
+                                    values
+                                    value-count ConstantValue:sizeof *
+                                    bytes-copy
+                                    values module constant-index constant-at !ConstantEntry.values
+                                    value-count module constant-index constant-at !ConstantEntry.value_count
+                                    ConstantState:evaluated module constant-index constant-at !ConstantEntry.state
+                                end
+                            end
                         end
                     end
                 end
@@ -8077,21 +8853,23 @@ end
 proc append-constant-values ConstantEvaluator* ModuleContext* int -- do
     let evaluator module constant-index do
         module constant-index evaluate-constant
-        module constant-index constant-at @ConstantEntry.values
-        module constant-index constant-at @ConstantEntry.value_count
-        let values value-count do
-            0
-            while dup value-count < do
-                dup
-                let value-index do
-                    evaluator
-                    values value-index constant-value-at @ConstantValue.value_type
-                    values value-index constant-value-at @ConstantValue.payload
-                    constant-evaluator-push
+        if module @ModuleContext.program program-failed ! do
+            module constant-index constant-at @ConstantEntry.values
+            module constant-index constant-at @ConstantEntry.value_count
+            let values value-count do
+                0
+                while dup value-count < do
+                    dup
+                    let value-index do
+                        evaluator
+                        values value-index constant-value-at @ConstantValue.value_type
+                        values value-index constant-value-at @ConstantValue.payload
+                        constant-evaluator-push
+                    end
+                    1 +
                 end
-                1 +
+                drop
             end
-            drop
         end
     end
 end
@@ -8161,7 +8939,10 @@ end
 proc evaluate-constant-range ConstantEvaluator* ModuleContext* int int -- do
     let evaluator module token-index body-end do
         token-index
-        while dup body-end < do
+        while peek index do
+            index body-end <
+            module @ModuleContext.program program-failed ! &&
+        end do
             dup evaluator module rot evaluate-constant-token
             1 +
         end
@@ -8172,7 +8953,7 @@ end
 proc evaluate-module-constants ModuleContext* -- do
     let module do
         0
-        while dup module @ModuleContext.constant_count < do
+        while peek index do index module @ModuleContext.constant_count < module @ModuleContext.program program-failed ! && end do
             dup module swap evaluate-constant
             1 +
         end
@@ -8182,7 +8963,7 @@ end
 
 proc evaluate-all-constants Program* -- do
     peek program do @Program.module_head
-        while dup ptr cast int cast 0 != do
+        while peek module do module ptr cast int cast 0 != program program-failed ! && end do
             dup evaluate-module-constants
             @ModuleContext.next_module
         end
@@ -8254,7 +9035,11 @@ proc resolve-type-value ModuleContext* int String -- int do
                         let symbol-index do
                             definition-module token-index symbol-index error-message require-nominal-symbol-type
                             let pointee-type do
-                                definition-module @ModuleContext.program pointee-type depth intern-pointer-depth
+                                if definition-module @ModuleContext.program program-failed do
+                                    0
+                                else
+                                    definition-module @ModuleContext.program pointee-type depth intern-pointer-depth
+                                end
                             end
                         end
                     end
@@ -8269,26 +9054,37 @@ end
 proc resolve-module-signature-types ModuleContext* -- do
     let ctx do
         0
-        while dup ctx @ModuleContext.type_count < do
+        while peek type-index do
+            type-index ctx @ModuleContext.type_count <
+            ctx @ModuleContext.program program-failed ! &&
+        end do
             dup
             let type-index do
                 ctx type-index c-signature-type-at let signature do
                     if signature @CSignatureType.active do
                         ctx ctx signature @CSignatureType.token find-scope-symbol let symbol do
                             if symbol 0 < do ctx signature @CSignatureType.token "unknown C type" fail-name-at end
-                            if ctx symbol scope-at @ScopeEntry.kind ScopeKind:c_type != do ctx signature @CSignatureType.token "unknown C type" fail-name-at end
-                            ctx symbol scope-at let entry do
-                                entry @ScopeEntry.definition_module signature !CSignatureType.definition_module
-                                entry @ScopeEntry.definition_index signature !CSignatureType.definition_index
-                                entry @ScopeEntry.definition_module entry @ScopeEntry.definition_index c-type-at @CTypeEntry.frog_type
-                                ctx @ModuleContext.types type-index cell-bytes * field-write
+                            if ctx @ModuleContext.program program-failed ! do
+                                if ctx symbol scope-at @ScopeEntry.kind ScopeKind:c_type != do ctx signature @CSignatureType.token "unknown C type" fail-name-at end
+                                if ctx @ModuleContext.program program-failed ! do
+                                    ctx symbol scope-at let entry do
+                                        entry @ScopeEntry.definition_module signature !CSignatureType.definition_module
+                                        entry @ScopeEntry.definition_index signature !CSignatureType.definition_index
+                                        entry @ScopeEntry.definition_module entry @ScopeEntry.definition_index c-type-at @CTypeEntry.frog_type
+                                        ctx @ModuleContext.types type-index cell-bytes * field-write
+                                    end
+                                end
                             end
                         end
                     else
                         ctx type-index type-at let value-type do
                             if value-type 0 < do
                                 ctx value-type "unknown type in procedure signature" resolve-type-value
-                                ctx @ModuleContext.types type-index cell-bytes * field-write
+                                let resolved-type do
+                                    if ctx @ModuleContext.program program-failed ! do
+                                        resolved-type ctx @ModuleContext.types type-index cell-bytes * field-write
+                                    end
+                                end
                             end
                         end
                     end
@@ -8425,14 +9221,21 @@ end
 proc resolve-module-record-field-types ModuleContext* -- do
     let ctx do
         0
-        while dup ctx @ModuleContext.record_field_count < do
+        while peek field-index do
+            field-index ctx @ModuleContext.record_field_count <
+            ctx @ModuleContext.program program-failed ! &&
+        end do
             dup
             let field-index do
                 ctx field-index record-field-at @RecordFieldEntry.field_type
                 let value-type do
                     if value-type 0 < do
                         ctx value-type "unknown type in record field" resolve-type-value
-                        ctx field-index record-field-at !RecordFieldEntry.field_type
+                        let resolved-type do
+                            if ctx @ModuleContext.program program-failed ! do
+                                resolved-type ctx field-index record-field-at !RecordFieldEntry.field_type
+                            end
+                        end
                     end
                 end
             end
@@ -8445,14 +9248,21 @@ end
 proc resolve-module-union-case-types ModuleContext* -- do
     let ctx do
         0
-        while dup ctx @ModuleContext.union_case_count < do
+        while peek case-index do
+            case-index ctx @ModuleContext.union_case_count <
+            ctx @ModuleContext.program program-failed ! &&
+        end do
             dup
             let case-index do
                 ctx case-index union-case-at @UnionCaseEntry.payload_type
                 let value-type do
                     if value-type 0 < do
                         ctx value-type "unknown type in union variant" resolve-type-value
-                        ctx case-index union-case-at !UnionCaseEntry.payload_type
+                        let resolved-type do
+                            if ctx @ModuleContext.program program-failed ! do
+                                resolved-type ctx case-index union-case-at !UnionCaseEntry.payload_type
+                            end
+                        end
                     end
                 end
             end
@@ -8577,14 +9387,21 @@ end
 proc resolve-module-function-signature-types ModuleContext* -- do
     let ctx do
         0
-        while dup ctx @ModuleContext.function_type_count < do
+        while peek type-index do
+            type-index ctx @ModuleContext.function_type_count <
+            ctx @ModuleContext.program program-failed ! &&
+        end do
             dup
             let type-index do
                 ctx type-index function-signature-type-at
                 let value-type do
                     if value-type 0 < do
                         ctx value-type "unknown type in function signature" resolve-type-value
-                        ctx type-index set-function-signature-type
+                        let resolved-type do
+                            if ctx @ModuleContext.program program-failed ! do
+                                resolved-type ctx type-index set-function-signature-type
+                            end
+                        end
                     end
                 end
             end
@@ -8596,17 +9413,17 @@ end
 
 proc resolve-all-types Program* -- do
     peek program do @Program.module_head
-        while dup ptr cast int cast 0 != do
+        while peek module do module ptr cast int cast 0 != program program-failed ! && end do
             dup resolve-module-record-field-types
-            dup resolve-module-union-case-types
-            dup resolve-module-function-signature-types
-            dup resolve-module-signature-types
-            dup validate-module-procedure-inputs
-            dup validate-scope-procedure-input-conflicts
+            if program program-failed ! do dup resolve-module-union-case-types end
+            if program program-failed ! do dup resolve-module-function-signature-types end
+            if program program-failed ! do dup resolve-module-signature-types end
+            if program program-failed ! do dup validate-module-procedure-inputs end
+            if program program-failed ! do dup validate-scope-procedure-input-conflicts end
             @ModuleContext.next_module
         end
         drop
-        program validate-aggregate-value-recursion
+        if program program-failed ! do program validate-aggregate-value-recursion end
     end
 end
 
@@ -9805,27 +10622,102 @@ proc emit-error-function-call-suffix Program* ModuleContext* int -- do
     end
 end
 
+proc append-cc-suffix CompileContext* int ByteBuffer* -- do
+    let cc expected-count buffer do
+        cc @CompileContext.type_count expected-count -
+        if dup 0 < do drop 0 end
+        let start do
+            cc @CompileContext.program cc @CompileContext.type_stack start cc @CompileContext.type_count start - buffer append-type-array
+        end
+    end
+end
+
+proc append-proc-inputs Program* ModuleContext* int ByteBuffer* -- do
+    let program module proc-index buffer do
+        program module @ModuleContext.types
+        module proc-index procedure-at @ProcedureEntry.input_start
+        module proc-index procedure-at @ProcedureEntry.input_count
+        buffer append-type-array
+    end
+end
+
+proc append-proc-outputs Program* ModuleContext* int ByteBuffer* -- do
+    let program module proc-index buffer do
+        program module @ModuleContext.types
+        module proc-index procedure-at @ProcedureEntry.output_start
+        module proc-index procedure-at @ProcedureEntry.output_count
+        buffer append-type-array
+    end
+end
+
+proc append-proc-contract Program* ModuleContext* int ByteBuffer* -- do
+    peek program module proc-index buffer do append-proc-inputs
+        " -- " buffer byte-buffer-append-string
+        program module proc-index buffer append-proc-outputs
+    end
+end
+
+proc append-function-inputs Program* ModuleContext* int ByteBuffer* -- do
+    let program module function-index buffer do
+        program module @ModuleContext.function_types
+        module function-index function-type-at @FunctionTypeEntry.input_start
+        module function-index function-type-at @FunctionTypeEntry.input_count
+        buffer append-type-array
+    end
+end
+
+proc append-function-outputs Program* ModuleContext* int ByteBuffer* -- do
+    let program module function-index buffer do
+        program module @ModuleContext.function_types
+        module function-index function-type-at @FunctionTypeEntry.output_start
+        module function-index function-type-at @FunctionTypeEntry.output_count
+        buffer append-type-array
+    end
+end
+
+proc append-function-contract Program* ModuleContext* int ByteBuffer* -- do
+    peek program module function-index buffer do append-function-inputs
+        " -- " buffer byte-buffer-append-string
+        program module function-index buffer append-function-outputs
+    end
+end
+
+proc append-function-call-suffix Program* ModuleContext* int ByteBuffer* -- do
+    let program module function-index buffer do
+        91 buffer byte-buffer-push
+        program module @ModuleContext.function_types
+        module function-index function-type-at @FunctionTypeEntry.input_start
+        module function-index function-type-at @FunctionTypeEntry.input_count
+        buffer append-type-array-items
+        if module function-index function-type-at @FunctionTypeEntry.input_count 0 > do 32 buffer byte-buffer-push end
+        program module function-index function-type-at @FunctionTypeEntry.function_type buffer append-type-name-buffer
+        93 buffer byte-buffer-push
+    end
+end
+
 proc fail-proc-input-contract CompileContext* ModuleContext* int -- do
     let cc module proc-index do
-        cc emit-compile-word-error-prefix
-        "stack contract mismatch: expected " emit-error
-        cc @CompileContext.program module proc-index emit-error-proc-inputs
-        ", actual " emit-error
-        cc module proc-index procedure-at @ProcedureEntry.input_count emit-error-cc-suffix
-        10 eputc
-        1 exit
+        64 byte-buffer-new
+        let message do
+            "stack contract mismatch: expected " message byte-buffer-append-string
+            cc @CompileContext.program module proc-index message append-proc-inputs
+            ", actual " message byte-buffer-append-string
+            cc module proc-index procedure-at @ProcedureEntry.input_count message append-cc-suffix
+            cc DiagnosticCode:type_error message finish-compile-diagnostic
+        end
     end
 end
 
 proc fail-function-call-contract CompileContext* ModuleContext* int -- do
     let cc module function-index do
-        cc emit-compile-word-error-prefix
-        "stack contract mismatch: expected " emit-error
-        cc @CompileContext.program module function-index emit-error-function-call-suffix
-        ", actual " emit-error
-        cc module function-index function-type-at @FunctionTypeEntry.input_count 1 + emit-error-cc-suffix
-        10 eputc
-        1 exit
+        64 byte-buffer-new
+        let message do
+            "stack contract mismatch: expected " message byte-buffer-append-string
+            cc @CompileContext.program module function-index message append-function-call-suffix
+            ", actual " message byte-buffer-append-string
+            cc module function-index function-type-at @FunctionTypeEntry.input_count 1 + message append-cc-suffix
+            cc DiagnosticCode:type_error message finish-compile-diagnostic
+        end
     end
 end
 
@@ -9847,12 +10739,14 @@ proc push-proc-outputs CompileContext* ModuleContext* int int -- do
 end
 
 proc apply-proc-contract CompileContext* ModuleContext* int -- do
-    peek cc module proc-index do
+    let cc module proc-index do
         if cc module proc-index proc-input-contract-matches ! do
             cc module proc-index fail-proc-input-contract
         end
-        procedure-at @ProcedureEntry.input_count consume-types
-        cc module proc-index 0 push-proc-outputs
+        if cc @CompileContext.program program-failed ! do
+            module proc-index procedure-at @ProcedureEntry.input_count cc swap consume-types
+            cc module proc-index 0 push-proc-outputs
+        end
     end
 end
 
@@ -9867,12 +10761,14 @@ proc push-function-outputs CompileContext* ModuleContext* int int -- do
 end
 
 proc apply-function-contract CompileContext* ModuleContext* int -- do
-    peek cc module function-index do
+    let cc module function-index do
         if cc module function-index function-call-contract-matches ! do
             cc module function-index fail-function-call-contract
         end
-        function-type-at @FunctionTypeEntry.input_count 1 + consume-types
-        cc module function-index 0 push-function-outputs
+        if cc @CompileContext.program program-failed ! do
+            module function-index function-type-at @FunctionTypeEntry.input_count 1 + cc swap consume-types
+            cc module function-index 0 push-function-outputs
+        end
     end
 end
 
@@ -10753,7 +11649,10 @@ proc require-block-types CompileContext* BlockFrame* -- do
 end
 
 proc compile-do CompileContext* int -- do
-    let cc token-index do cc top-block
+    let cc token-index do
+        if cc @CompileContext.block_count 0 <= do
+            cc "control-flow block stack underflow" fail-compile-word
+        else cc top-block
         let block do
             if block @BlockFrame.has_do do
                 cc "duplicate do in control-flow block" fail-compile-word
@@ -10813,11 +11712,15 @@ proc compile-do CompileContext* int -- do
                 true block !BlockFrame.has_do
             end
         end
+        end
     end
 end
 
 proc compile-else CompileContext* int -- do
-    let cc token-index do cc top-block
+    let cc token-index do
+        if cc @CompileContext.block_count 0 <= do
+            cc "control-flow block stack underflow" fail-compile-word
+        else cc top-block
         let block do
             if block @BlockFrame.kind BlockKind:conditional != do
                 cc "else outside if" fail-compile-word
@@ -10828,30 +11731,35 @@ proc compile-else CompileContext* int -- do
             if block @BlockFrame.has_do ! do
                 cc "else requires a preceding if arm and do" fail-compile-word
             end
-            if block @BlockFrame.then_count 0 < do
-                cc type-snapshot
-                let then-types then-count do
-                    then-types block !BlockFrame.then_types
-                    then-count block !BlockFrame.then_count
+            if cc @CompileContext.program program-failed ! do
+                if block @BlockFrame.then_count 0 < do
+                    cc type-snapshot
+                    let then-types then-count do
+                        then-types block !BlockFrame.then_types
+                        then-count block !BlockFrame.then_count
+                    end
+                elif cc block @BlockFrame.then_types block @BlockFrame.then_count types-match ! do
+                    cc "if branches leave different stack shapes" fail-compile-word
                 end
-            elif cc block @BlockFrame.then_types block @BlockFrame.then_count types-match ! do
-                cc "if branches leave different stack shapes" fail-compile-word
-            end
-            if cc cfg-recording do
-                cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
-                let arm-block do block arm-block append-pending-merge-source end
-            end
-            cc block @BlockFrame.base_types block @BlockFrame.base_count restore-type-snapshot
-            if cc cfg-recording do
-                cc cc @CompileContext.defining_module token-index 1 + begin-analyzed-block
-                let else-block do
-                    cc block @BlockFrame.cfg_condition_block true else-block patch-analyzed-block-target
+                if cc @CompileContext.program program-failed ! do
+                    if cc cfg-recording do
+                        cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
+                        let arm-block do block arm-block append-pending-merge-source end
+                    end
+                    cc block @BlockFrame.base_types block @BlockFrame.base_count restore-type-snapshot
+                    if cc cfg-recording do
+                        cc cc @CompileContext.defining_module token-index 1 + begin-analyzed-block
+                        let else-block do
+                            cc block @BlockFrame.cfg_condition_block true else-block patch-analyzed-block-target
+                        end
+                    end
+                    true block !BlockFrame.has_else
+                    cc indent-less
+                    cc "} else {" emit-line
+                    cc indent-more
                 end
             end
-            true block !BlockFrame.has_else
-            cc indent-less
-            cc "} else {" emit-line
-            cc indent-more
+        end
         end
     end
 end
@@ -10870,7 +11778,10 @@ proc append-pending-merge-source BlockFrame* int -- do
 end
 
 proc compile-elif CompileContext* int -- do
-    let cc token-index do cc top-block
+    let cc token-index do
+        if cc @CompileContext.block_count 0 <= do
+            cc "control-flow block stack underflow" fail-compile-word
+        else cc top-block
         let block do
             if block @BlockFrame.kind BlockKind:conditional != do
                 cc "elif outside if" fail-compile-word
@@ -10905,6 +11816,7 @@ proc compile-elif CompileContext* int -- do
             end
             end
         end
+        end
     end
 end
 
@@ -10913,7 +11825,8 @@ proc close-if-block CompileContext* BlockFrame* int -- do
         if block @BlockFrame.has_do ! do
             cc "if requires do before end" fail-compile-word
         end
-        if block @BlockFrame.elif_parent do
+        if cc @CompileContext.program program-failed do
+        elif block @BlockFrame.elif_parent do
             if cc block @BlockFrame.elif_result_types block @BlockFrame.elif_result_count types-match ! do
                 cc "if branches leave different stack shapes" fail-compile-word
             end
@@ -10929,41 +11842,45 @@ proc close-if-block CompileContext* BlockFrame* int -- do
                 end
             end
         end
-        if cc cfg-recording do
-            cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
-            let final-arm do
-                block final-arm append-pending-merge-source
-                cc cc @CompileContext.defining_module token-index begin-analyzed-block
-                let merge-block do
-                    0
-                    while dup block @BlockFrame.cfg_pending_merge_count < do
-                        dup let index do
-                            block @BlockFrame.cfg_pending_merge_sources index cell-bytes * + 0 field-read
-                            let source do cc source false merge-block patch-analyzed-block-target end
+        if cc @CompileContext.program program-failed ! do
+            if cc cfg-recording do
+                cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump 0 1 - 0 1 - finish-analyzed-block
+                let final-arm do
+                    block final-arm append-pending-merge-source
+                    cc cc @CompileContext.defining_module token-index begin-analyzed-block
+                    let merge-block do
+                        0
+                        while dup block @BlockFrame.cfg_pending_merge_count < do
+                            dup let index do
+                                block @BlockFrame.cfg_pending_merge_sources index cell-bytes * + 0 field-read
+                                let source do cc source false merge-block patch-analyzed-block-target end
+                            end
+                            1 +
                         end
-                        1 +
-                    end
-                    drop
-                    if block @BlockFrame.has_else ! do
-                        cc block @BlockFrame.cfg_condition_block true merge-block patch-analyzed-block-target
+                        drop
+                        if block @BlockFrame.has_else ! do
+                            cc block @BlockFrame.cfg_condition_block true merge-block patch-analyzed-block-target
+                        end
                     end
                 end
             end
+            cc indent-less
+            cc "}" emit-line
         end
-        cc indent-less
-        cc "}" emit-line
     end
 end
 
 proc close-elif-parent-types CompileContext* BlockFrame* int -- do
     let cc block token-index do
         if block @BlockFrame.has_do ! do cc "if requires do before end" fail-compile-word end
-        if block @BlockFrame.has_else ! do "internal elif parent without else" fail end
-        cc indent-less
-        cc "}" emit-line
-        if block @BlockFrame.elif_parent do
-            cc pop-block
-            let parent do cc parent token-index close-elif-parent-types end
+        if cc @CompileContext.program program-failed ! do
+            if block @BlockFrame.has_else ! do "internal elif parent without else" fail end
+            cc indent-less
+            cc "}" emit-line
+            if block @BlockFrame.elif_parent do
+                cc pop-block
+                let parent do cc parent token-index close-elif-parent-types end
+            end
         end
     end
 end
@@ -10973,16 +11890,18 @@ proc close-while-block CompileContext* BlockFrame* int -- do
         if block @BlockFrame.has_do ! do
             cc "while requires do before end" fail-compile-word
         end
-        cc block require-block-types
-        if cc cfg-recording do
-            cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump block @BlockFrame.cfg_loop_header 0 1 - finish-analyzed-block drop
-            cc cc @CompileContext.defining_module token-index begin-analyzed-block
-            let exit-block do
-                cc block @BlockFrame.cfg_condition_block true exit-block patch-analyzed-block-target
+        if cc @CompileContext.program program-failed ! do
+            cc block require-block-types
+            if cc cfg-recording do
+                cc cc @CompileContext.defining_module token-index CFGTerminatorKind:jump block @BlockFrame.cfg_loop_header 0 1 - finish-analyzed-block drop
+                cc cc @CompileContext.defining_module token-index begin-analyzed-block
+                let exit-block do
+                    cc block @BlockFrame.cfg_condition_block true exit-block patch-analyzed-block-target
+                end
             end
+            cc indent-less
+            cc "}" emit-line
         end
-        cc indent-less
-        cc "}" emit-line
     end
 end
 
@@ -11008,7 +11927,7 @@ proc close-end-chain CompileContext* BlockFrame* int -- do
                 "unknown block kind" fail
             end
         end
-        if block @BlockFrame.elif_parent do
+        if block @BlockFrame.elif_parent cc @CompileContext.program program-failed ! && do
             cc pop-block
             let parent do cc parent token-index close-elif-parent-types end
         end
@@ -11016,9 +11935,13 @@ proc close-end-chain CompileContext* BlockFrame* int -- do
 end
 
 proc compile-end CompileContext* int -- do
-    let cc token-index do cc pop-block
+    let cc token-index do
+        if cc @CompileContext.block_count 0 <= do
+            cc "control-flow block stack underflow" fail-compile-word
+        else cc pop-block
         let block do
             cc block token-index close-end-chain
+        end
         end
     end
 end
@@ -11039,7 +11962,7 @@ end
 
 proc bind-let-names CompileContext* int int -- do
     let cc first-token count do
-        if count 0 > do
+        if count 0 > cc @CompileContext.program program-failed ! && do
             first-token count 1 - +
             let name-token do
                 if cc @CompileContext.defining_module name-token string-type-name do
@@ -11101,10 +12024,12 @@ proc compile-let CompileContext* int -- int do
                 if name-count 0 <= do
                     cc "let requires at least one name" fail-compile-word
                 end
-                cc let-token begin-typed-instruction
-                cc OperationKind:let_binding set-operation-binding
-                cc let-token 1 + name-count begin-binding-block
-                cc do-token 1 + finish-typed-instruction
+                if cc @CompileContext.program program-failed ! do
+                    cc let-token begin-typed-instruction
+                    cc OperationKind:let_binding set-operation-binding
+                    cc let-token 1 + name-count begin-binding-block
+                    cc do-token 1 + finish-typed-instruction
+                end
                 do-token 1 +
             end
         end
@@ -11118,19 +12043,23 @@ proc compile-peek CompileContext* int -- int do
                 if name-count 0 <= do
                     cc "peek requires at least one name" fail-compile-word
                 end
-                cc peek-token begin-typed-instruction
-                cc OperationKind:peek_binding set-operation-binding
-                cc peek-token 1 + name-count begin-binding-block
-                cc do-token 1 + finish-typed-instruction
-                cc peek-token begin-typed-instruction
-                cc RuntimeOperation:restore_peek_locals set-typed-instruction
-                let restore-instruction do
-                    cc compile-context-analysis @ProcedureAnalysis.binding_local_count name-count -
-                    restore-instruction !TypedInstruction.binding_local_start
-                    name-count restore-instruction !TypedInstruction.binding_local_count
+                if cc @CompileContext.program program-failed ! do
+                    cc peek-token begin-typed-instruction
+                    cc OperationKind:peek_binding set-operation-binding
+                    cc peek-token 1 + name-count begin-binding-block
+                    cc do-token 1 + finish-typed-instruction
+                    if cc @CompileContext.program program-failed ! do
+                        cc peek-token begin-typed-instruction
+                        cc RuntimeOperation:restore_peek_locals set-typed-instruction
+                        let restore-instruction do
+                            cc compile-context-analysis @ProcedureAnalysis.binding_local_count name-count -
+                            restore-instruction !TypedInstruction.binding_local_start
+                            name-count restore-instruction !TypedInstruction.binding_local_count
+                        end
+                        cc peek-token 1 + name-count restore-peek-names
+                        cc do-token 1 + finish-typed-instruction
+                    end
                 end
-                cc peek-token 1 + name-count restore-peek-names
-                cc do-token 1 + finish-typed-instruction
                 do-token 1 +
             end
         end
@@ -11265,6 +12194,9 @@ proc compile-inferred-record-field CompileContext* ptr int bool -- bool do
             if cc @CompileContext.type_count 0 <= do
                 cc "compile-time stack underflow" fail-compile-word
             end
+            if cc @CompileContext.program program-failed do
+                false
+            else
             cc cc @CompileContext.type_count 1 - type-at-depth
             cc @CompileContext.program swap record-receiver-type
             let record-type pointer-receiver do
@@ -11276,7 +12208,10 @@ proc compile-inferred-record-field CompileContext* ptr int bool -- bool do
                     else
                         module record-index bytes 2 + length 2 - find-record-field
                         let field-index do
-                            if field-index 0 < do cc "unknown record field" fail-compile-word end
+                            if field-index 0 < do
+                                cc "unknown record field" fail-compile-word
+                                false
+                            else
                             module record-index record-type-at
                             module field-index record-field-at
                             let record-entry field do
@@ -11296,9 +12231,11 @@ proc compile-inferred-record-field CompileContext* ptr int bool -- bool do
                                 pointer-receiver setter compile-resolved-record-field
                             end
                             true
+                            end
                         end
                     end
                 end
+            end
             end
         end
     end
@@ -11513,10 +12450,12 @@ end
 
 proc fail-ambiguous-procedure-call CompileContext* -- do
     let cc do
-        cc emit-compile-word-error-prefix
-        "ambiguous procedure call" emit-error
-        10 eputc
-        1 exit
+        if cc @CompileContext.diagnostic_word do
+            cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-slice
+        else 0 ptr cast 0 end
+        let subject subject-length do
+            cc DiagnosticCode:type_error "ambiguous procedure call" subject subject-length add-compile-diagnostic
+        end
     end
 end
 
@@ -11793,7 +12732,8 @@ proc compile-record-field CompileContext* ptr int int bool -- bool do
                             let field-index do
                                 if field-index 0 < do
                                     cc "unknown record field" fail-compile-word
-                                end
+                                    false
+                                else
                                 module record-index record-type-at
                                 let record-entry do
                                     module field-index record-field-at
@@ -11816,6 +12756,7 @@ proc compile-record-field CompileContext* ptr int int bool -- bool do
                                             pointer-receiver setter compile-resolved-record-field
                                         end
                                     true
+                                end
                                 end
                                 end
                             end
@@ -11939,7 +12880,8 @@ proc compile-union-constructor CompileContext* ptr int int -- bool do
                     let case-index do
                         if case-index 0 < do
                             cc "unknown union variant" fail-compile-word
-                        end
+                            false
+                        else
                         module case-index union-case-at @UnionCaseEntry.payload_type
                         let payload-type do
                             cc OperationKind:union_construct module case-index set-operation-target
@@ -11960,6 +12902,7 @@ proc compile-union-constructor CompileContext* ptr int int -- bool do
                             module union-index union-type-at @UnionTypeEntry.union_type
                             emit-union-constructor
                             true
+                        end
                         end
                     end
                 end
@@ -11987,12 +12930,14 @@ proc compile-union-instance CompileContext* ptr int int -- bool do
                             let case-length do
                                 if case-length 0 <= do
                                     cc "unknown union variant" fail-compile-word
-                                end
+                                    false
+                                else
                                 module union-index bytes case-start + case-length find-union-case
                                 let case-index do
                                     if case-index 0 < do
                                         cc "unknown union variant" fail-compile-word
-                                    end
+                                        false
+                                    else
                                     module union-index union-type-at @UnionTypeEntry.union_type
                                     let union-type do
                                         if predicate do OperationKind:union_test else OperationKind:union_project end
@@ -12030,6 +12975,8 @@ proc compile-union-instance CompileContext* ptr int int -- bool do
                                         end
                                         true
                                     end
+                                    end
+                                end
                                 end
                             end
                         end
@@ -12132,13 +13079,14 @@ end
 
 proc fail-function-reference-contract CompileContext* ModuleContext* int ModuleContext* int -- do
     let cc function-module function-index proc-module proc-index do
-        cc emit-compile-word-error-prefix
-        "function reference contract mismatch: expected " emit-error
-        cc @CompileContext.program function-module function-index emit-error-function-contract
-        ", actual " emit-error
-        cc @CompileContext.program proc-module proc-index emit-error-proc-contract
-        10 eputc
-        1 exit
+        64 byte-buffer-new
+        let message do
+            "function reference contract mismatch: expected " message byte-buffer-append-string
+            cc @CompileContext.program function-module function-index message append-function-contract
+            ", actual " message byte-buffer-append-string
+            cc @CompileContext.program proc-module proc-index message append-proc-contract
+            cc DiagnosticCode:type_error message finish-compile-diagnostic
+        end
     end
 end
 
@@ -12195,12 +13143,16 @@ proc compile-function-operation CompileContext* ptr int int -- bool do
                                         end
                                     end
                                 end
-                                cc OperationKind:function_reference function-module function-index set-operation-target
-                                cc proc-module proc-index set-operation-secondary-target
-                                cc proc-module proc-index procedure-at @ProcedureEntry.global_id set-operation-payload
-                                cc function-module function-index function-type-at @FunctionTypeEntry.function_type type-push
-                                cc proc-module proc-index procedure-at @ProcedureEntry.global_id emit-push-integer
-                                true
+                                if cc @CompileContext.program program-failed do
+                                    false
+                                else
+                                    cc OperationKind:function_reference function-module function-index set-operation-target
+                                    cc proc-module proc-index set-operation-secondary-target
+                                    cc proc-module proc-index procedure-at @ProcedureEntry.global_id set-operation-payload
+                                    cc function-module function-index function-type-at @FunctionTypeEntry.function_type type-push
+                                    cc proc-module proc-index procedure-at @ProcedureEntry.global_id emit-push-integer
+                                    true
+                                end
                             end
                         else
                             cc "unknown function operation" fail-compile-word
@@ -12398,11 +13350,17 @@ proc compile-ordinary-word CompileContext* int -- do
                             cc token-index macro-module macro-index compile-macro
                         end
                     elif cc token-index compile-type-word do
+                    elif cc @CompileContext.program program-failed do
                     elif cc token-index compile-string-word do
+                    elif cc @CompileContext.program program-failed do
                     elif cc token-index compile-record-word do
+                    elif cc @CompileContext.program program-failed do
                     elif cc token-index compile-union-word do
+                    elif cc @CompileContext.program program-failed do
                     elif cc token-index compile-function-word do
+                    elif cc @CompileContext.program program-failed do
                     elif cc token-index compile-private-intrinsic do
+                    elif cc @CompileContext.program program-failed do
                     else
                         cc token-index find-local
                         let local-index do
@@ -12462,10 +13420,16 @@ proc compile-ordinary-word CompileContext* int -- do
                                     end
                                 else
                                     if cc token-index compile-builtins-word ! do
+                                        if cc @CompileContext.program program-failed do
+                                        else
                                         if cc token-index compile-generic-pointer-memory ! do
+                                            if cc @CompileContext.program program-failed do
+                                            else
                                             if cc token-index compile-memory-io-intrinsic ! do
                                                 cc token-index fail-unknown-word
                                             end
+                                            end
+                                        end
                                         end
                                     end
                                 end
@@ -12474,7 +13438,7 @@ proc compile-ordinary-word CompileContext* int -- do
                     end
                     end
                 end
-            if trace do cc "after" emit-debug-word-stack end
+            if trace cc @CompileContext.program program-failed ! && do cc "after" emit-debug-word-stack end
         end
     end
 end
@@ -12595,8 +13559,13 @@ proc compile-token CompileContext* int -- int do
                 cc token-index compile-token-inner
                 let next-token do
                     if was-active ! do false cc !CompileContext.diagnostic_active end
-                    if cc @CompileContext.instruction_active do cc next-token finish-typed-instruction end
-                    if begin-operation do cc next-token finish-analyzed-operation end
+                    if cc @CompileContext.program program-failed do
+                        false cc !CompileContext.instruction_active
+                        false cc !CompileContext.operation_active
+                    else
+                        if cc @CompileContext.instruction_active do cc next-token finish-typed-instruction end
+                        if begin-operation do cc next-token finish-analyzed-operation end
+                    end
                     next-token
                 end
             end
@@ -12697,19 +13666,18 @@ end
 
 proc fail-proc-output-contract CompileContext* -- do
     let cc do
-        cc emit-source-error-prefix
-        cc @CompileContext.procedure_module @ModuleContext.source
-        cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.name_start
-        +
-        cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.name_length
-        emit-error-bytes
-        ": " emit-error
-        "procedure output contract mismatch: expected " emit-error
-        cc @CompileContext.program cc @CompileContext.procedure_module cc @CompileContext.procedure_index emit-error-proc-outputs
-        ", actual " emit-error
-        cc @CompileContext.program cc @CompileContext.type_stack 0 cc @CompileContext.type_count emit-error-type-array
-        10 eputc
-        1 exit
+        64 byte-buffer-new
+        let message do
+            cc @CompileContext.procedure_module @ModuleContext.source
+            cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.name_start +
+            cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.name_length
+            message byte-buffer-append-bytes
+            ": procedure output contract mismatch: expected " message byte-buffer-append-string
+            cc @CompileContext.program cc @CompileContext.procedure_module cc @CompileContext.procedure_index message append-proc-outputs
+            ", actual " message byte-buffer-append-string
+            cc @CompileContext.program cc @CompileContext.type_stack 0 cc @CompileContext.type_count message append-type-array
+            cc DiagnosticCode:type_error message finish-compile-diagnostic
+        end
     end
 end
 
@@ -12718,7 +13686,7 @@ proc require-proc-outputs CompileContext* -- do
         if cc @CompileContext.type_count cc @CompileContext.procedure_module cc @CompileContext.procedure_index procedure-at @ProcedureEntry.output_count != do
             cc fail-proc-output-contract
         end
-        if cc 0 outputs-match-from ! do
+        if cc @CompileContext.program program-failed ! cc 0 outputs-match-from ! && do
             cc fail-proc-output-contract
         end
     end
@@ -12727,7 +13695,7 @@ end
 proc compile-body-range CompileContext* int int -- do
     let cc token-index body-end do
         token-index
-        while dup body-end < do
+        while peek current do current body-end < cc @CompileContext.program program-failed ! && end do
             let current-token do
                 if cc current-token body-end try-compile-constant-add do
                     current-token 3 +
@@ -12844,7 +13812,8 @@ end
 
 proc validate-compiled-procedure CompileContext* -- do
     let cc do
-        if cc @CompileContext.block_count 0 != do
+        if cc @CompileContext.program program-failed do
+        elif cc @CompileContext.block_count 0 != do
             cc "unclosed control-flow block" fail-compile-word
         end
         if cc @CompileContext.local_count 0 != do
@@ -12862,13 +13831,17 @@ proc compile-procedure-body CompileContext* ModuleContext* int -- do
         ctx proc-index procedure-at @ProcedureEntry.body_start
         ctx proc-index procedure-at @ProcedureEntry.body_end
         compile-body-range
-        ctx cc !CompileContext.diagnostic_module
-        ctx proc-index procedure-at @ProcedureEntry.body_end cc !CompileContext.diagnostic_token
-        true cc !CompileContext.diagnostic_active
-        false cc !CompileContext.diagnostic_word
-        cc validate-compiled-procedure
-        cc ctx ctx proc-index procedure-at @ProcedureEntry.body_end CFGTerminatorKind:return 0 1 - 0 1 - finish-analyzed-block drop
-        false cc !CompileContext.diagnostic_active
+        if cc @CompileContext.program program-failed ! do
+            ctx cc !CompileContext.diagnostic_module
+            ctx proc-index procedure-at @ProcedureEntry.body_end cc !CompileContext.diagnostic_token
+            true cc !CompileContext.diagnostic_active
+            false cc !CompileContext.diagnostic_word
+            cc validate-compiled-procedure
+            if cc @CompileContext.program program-failed ! do
+                cc ctx ctx proc-index procedure-at @ProcedureEntry.body_end CFGTerminatorKind:return 0 1 - 0 1 - finish-analyzed-block drop
+            end
+            false cc !CompileContext.diagnostic_active
+        end
     end
 end
 
@@ -13040,6 +14013,24 @@ proc emit-ir-procedure-body CompileContext* ProcedureAnalysis* -- do
     end
 end
 
+proc finish-procedure-analysis Program* ModuleContext* int CompileContext* -- do
+    let program ctx proc-index measurement do
+        if measurement @CompileContext.operation_active do
+            "internal unclosed analyzed operation" fail
+        end
+        ctx proc-index procedure-at @ProcedureEntry.analysis
+        let analysis do
+            measurement @CompileContext.max_type_count analysis !ProcedureAnalysis.max_type_count
+            measurement @CompileContext.stack_slots analysis !ProcedureAnalysis.stack_slots
+            measurement @CompileContext.stack_slot_count analysis !ProcedureAnalysis.stack_slot_count
+            measurement @CompileContext.stack_slot_capacity analysis !ProcedureAnalysis.stack_slot_capacity
+            analysis verify-typed-instructions
+            analysis verify-macro-expansions
+            ctx proc-index analysis verify-procedure-cfg
+        end
+    end
+end
+
 proc analyze-procedure Program* ModuleContext* int -- do
     let program ctx proc-index do
         if ctx proc-index procedure-at @ProcedureEntry.c_binding CBinding:none == do
@@ -13051,19 +14042,7 @@ proc analyze-procedure Program* ModuleContext* int -- do
             let measurement do
                 true measurement !CompileContext.record_operations
                 measurement ctx proc-index compile-procedure-body
-                if measurement @CompileContext.operation_active do
-                    "internal unclosed analyzed operation" fail
-                end
-                ctx proc-index procedure-at @ProcedureEntry.analysis
-                let analysis do
-                    measurement @CompileContext.max_type_count analysis !ProcedureAnalysis.max_type_count
-                    measurement @CompileContext.stack_slots analysis !ProcedureAnalysis.stack_slots
-                    measurement @CompileContext.stack_slot_count analysis !ProcedureAnalysis.stack_slot_count
-                    measurement @CompileContext.stack_slot_capacity analysis !ProcedureAnalysis.stack_slot_capacity
-                    analysis verify-typed-instructions
-                    analysis verify-macro-expansions
-                    ctx proc-index analysis verify-procedure-cfg
-                end
+                if program program-failed ! do program ctx proc-index measurement finish-procedure-analysis end
             end
         end
     end
@@ -13121,7 +14100,7 @@ end
 proc analyze-module-procedures Program* ModuleContext* -- do
     let program ctx do
         0
-        while dup ctx @ModuleContext.proc_count < do
+        while peek index do index ctx @ModuleContext.proc_count < program program-failed ! && end do
             dup program ctx rot analyze-procedure
             1 +
         end
@@ -13135,12 +14114,12 @@ proc analyze-all-procedures Program* -- do
             "internal program must be resolved before analysis" fail
         end
         program @Program.module_head
-        while dup ptr cast int cast 0 != do
+        while peek module do module ptr cast int cast 0 != program program-failed ! && end do
             dup program swap analyze-module-procedures
             @ModuleContext.next_module
         end
         drop
-        ProgramPhase:analyzed program !Program.phase
+        if program program-failed ! do ProgramPhase:analyzed program !Program.phase end
     end
 end
 
@@ -13213,9 +14192,18 @@ proc allocate-program bool bool ptr int -- Program* do
             standard-library-root-length program !Program.standard_library_root_length
             0 ptr cast ModuleContext* cast program !Program.builtins_module
             ProgramPhase:allocated program !Program.phase
+            8 Diagnostic:sizeof * alloc program !Program.diagnostics
+            0 program !Program.diagnostic_count
+            8 program !Program.diagnostic_capacity
+            8 SourceEntry:sizeof * alloc program !Program.sources
+            0 program !Program.source_count
+            8 program !Program.source_capacity
+            true program !Program.allow_filesystem_sources
         end
     end
 end
+
+proc disable-filesystem-sources Program* -- do false swap !Program.allow_filesystem_sources end
 
 proc load-program-source Program* ptr int ptr int -- do
     let program source source-length diagnostic-path diagnostic-path-length do
@@ -13238,12 +14226,27 @@ proc load-program-source Program* ptr int ptr int -- do
             program ctx program-add-module
             ctx program !Program.root_module
             source source-length copy-bytes ctx swap source-length initialize-module-source
-            program ctx load-module-imports
-            LoadState:loaded ctx !ModuleContext.load_state
-            program initialize-builtins
-            program initialize-string-pool
-            ProgramPhase:loaded program !Program.phase
+            if program program-failed ! do
+                program ctx load-module-imports
+                if program program-failed ! do
+                    LoadState:loaded ctx !ModuleContext.load_state
+                    program initialize-builtins
+                    if program program-failed ! do
+                        program initialize-string-pool
+                        ProgramPhase:loaded program !Program.phase
+                    end
+                end
+            end
         end
+    end
+end
+
+proc analyze-program Program* ptr int ptr int -- Program* do
+    let program source source-length diagnostic-path diagnostic-path-length do
+        program source source-length diagnostic-path diagnostic-path-length load-program-source
+        if program program-failed ! do program resolve-program end
+        if program program-failed ! do program analyze-all-procedures end
+        program
     end
 end
 
@@ -13253,10 +14256,12 @@ proc resolve-program Program* -- do
             "internal program must be loaded before resolution" fail
         end
         program resolve-all-module-scopes
-        program find-builtins-assert-procedure program !Program.builtins_assert_proc
-        program evaluate-all-constants
-        program resolve-all-types
-        ProgramPhase:resolved program !Program.phase
+        if program program-failed ! do
+            program find-builtins-assert-procedure program !Program.builtins_assert_proc
+            program evaluate-all-constants
+        end
+        if program program-failed ! do program resolve-all-types end
+        if program program-failed ! do ProgramPhase:resolved program !Program.phase end
     end
 end
 
@@ -13274,11 +14279,7 @@ end
 proc analyze-source ptr int ptr int bool bool ptr int -- Program* do
     let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
         debug release standard-library-root standard-library-root-length allocate-program
-        peek program do
-            program source source-length diagnostic-path diagnostic-path-length load-program-source
-            program resolve-program
-            program analyze-all-procedures
-        end
+        source source-length diagnostic-path diagnostic-path-length analyze-program
     end
 end
 
@@ -13288,8 +14289,8 @@ proc emit-inspect-module-id ModuleContext* -- do
     end
 end
 
-proc emit-inspect-bytes ptr int -- do
-    let bytes length do
+proc emit-inspect-bytes-with-space-policy ptr int bool -- do
+    let bytes length escape-spaces do
         0
         while dup length < do
             dup let index do
@@ -13299,6 +14300,7 @@ proc emit-inspect-bytes ptr int -- do
                     elif byte 10 == do "\\n" emit
                     elif byte 13 == do "\\r" emit
                     elif byte 92 == do "\\\\" emit
+                    elif byte 32 == escape-spaces && do "<space>" emit
                     elif byte 32 >= byte 126 <= && do byte putc
                     else
                         "\\x" emit
@@ -13312,6 +14314,10 @@ proc emit-inspect-bytes ptr int -- do
         drop
     end
 end
+
+proc emit-inspect-bytes ptr int -- do false emit-inspect-bytes-with-space-policy end
+
+proc emit-inspect-lexeme-bytes ptr int -- do true emit-inspect-bytes-with-space-policy end
 
 proc emit-inspect-module-path Program* ModuleContext* -- do
     let program module do
@@ -13334,6 +14340,141 @@ proc emit-inspect-module-path Program* ModuleContext* -- do
                 end
             else
                 module @ModuleContext.canonical_path module @ModuleContext.canonical_path_length emit-inspect-bytes
+            end
+        end
+    end
+end
+
+proc emit-inspect-lexeme-kind LexemeKind -- do
+    let kind do
+        if kind LexemeKind:token == do "token" emit
+        elif kind LexemeKind:whitespace == do "whitespace" emit
+        else "comment" emit end
+    end
+end
+
+proc emit-inspect-lexemes ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.lexeme_count < do
+            dup let index do
+                module index lexeme-at
+                let lexeme do
+                    "lexeme\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
+                    index emit-unsigned 9 putc
+                    lexeme @LexemeEntry.start emit-unsigned 9 putc
+                    lexeme @LexemeEntry.length emit-unsigned 9 putc
+                    lexeme @LexemeEntry.kind emit-inspect-lexeme-kind 9 putc
+                    module @ModuleContext.source lexeme @LexemeEntry.start + lexeme @LexemeEntry.length emit-inspect-lexeme-bytes
+                    10 putc
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc emit-inspect-syntax-region-kind SyntaxRegionKind -- do
+    let kind do
+        if kind SyntaxRegionKind.module? do "module" emit
+        elif kind SyntaxRegionKind.declaration? do "declaration" emit
+        else "block" emit end
+    end
+end
+
+proc emit-inspect-syntax-regions ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.syntax_region_count < do
+            dup let index do
+                module index syntax-region-at
+                let region do
+                    "region\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
+                    index emit-unsigned 9 putc
+                    region @SyntaxRegion.parent emit-integer 9 putc
+                    region @SyntaxRegion.kind emit-inspect-syntax-region-kind 9 putc
+                    region @SyntaxRegion.start_token emit-unsigned 9 putc
+                    region @SyntaxRegion.end_token emit-unsigned 9 putc
+                    region @SyntaxRegion.start_byte emit-unsigned 9 putc
+                    region @SyntaxRegion.end_byte emit-unsigned
+                    10 putc
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc verify-module-syntax-regions ModuleContext* -- do
+    let module do
+        if module @ModuleContext.syntax_region_count 0 <= do
+            "internal missing module syntax region" fail
+        end
+        0 while dup module @ModuleContext.syntax_region_count < do
+            dup let index do
+                module index syntax-region-at
+                let region do
+                    if
+                        region @SyntaxRegion.start_token 0 <
+                        region @SyntaxRegion.end_token region @SyntaxRegion.start_token < ||
+                        region @SyntaxRegion.end_token module @ModuleContext.token_count > ||
+                        region @SyntaxRegion.start_byte 0 < ||
+                        region @SyntaxRegion.end_byte region @SyntaxRegion.start_byte < ||
+                        region @SyntaxRegion.end_byte module @ModuleContext.source_length > ||
+                    do
+                        "internal invalid syntax region" fail
+                    end
+                    if index 0 == do
+                        if
+                            region @SyntaxRegion.kind SyntaxRegionKind.module? !
+                            region @SyntaxRegion.parent 0 1 - != ||
+                            region @SyntaxRegion.start_token 0 != ||
+                            region @SyntaxRegion.end_token module @ModuleContext.token_count != ||
+                            region @SyntaxRegion.start_byte 0 != ||
+                            region @SyntaxRegion.end_byte module @ModuleContext.source_length != ||
+                        do
+                            "internal invalid module syntax region" fail
+                        end
+                    else
+                        if region @SyntaxRegion.parent 0 < region @SyntaxRegion.parent index >= || do
+                            "internal invalid syntax region parent" fail
+                        end
+                        module region @SyntaxRegion.parent syntax-region-at
+                        let parent do
+                            if
+                                region @SyntaxRegion.start_token parent @SyntaxRegion.start_token <
+                                region @SyntaxRegion.end_token parent @SyntaxRegion.end_token > ||
+                            do
+                                "internal syntax region escapes parent" fail
+                            end
+                        end
+                    end
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc verify-module-lexemes ModuleContext* -- do
+    let module do
+        0 0
+        while peek index expected-start do index module @ModuleContext.lexeme_count < end do
+            let index expected-start do
+                module index lexeme-at
+                let lexeme do
+                    if
+                        lexeme @LexemeEntry.start expected-start !=
+                        lexeme @LexemeEntry.length 0 <= ||
+                        lexeme @LexemeEntry.length module @ModuleContext.source_length expected-start - > ||
+                    do
+                        "internal lossless lexeme coverage mismatch" fail
+                    end
+                    index 1 + expected-start lexeme @LexemeEntry.length +
+                end
+            end
+        end
+        let index expected-start do
+            if expected-start module @ModuleContext.source_length != do
+                "internal lossless lexeme coverage mismatch" fail
             end
         end
     end
@@ -13738,10 +14879,10 @@ proc emit-inspect-procedure Program* ModuleContext* int -- do
     end
 end
 
-proc emit-inspect-program Program* bool -- do
-    let program include-builtins do
+proc emit-inspect-program Program* bool bool -- do
+    let program include-builtins include-lexemes do
         if program @Program.phase ProgramPhase.analyzed? ! do "internal program must be analyzed before inspection" fail end
-        "frogc-inspect\t4\n" emit
+        if include-lexemes do "frogc-inspect\t5\n" emit else "frogc-inspect\t4\n" emit end
         "fields\tmodule\tid\troot\tbuiltins\tpath\n" emit
         "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tinstruction_count\texpansion_count\tblock_count\n" emit
         "fields\toperation\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\tbefore_depth\tminimum_depth\tafter_depth\tinput_count\toutput_count\tkind\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tbinding_local_start\tbinding_local_count\tvalue_type\tintrinsic\tprivate_operation\tbefore_types\tafter_types\n" emit
@@ -13749,6 +14890,10 @@ proc emit-inspect-program Program* bool -- do
         "fields\tinstruction\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tend_token\tstart_byte\tend_byte\tline\tcolumn\texpansion\tbefore_depth\tminimum_depth\tafter_depth\toperation\ttarget_module\ttarget_index\tsecondary_module\tsecondary_index\tlocal_id\tbinding_local_start\tbinding_local_count\tvalue_type\tsecondary_type\tpayload\tprivate_operation\tbefore_types\tafter_types\n" emit
         "fields\texpansion\tprocedure_module\tprocedure_index\tid\tparent\tinvocation_module\tinvocation_token\tmacro_module\tmacro_index\tinstruction_start\tinstruction_count\tbefore_depth\tminimum_depth\tafter_depth\tbefore_types\tafter_types\n" emit
         "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tinstruction_start\tinstruction_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types\n" emit
+        if include-lexemes do
+            "fields\tlexeme\tmodule\tindex\tstart_byte\tlength\tkind\ttext\n" emit
+            "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" emit
+        end
         program @Program.module_head
         while dup ptr cast int cast 0 != do
             let module do
@@ -13757,6 +14902,15 @@ proc emit-inspect-program Program* bool -- do
                 if module ptr cast int cast program @Program.builtins_module ptr cast int cast == do 1 else 0 end emit-unsigned 9 putc
                 program module emit-inspect-module-path
                 10 putc
+                if
+                    include-lexemes
+                    include-builtins module ptr cast int cast program @Program.builtins_module ptr cast int cast != || &&
+                do
+                    module verify-module-lexemes
+                    module verify-module-syntax-regions
+                    module emit-inspect-lexemes
+                    module emit-inspect-syntax-regions
+                end
                 if
                     include-builtins
                     module ptr cast int cast program @Program.builtins_module ptr cast int cast != ||
@@ -13780,7 +14934,8 @@ proc compile-source ptr int ptr int bool bool ptr int -- do
         source source-length diagnostic-path diagnostic-path-length debug release
         standard-library-root standard-library-root-length analyze-source
         let program do
-            program emit-program
+            if program program-failed do program emit-program-diagnostics 1 exit
+            else program emit-program end
         end
     end
 end
@@ -14298,9 +15453,17 @@ proc check-frog-source ptr int ptr int ptr bool bool ptr int -- int do
                     1
                 else
                     source source-length diagnostic-path diagnostic-path-length debug release
-                    standard-library-root standard-library-root-length analyze-source drop
-                    0 finish-child
-                    0
+                    standard-library-root standard-library-root-length analyze-source
+                    let program do
+                        if program program-failed do
+                            program emit-program-diagnostics
+                            1 finish-child
+                            1
+                        else
+                            0 finish-child
+                            0
+                        end
+                    end
                 end
             else
                 child wait-for-child
@@ -14322,8 +15485,8 @@ proc check-file ptr bool bool ptr int -- int do
     end
 end
 
-proc inspect-frog-source ptr int ptr int ptr bool bool bool ptr int -- int do
-    let source source-length diagnostic-path diagnostic-path-length directory debug release include-builtins standard-library-root standard-library-root-length do
+proc inspect-frog-source ptr int ptr int ptr bool bool bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory debug release include-builtins include-lexemes standard-library-root standard-library-root-length do
         fork
         let child do
             if child 0 < do
@@ -14338,9 +15501,17 @@ proc inspect-frog-source ptr int ptr int ptr bool bool bool ptr int -- int do
                 else
                     source source-length diagnostic-path diagnostic-path-length debug release
                     standard-library-root standard-library-root-length analyze-source
-                    include-builtins emit-inspect-program
-                    0 finish-child
-                    0
+                    let program do
+                        if program program-failed do
+                            program emit-program-diagnostics
+                            1 finish-child
+                            1
+                        else
+                            program include-builtins include-lexemes emit-inspect-program
+                            0 finish-child
+                            0
+                        end
+                    end
                 end
             else
                 child wait-for-child
@@ -14349,14 +15520,33 @@ proc inspect-frog-source ptr int ptr int ptr bool bool bool ptr int -- int do
     end
 end
 
-proc inspect-file ptr bool bool bool ptr int -- int do
-    let path debug release include-builtins standard-library-root standard-library-root-length do
+proc inspect-file ptr bool bool bool bool ptr int -- int do
+    let path debug release include-builtins include-lexemes standard-library-root standard-library-root-length do
         path read-source-path
         let source source-length do
             path parent-path
             let directory do
-                source source-length path path cstring-length directory debug release include-builtins
+                source source-length path path cstring-length directory debug release include-builtins include-lexemes
                 standard-library-root standard-library-root-length inspect-frog-source
+            end
+        end
+    end
+end
+
+proc parse-inspect-options ptr int int bool bool -- int bool bool do
+    let argv argc index include-builtins include-lexemes do
+        if index argc >= do
+            index include-builtins include-lexemes
+        else
+            argv index argv-at
+            let argument do
+                if argument "--builtins" cstring-equals do
+                    argv argc index 1 + true include-lexemes parse-inspect-options
+                elif argument "--lexemes" cstring-equals do
+                    argv argc index 1 + include-builtins true parse-inspect-options
+                else
+                    index include-builtins include-lexemes
+                end
             end
         end
     end
@@ -14465,10 +15655,10 @@ end
 
 proc inspect-command ptr int int bool bool ptr int -- do
     let argv argc command-index debug release standard-library-root standard-library-root-length do
-        command-index 1 +
-        let argument-index do
+        argv argc command-index 1 + false false parse-inspect-options
+        let argument-index include-builtins include-lexemes do
             if argument-index argc >= do
-                read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release false
+                read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release include-builtins include-lexemes
                 standard-library-root standard-library-root-length inspect-frog-source exit
             end
             argv argument-index argv-at
@@ -14477,24 +15667,14 @@ proc inspect-command ptr int int bool bool ptr int -- do
                     argc argument-index 1 + ==
                     argument "-h" cstring-equals argument "--help" cstring-equals || &&
                 do
-                    "Usage: frogc [--debug] [--release] inspect [--builtins] [FILE]\n" emit
-                elif argument "--builtins" cstring-equals do
-                    if argument-index 1 + argc >= do
-                        read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes debug release true
-                        standard-library-root standard-library-root-length inspect-frog-source exit
-                    end
-                    argv argument-index 1 + argv-at
-                    let path do
-                        if path u8* cast @ int cast 45 == do "unknown inspect option: " path cli-usage-error-value end
-                        if argument-index 2 + argc != do "inspect accepts at most one source file" cli-usage-error end
-                        path debug release true standard-library-root standard-library-root-length inspect-file exit
-                    end
+                    "Usage: frogc [--debug] [--release] inspect [--builtins] [--lexemes] [FILE]\n" emit
                 elif argument u8* cast @ int cast 45 == do
                     "unknown inspect option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "inspect accepts at most one source file" cli-usage-error
                 else
-                    argument debug release false standard-library-root standard-library-root-length inspect-file exit
+                    argument debug release include-builtins include-lexemes
+                    standard-library-root standard-library-root-length inspect-file exit
                 end
             end
         end

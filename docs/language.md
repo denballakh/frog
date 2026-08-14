@@ -33,6 +33,10 @@ PATH:LINE:COLUMN:
 error: MESSAGE
 ```
 
+Compilation and analysis stop after the first diagnostic. The `check` and
+`inspect` commands exit with status 1 and leave standard output empty when
+analysis fails.
+
 `PATH` is `<stdin>` for filter input, `<command>` for `run -c`, and the loaded
 module path for files. Columns are visual columns from one; tabs are expanded
 to 8-column stops when the source line and carets are displayed. A

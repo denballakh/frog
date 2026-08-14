@@ -124,6 +124,24 @@ proc frog-cli-inspect-stdin String String String int String FrogTestContext* -- 
     end
 end
 
+proc frog-cli-inspect-lexemes String String String int String FrogTestContext* -- do
+    let source expected-stdout expected-stderr expected-status name context do
+        3 subprocess-argv
+        let arguments do
+            context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+            "inspect" arguments 1 subprocess-arg
+            "--lexemes" arguments 2 subprocess-arg
+            arguments source String.bytes source String.len "" subprocess-run-bytes-in
+            let result do
+                result expected-stdout expected-stderr expected-status frog-process-equals
+                name context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
 proc frog-cli-tsv-field ptr int int -- ptr int bool do
     let line length requested do
         if requested 0 < do
@@ -735,6 +753,36 @@ proc frog-cli-inspect-builtins FrogTestContext* -- do
     end
 end
 
+proc frog-cli-inspect-builtins-lexemes FrogTestContext* -- do
+    let context do
+        4 context frog-cli-argv
+        let arguments do
+            "inspect" arguments 1 subprocess-arg
+            "--builtins" arguments 2 subprocess-arg
+            "--lexemes" arguments 3 subprocess-arg
+            "test/cases/cli/inspect_relative/main.frog" arguments 4 subprocess-arg
+            arguments "" subprocess-run
+            let result do
+                result @CompletedProcess.returncode 0 ==
+                result @CompletedProcess.stderr_len 0 == &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "frogc-inspect\t5\n" String.bytes "frogc-inspect\t5\n" String.len bytes-starts-with &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.bytes
+                "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "region\t2\t0\t-1\tmodule\t" String.bytes "region\t2\t0\t-1\tmodule\t" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.bytes
+                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.len bytes-contain &&
+                "cli/inspect-builtins-lexemes" context frog-check
+                result completed-process-free
+                arguments subprocess-argv-free
+            end
+        end
+    end
+end
+
 proc frog-cli-inspect-bindings FrogTestContext* -- do
     let context do
         2 context frog-cli-argv
@@ -857,7 +905,7 @@ Options:
         "check" "-h" "Usage: frogc [--debug] [--release] check [FILE]
 " "" 0 "cli/check-help" context frog-cli-case-2
 
-        "inspect" "-h" "Usage: frogc [--debug] [--release] inspect [--builtins] [FILE]
+        "inspect" "-h" "Usage: frogc [--debug] [--release] inspect [--builtins] [--lexemes] [FILE]
 " "" 0 "cli/inspect-help" context frog-cli-case-2
 
         "proc helper int -- int do 1 + end
@@ -932,6 +980,107 @@ proc late -- do nope end
 error: unknown word: nope
 " 1 "cli/inspect-stdin-late-error" context frog-cli-inspect-stdin
 
+        "// note
+proc main -- do end
+" "frogc-inspect	5
+fields	module	id	root	builtins	path
+fields	procedure	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
+fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
+fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
+fields	instruction	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
+fields	expansion	procedure_module	procedure_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
+fields	block	procedure_module	procedure_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
+fields	lexeme	module	index	start_byte	length	kind	text
+fields	region	module	id	parent	kind	start_token	end_token	start_byte	end_byte
+module	0	1	0	<stdin>
+lexeme	0	0	0	7	comment	//<space>note
+lexeme	0	1	7	1	whitespace	\\n
+lexeme	0	2	8	4	token	proc
+lexeme	0	3	12	1	whitespace	<space>
+lexeme	0	4	13	4	token	main
+lexeme	0	5	17	1	whitespace	<space>
+lexeme	0	6	18	2	token	--
+lexeme	0	7	20	1	whitespace	<space>
+lexeme	0	8	21	2	token	do
+lexeme	0	9	23	1	whitespace	<space>
+lexeme	0	10	24	3	token	end
+lexeme	0	11	27	1	whitespace	\\n
+region	0	0	-1	module	0	5	0	28
+region	0	1	0	declaration	0	5	8	27
+procedure	0	0	main	0	0	0	0	1
+block	0	0	0	0	4	0	0	return	0	4	-1	-1	[]	[]
+module	1	0	1	stdlib/builtins.frog
+" "" 0 "cli/inspect-lexemes" context frog-cli-inspect-lexemes
+
+        "proc
+" "" "<stdin>:2:1:\n  \n  ^
+error: expected procedure name
+" 1 "cli/check-incomplete-procedure" context frog-cli-check-stdin
+
+        "from
+" "" "<stdin>:2:1:\n  \n  ^
+error: expected import path string
+" 1 "cli/check-incomplete-import" context frog-cli-check-stdin
+
+        "proc main -- do
+  \"unfinished
+" "" "<stdin>:2:3:
+    \"unfinished
+    ^^^^^^^^^^^
+error: unterminated string literal
+" 1 "cli/check-incomplete-string" context frog-cli-check-stdin
+
+        "proc main -- do
+  '
+" "" "<stdin>:2:3:
+    '
+    ^
+error: unterminated character literal
+" 1 "cli/check-incomplete-character" context frog-cli-check-stdin
+
+        "record Shape field
+" "" "<stdin>:2:1:\n  \n  ^
+error: expected record field type
+" 1 "cli/check-incomplete-record-field" context frog-cli-check-stdin
+
+        "from \"missing.frog\" import value as
+" "" "<stdin>:2:1:\n  \n  ^
+error: expected import alias
+" 1 "cli/check-incomplete-import-alias" context frog-cli-check-stdin
+
+        "c-type CInt int
+" "" "<stdin>:2:1:\n  \n  ^
+error: expected C type string
+" 1 "cli/check-incomplete-c-type" context frog-cli-check-stdin
+
+        "c-call value symbol
+" "" "<stdin>:2:1:\n  \n  ^
+error: expected -- in C call signature
+" 1 "cli/check-incomplete-c-call" context frog-cli-check-stdin
+
+        "proc main -- do
+  \"unfinished
+" "" "<stdin>:2:3:
+    \"unfinished
+    ^^^^^^^^^^^
+error: unterminated string literal
+" 1 "cli/inspect-lexemes-incomplete-string" context frog-cli-inspect-lexemes
+
+        "proc main -- do else end
+" "" "<stdin>:1:17:
+  proc main -- do else end
+                  ^^^^
+error: control-flow block stack underflow
+" 1 "cli/check-stray-else" context frog-cli-check-stdin
+
+        "const value 1 0 / 2 end
+proc main -- do value drop end
+" "" "<stdin>:1:17:
+  const value 1 0 / 2 end
+                  ^
+error: constant division by zero
+" 1 "cli/check-constant-stops-after-error" context frog-cli-check-stdin
+
         "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	4
 fields	module	id	root	builtins	path
 fields	procedure	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
@@ -970,6 +1119,7 @@ Try `frogc --help`.
 " 2 "cli/inspect-too-many-files" context frog-cli-case-3
 
         context frog-cli-inspect-builtins
+        context frog-cli-inspect-builtins-lexemes
         context frog-cli-inspect-bindings
         context frog-cli-inspect-cfg
 
