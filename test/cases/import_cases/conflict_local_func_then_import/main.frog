@@ -1,0 +1,6 @@
+func inc int -- int do 2 + end
+
+func main -- do
+end
+
+from "math.frog" import inc

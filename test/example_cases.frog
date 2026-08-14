@@ -1,6 +1,6 @@
 from "framework.frog" import ( FrogTestContext frog-run-case )
 
-proc run-example-cases FrogTestContext* -- do
+func run-example-cases FrogTestContext* -- do
     let context do
         "examples/01_simple.frog" "examples" "3\n" "" 0 "" "" "" "examples/01_simple" context frog-run-case
         "examples/02_while.frog" "examples" "1
@@ -30,12 +30,12 @@ proc run-example-cases FrogTestContext* -- do
 377
 610
 " "" 0 "" "" "" "examples/03_fib" context frog-run-case
-        "examples/04_procs.frog" "examples" "9
+        "examples/04_funcs.frog" "examples" "9
 8
 7
 6
 5
-" "" 0 "" "" "" "examples/04_procs" context frog-run-case
+" "" 0 "" "" "" "examples/04_funcs" context frog-run-case
         "examples/05_is_prime.frog" "examples" "0
 false
 1
@@ -180,14 +180,14 @@ false
 ####  ####  ####  ####    ##  ####  ####  ####  ##    ####  ####  ####  ####  ##
 ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##  ##  ##      ##  ##\x20\x20
 " "" 0 "" "" "" "examples/08_gcd_grid" context frog-run-case
-        "examples/09_records.frog" "examples" "25
+        "examples/09_structs.frog" "examples" "25
 3
 4
-" "" 0 "" "" "" "examples/09_records" context frog-run-case
-        "examples/10_tagged_unions.frog" "examples" "5
+" "" 0 "" "" "" "examples/09_structs" context frog-run-case
+        "examples/10_tagged_enums.frog" "examples" "5
 E
 12
-" "" 0 "" "" "" "examples/10_tagged_unions" context frog-run-case
+" "" 0 "" "" "" "examples/10_tagged_enums" context frog-run-case
         "examples/11_c_ffi.frog" "examples" "42
 4
 " "" 0 "" "" "" "examples/11_c_ffi" context frog-run-case

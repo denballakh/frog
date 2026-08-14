@@ -4,7 +4,7 @@ from "string.frog" import bytes-copy
 const subprocess-pointer-bytes 8 end
 const subprocess-capture-initial-capacity 256 end
 
-record CompletedProcess
+struct CompletedProcess
     stdout ptr
     stdout_len int
     stderr ptr
@@ -12,13 +12,13 @@ record CompletedProcess
     returncode int
 end
 
-record SubprocessCapture
+struct SubprocessCapture
     bytes ptr
     len int
     capacity int
 end
 
-proc subprocess-fail -- do
+func subprocess-fail -- do
     "subprocess: operation failed\n"
     let message do
         0
@@ -33,12 +33,12 @@ proc subprocess-fail -- do
     1 finish-child
 end
 
-proc subprocess-checked-stream -- ptr do
+func subprocess-checked-stream -- ptr do
     subprocess-tmpfile
     if dup int cast 0 == do subprocess-fail end
 end
 
-proc subprocess-capture-new -- SubprocessCapture* do
+func subprocess-capture-new -- SubprocessCapture* do
     subprocess-capture-initial-capacity alloc
     let bytes do
         SubprocessCapture:alloc
@@ -51,7 +51,7 @@ proc subprocess-capture-new -- SubprocessCapture* do
     end
 end
 
-proc subprocess-capture-push int SubprocessCapture* -- do
+func subprocess-capture-push int SubprocessCapture* -- do
     let byte capture do
         if capture @SubprocessCapture.len capture @SubprocessCapture.capacity == do
             capture @SubprocessCapture.capacity 2 *
@@ -70,7 +70,7 @@ proc subprocess-capture-push int SubprocessCapture* -- do
     end
 end
 
-proc subprocess-read-stream ptr SubprocessCapture* -- do
+func subprocess-read-stream ptr SubprocessCapture* -- do
     let stream capture do
         stream subprocess-file-getc
         while dup 0 >= do
@@ -83,7 +83,7 @@ proc subprocess-read-stream ptr SubprocessCapture* -- do
     end
 end
 
-proc subprocess-write-input ptr int ptr -- do
+func subprocess-write-input ptr int ptr -- do
     let input input-length stream do
         0
         while dup input-length < do
@@ -98,7 +98,7 @@ proc subprocess-write-input ptr int ptr -- do
     end
 end
 
-proc subprocess-argv int -- ptr do
+func subprocess-argv int -- ptr do
     let count do
         if count 0 < do subprocess-fail end
         count 1 + subprocess-pointer-bytes * alloc
@@ -109,21 +109,21 @@ proc subprocess-argv int -- ptr do
     end
 end
 
-proc subprocess-arg String ptr int -- do
+func subprocess-arg String ptr int -- do
     let value argv index do
         value String.bytes argv index subprocess-pointer-bytes * + ptr* cast !
     end
 end
 
-proc subprocess-arg-pointer ptr ptr int -- do
+func subprocess-arg-pointer ptr ptr int -- do
     let value argv index do
         value argv index subprocess-pointer-bytes * + ptr* cast !
     end
 end
 
-proc subprocess-argv-free ptr -- do free end
+func subprocess-argv-free ptr -- do free end
 
-proc subprocess-run-child ptr ptr ptr ptr String -- do
+func subprocess-run-child ptr ptr ptr ptr String -- do
     let argv input output errors cwd do
         if input subprocess-file-descriptor 0 dup2 0 < do subprocess-fail end
         if output subprocess-file-descriptor 1 dup2 0 < do subprocess-fail end
@@ -139,7 +139,7 @@ proc subprocess-run-child ptr ptr ptr ptr String -- do
     end
 end
 
-proc subprocess-run-with ptr ptr int String -- CompletedProcess* do
+func subprocess-run-with ptr ptr int String -- CompletedProcess* do
     let argv input input-length cwd do
         subprocess-checked-stream
         let stdin do
@@ -189,31 +189,31 @@ proc subprocess-run-with ptr ptr int String -- CompletedProcess* do
     end
 end
 
-proc subprocess-run ptr String -- CompletedProcess* do
+func subprocess-run ptr String -- CompletedProcess* do
     let argv input do
         argv input String.bytes input String.len "" subprocess-run-with
     end
 end
 
-proc subprocess-run-in ptr String String -- CompletedProcess* do
+func subprocess-run-in ptr String String -- CompletedProcess* do
     let argv input cwd do
         argv input String.bytes input String.len cwd subprocess-run-with
     end
 end
 
-proc subprocess-run-bytes ptr ptr int -- CompletedProcess* do
+func subprocess-run-bytes ptr ptr int -- CompletedProcess* do
     let argv input input-length do
         argv input input-length "" subprocess-run-with
     end
 end
 
-proc subprocess-run-bytes-in ptr ptr int String -- CompletedProcess* do
+func subprocess-run-bytes-in ptr ptr int String -- CompletedProcess* do
     let argv input input-length cwd do
         argv input input-length cwd subprocess-run-with
     end
 end
 
-proc completed-process-free CompletedProcess* -- do
+func completed-process-free CompletedProcess* -- do
     let result do
         result @CompletedProcess.stdout free
         result @CompletedProcess.stderr free

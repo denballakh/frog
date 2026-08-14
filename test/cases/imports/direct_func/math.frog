@@ -1,0 +1,3 @@
+func inc int -- int do
+    1 +
+end

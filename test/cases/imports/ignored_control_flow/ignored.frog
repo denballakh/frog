@@ -6,4 +6,4 @@ else
     "ignored,else" drop
 end
 
-proc value -- int do 44 end
+func value -- int do 44 end

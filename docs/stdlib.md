@@ -27,7 +27,7 @@ the shell's `PATH` does not identify the accompanying standard library.
 
 `stdlib/builtins.frog` is loaded implicitly for every program. It defines the
 standard stack macros `dup`, `dup2`, `drop`, `swap`, `swap2`, and `rot`, plus
-the `NULL` and `assert` procedures documented in the
+the `NULL` and `assert` functions documented in the
 [language reference](language.md#implicit-builtins-module). These declarations
 are available without an import and may be shadowed; explicit imports from the
 module are also supported.
@@ -35,8 +35,8 @@ module are also supported.
 ## libc
 
 `stdlib/libc.frog` exposes low-level C and POSIX operations. Programs using its
-POSIX procedures are platform-specific. Its general allocation and byte-I/O
-procedures are:
+POSIX functions are platform-specific. Its general allocation and byte-I/O
+functions are:
 
 - `alloc`: `int -- ptr` allocates uninitialized bytes. The size must be
   non-negative and representable as the target C `size_t`.
@@ -50,10 +50,10 @@ procedures are:
   `false`; the data pointer must not be dereferenced. On success the caller
   releases the data with `free`.
 
-These are ordinary Frog procedures, so callers use the Frog contracts above
+These are ordinary Frog functions, so callers use the Frog contracts above
 rather than the underlying C signatures.
 
-The POSIX procedures are:
+The POSIX functions are:
 
 - `fork`: `-- int`
 - `create-file`: `path -- int`
@@ -127,7 +127,7 @@ heap-backed byte buffers:
 - `byte-buffer-free`: `ByteBuffer* --` releases a buffer and its storage.
 
 `ByteBuffer` exposes `bytes`, `len`, and `capacity` fields through the normal
-record operations. Its byte storage may move after `byte-buffer-push`, so code
+struct operations. Its byte storage may move after `byte-buffer-push`, so code
 must load `@ByteBuffer.bytes` again after an append.
 
 ## Opaque-pointer containers
@@ -192,7 +192,7 @@ bool` are structural macros that work with `PtrArray*`, `PtrList*`, and
 ## JSON
 
 `stdlib/json.frog` parses one complete JSON value into an exclusively owned
-tree. `JsonValue` is a by-value tagged union with `null`, `boolean`, `number`,
+tree. `JsonValue` is a by-value enum with `null`, `boolean`, `number`,
 `string`, `array`, and `object` variants. Number payloads preserve their source
 lexemes; string payloads contain decoded bytes.
 
@@ -240,12 +240,12 @@ module.
 ```frog
 fn HttpHandler HttpRequest* -- HttpResponse* end
 
-proc handler HttpRequest* -- HttpResponse* do
+func handler HttpRequest* -- HttpResponse* do
     drop
     200 "frog" http-response
 end
 
-proc serve-one-connection int -- int do
+func serve-one-connection int -- int do
     HttpHandler:ref:handler http-serve-connection
 end
 ```
@@ -309,7 +309,7 @@ from "stdlib/subprocess.frog" import (
     completed-process-free
 )
 
-proc main -- do
+func main -- do
     2 subprocess-argv
     let argv do
         "printf" argv 0 subprocess-arg
@@ -346,7 +346,7 @@ end
 - `subprocess-run-bytes-in`: `argv input input_len cwd -- CompletedProcess*`
   combines raw-byte input with a child working directory.
 - `completed-process-free`: `CompletedProcess* --` releases both captured buffers
-  and the result record.
+  and the result struct.
 
 `CompletedProcess.stdout` and `CompletedProcess.stderr` are byte pointers whose
 lengths are stored in `stdout_len` and `stderr_len`; the buffers are not
@@ -366,7 +366,7 @@ from "stdlib/test.frog" import (
     test-finish
 )
 
-proc main -- do
+func main -- do
     test-suite
     let suite do
         6 7 * 42 "multiplication" suite check-int-equal

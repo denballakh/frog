@@ -1,5 +1,5 @@
 from "macros.frog" import twice
 
-proc main -- do
+func main -- do
     21 twice print
 end

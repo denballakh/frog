@@ -1,0 +1,5 @@
+from "lib.frog" import Mapper as Local
+
+fn Local int -- int end
+
+func main -- do end

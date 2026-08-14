@@ -1,6 +1,6 @@
 from "math.frog" import inc
 from "math.frog" import inc
 
-proc main -- do
+func main -- do
     1 inc print
 end

@@ -5,7 +5,7 @@ macro two one one end
 macro int 9 end
 macro alloc 7 end
 
-proc main -- do
+func main -- do
     0 1 - choose print
     0 choose print
     1 choose print

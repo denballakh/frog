@@ -1,2 +1,2 @@
 const __intrinsic_user 1 end
-proc main -- do end
+func main -- do end

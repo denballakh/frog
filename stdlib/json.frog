@@ -31,26 +31,26 @@ const json-int-magnitude-limit json-int-max 10 / end
 const json-int-max-last-digit json-int-max 10 % end
 const json-int-min-last-digit json-int-max-last-digit 1 + end
 
-record JsonText
+struct JsonText
     bytes ptr
     len int
 end
 
-record JsonArray
+struct JsonArray
     values PtrArray*
 end
 
-record JsonObjectEntry
+struct JsonObjectEntry
     key JsonText*
     value JsonValue
     next JsonObjectEntry*
 end
 
-record JsonObject
+struct JsonObject
     head JsonObjectEntry*
 end
 
-union JsonValue
+enum JsonValue
     case null
     case boolean bool
     case number JsonText*
@@ -59,33 +59,33 @@ union JsonValue
     case object JsonObject*
 end
 
-record JsonArrayItem
+struct JsonArrayItem
     value JsonValue
 end
 
-record JsonParser
+struct JsonParser
     bytes ptr
     len int
     index int
 end
 
-proc json-null-pointer? ptr -- bool do
+func json-null-pointer? ptr -- bool do
     int cast 0 ==
 end
 
-proc json-null-value -- JsonValue do
+func json-null-value -- JsonValue do
     JsonValue:null
 end
 
-proc json-parse-failure -- JsonValue bool do
+func json-parse-failure -- JsonValue bool do
     json-null-value false
 end
 
-proc json-text-failure -- JsonText* bool do
+func json-text-failure -- JsonText* bool do
     0 ptr cast JsonText* cast false
 end
 
-proc json-text-copy ptr int -- JsonText* do
+func json-text-copy ptr int -- JsonText* do
     let source length do
         length alloc
         let bytes do
@@ -100,34 +100,34 @@ proc json-text-copy ptr int -- JsonText* do
     end
 end
 
-proc json-text-free JsonText* -- do
+func json-text-free JsonText* -- do
     let text do
         text @JsonText.bytes free
         text ptr cast free
     end
 end
 
-proc json-value-null? JsonValue -- bool do
+func json-value-null? JsonValue -- bool do
     JsonValue.null?
 end
 
-proc json-value-boolean? JsonValue -- bool do
+func json-value-boolean? JsonValue -- bool do
     JsonValue.boolean?
 end
 
-proc json-value-number? JsonValue -- bool do
+func json-value-number? JsonValue -- bool do
     JsonValue.number?
 end
 
-proc json-value-string? JsonValue -- bool do
+func json-value-string? JsonValue -- bool do
     JsonValue.string?
 end
 
-proc json-value-array? JsonValue -- bool do
+func json-value-array? JsonValue -- bool do
     JsonValue.array?
 end
 
-proc json-value-box JsonValue -- JsonArrayItem* do
+func json-value-box JsonValue -- JsonArrayItem* do
     let value do
         JsonArrayItem:alloc
         let box do
@@ -137,7 +137,7 @@ proc json-value-box JsonValue -- JsonArrayItem* do
     end
 end
 
-proc json-ptr-array-free-values PtrArray* -- do
+func json-ptr-array-free-values PtrArray* -- do
     let values do
         0
         while dup values @PtrArray.count < do
@@ -160,14 +160,14 @@ proc json-ptr-array-free-values PtrArray* -- do
     end
 end
 
-proc json-array-free JsonArray* -- do
+func json-array-free JsonArray* -- do
     let array do
         array @JsonArray.values json-ptr-array-free-values
         array ptr cast free
     end
 end
 
-proc json-object-free JsonObject* -- do
+func json-object-free JsonObject* -- do
     let object do
         object @JsonObject.head
         while dup ptr cast json-null-pointer? ! do
@@ -184,7 +184,7 @@ proc json-object-free JsonObject* -- do
     end
 end
 
-proc json-free JsonValue -- do
+func json-free JsonValue -- do
     let value do
         if value json-value-null? do
         elif value json-value-boolean? do
@@ -200,7 +200,7 @@ proc json-free JsonValue -- do
     end
 end
 
-proc json-whitespace? int -- bool do
+func json-whitespace? int -- bool do
     let byte do
         byte 0x20 ==
         byte 0x09 == ||
@@ -209,15 +209,15 @@ proc json-whitespace? int -- bool do
     end
 end
 
-proc json-digit? int -- bool do
+func json-digit? int -- bool do
     let byte do byte 48 >= byte 57 <= && end
 end
 
-proc json-parser-at-end? JsonParser* -- bool do
+func json-parser-at-end? JsonParser* -- bool do
     let parser do parser @JsonParser.index parser @JsonParser.len >= end
 end
 
-proc json-parser-next-is JsonParser* int -- bool do
+func json-parser-next-is JsonParser* int -- bool do
     let parser expected do
         if parser json-parser-at-end? do
             false
@@ -227,7 +227,7 @@ proc json-parser-next-is JsonParser* int -- bool do
     end
 end
 
-proc json-parser-skip-whitespace JsonParser* -- do
+func json-parser-skip-whitespace JsonParser* -- do
     let parser do
         parser @JsonParser.index
         while peek index do
@@ -244,7 +244,7 @@ proc json-parser-skip-whitespace JsonParser* -- do
     end
 end
 
-proc json-parser-consume JsonParser* String -- bool do
+func json-parser-consume JsonParser* String -- bool do
     let parser expected do
         if expected String.len parser @JsonParser.len parser @JsonParser.index - > do
             false
@@ -259,7 +259,7 @@ proc json-parser-consume JsonParser* String -- bool do
     end
 end
 
-proc json-hex-value int -- int bool do
+func json-hex-value int -- int bool do
     let byte do
         if byte 48 >= byte 57 <= && do
             byte 48 - true
@@ -273,7 +273,7 @@ proc json-hex-value int -- int bool do
     end
 end
 
-proc json-parser-hex4 JsonParser* -- int bool do
+func json-parser-hex4 JsonParser* -- int bool do
     let parser do
         0 0 true
         while peek count value valid do
@@ -300,7 +300,7 @@ proc json-parser-hex4 JsonParser* -- int bool do
     end
 end
 
-proc json-buffer-push-codepoint int ByteBuffer* -- do
+func json-buffer-push-codepoint int ByteBuffer* -- do
     let codepoint buffer do
         if codepoint 0x7f <= do
             codepoint buffer byte-buffer-push
@@ -320,7 +320,7 @@ proc json-buffer-push-codepoint int ByteBuffer* -- do
     end
 end
 
-proc json-parser-string-escape JsonParser* ByteBuffer* -- bool do
+func json-parser-string-escape JsonParser* ByteBuffer* -- bool do
     let parser buffer do
         if parser json-parser-at-end? do
             false
@@ -389,7 +389,7 @@ proc json-parser-string-escape JsonParser* ByteBuffer* -- bool do
     end
 end
 
-proc json-parser-string-text JsonParser* -- JsonText* bool do
+func json-parser-string-text JsonParser* -- JsonText* bool do
     let parser do
         if parser json-parser-at-end? do
             json-text-failure
@@ -448,7 +448,7 @@ proc json-parser-string-text JsonParser* -- JsonText* bool do
     end
 end
 
-proc json-parser-consume-digits JsonParser* -- int do
+func json-parser-consume-digits JsonParser* -- int do
     let parser do
         parser @JsonParser.index
         let start do
@@ -471,7 +471,7 @@ proc json-parser-consume-digits JsonParser* -- int do
     end
 end
 
-proc json-parser-number-integer JsonParser* -- bool do
+func json-parser-number-integer JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             false
@@ -496,7 +496,7 @@ proc json-parser-number-integer JsonParser* -- bool do
     end
 end
 
-proc json-parser-number-fraction JsonParser* -- bool do
+func json-parser-number-fraction JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             true
@@ -509,7 +509,7 @@ proc json-parser-number-fraction JsonParser* -- bool do
     end
 end
 
-proc json-parser-number-exponent JsonParser* -- bool do
+func json-parser-number-exponent JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             true
@@ -535,7 +535,7 @@ proc json-parser-number-exponent JsonParser* -- bool do
     end
 end
 
-proc json-parser-number JsonParser* -- JsonValue bool do
+func json-parser-number JsonParser* -- JsonValue bool do
     let parser do
         parser @JsonParser.index
         let start do
@@ -559,7 +559,7 @@ proc json-parser-number JsonParser* -- JsonValue bool do
     end
 end
 
-proc json-parser-value JsonParser* int -- JsonValue bool do
+func json-parser-value JsonParser* int -- JsonValue bool do
     let parser depth do
         if parser json-parser-at-end? do
             json-parse-failure
@@ -611,7 +611,7 @@ proc json-parser-value JsonParser* int -- JsonValue bool do
     end
 end
 
-proc json-parser-array JsonParser* int -- JsonValue bool do
+func json-parser-array JsonParser* int -- JsonValue bool do
     let parser depth do
         parser @JsonParser.index 1 + parser !JsonParser.index
         parser json-parser-skip-whitespace
@@ -674,7 +674,7 @@ proc json-parser-array JsonParser* int -- JsonValue bool do
     end
 end
 
-proc json-parser-object JsonParser* int -- JsonValue bool do
+func json-parser-object JsonParser* int -- JsonValue bool do
     let parser depth do
         parser @JsonParser.index 1 + parser !JsonParser.index
         parser json-parser-skip-whitespace
@@ -755,7 +755,7 @@ proc json-parser-object JsonParser* int -- JsonValue bool do
     end
 end
 
-proc json-parse-bytes ptr int -- JsonValue bool do
+func json-parse-bytes ptr int -- JsonValue bool do
     let bytes length do
         if length 0 < do
             json-parse-failure
@@ -790,17 +790,17 @@ proc json-parse-bytes ptr int -- JsonValue bool do
     end
 end
 
-proc json-parse String -- JsonValue bool do
+func json-parse String -- JsonValue bool do
     let source do source String.bytes source String.len json-parse-bytes end
 end
 
-proc json-boolean JsonValue -- bool bool do
+func json-boolean JsonValue -- bool bool do
     let value do
         if value JsonValue.boolean? do value JsonValue.boolean true else false false end
     end
 end
 
-proc json-string-bytes JsonValue -- ptr int bool do
+func json-string-bytes JsonValue -- ptr int bool do
     let value do
         if value JsonValue.string? do
             value JsonValue.string
@@ -811,7 +811,7 @@ proc json-string-bytes JsonValue -- ptr int bool do
     end
 end
 
-proc json-number-bytes JsonValue -- ptr int bool do
+func json-number-bytes JsonValue -- ptr int bool do
     let value do
         if value JsonValue.number? do
             value JsonValue.number
@@ -822,7 +822,7 @@ proc json-number-bytes JsonValue -- ptr int bool do
     end
 end
 
-proc json-number-int JsonValue -- int bool do
+func json-number-int JsonValue -- int bool do
     json-number-bytes
     let bytes length is-number do
         if is-number ! length 0 == || do
@@ -886,7 +886,7 @@ proc json-number-int JsonValue -- int bool do
     end
 end
 
-proc json-array-length JsonValue -- int bool do
+func json-array-length JsonValue -- int bool do
     let value do
         if value JsonValue.array? do
             value JsonValue.array @JsonArray.values @PtrArray.count true
@@ -896,7 +896,7 @@ proc json-array-length JsonValue -- int bool do
     end
 end
 
-proc json-array-get JsonValue int -- JsonValue bool do
+func json-array-get JsonValue int -- JsonValue bool do
     let value index do
         if value JsonValue.array? do
             value JsonValue.array @JsonArray.values index ptr-array-get
@@ -909,7 +909,7 @@ proc json-array-get JsonValue int -- JsonValue bool do
     end
 end
 
-proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
+func json-object-get-bytes JsonValue ptr int -- JsonValue bool do
     let value key key-length do
         if key-length 0 < do
             json-parse-failure
@@ -948,7 +948,7 @@ proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
     end
 end
 
-proc json-object-get JsonValue String -- JsonValue bool do
+func json-object-get JsonValue String -- JsonValue bool do
     let value key do
         value key String.bytes key String.len json-object-get-bytes
     end

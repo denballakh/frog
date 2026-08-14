@@ -143,7 +143,7 @@ def check_slashless_compiler_policy() -> None:
         help_result.returncode == 0 and help_result.stdout.startswith('Usage:\n') and help_result.stderr == ''
     ), f'unexpected slashless help result{format_streams(help_result.stdout, help_result.stderr)}'
 
-    compile_result = capture_command('frogc', 'run', '-c', 'proc main -- do end', env=environment)
+    compile_result = capture_command('frogc', 'run', '-c', 'func main -- do end', env=environment)
     assert_result(compile_result, 1, '', 'frogc: standard library path is unavailable\n')
 
 

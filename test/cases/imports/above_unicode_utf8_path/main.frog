@@ -1,5 +1,5 @@
 from "\xF4\x90\x80\x80" import value
 
-proc main -- do
+func main -- do
     value print
 end

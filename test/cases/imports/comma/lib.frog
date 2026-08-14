@@ -1,7 +1,7 @@
-proc one -- int do
+func one -- int do
     1
 end
 
-proc two -- int do
+func two -- int do
     2
 end

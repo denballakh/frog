@@ -1,0 +1,10 @@
+enum Hidden
+    case none
+    case some int
+end
+
+macro unwrap-hidden
+    let value do
+        value Hidden:some Hidden.some
+    end
+end

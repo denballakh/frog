@@ -1,4 +1,4 @@
 
             99 print
 
-            proc value -- int do 7 end
+            func value -- int do 7 end

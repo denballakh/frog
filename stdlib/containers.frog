@@ -10,30 +10,30 @@ const string-map-hash-mask 0x7fffffff end
 const container-max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const container-max-capacity container-max-int container-slot-bytes / end
 
-record PtrArray
+struct PtrArray
     items ptr
     count int
     capacity int
 end
 
-record PtrListNode
+struct PtrListNode
     value ptr
     next PtrListNode*
 end
 
-record PtrList
+struct PtrList
     head PtrListNode*
     count int
 end
 
-record StringMapEntry
+struct StringMapEntry
     key ptr
     key_length int
     value ptr
     next StringMapEntry*
 end
 
-record StringMap
+struct StringMap
     buckets ptr
     count int
     capacity int
@@ -42,15 +42,15 @@ end
 macro container-count @.count end
 macro container-empty? @.count 0 == end
 
-proc container-null? ptr -- bool do
+func container-null? ptr -- bool do
     int cast 0 ==
 end
 
-proc container-slot-address ptr int -- ptr do
+func container-slot-address ptr int -- ptr do
     container-slot-bytes * +
 end
 
-proc container-require-capacity int -- do
+func container-require-capacity int -- do
     if dup container-max-capacity > do
         drop 1 exit
     else
@@ -58,7 +58,7 @@ proc container-require-capacity int -- do
     end
 end
 
-proc ptr-array-new int -- PtrArray* do
+func ptr-array-new int -- PtrArray* do
     let requested-capacity do
         requested-capacity container-require-capacity
         if requested-capacity 0 > do
@@ -81,7 +81,7 @@ proc ptr-array-new int -- PtrArray* do
     end
 end
 
-proc ptr-array-grow PtrArray* -- do
+func ptr-array-grow PtrArray* -- do
     let array do
         if array @.capacity container-max-capacity 2 / > do
             1 exit
@@ -107,7 +107,7 @@ proc ptr-array-grow PtrArray* -- do
     end
 end
 
-proc ptr-array-push ptr PtrArray* -- do
+func ptr-array-push ptr PtrArray* -- do
     let value array do
         if array @.count array @.capacity == do
             array ptr-array-grow
@@ -117,7 +117,7 @@ proc ptr-array-push ptr PtrArray* -- do
     end
 end
 
-proc ptr-array-get PtrArray* int -- ptr bool do
+func ptr-array-get PtrArray* int -- ptr bool do
     let array index do
         if index 0 < index array @.count >= || do
             0 ptr cast false
@@ -127,7 +127,7 @@ proc ptr-array-get PtrArray* int -- ptr bool do
     end
 end
 
-proc ptr-array-set ptr PtrArray* int -- bool do
+func ptr-array-set ptr PtrArray* int -- bool do
     let value array index do
         if index 0 < index array @.count >= || do
             false
@@ -138,7 +138,7 @@ proc ptr-array-set ptr PtrArray* int -- bool do
     end
 end
 
-proc ptr-array-pop PtrArray* -- ptr bool do
+func ptr-array-pop PtrArray* -- ptr bool do
     let array do
         if array @.count 0 == do
             0 ptr cast false
@@ -153,14 +153,14 @@ proc ptr-array-pop PtrArray* -- ptr bool do
     end
 end
 
-proc ptr-array-free PtrArray* -- do
+func ptr-array-free PtrArray* -- do
     let array do
         array @.items free
         array ptr cast free
     end
 end
 
-proc ptr-list-new -- PtrList* do
+func ptr-list-new -- PtrList* do
     PtrList:alloc
     let list do
         0 ptr cast PtrListNode* cast list !.head
@@ -169,7 +169,7 @@ proc ptr-list-new -- PtrList* do
     end
 end
 
-proc ptr-list-push-front ptr PtrList* -- do
+func ptr-list-push-front ptr PtrList* -- do
     let value list do
         PtrListNode:alloc
         let node do
@@ -181,7 +181,7 @@ proc ptr-list-push-front ptr PtrList* -- do
     end
 end
 
-proc ptr-list-first PtrList* -- ptr bool do
+func ptr-list-first PtrList* -- ptr bool do
     let list do
         list @.head
         let head do
@@ -194,7 +194,7 @@ proc ptr-list-first PtrList* -- ptr bool do
     end
 end
 
-proc ptr-list-pop-front PtrList* -- ptr bool do
+func ptr-list-pop-front PtrList* -- ptr bool do
     let list do
         list @.head
         let head do
@@ -216,7 +216,7 @@ proc ptr-list-pop-front PtrList* -- ptr bool do
     end
 end
 
-proc ptr-list-free PtrList* -- do
+func ptr-list-free PtrList* -- do
     let list do
         while list @.count 0 > do
             list ptr-list-pop-front drop drop
@@ -225,7 +225,7 @@ proc ptr-list-free PtrList* -- do
     end
 end
 
-proc string-map-hash ptr int -- int do
+func string-map-hash ptr int -- int do
     let bytes length do
         0 string-map-hash-initial
         while peek index hash do
@@ -246,7 +246,7 @@ proc string-map-hash ptr int -- int do
     end
 end
 
-proc string-map-new int -- StringMap* do
+func string-map-new int -- StringMap* do
     let requested-capacity do
         requested-capacity container-require-capacity
         if requested-capacity 0 > do
@@ -277,7 +277,7 @@ proc string-map-new int -- StringMap* do
     end
 end
 
-proc string-map-bucket-address ptr int StringMap* -- ptr do
+func string-map-bucket-address ptr int StringMap* -- ptr do
     let key length map do
         map @.buckets
           key length string-map-hash map @.capacity %
@@ -285,7 +285,7 @@ proc string-map-bucket-address ptr int StringMap* -- ptr do
     end
 end
 
-proc string-map-find-from ptr int StringMapEntry* -- StringMapEntry* do
+func string-map-find-from ptr int StringMapEntry* -- StringMapEntry* do
     let key length first do
         first false
         while peek current found do
@@ -313,7 +313,7 @@ proc string-map-find-from ptr int StringMapEntry* -- StringMapEntry* do
     end
 end
 
-proc string-map-find ptr int StringMap* -- StringMapEntry* do
+func string-map-find ptr int StringMap* -- StringMapEntry* do
     let key length map do
         key length map string-map-bucket-address ptr* cast @ StringMapEntry* cast
         let current do
@@ -322,7 +322,7 @@ proc string-map-find ptr int StringMap* -- StringMapEntry* do
     end
 end
 
-proc string-map-get ptr int StringMap* -- ptr bool do
+func string-map-get ptr int StringMap* -- ptr bool do
     let key length map do
         if length 0 < do
             0 ptr cast false
@@ -339,7 +339,7 @@ proc string-map-get ptr int StringMap* -- ptr bool do
     end
 end
 
-proc string-map-set ptr int ptr StringMap* -- ptr bool do
+func string-map-set ptr int ptr StringMap* -- ptr bool do
     let key length value map do
         if length 0 < do
             0 ptr cast false
@@ -377,7 +377,7 @@ proc string-map-set ptr int ptr StringMap* -- ptr bool do
     end
 end
 
-proc string-map-remove ptr int StringMap* -- ptr bool do
+func string-map-remove ptr int StringMap* -- ptr bool do
     let key length map do
         if length 0 < do
             0 ptr cast false
@@ -426,7 +426,7 @@ proc string-map-remove ptr int StringMap* -- ptr bool do
     end
 end
 
-proc string-map-free-chain StringMapEntry* -- do
+func string-map-free-chain StringMapEntry* -- do
     while dup ptr cast container-null? ! do
         let current do
             current
@@ -440,7 +440,7 @@ proc string-map-free-chain StringMapEntry* -- do
     drop
 end
 
-proc string-map-free StringMap* -- do
+func string-map-free StringMap* -- do
     let map do
         0
         while dup map @.capacity < do

@@ -4,7 +4,7 @@ macro preserve-sum
     end
 end
 
-proc main -- do
+func main -- do
     1 2
     peek first second do
         first second + print

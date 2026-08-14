@@ -14,7 +14,7 @@ const intrinsic-wins 1 2 + end
 macro emit-product product end
 macro shadowed 99 end
 
-proc main -- do
+func main -- do
     product print
     product print
     emit-product print

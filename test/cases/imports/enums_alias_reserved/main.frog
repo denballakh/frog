@@ -1,0 +1,3 @@
+from "shape.frog" import Maybe as int
+
+func main -- do end

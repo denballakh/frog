@@ -1,9 +1,9 @@
 from "facade.frog" import scoped
 
-proc helper int -- int do
+func helper int -- int do
     100 +
 end
 
-proc main -- do
+func main -- do
     5 scoped print
 end

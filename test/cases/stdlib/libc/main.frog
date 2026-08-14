@@ -2,13 +2,13 @@ from "stdlib/libc.frog" import (
     alloc free putc getc eputc exit ensure-directory
 )
 
-proc require bool -- do
+func require bool -- do
     let condition do
         if condition do else 1 exit end
     end
 end
 
-proc main -- do
+func main -- do
     8 alloc
     let bytes do
         65 u8 cast bytes u8* cast !

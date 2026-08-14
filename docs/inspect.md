@@ -25,24 +25,33 @@ serialization format.
 For a position-oriented view of resolved identities, visible names, and the
 typed stack, use [`frogc cursor`](./cursor.md).
 
-## Format 4: analyzed program
+## Format 6: analyzed program
 
-Ordinary `inspect` emits format 4. Its rows describe:
+Ordinary `inspect` emits format 6. Its rows describe:
 
-- loaded modules and procedures;
+- loaded modules and functions;
 - resolved source operations and their typed stack before and after execution;
 - typed backend-independent instructions;
 - caller-specialized macro expansion origins;
 - local bindings; and
 - typed control-flow blocks and terminators.
 
-Pass `--builtins` to include procedure bodies from the implicitly imported
+Pass `--builtins` to include function bodies from the implicitly imported
 builtins module. The builtins module itself remains listed without this option
 so that resolved targets retain a visible module identity.
 
-## Format 5: lossless source data
+Direct function rows use `func`; ownership columns use `func_module` and
+`func_index`; and direct calls use `func_call`. The existing `function_type`
+and `function_call` names remain specific to nominal `fn` function-reference
+types and their indirect calls. Struct operations use `struct_new`,
+`struct_alloc`, `struct_sizeof`, `struct_field_read`, and
+`struct_field_write`. Enum operations use `enum_construct`, `enum_test`, and
+`enum_project`. The corresponding cursor semantic classes are `struct_type`,
+`struct_field`, `enum_type`, and `enum_case`.
 
-Pass `--lexemes` to emit format 5. It contains every format-4 row plus `lexeme`
+## Format 7: lossless source data
+
+Pass `--lexemes` to emit format 7. It contains every format-6 row plus `lexeme`
 and `region` rows:
 
 ```sh
@@ -62,7 +71,7 @@ Each syntax region has a module-local ID, parent ID, kind, half-open token
 range, and half-open byte range. The module region has parent `-1` and covers
 the complete source, including leading and trailing trivia. Declaration
 regions cover their declaration tokens. Block regions identify nested `if`,
-`while`, `let`, and `peek` constructs inside procedure and macro declarations.
+`while`, `let`, and `peek` constructs inside function and macro declarations.
 
 Combine `--lexemes` with `--builtins` in either order to include lossless source
 data and analyzed bodies for the builtins module:

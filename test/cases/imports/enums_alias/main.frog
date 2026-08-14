@@ -1,0 +1,11 @@
+from "shape.frog" import Maybe as P
+
+func take P -- int do P.some end
+
+func main -- do
+    8 P:some
+    let value do
+        value P.some? print
+        value take print
+    end
+end

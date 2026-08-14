@@ -1,7 +1,0 @@
-from "shape.frog" import Maybe as Local
-
-union Local
-    case none
-end
-
-proc main -- do end

@@ -1,5 +1,0 @@
-from "lib.frog" import ( Mapper as F inc as plus-one )
-
-proc main -- do
-    5 F:ref:plus-one F:call print
-end

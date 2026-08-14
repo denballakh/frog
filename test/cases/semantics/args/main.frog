@@ -1,12 +1,12 @@
 from "stdlib/libc.frog" import putc
 
-proc pointer-bytes -- int do 8 end
+func pointer-bytes -- int do 8 end
 
-proc argument-at ptr int -- ptr do
+func argument-at ptr int -- ptr do
     pointer-bytes * + ptr* cast @
 end
 
-proc print-c-string ptr -- do
+func print-c-string ptr -- do
     while dup u8* cast @ int cast 0 != do
         dup u8* cast @ int cast putc
         1 +
@@ -15,7 +15,7 @@ proc print-c-string ptr -- do
     10 putc
 end
 
-proc main -- do
+func main -- do
     args
     let argv argc do
         argc print

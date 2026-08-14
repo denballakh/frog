@@ -1,5 +1,5 @@
 from "\xE2\x82" import value
 
-proc main -- do
+func main -- do
     value print
 end

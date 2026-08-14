@@ -1,6 +1,6 @@
 from "macros.frog" import move_away_from_zero
 
-proc main -- do
+func main -- do
     5 move_away_from_zero print
     0 move_away_from_zero print
 end

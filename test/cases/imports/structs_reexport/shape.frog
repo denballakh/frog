@@ -1,0 +1,5 @@
+struct Point
+    x int
+end
+
+func read Point* -- int do @Point.x end

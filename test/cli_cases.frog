@@ -13,7 +13,7 @@ from "stdlib/subprocess.frog" import (
     subprocess-run subprocess-run-bytes-in completed-process-free
 )
 
-proc frog-cli-argv int FrogTestContext* -- ptr do
+func frog-cli-argv int FrogTestContext* -- ptr do
     let argument-count context do
         argument-count 1 + subprocess-argv
         peek arguments do
@@ -22,7 +22,7 @@ proc frog-cli-argv int FrogTestContext* -- ptr do
     end
 end
 
-proc frog-run-cli ptr String String int String FrogTestContext* -- do
+func frog-run-cli ptr String String int String FrogTestContext* -- do
     let arguments expected-stdout expected-stderr expected-status name context do
         arguments "" subprocess-run
         let result do
@@ -34,7 +34,7 @@ proc frog-run-cli ptr String String int String FrogTestContext* -- do
     end
 end
 
-proc frog-cli-case-1 String String String int String FrogTestContext* -- do
+func frog-cli-case-1 String String String int String FrogTestContext* -- do
     let first expected-stdout expected-stderr expected-status name context do
         1 context frog-cli-argv
         let arguments do
@@ -44,7 +44,7 @@ proc frog-cli-case-1 String String String int String FrogTestContext* -- do
     end
 end
 
-proc frog-cli-case-2 String String String String int String FrogTestContext* -- do
+func frog-cli-case-2 String String String String int String FrogTestContext* -- do
     let first second expected-stdout expected-stderr expected-status name context do
         2 context frog-cli-argv
         let arguments do
@@ -55,7 +55,7 @@ proc frog-cli-case-2 String String String String int String FrogTestContext* -- 
     end
 end
 
-proc frog-cli-case-3 String String String String String int String FrogTestContext* -- do
+func frog-cli-case-3 String String String String String int String FrogTestContext* -- do
     let first second third expected-stdout expected-stderr expected-status name context do
         3 context frog-cli-argv
         let arguments do
@@ -67,7 +67,7 @@ proc frog-cli-case-3 String String String String String int String FrogTestConte
     end
 end
 
-proc frog-cli-case-4 String String String String String String int String FrogTestContext* -- do
+func frog-cli-case-4 String String String String String String int String FrogTestContext* -- do
     let first second third fourth expected-stdout expected-stderr expected-status name context do
         4 context frog-cli-argv
         let arguments do
@@ -80,7 +80,7 @@ proc frog-cli-case-4 String String String String String String int String FrogTe
     end
 end
 
-proc frog-cli-case-5 String String String String String String String int String FrogTestContext* -- do
+func frog-cli-case-5 String String String String String String String int String FrogTestContext* -- do
     let first second third fourth fifth expected-stdout expected-stderr expected-status name context do
         5 context frog-cli-argv
         let arguments do
@@ -94,7 +94,7 @@ proc frog-cli-case-5 String String String String String String String int String
     end
 end
 
-proc frog-cli-check-stdin String String String int String FrogTestContext* -- do
+func frog-cli-check-stdin String String String int String FrogTestContext* -- do
     let source expected-stdout expected-stderr expected-status name context do
         2 subprocess-argv
         let arguments do
@@ -111,7 +111,7 @@ proc frog-cli-check-stdin String String String int String FrogTestContext* -- do
     end
 end
 
-proc frog-cli-fmt-stdin String String String int String FrogTestContext* -- do
+func frog-cli-fmt-stdin String String String int String FrogTestContext* -- do
     let source expected-stdout expected-stderr expected-status name context do
         2 subprocess-argv
         let arguments do
@@ -128,7 +128,7 @@ proc frog-cli-fmt-stdin String String String int String FrogTestContext* -- do
     end
 end
 
-proc frog-cli-fmt-file String String String String FrogTestContext* -- do
+func frog-cli-fmt-file String String String String FrogTestContext* -- do
     let path expected-stdout expected-source name context do
         2 context frog-cli-argv
         let arguments do
@@ -151,7 +151,7 @@ proc frog-cli-fmt-file String String String String FrogTestContext* -- do
     end
 end
 
-proc frog-cli-inspect-stdin String String String int String FrogTestContext* -- do
+func frog-cli-inspect-stdin String String String int String FrogTestContext* -- do
     let source expected-stdout expected-stderr expected-status name context do
         2 subprocess-argv
         let arguments do
@@ -168,7 +168,7 @@ proc frog-cli-inspect-stdin String String String int String FrogTestContext* -- 
     end
 end
 
-proc frog-cli-inspect-lexemes String String String int String FrogTestContext* -- do
+func frog-cli-inspect-lexemes String String String int String FrogTestContext* -- do
     let source expected-stdout expected-stderr expected-status name context do
         3 subprocess-argv
         let arguments do
@@ -186,14 +186,14 @@ proc frog-cli-inspect-lexemes String String String int String FrogTestContext* -
     end
 end
 
-proc frog-cli-append-unsigned int ByteBuffer* -- do
+func frog-cli-append-unsigned int ByteBuffer* -- do
     let value buffer do
         if value 10 >= do value 10 / buffer frog-cli-append-unsigned end
         value 10 % 48 + buffer byte-buffer-push
     end
 end
 
-proc frog-cli-offset-buffer int -- ByteBuffer* do
+func frog-cli-offset-buffer int -- ByteBuffer* do
     let offset do
         24 byte-buffer-new
         peek buffer do
@@ -203,7 +203,7 @@ proc frog-cli-offset-buffer int -- ByteBuffer* do
     end
 end
 
-proc frog-cli-cursor-stdin String int FrogTestContext* -- CompletedProcess* do
+func frog-cli-cursor-stdin String int FrogTestContext* -- CompletedProcess* do
     let source offset context do
         offset frog-cli-offset-buffer
         let offset-buffer do
@@ -221,7 +221,7 @@ proc frog-cli-cursor-stdin String int FrogTestContext* -- CompletedProcess* do
     end
 end
 
-proc frog-cli-cursor-file String int FrogTestContext* -- CompletedProcess* do
+func frog-cli-cursor-file String int FrogTestContext* -- CompletedProcess* do
     let path offset context do
         offset frog-cli-offset-buffer
         let offset-buffer do
@@ -240,23 +240,23 @@ proc frog-cli-cursor-file String int FrogTestContext* -- CompletedProcess* do
     end
 end
 
-proc frog-cli-cursor-succeeded CompletedProcess* -- bool do
+func frog-cli-cursor-succeeded CompletedProcess* -- bool do
     let result do
         result @CompletedProcess.returncode 0 ==
         result @CompletedProcess.stderr_len 0 == &&
           result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-        "frogc-cursor\t1\n" String.bytes "frogc-cursor\t1\n" String.len bytes-starts-with &&
+        "frogc-cursor\t2\n" String.bytes "frogc-cursor\t2\n" String.len bytes-starts-with &&
     end
 end
 
-proc frog-cli-fixture-marker ptr int String -- int do
+func frog-cli-fixture-marker ptr int String -- int do
     let source source-length marker do
         source source-length marker String.bytes marker String.len bytes-index-of
         peek offset do offset 0 >= marker assert end
     end
 end
 
-proc frog-cli-tsv-field ptr int int -- ptr int bool do
+func frog-cli-tsv-field ptr int int -- ptr int bool do
     let line length requested do
         if requested 0 < do
             line 0 false
@@ -300,7 +300,7 @@ proc frog-cli-tsv-field ptr int int -- ptr int bool do
     end
 end
 
-proc frog-cli-tsv-field-equals ptr int int String -- bool do
+func frog-cli-tsv-field-equals ptr int int String -- bool do
     let line length index expected do
         line length index frog-cli-tsv-field
         let field field-length found do
@@ -313,7 +313,7 @@ proc frog-cli-tsv-field-equals ptr int int String -- bool do
     end
 end
 
-proc frog-cli-parse-inspect-int ptr int -- int bool do
+func frog-cli-parse-inspect-int ptr int -- int bool do
     let bytes length do
         if length 0 == do
             0 false
@@ -356,7 +356,7 @@ proc frog-cli-parse-inspect-int ptr int -- int bool do
     end
 end
 
-proc frog-cli-tsv-int ptr int int -- int bool do
+func frog-cli-tsv-int ptr int int -- int bool do
     let line length index do
         line length index frog-cli-tsv-field
         let field field-length found do
@@ -365,7 +365,7 @@ proc frog-cli-tsv-int ptr int int -- int bool do
     end
 end
 
-proc frog-cli-find-cursor-occurrence-line ptr int String String int -- ptr int bool do
+func frog-cli-find-cursor-occurrence-line ptr int String String int -- ptr int bool do
     let bytes length role semantic-class identity-index do
         0 0 ptr cast 0 false
         while
@@ -398,7 +398,7 @@ proc frog-cli-find-cursor-occurrence-line ptr int String String int -- ptr int b
     end
 end
 
-proc frog-cli-cursor-occurrence-is CompletedProcess* String String int int int int int -- bool do
+func frog-cli-cursor-occurrence-is CompletedProcess* String String int int int int int -- bool do
     let result role semantic-class identity-module identity-index identity-subindex binding-module binding-index do
         result @CompletedProcess.stdout result @CompletedProcess.stdout_len role semantic-class identity-index
             frog-cli-find-cursor-occurrence-line
@@ -422,17 +422,17 @@ proc frog-cli-cursor-occurrence-is CompletedProcess* String String int int int i
     end
 end
 
-proc frog-cli-cursor-local-id CompletedProcess* int -- int bool do
-    let result procedure-index do
+func frog-cli-cursor-local-id CompletedProcess* int -- int bool do
+    let result function-index do
         result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-            "reference" "local" procedure-index frog-cli-find-cursor-occurrence-line
+            "reference" "local" function-index frog-cli-find-cursor-occurrence-line
         let line line-length found do
             if found do line line-length 9 frog-cli-tsv-int else 0 false end
         end
     end
 end
 
-proc frog-cli-cursor-query-token CompletedProcess* -- int bool do
+func frog-cli-cursor-query-token CompletedProcess* -- int bool do
     let result do
         0 0 false
         while
@@ -457,7 +457,7 @@ proc frog-cli-cursor-query-token CompletedProcess* -- int bool do
     end
 end
 
-proc frog-cli-cursor-has-stack CompletedProcess* String -- bool do
+func frog-cli-cursor-has-stack CompletedProcess* String -- bool do
     let result expected do
         0 false
         while
@@ -484,7 +484,7 @@ proc frog-cli-cursor-has-stack CompletedProcess* String -- bool do
     end
 end
 
-proc frog-cli-cursor-has-visible-local CompletedProcess* String int -- bool do
+func frog-cli-cursor-has-visible-local CompletedProcess* String int -- bool do
     let result name local-id do
         0 false
         while
@@ -518,7 +518,7 @@ proc frog-cli-cursor-has-visible-local CompletedProcess* String int -- bool do
     end
 end
 
-proc frog-cli-count-procedure-contexts-with-parent CompletedProcess* -- int do
+func frog-cli-count-func-contexts-with-parent CompletedProcess* -- int do
     let result do
         0 0
         while peek offset count do offset result @CompletedProcess.stdout_len < end do
@@ -530,7 +530,7 @@ proc frog-cli-count-procedure-contexts-with-parent CompletedProcess* -- int do
                         offset line-length 1 + +
                         if
                             result @CompletedProcess.stdout offset + line-length 0 "context" frog-cli-tsv-field-equals
-                            result @CompletedProcess.stdout offset + line-length 2 "procedure" frog-cli-tsv-field-equals &&
+                            result @CompletedProcess.stdout offset + line-length 2 "func" frog-cli-tsv-field-equals &&
                             valid-parent && parent 0 >= &&
                         do
                             count 1 +
@@ -545,7 +545,7 @@ proc frog-cli-count-procedure-contexts-with-parent CompletedProcess* -- int do
     end
 end
 
-proc frog-cli-find-inspect-procedure-line ptr int String -- ptr int bool do
+func frog-cli-find-inspect-function-line ptr int String -- ptr int bool do
     let bytes length name do
         0 0 ptr cast 0 false
         while
@@ -558,7 +558,7 @@ proc frog-cli-find-inspect-procedure-line ptr int String -- ptr int bool do
                 let line-length do
                     offset line-length 1 + +
                     if
-                        bytes offset + line-length 0 "procedure" frog-cli-tsv-field-equals
+                        bytes offset + line-length 0 "func" frog-cli-tsv-field-equals
                         bytes offset + line-length 3 name frog-cli-tsv-field-equals &&
                     do
                         bytes offset + line-length true
@@ -572,9 +572,9 @@ proc frog-cli-find-inspect-procedure-line ptr int String -- ptr int bool do
     end
 end
 
-proc frog-cli-inspect-procedure-info ptr int String -- int int int int int bool do
+func frog-cli-inspect-function-info ptr int String -- int int int int int bool do
     let bytes length name do
-        bytes length name frog-cli-find-inspect-procedure-line
+        bytes length name frog-cli-find-inspect-function-line
         let line line-length found do
             if found ! do
                 0 0 0 0 0 false
@@ -584,35 +584,35 @@ proc frog-cli-inspect-procedure-info ptr int String -- int int int int int bool 
                         line line-length 4 frog-cli-tsv-int
                             line line-length 6 frog-cli-tsv-int
                                 line line-length 8 frog-cli-tsv-int
-                let module module-valid procedure procedure-valid operation-count operation-count-valid instruction-count instruction-count-valid block-count block-count-valid do
-                    module procedure operation-count instruction-count block-count
-                              module-valid procedure-valid && operation-count-valid && instruction-count-valid && block-count-valid &&
+                let module module-valid function function-valid operation-count operation-count-valid instruction-count instruction-count-valid block-count block-count-valid do
+                    module function operation-count instruction-count block-count
+                              module-valid function-valid && operation-count-valid && instruction-count-valid && block-count-valid &&
                 end
             end
         end
     end
 end
 
-proc frog-cli-inspect-row-ids-match ptr int String int int int -- bool do
-    let line length kind module procedure index do
+func frog-cli-inspect-row-ids-match ptr int String int int int -- bool do
+    let line length kind module function index do
         if line length 0 kind frog-cli-tsv-field-equals ! do
             false
         else
             line length 1 frog-cli-tsv-int
                 line length 2 frog-cli-tsv-int
                     line length 3 frog-cli-tsv-int
-            let actual-module module-valid actual-procedure procedure-valid actual-index index-valid do
-                module-valid procedure-valid && index-valid &&
+            let actual-module module-valid actual-function function-valid actual-index index-valid do
+                module-valid function-valid && index-valid &&
                 actual-module module == &&
-                actual-procedure procedure == &&
+                actual-function function == &&
                 actual-index index == &&
             end
         end
     end
 end
 
-proc frog-cli-find-inspect-indexed-line ptr int String int int int -- ptr int bool do
-    let bytes length kind module procedure index do
+func frog-cli-find-inspect-indexed-line ptr int String int int int -- ptr int bool do
+    let bytes length kind module function index do
         0 0 ptr cast 0 false
         while
             peek offset result result-length found do
@@ -624,7 +624,7 @@ proc frog-cli-find-inspect-indexed-line ptr int String int int int -- ptr int bo
                 let line-length do
                     offset line-length 1 + +
                     if
-                        bytes offset + line-length kind module procedure index
+                        bytes offset + line-length kind module function index
                         frog-cli-inspect-row-ids-match
                     do
                         bytes offset + line-length true
@@ -638,18 +638,18 @@ proc frog-cli-find-inspect-indexed-line ptr int String int int int -- ptr int bo
     end
 end
 
-proc frog-cli-inspect-block-int ptr int int int int int -- int bool do
-    let bytes length module procedure block-index field-index do
-        bytes length "block" module procedure block-index frog-cli-find-inspect-indexed-line
+func frog-cli-inspect-block-int ptr int int int int int -- int bool do
+    let bytes length module function block-index field-index do
+        bytes length "block" module function block-index frog-cli-find-inspect-indexed-line
         let line line-length found do
             if found do line line-length field-index frog-cli-tsv-int else 0 false end
         end
     end
 end
 
-proc frog-cli-inspect-block-field-equals ptr int int int int int String -- bool do
-    let bytes length module procedure block-index field-index expected do
-        bytes length "block" module procedure block-index frog-cli-find-inspect-indexed-line
+func frog-cli-inspect-block-field-equals ptr int int int int int String -- bool do
+    let bytes length module function block-index field-index expected do
+        bytes length "block" module function block-index frog-cli-find-inspect-indexed-line
         let line line-length found do
             if found do
                 line line-length field-index expected frog-cli-tsv-field-equals
@@ -660,12 +660,12 @@ proc frog-cli-inspect-block-field-equals ptr int int int int int String -- bool 
     end
 end
 
-proc frog-cli-inspect-target-valid int int -- bool do
+func frog-cli-inspect-target-valid int int -- bool do
     let target block-count do target 0 >= target block-count < && end
 end
 
-proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
-    let line length next-instruction procedure-instruction-count block-count do
+func frog-cli-inspect-block-valid ptr int int int int -- int bool do
+    let line length next-instruction function-instruction-count block-count do
         line length 6 frog-cli-tsv-int
             line length 7 frog-cli-tsv-int
                 line length 11 frog-cli-tsv-int
@@ -675,9 +675,9 @@ proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
             first-target-valid && second-target-valid &&
             instruction-start next-instruction == &&
             instruction-start 0 >= &&
-            instruction-start procedure-instruction-count <= &&
+            instruction-start function-instruction-count <= &&
             block-instruction-count 0 >= &&
-            block-instruction-count procedure-instruction-count instruction-start - <= &&
+            block-instruction-count function-instruction-count instruction-start - <= &&
             let range-valid do
                 line length 8 "jump" frog-cli-tsv-field-equals
                   line length 8 "branch" frog-cli-tsv-field-equals
@@ -705,8 +705,8 @@ proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
     end
 end
 
-proc frog-cli-inspect-procedure-generic ptr int int int int int -- bool do
-    let bytes length module procedure instruction-count block-count do
+func frog-cli-inspect-function-generic ptr int int int int int -- bool do
+    let bytes length module function instruction-count block-count do
         0 0 true
         while
             peek block-index next-instruction valid do
@@ -714,7 +714,7 @@ proc frog-cli-inspect-procedure-generic ptr int int int int int -- bool do
             end
         do
             let block-index next-instruction valid do
-                bytes length "block" module procedure block-index frog-cli-find-inspect-indexed-line
+                bytes length "block" module function block-index frog-cli-find-inspect-indexed-line
                 let line line-length found do
                     if found do
                         line line-length next-instruction instruction-count block-count frog-cli-inspect-block-valid
@@ -733,162 +733,162 @@ proc frog-cli-inspect-procedure-generic ptr int int int int int -- bool do
     end
 end
 
-proc frog-cli-inspect-procedure-base ptr int String int -- int int int bool do
+func frog-cli-inspect-function-base ptr int String int -- int int int bool do
     let bytes length name expected-block-count do
-        bytes length name frog-cli-inspect-procedure-info
-        let module procedure operation-count instruction-count block-count found do
+        bytes length name frog-cli-inspect-function-info
+        let module function operation-count instruction-count block-count found do
             if found block-count expected-block-count == && do
-                module procedure operation-count
-                      bytes length module procedure instruction-count block-count
-                      frog-cli-inspect-procedure-generic
+                module function operation-count
+                      bytes length module function instruction-count block-count
+                      frog-cli-inspect-function-generic
             else
-                module procedure operation-count false
+                module function operation-count false
             end
         end
     end
 end
 
-proc frog-cli-inspect-block-is ptr int int int int String -- bool do
-    let bytes length module procedure block-index terminator do
-        bytes length module procedure block-index 8 terminator frog-cli-inspect-block-field-equals
+func frog-cli-inspect-block-is ptr int int int int String -- bool do
+    let bytes length module function block-index terminator do
+        bytes length module function block-index 8 terminator frog-cli-inspect-block-field-equals
     end
 end
 
-proc frog-cli-inspect-block-types-are ptr int int int int String String -- bool do
-    let bytes length module procedure block-index entry-types exit-types do
-        bytes length module procedure block-index 13 entry-types frog-cli-inspect-block-field-equals
-        bytes length module procedure block-index 14 exit-types frog-cli-inspect-block-field-equals &&
+func frog-cli-inspect-block-types-are ptr int int int int String String -- bool do
+    let bytes length module function block-index entry-types exit-types do
+        bytes length module function block-index 13 entry-types frog-cli-inspect-block-field-equals
+        bytes length module function block-index 14 exit-types frog-cli-inspect-block-field-equals &&
     end
 end
 
-proc frog-cli-inspect-block-instruction-count-is ptr int int int int int -- bool do
-    let bytes length module procedure block-index expected do
-        bytes length module procedure block-index 7 frog-cli-inspect-block-int
+func frog-cli-inspect-block-instruction-count-is ptr int int int int int -- bool do
+    let bytes length module function block-index expected do
+        bytes length module function block-index 7 frog-cli-inspect-block-int
         let actual found do found actual expected == && end
     end
 end
 
-proc frog-cli-inspect-jump-target ptr int int int int -- int bool do
-    let bytes length module procedure block-index do
-        bytes length module procedure block-index 11 frog-cli-inspect-block-int
+func frog-cli-inspect-jump-target ptr int int int int -- int bool do
+    let bytes length module function block-index do
+        bytes length module function block-index 11 frog-cli-inspect-block-int
         let target found do
             target found
-              bytes length module procedure block-index "jump" frog-cli-inspect-block-is &&
+              bytes length module function block-index "jump" frog-cli-inspect-block-is &&
         end
     end
 end
 
-proc frog-cli-inspect-branch-targets ptr int int int int -- int int bool do
-    let bytes length module procedure block-index do
-        bytes length module procedure block-index 11 frog-cli-inspect-block-int
-            bytes length module procedure block-index 12 frog-cli-inspect-block-int
+func frog-cli-inspect-branch-targets ptr int int int int -- int int bool do
+    let bytes length module function block-index do
+        bytes length module function block-index 11 frog-cli-inspect-block-int
+            bytes length module function block-index 12 frog-cli-inspect-block-int
         let first first-found second second-found do
             first second first-found second-found &&
-                bytes length module procedure block-index "branch" frog-cli-inspect-block-is &&
+                bytes length module function block-index "branch" frog-cli-inspect-block-is &&
         end
     end
 end
 
-proc frog-cli-inspect-straight ptr int -- bool do
+func frog-cli-inspect-straight ptr int -- bool do
     let bytes length do
-        bytes length "straight" 1 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
+        bytes length "straight" 1 frog-cli-inspect-function-base
+        let module function operation-count valid do
             valid
-            bytes length module procedure 0 "return" frog-cli-inspect-block-is &&
-            bytes length module procedure 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
+            bytes length module function 0 "return" frog-cli-inspect-block-is &&
+            bytes length module function 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
         end
     end
 end
 
-proc frog-cli-inspect-if-else ptr int -- bool do
+func frog-cli-inspect-if-else ptr int -- bool do
     let bytes length do
-        bytes length "if-else" 4 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
-            bytes length module procedure 0 frog-cli-inspect-branch-targets
+        bytes length "if-else" 4 frog-cli-inspect-function-base
+        let module function operation-count valid do
+            bytes length module function 0 frog-cli-inspect-branch-targets
             let then-block else-block branch-valid do
-                bytes length module procedure then-block frog-cli-inspect-jump-target
-                    bytes length module procedure else-block frog-cli-inspect-jump-target
+                bytes length module function then-block frog-cli-inspect-jump-target
+                    bytes length module function else-block frog-cli-inspect-jump-target
                 let then-merge then-valid else-merge else-valid do
                     valid branch-valid && then-valid && else-valid &&
                     then-merge else-merge == &&
-                    bytes length module procedure then-merge "return" frog-cli-inspect-block-is &&
-                    bytes length module procedure 0 "[]" "[bool]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure then-block "[]" "[int]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure else-block "[]" "[int]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-merge "return" frog-cli-inspect-block-is &&
+                    bytes length module function 0 "[]" "[bool]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-block "[]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function else-block "[]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
                 end
             end
         end
     end
 end
 
-proc frog-cli-inspect-no-else ptr int -- bool do
+func frog-cli-inspect-no-else ptr int -- bool do
     let bytes length do
-        bytes length "no-else" 3 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
-            bytes length module procedure 0 frog-cli-inspect-branch-targets
+        bytes length "no-else" 3 frog-cli-inspect-function-base
+        let module function operation-count valid do
+            bytes length module function 0 frog-cli-inspect-branch-targets
             let then-block merge-block branch-valid do
-                bytes length module procedure then-block frog-cli-inspect-jump-target
+                bytes length module function then-block frog-cli-inspect-jump-target
                 let then-merge then-valid do
                     valid branch-valid && then-valid &&
                     then-merge merge-block == &&
-                    bytes length module procedure merge-block "return" frog-cli-inspect-block-is &&
-                    bytes length module procedure then-block 0 frog-cli-inspect-block-instruction-count-is &&
-                    bytes length module procedure 0 "[]" "[int,bool]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure merge-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function merge-block "return" frog-cli-inspect-block-is &&
+                    bytes length module function then-block 0 frog-cli-inspect-block-instruction-count-is &&
+                    bytes length module function 0 "[]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function merge-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
                 end
             end
         end
     end
 end
 
-proc frog-cli-inspect-empty-arms ptr int -- bool do
+func frog-cli-inspect-empty-arms ptr int -- bool do
     let bytes length do
-        bytes length "empty-arms" 4 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
-            bytes length module procedure 0 frog-cli-inspect-branch-targets
+        bytes length "empty-arms" 4 frog-cli-inspect-function-base
+        let module function operation-count valid do
+            bytes length module function 0 frog-cli-inspect-branch-targets
             let then-block else-block branch-valid do
-                bytes length module procedure then-block frog-cli-inspect-jump-target
-                    bytes length module procedure else-block frog-cli-inspect-jump-target
+                bytes length module function then-block frog-cli-inspect-jump-target
+                    bytes length module function else-block frog-cli-inspect-jump-target
                 let then-merge then-valid else-merge else-valid do
                     valid branch-valid && then-valid && else-valid &&
                     then-merge else-merge == &&
-                    bytes length module procedure then-merge "return" frog-cli-inspect-block-is &&
-                    bytes length module procedure then-block 0 frog-cli-inspect-block-instruction-count-is &&
-                    bytes length module procedure else-block 0 frog-cli-inspect-block-instruction-count-is &&
-                    bytes length module procedure 0 "[]" "[int,bool]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure else-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                    bytes length module procedure then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-merge "return" frog-cli-inspect-block-is &&
+                    bytes length module function then-block 0 frog-cli-inspect-block-instruction-count-is &&
+                    bytes length module function else-block 0 frog-cli-inspect-block-instruction-count-is &&
+                    bytes length module function 0 "[]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function else-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                    bytes length module function then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
                 end
             end
         end
     end
 end
 
-proc frog-cli-inspect-elif ptr int -- bool do
+func frog-cli-inspect-elif ptr int -- bool do
     let bytes length do
-        bytes length "elif-chain" 6 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
-            bytes length module procedure 0 frog-cli-inspect-branch-targets
+        bytes length "elif-chain" 6 frog-cli-inspect-function-base
+        let module function operation-count valid do
+            bytes length module function 0 frog-cli-inspect-branch-targets
             let first-arm next-condition first-branch-valid do
-                bytes length module procedure first-arm frog-cli-inspect-jump-target
-                    bytes length module procedure next-condition frog-cli-inspect-branch-targets
+                bytes length module function first-arm frog-cli-inspect-jump-target
+                    bytes length module function next-condition frog-cli-inspect-branch-targets
                 let first-merge first-arm-valid second-arm third-arm second-branch-valid do
-                    bytes length module procedure second-arm frog-cli-inspect-jump-target
-                        bytes length module procedure third-arm frog-cli-inspect-jump-target
+                    bytes length module function second-arm frog-cli-inspect-jump-target
+                        bytes length module function third-arm frog-cli-inspect-jump-target
                     let second-merge second-arm-valid third-merge third-arm-valid do
                         valid first-branch-valid && first-arm-valid && second-branch-valid &&
                         second-arm-valid && third-arm-valid &&
                         first-merge second-merge == && first-merge third-merge == &&
-                        bytes length module procedure first-merge "return" frog-cli-inspect-block-is &&
-                        bytes length module procedure 0 "[]" "[bool]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure next-condition "[]" "[bool]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure first-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure second-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure third-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure first-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function first-merge "return" frog-cli-inspect-block-is &&
+                        bytes length module function 0 "[]" "[bool]" frog-cli-inspect-block-types-are &&
+                        bytes length module function next-condition "[]" "[bool]" frog-cli-inspect-block-types-are &&
+                        bytes length module function first-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function second-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function third-arm "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function first-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
                     end
                 end
             end
@@ -896,23 +896,23 @@ proc frog-cli-inspect-elif ptr int -- bool do
     end
 end
 
-proc frog-cli-inspect-loop ptr int -- bool do
+func frog-cli-inspect-loop ptr int -- bool do
     let bytes length do
-        bytes length "loop" 4 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
-            bytes length module procedure 0 frog-cli-inspect-jump-target
+        bytes length "loop" 4 frog-cli-inspect-function-base
+        let module function operation-count valid do
+            bytes length module function 0 frog-cli-inspect-jump-target
             let header entry-valid do
-                bytes length module procedure header frog-cli-inspect-branch-targets
+                bytes length module function header frog-cli-inspect-branch-targets
                 let body exit-block header-valid do
-                    bytes length module procedure body frog-cli-inspect-jump-target
+                    bytes length module function body frog-cli-inspect-jump-target
                     let back-edge body-valid do
                         valid entry-valid && header-valid && body-valid &&
                         back-edge header == &&
-                        bytes length module procedure exit-block "return" frog-cli-inspect-block-is &&
-                        bytes length module procedure 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure header "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure body "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                        bytes length module procedure exit-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function exit-block "return" frog-cli-inspect-block-is &&
+                        bytes length module function 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function header "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                        bytes length module function body "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                        bytes length module function exit-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
                     end
                 end
             end
@@ -920,31 +920,31 @@ proc frog-cli-inspect-loop ptr int -- bool do
     end
 end
 
-proc frog-cli-inspect-nested ptr int -- bool do
+func frog-cli-inspect-nested ptr int -- bool do
     let bytes length do
-        bytes length "nested" 7 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
-            bytes length module procedure 0 frog-cli-inspect-jump-target
+        bytes length "nested" 7 frog-cli-inspect-function-base
+        let module function operation-count valid do
+            bytes length module function 0 frog-cli-inspect-jump-target
             let loop-header entry-valid do
-                bytes length module procedure loop-header frog-cli-inspect-branch-targets
+                bytes length module function loop-header frog-cli-inspect-branch-targets
                 let inner-condition exit-block loop-valid do
-                    bytes length module procedure inner-condition frog-cli-inspect-branch-targets
+                    bytes length module function inner-condition frog-cli-inspect-branch-targets
                     let then-block else-block inner-valid do
-                        bytes length module procedure then-block frog-cli-inspect-jump-target
-                            bytes length module procedure else-block frog-cli-inspect-jump-target
+                        bytes length module function then-block frog-cli-inspect-jump-target
+                            bytes length module function else-block frog-cli-inspect-jump-target
                         let then-merge then-valid else-merge else-valid do
-                            bytes length module procedure then-merge frog-cli-inspect-jump-target
+                            bytes length module function then-merge frog-cli-inspect-jump-target
                             let back-edge merge-valid do
                                 valid entry-valid && loop-valid && inner-valid && then-valid && else-valid && merge-valid &&
                                 then-merge else-merge == && back-edge loop-header == &&
-                                bytes length module procedure exit-block "return" frog-cli-inspect-block-is &&
-                                bytes length module procedure 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
-                                bytes length module procedure loop-header "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
-                                bytes length module procedure inner-condition "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
-                                bytes length module procedure then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                                bytes length module procedure else-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                                bytes length module procedure then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
-                                bytes length module procedure exit-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module function exit-block "return" frog-cli-inspect-block-is &&
+                                bytes length module function 0 "[]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module function loop-header "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                                bytes length module function inner-condition "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+                                bytes length module function then-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module function else-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module function then-merge "[int]" "[int]" frog-cli-inspect-block-types-are &&
+                                bytes length module function exit-block "[int]" "[int]" frog-cli-inspect-block-types-are &&
                             end
                         end
                     end
@@ -954,41 +954,41 @@ proc frog-cli-inspect-nested ptr int -- bool do
     end
 end
 
-proc frog-cli-inspect-operation-kind-is ptr int int int int String -- bool do
-    let bytes length module procedure operation-index kind do
-        bytes length "operation" module procedure operation-index frog-cli-find-inspect-indexed-line
+func frog-cli-inspect-operation-kind-is ptr int int int int String -- bool do
+    let bytes length module function operation-index kind do
+        bytes length "operation" module function operation-index frog-cli-find-inspect-indexed-line
         let line line-length found do
             if found do line line-length 16 kind frog-cli-tsv-field-equals else false end
         end
     end
 end
 
-proc frog-cli-inspect-macro-flow ptr int -- bool do
+func frog-cli-inspect-macro-flow ptr int -- bool do
     let bytes length do
-        bytes length "macro-flow" 4 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
+        bytes length "macro-flow" 4 frog-cli-inspect-function-base
+        let module function operation-count valid do
             valid operation-count 1 == &&
-            bytes length module procedure 3 "return" frog-cli-inspect-block-is &&
-            bytes length module procedure 0 "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
-            bytes length module procedure 3 "[int]" "[int]" frog-cli-inspect-block-types-are &&
-            bytes length module procedure 0 5 frog-cli-inspect-block-instruction-count-is &&
-            bytes length module procedure 0 "macro_call" frog-cli-inspect-operation-kind-is &&
+            bytes length module function 3 "return" frog-cli-inspect-block-is &&
+            bytes length module function 0 "[int]" "[int,bool]" frog-cli-inspect-block-types-are &&
+            bytes length module function 3 "[int]" "[int]" frog-cli-inspect-block-types-are &&
+            bytes length module function 0 5 frog-cli-inspect-block-instruction-count-is &&
+            bytes length module function 0 "macro_call" frog-cli-inspect-operation-kind-is &&
         end
     end
 end
 
-proc frog-cli-inspect-main-cfg ptr int -- bool do
+func frog-cli-inspect-main-cfg ptr int -- bool do
     let bytes length do
-        bytes length "main" 1 frog-cli-inspect-procedure-base
-        let module procedure operation-count valid do
+        bytes length "main" 1 frog-cli-inspect-function-base
+        let module function operation-count valid do
             valid operation-count 0 == &&
-            bytes length module procedure 0 "return" frog-cli-inspect-block-is &&
-            bytes length module procedure 0 "[]" "[]" frog-cli-inspect-block-types-are &&
+            bytes length module function 0 "return" frog-cli-inspect-block-is &&
+            bytes length module function 0 "[]" "[]" frog-cli-inspect-block-types-are &&
         end
     end
 end
 
-proc frog-cli-inspect-cfg FrogTestContext* -- do
+func frog-cli-inspect-cfg FrogTestContext* -- do
     let context do
         2 context frog-cli-argv
         let arguments do
@@ -1000,12 +1000,12 @@ proc frog-cli-inspect-cfg FrogTestContext* -- do
                 let bytes length do
                     result @CompletedProcess.returncode 0 ==
                     result @CompletedProcess.stderr_len 0 == &&
-                    bytes length "frogc-inspect\t4\n" String.bytes "frogc-inspect\t4\n" String.len bytes-starts-with &&
+                    bytes length "frogc-inspect\t6\n" String.bytes "frogc-inspect\t6\n" String.len bytes-starts-with &&
                       bytes length
-                          "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tinstruction_count\texpansion_count\tblock_count"
+                          "fields\tfunc\tmodule\tindex\tname\toperation_count\tbinding_local_count\tinstruction_count\texpansion_count\tblock_count"
                     frog-bytes-contain-line &&
                       bytes length
-                          "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tinstruction_start\tinstruction_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types"
+                          "fields\tblock\tfunc_module\tfunc_index\tindex\tsource_module\tstart_token\tinstruction_start\tinstruction_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types"
                     frog-bytes-contain-line &&
                     bytes length frog-cli-inspect-straight &&
                     bytes length frog-cli-inspect-if-else &&
@@ -1025,7 +1025,7 @@ proc frog-cli-inspect-cfg FrogTestContext* -- do
     end
 end
 
-proc frog-cli-inspect-builtins FrogTestContext* -- do
+func frog-cli-inspect-builtins FrogTestContext* -- do
     let context do
         3 context frog-cli-argv
         let arguments do
@@ -1047,7 +1047,7 @@ proc frog-cli-inspect-builtins FrogTestContext* -- do
     end
 end
 
-proc frog-cli-inspect-builtins-lexemes FrogTestContext* -- do
+func frog-cli-inspect-builtins-lexemes FrogTestContext* -- do
     let context do
         4 context frog-cli-argv
         let arguments do
@@ -1060,7 +1060,7 @@ proc frog-cli-inspect-builtins-lexemes FrogTestContext* -- do
                 result @CompletedProcess.returncode 0 ==
                 result @CompletedProcess.stderr_len 0 == &&
                   result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "frogc-inspect\t5\n" String.bytes "frogc-inspect\t5\n" String.len bytes-starts-with &&
+                "frogc-inspect\t7\n" String.bytes "frogc-inspect\t7\n" String.len bytes-starts-with &&
                   result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                       "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.bytes
                 "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.len bytes-contain &&
@@ -1077,7 +1077,7 @@ proc frog-cli-inspect-builtins-lexemes FrogTestContext* -- do
     end
 end
 
-proc frog-cli-inspect-bindings FrogTestContext* -- do
+func frog-cli-inspect-bindings FrogTestContext* -- do
     let context do
         2 context frog-cli-argv
         let arguments do
@@ -1106,8 +1106,8 @@ proc frog-cli-inspect-bindings FrogTestContext* -- do
                       "binding_local\t0\t0\t10\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t11\t0\t42\tleft\t11\tint\n" String.bytes
                 "binding_local\t0\t0\t10\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t11\t0\t42\tleft\t11\tint\n" String.len bytes-contain &&
                   result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                      "procedure\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.bytes
-                "procedure\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.len bytes-contain &&
+                      "func\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.bytes
+                "func\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.len bytes-contain &&
                   result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                       "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.bytes
                 "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.len bytes-contain &&
@@ -1119,7 +1119,7 @@ proc frog-cli-inspect-bindings FrogTestContext* -- do
     end
 end
 
-proc frog-cli-check-cursor-occurrence String int String String int int int int int String FrogTestContext* -- do
+func frog-cli-check-cursor-occurrence String int String String int int int int int String FrogTestContext* -- do
     let path offset role semantic-class identity-module identity-index identity-subindex binding-module binding-index name context do
         path offset context frog-cli-cursor-file
         let result do
@@ -1133,40 +1133,40 @@ proc frog-cli-check-cursor-occurrence String int String String int int int int i
     end
 end
 
-proc frog-cli-cursor-compound-spans FrogTestContext* -- do
+func frog-cli-cursor-compound-spans FrogTestContext* -- do
     let context do
         "test/cases/cli/cursor_semantics.frog"
         let path do path String.bytes path String.len read-file
             let source source-length success do
                 success path assert
 
-                source source-length "proc choose int" frog-cli-fixture-marker 5 +
-                let offset do path offset "declaration" "procedure" 0 0 0 1 - 0 1 - 0 1 -
+                source source-length "func choose int" frog-cli-fixture-marker 5 +
+                let offset do path offset "declaration" "func" 0 0 0 1 - 0 1 - 0 1 -
                     "cli/cursor-declaration" context frog-cli-check-cursor-occurrence
                 end
 
                 source source-length "@Point.x" frog-cli-fixture-marker
                 let offset do
-                    path offset 1 + "reference" "record_type" 0 0 0 1 - 0 3
-                    "cli/cursor-record-owner" context frog-cli-check-cursor-occurrence
-                    path offset 7 + "reference" "record_field" 0 0 0 0 1 - 0 1 -
-                    "cli/cursor-record-field" context frog-cli-check-cursor-occurrence
+                    path offset 1 + "reference" "struct_type" 0 0 0 1 - 0 3
+                    "cli/cursor-struct-owner" context frog-cli-check-cursor-occurrence
+                    path offset 7 + "reference" "struct_field" 0 0 0 0 1 - 0 1 -
+                    "cli/cursor-struct-field" context frog-cli-check-cursor-occurrence
                 end
 
                 source source-length "Maybe:some" frog-cli-fixture-marker
                 let offset do
-                    path offset "reference" "union_type" 0 0 0 1 - 0 4
-                    "cli/cursor-union-owner" context frog-cli-check-cursor-occurrence
-                    path offset 6 + "reference" "union_case" 0 0 1 0 1 - 0 1 -
-                    "cli/cursor-union-case" context frog-cli-check-cursor-occurrence
+                    path offset "reference" "enum_type" 0 0 0 1 - 0 4
+                    "cli/cursor-enum-owner" context frog-cli-check-cursor-occurrence
+                    path offset 6 + "reference" "enum_case" 0 0 1 0 1 - 0 1 -
+                    "cli/cursor-enum-case" context frog-cli-check-cursor-occurrence
                 end
 
                 source source-length "Mapper:ref:choose" frog-cli-fixture-marker
                 let offset do
                     path offset "reference" "function_type" 0 0 0 1 - 0 5
                     "cli/cursor-function-owner" context frog-cli-check-cursor-occurrence
-                    path offset 11 + "reference" "procedure" 0 0 0 1 - 0 6
-                    "cli/cursor-function-procedure" context frog-cli-check-cursor-occurrence
+                    path offset 11 + "reference" "func" 0 0 0 1 - 0 6
+                    "cli/cursor-function-func" context frog-cli-check-cursor-occurrence
                 end
 
                 source free
@@ -1175,7 +1175,7 @@ proc frog-cli-cursor-compound-spans FrogTestContext* -- do
     end
 end
 
-proc frog-cli-cursor-macro-specializations FrogTestContext* -- do
+func frog-cli-cursor-macro-specializations FrogTestContext* -- do
     let context do
         "test/cases/cli/cursor_semantics.frog"
         let path do path String.bytes path String.len read-file
@@ -1187,11 +1187,11 @@ proc frog-cli-cursor-macro-specializations FrogTestContext* -- do
                     let result do
                         result frog-cli-cursor-succeeded
                         result @CompletedProcess.stdout result @CompletedProcess.stdout_len "occurrence\t" frog-count-lines-starting-with 2 == &&
-                        result "reference" "procedure" 0 0 0 1 - 0 6 frog-cli-cursor-occurrence-is &&
-                        result "reference" "procedure" 0 1 0 1 - 0 7 frog-cli-cursor-occurrence-is &&
+                        result "reference" "func" 0 0 0 1 - 0 6 frog-cli-cursor-occurrence-is &&
+                        result "reference" "func" 0 1 0 1 - 0 7 frog-cli-cursor-occurrence-is &&
                         result "[int]" frog-cli-cursor-has-stack &&
                         result "[bool]" frog-cli-cursor-has-stack &&
-                        result frog-cli-count-procedure-contexts-with-parent 2 == &&
+                        result frog-cli-count-func-contexts-with-parent 2 == &&
                         "cli/cursor-macro-specializations" context frog-check
                         result completed-process-free
                     end
@@ -1215,7 +1215,7 @@ proc frog-cli-cursor-macro-specializations FrogTestContext* -- do
     end
 end
 
-proc frog-cli-cursor-locals FrogTestContext* -- do
+func frog-cli-cursor-locals FrogTestContext* -- do
     let context do
         "test/cases/cli/cursor_semantics.frog"
         let path do path String.bytes path String.len read-file
@@ -1250,14 +1250,14 @@ proc frog-cli-cursor-locals FrogTestContext* -- do
     end
 end
 
-proc frog-cli-cursor-builtin-shadowing FrogTestContext* -- do
+func frog-cli-cursor-builtin-shadowing FrogTestContext* -- do
     let context do
         "const drop 7 end
-proc shadow -- int do
+func shadow -- int do
     drop
 end
 
-proc main -- do
+func main -- do
     shadow let ignored do end
 end
 "
@@ -1277,25 +1277,25 @@ end
     end
 end
 
-proc frog-cli-cursor-builtin-overloads FrogTestContext* -- do
+func frog-cli-cursor-builtin-overloads FrogTestContext* -- do
     let context do
-        "proc + int int -- int do
+        "func + int int -- int do
     let left right do left end
 end
 
-proc main -- do end
+func main -- do end
 "
         let same-source do
-            "proc + String String -- String do
+            "func + String String -- String do
     let left right do left end
 end
 
-proc main -- do end
+func main -- do end
 "
             let distinct-source do
                 "macro + 1 end
 
-proc main -- do end
+func main -- do end
 "
                 let macro-source do
                     same-source same-source String.len context frog-cli-cursor-stdin
@@ -1303,11 +1303,11 @@ proc main -- do end
                         macro-source macro-source String.len context frog-cli-cursor-stdin
                     let same-result distinct-result macro-result do
                         same-result @CompletedProcess.stdout same-result @CompletedProcess.stdout_len
-                        "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                        "\t2\t+\tfunc\t" String.bytes "\t2\t+\tfunc\t" String.len bytes-count
                           distinct-result @CompletedProcess.stdout distinct-result @CompletedProcess.stdout_len
-                          "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                          "\t2\t+\tfunc\t" String.bytes "\t2\t+\tfunc\t" String.len bytes-count
                             macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
-                            "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                            "\t2\t+\tfunc\t" String.bytes "\t2\t+\tfunc\t" String.len bytes-count
                         let same-count distinct-count macro-count do
                             same-result frog-cli-cursor-succeeded
                             distinct-result frog-cli-cursor-succeeded &&
@@ -1329,29 +1329,29 @@ proc main -- do end
     end
 end
 
-proc frog-cli-cursor-local-precedence FrogTestContext* -- do
+func frog-cli-cursor-local-precedence FrogTestContext* -- do
     let context do
         "macro m 99 end
 
-proc main -- do
+func main -- do
     1 let m do
         m drop
     end
 end
 "
         let macro-source do
-            "record R
+            "struct R
     x int
 end
 
-proc main -- do
+func main -- do
     1 let R do
         R drop
     end
 end
 "
-            let record-source do
-                "proc main -- do
+            let struct-source do
+                "func main -- do
     1 let int do
         int drop
     end
@@ -1360,11 +1360,11 @@ end
                 let primitive-source do
                     macro-source macro-source String.bytes macro-source String.len "m drop" frog-cli-fixture-marker
                     context frog-cli-cursor-stdin
-                      record-source record-source String.bytes record-source String.len "R drop" frog-cli-fixture-marker
+                      struct-source struct-source String.bytes struct-source String.len "R drop" frog-cli-fixture-marker
                       context frog-cli-cursor-stdin
                         primitive-source primitive-source String.bytes primitive-source String.len "int drop" frog-cli-fixture-marker
                         context frog-cli-cursor-stdin
-                    let macro-result record-result primitive-result do
+                    let macro-result struct-result primitive-result do
                         macro-result frog-cli-cursor-succeeded
                           macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
                         "\treference\tmacro\t" String.bytes "\treference\tmacro\t" String.len bytes-contain &&
@@ -1372,12 +1372,12 @@ end
                         "\t1\tm\tmacro\t" String.bytes "\t1\tm\tmacro\t" String.len bytes-contain &&
                           macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
                         "\t0\tm\tlocal\t" String.bytes "\t0\tm\tlocal\t" String.len bytes-contain ! &&
-                        record-result frog-cli-cursor-succeeded &&
-                          record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
-                        "\treference\trecord_type\t" String.bytes "\treference\trecord_type\t" String.len bytes-contain &&
-                          record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
-                        "\t1\tR\trecord_type\t" String.bytes "\t1\tR\trecord_type\t" String.len bytes-contain &&
-                          record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                        struct-result frog-cli-cursor-succeeded &&
+                          struct-result @CompletedProcess.stdout struct-result @CompletedProcess.stdout_len
+                        "\treference\tstruct_type\t" String.bytes "\treference\tstruct_type\t" String.len bytes-contain &&
+                          struct-result @CompletedProcess.stdout struct-result @CompletedProcess.stdout_len
+                        "\t1\tR\tstruct_type\t" String.bytes "\t1\tR\tstruct_type\t" String.len bytes-contain &&
+                          struct-result @CompletedProcess.stdout struct-result @CompletedProcess.stdout_len
                         "\t0\tR\tlocal\t" String.bytes "\t0\tR\tlocal\t" String.len bytes-contain ! &&
                         primitive-result frog-cli-cursor-succeeded &&
                           primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
@@ -1386,7 +1386,7 @@ end
                         "\t0\tint\tlocal\t" String.bytes "\t0\tint\tlocal\t" String.len bytes-contain ! &&
                         "cli/cursor-local-precedence" context frog-check
                         macro-result completed-process-free
-                        record-result completed-process-free
+                        struct-result completed-process-free
                         primitive-result completed-process-free
                     end
                 end
@@ -1395,7 +1395,7 @@ end
     end
 end
 
-proc frog-cli-cursor-import-overloads FrogTestContext* -- do
+func frog-cli-cursor-import-overloads FrogTestContext* -- do
     let context do
         "test/cases/cli/cursor_import/main.frog"
         let path do path String.bytes path String.len read-file
@@ -1411,13 +1411,13 @@ proc frog-cli-cursor-import-overloads FrogTestContext* -- do
                     binding-result frog-cli-cursor-succeeded
                       binding-result @CompletedProcess.stdout binding-result @CompletedProcess.stdout_len
                     "occurrence\t" frog-count-lines-starting-with 2 == &&
-                    binding-result "import_binding" "procedure" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
-                    binding-result "import_binding" "procedure" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
+                    binding-result "import_binding" "func" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
+                    binding-result "import_binding" "func" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
                     int-result frog-cli-cursor-succeeded &&
-                    int-result "reference" "procedure" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
+                    int-result "reference" "func" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
                     int-result "[int]" frog-cli-cursor-has-stack &&
                     bool-result frog-cli-cursor-succeeded &&
-                    bool-result "reference" "procedure" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
+                    bool-result "reference" "func" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
                     bool-result "[bool]" frog-cli-cursor-has-stack &&
                     "cli/cursor-import-overloads" context frog-check
                     binding-result completed-process-free
@@ -1430,7 +1430,7 @@ proc frog-cli-cursor-import-overloads FrogTestContext* -- do
     end
 end
 
-proc frog-cli-cursor-positions FrogTestContext* -- do
+func frog-cli-cursor-positions FrogTestContext* -- do
     let context do
         "test/cases/cli/cursor_semantics.frog"
         let path do path String.bytes path String.len read-file
@@ -1472,13 +1472,13 @@ proc frog-cli-cursor-positions FrogTestContext* -- do
     end
 end
 
-proc frog-cli-cursor-malformed FrogTestContext* -- do
+func frog-cli-cursor-malformed FrogTestContext* -- do
     let context do
-        "proc main -- do nope end\n"
+        "func main -- do nope end\n"
         let source do source source String.bytes source String.len "nope" String.bytes "nope" String.len bytes-index-of
             context frog-cli-cursor-stdin
             let result do
-                result "" "<stdin>:1:17:\n  proc main -- do nope end\n                  ^^^^\nerror: unknown word: nope\n" 1
+                result "" "<stdin>:1:17:\n  func main -- do nope end\n                  ^^^^\nerror: unknown word: nope\n" 1
                 frog-process-equals
                 "cli/cursor-malformed" context frog-check
                 result completed-process-free
@@ -1487,9 +1487,9 @@ proc frog-cli-cursor-malformed FrogTestContext* -- do
     end
 end
 
-proc frog-cli-filter-debug-invariant FrogTestContext* -- do
+func frog-cli-filter-debug-invariant FrogTestContext* -- do
     let context do
-        "proc main -- do 1 2 + print end
+        "func main -- do 1 2 + print end
 "
           "frogc: debug: +: before [int int]
 frogc: debug: +: after [int]
@@ -1526,7 +1526,7 @@ frogc: debug: print: after []
     end
 end
 
-proc run-cli-cases FrogTestContext* -- do
+func run-cli-cases FrogTestContext* -- do
     let context do
         "-h" "Usage:
   frogc [--debug] [--release] < source.frog > source.c
@@ -1616,15 +1616,15 @@ Try `frogc --help`.
 Try `frogc --help`.
 " 2 "cli/cursor-offset-out-of-range" context frog-cli-case-4
 
-        "proc helper int -- int do 1 + end
-proc main -- do 41 helper drop end
+        "func helper int -- int do 1 + end
+func main -- do 41 helper drop end
 " "" "" 0 "cli/check-stdin" context frog-cli-check-stdin
 
-        "proc early -- do end
-proc main -- do end
-proc late -- do nope end
+        "func early -- do end
+func main -- do end
+func late -- do nope end
 " "" "<stdin>:3:17:
-  proc late -- do nope end
+  func late -- do nope end
                   ^^^^
 error: unknown word: nope
 " 1 "cli/check-stdin-late-error" context frog-cli-check-stdin
@@ -1640,20 +1640,20 @@ Try `frogc --help`.
 Try `frogc --help`.
 " 2 "cli/check-too-many-files" context frog-cli-case-3
 
-        "proc a -- int do 1 end
-proc b -- int do 2 end
-proc c -- int do 3 end
-proc formatted -- int do
+        "func a -- int do 1 end
+func b -- int do 2 end
+func c -- int do 3 end
+func formatted -- int do
    a
 b
     +
  c
 *
 end
-" "proc a -- int do 1 end
-proc b -- int do 2 end
-proc c -- int do 3 end
-proc formatted -- int do
+" "func a -- int do 1 end
+func b -- int do 2 end
+func c -- int do 3 end
+func formatted -- int do
     a
       b
     +
@@ -1662,42 +1662,64 @@ proc formatted -- int do
 end
 " "" 0 "cli/fmt-stdin-expanded-stack" context frog-cli-fmt-stdin
 
-        "proc a -- int do 1 end
-proc b -- int do 2 end
-proc c -- int do 3 end
-proc formatted -- int int do
+        "func a -- int do 1 end
+func b -- int do 2 end
+func c -- int do 3 end
+func formatted -- int int do
 a
  b c +
    + dup
 end
-" "proc a -- int do 1 end
-proc b -- int do 2 end
-proc c -- int do 3 end
-proc formatted -- int int do
+" "func a -- int do 1 end
+func b -- int do 2 end
+func c -- int do 3 end
+func formatted -- int int do
     a
       b c +
       + dup
 end
 " "" 0 "cli/fmt-stdin-folded-line-boundary" context frog-cli-fmt-stdin
 
-        "record Entry
+        "func value -- int do
+1
+end
+struct Entry
+value int
+end
+enum Maybe
+case none
+case some int
+end
+" "func value -- int do
+    1
+end
+struct Entry
+    value int
+end
+enum Maybe
+    case none
+    case some int
+end
+" "" 0 "cli/fmt-stdin-declaration-keywords" context frog-cli-fmt-stdin
+
+        "struct Entry
 next ptr
 key ptr
 end
-proc release ptr -- do drop end
-proc formatted Entry* -- ptr do
+func release ptr -- do drop end
+func formatted Entry* -- ptr do
 let entry do
 entry @Entry.next
 entry @Entry.key release
 entry ptr cast release
 end
 end
-" "record Entry
+" "struct Entry
     next ptr
     key ptr
 end
-proc release ptr -- do drop end
-proc formatted Entry* -- ptr do
+func release ptr -- do drop end
+func formatted Entry* -- ptr do
     let entry do
         entry @Entry.next
         entry @Entry.key release
@@ -1706,7 +1728,7 @@ proc formatted Entry* -- ptr do
 end
 " "" 0 "cli/fmt-stdin-carried-value-cleanup-alignment" context frog-cli-fmt-stdin
 
-        "proc formatted -- do
+        "func formatted -- do
 1
 2
 3
@@ -1718,7 +1740,7 @@ print
 1 +
 print
 end
-" "proc formatted -- do
+" "func formatted -- do
     1
       2
         3
@@ -1732,17 +1754,17 @@ end
 end
 " "" 0 "cli/fmt-stdin-shuffle-boundaries" context frog-cli-fmt-stdin
 
-        "proc formatted -- int do
+        "func formatted -- int do
 1
 2 if true do drop else drop end
 end
-" "proc formatted -- int do
+" "func formatted -- int do
     1
     2 if true do drop else drop end
 end
 " "" 0 "cli/fmt-stdin-flow-owned-structured-line-boundary" context frog-cli-fmt-stdin
 
-        "proc formatted -- int do
+        "func formatted -- int do
 1
 2 if true do
 drop
@@ -1750,7 +1772,7 @@ else
 drop
 end
 end
-" "proc formatted -- int do
+" "func formatted -- int do
     1
       2 if true do
         drop
@@ -1760,13 +1782,13 @@ end
 end
 " "" 0 "cli/fmt-stdin-multiline-if-header-boundary" context frog-cli-fmt-stdin
 
-        "proc formatted -- int int do
+        "func formatted -- int int do
 1
 2 let value do
 value
 end
 end
-" "proc formatted -- int int do
+" "func formatted -- int int do
     1
     2 let value do
         value
@@ -1774,13 +1796,13 @@ end
 end
 " "" 0 "cli/fmt-stdin-multiline-let-header-boundary" context frog-cli-fmt-stdin
 
-        "proc formatted -- int int do
+        "func formatted -- int int do
 1
 2 while drop
 3 false do
 end
 end
-" "proc formatted -- int int do
+" "func formatted -- int int do
     1
     2 while drop
         3 false do
@@ -1788,45 +1810,45 @@ end
 end
 " "" 0 "cli/fmt-stdin-multiline-while-header-boundary" context frog-cli-fmt-stdin
 
-        "proc formatted -- int int do
+        "func formatted -- int int do
 1
 dup
 end
-" "proc formatted -- int int do
+" "func formatted -- int int do
     1
       dup
 end
 " "" 0 "cli/fmt-stdin-dup-boundary" context frog-cli-fmt-stdin
 
-        "proc pair -- int int do 1 2 end
-proc formatted -- int int do
+        "func pair -- int int do 1 2 end
+func formatted -- int int do
 pair
 end
-" "proc pair -- int int do 1 2 end
-proc formatted -- int int do
+" "func pair -- int int do 1 2 end
+func formatted -- int int do
     pair
 end
 " "" 0 "cli/fmt-stdin-two-value-producer-floor" context frog-cli-fmt-stdin
 
-        "proc effect -- do end
-proc formatted -- do
+        "func effect -- do end
+func formatted -- do
 effect
 end
-" "proc effect -- do end
-proc formatted -- do
+" "func effect -- do end
+func formatted -- do
     effect
 end
 " "" 0 "cli/fmt-stdin-zero-effect-floor" context frog-cli-fmt-stdin
 
-        "proc cond -- bool do true end
-proc formatted -- bool do
+        "func cond -- bool do true end
+func formatted -- bool do
 cond
 cond &&
 cond &&
 cond &&
 end
-" "proc cond -- bool do true end
-proc formatted -- bool do
+" "func cond -- bool do true end
+func formatted -- bool do
     cond
     cond &&
     cond &&
@@ -1858,7 +1880,7 @@ end
 end
 " "" 0 "cli/fmt-stdin-nested-constant" context frog-cli-fmt-stdin
 
-        "proc main -- do
+        "func main -- do
 if true do
 1 drop
 else
@@ -1875,7 +1897,7 @@ preserved drop
 end
 drop
 end
-" "proc main -- do
+" "func main -- do
     if true do
         1 drop
     else
@@ -1894,24 +1916,24 @@ end
 end
 " "" 0 "cli/fmt-stdin-structured-regions" context frog-cli-fmt-stdin
 
-        "proc formatted -- int do
+        "func formatted -- int do
 2 3 + if dup 5 == do drop 7 else drop 11 end
 end
-" "proc formatted -- int do
+" "func formatted -- int do
     2 3 + if dup 5 == do drop 7 else drop 11 end
 end
 " "" 0 "cli/fmt-stdin-structured-line-preserved" context frog-cli-fmt-stdin
 
-        "proc main -- do\r\n// comment\t  \r\n  \"first\r\n  second\" drop  \r\n\r\nend\r\n" "proc main -- do\r\n// comment\t  \r\n    \"first\r\n  second\" drop  \r\n\r\nend\r\n" "" 0
+        "func main -- do\r\n// comment\t  \r\n  \"first\r\n  second\" drop  \r\n\r\nend\r\n" "func main -- do\r\n// comment\t  \r\n    \"first\r\n  second\" drop  \r\n\r\nend\r\n" "" 0
         "cli/fmt-stdin-comments-literal-crlf" context frog-cli-fmt-stdin
 
-        "proc main -- do\n\"first\n  second\n  \" drop\nend\n" "proc main -- do\n    \"first\n  second\n  \" drop\nend\n" "" 0
+        "func main -- do\n\"first\n  second\n  \" drop\nend\n" "func main -- do\n    \"first\n  second\n  \" drop\nend\n" "" 0
         "cli/fmt-stdin-multiline-string-closing-lf" context frog-cli-fmt-stdin
 
-        "proc main -- do\r\"first\r  second\r  \" drop\rend\r" "proc main -- do\r    \"first\r  second\r  \" drop\rend\r" "" 0
+        "func main -- do\r\"first\r  second\r  \" drop\rend\r" "func main -- do\r    \"first\r  second\r  \" drop\rend\r" "" 0
         "cli/fmt-stdin-multiline-string-lone-cr" context frog-cli-fmt-stdin
 
-        "proc formatted -- int do\n1\nlet value do\nvalue\nend\nend\n" "proc formatted -- int do\n    1\n    let value do\n        value\n    end\nend\n" "" 0
+        "func formatted -- int do\n1\nlet value do\nvalue\nend\nend\n" "func formatted -- int do\n    1\n    let value do\n        value\n    end\nend\n" "" 0
         "cli/fmt-stdin-let-keyword-syntax-indent" context frog-cli-fmt-stdin
 
         "  macro add-one
@@ -1922,7 +1944,7 @@ macro twice
 add-one
 add-one
 end
-proc formatted int -- int do
+func formatted int -- int do
 twice
 end
 " "  macro add-one
@@ -1933,40 +1955,40 @@ macro twice
 add-one
 add-one
 end
-proc formatted int -- int do
+func formatted int -- int do
     twice
 end
 " "" 0 "cli/fmt-stdin-preserved-macros" context frog-cli-fmt-stdin
 
-        "proc op bool -- int do drop 1 end
-proc op int int -- int do + end
+        "func op bool -- int do drop 1 end
+func op int int -- int do + end
 macro m op end
-proc one -- int int do
+func one -- int int do
 1
 true
 m
 end
-proc two -- int do
+func two -- int do
 1
 2
 m
 end
-" "proc op bool -- int do drop 1 end
-proc op int int -- int do + end
+" "func op bool -- int do drop 1 end
+func op int int -- int do + end
 macro m op end
-proc one -- int int do
+func one -- int int do
     1
       true
       m
 end
-proc two -- int do
+func two -- int do
     1
       2
     m
 end
 " "" 0 "cli/fmt-stdin-polymorphic-macro-preserved" context frog-cli-fmt-stdin
 
-        "proc expanded -- int do
+        "func expanded -- int do
 if false do
 if true do
 1
@@ -1979,10 +2001,10 @@ else
 4
 end
 end
-proc folded -- int do
+func folded -- int do
 if false do 1 elif true do 2 else 3 end
 end
-" "proc expanded -- int do
+" "func expanded -- int do
     if false do
         if true do
             1
@@ -1995,19 +2017,19 @@ end
         4
     end
 end
-proc folded -- int do
+func folded -- int do
     if false do 1 elif true do 2 else 3 end
 end
 " "" 0 "cli/fmt-stdin-elif-regions" context frog-cli-fmt-stdin
 
-        "proc formatted -- bool do
+        "func formatted -- bool do
 if \"do\" drop true do
 \"end\" drop true
 else
 false
 end
 end
-" "proc formatted -- bool do
+" "func formatted -- bool do
     if \"do\" drop true do
         \"end\" drop true
     else
@@ -2016,14 +2038,14 @@ end
 end
 " "" 0 "cli/fmt-stdin-keyword-literals" context frog-cli-fmt-stdin
 
-        "proc main -- do
+        "func main -- do
     if true do
         1 drop
     else
         2 drop
     end
 end
-" "proc main -- do
+" "func main -- do
     if true do
         1 drop
     else
@@ -2044,56 +2066,56 @@ const root
 end
 " "cli/fmt-file-relative-library" context frog-cli-fmt-file
 
-        "proc main -- do nope end
+        "func main -- do nope end
 " "" "<stdin>:1:17:
-  proc main -- do nope end
+  func main -- do nope end
                   ^^^^
 error: unknown word: nope
 " 1 "cli/fmt-stdin-invalid-source" context frog-cli-fmt-stdin
 
         "macro unused nope end
-proc main -- do end
+func main -- do end
 " "macro unused nope end
-proc main -- do end
+func main -- do end
 " "" 0 "cli/fmt-stdin-unused-macro-preserved" context frog-cli-fmt-stdin
 
-        "  macro unused nope end proc formatted -- int do
+        "  macro unused nope end func formatted -- int do
 1
 end
-" "  macro unused nope end proc formatted -- int do
+" "  macro unused nope end func formatted -- int do
     1
 end
 " "" 0 "cli/fmt-stdin-macro-owned-shared-line" context frog-cli-fmt-stdin
 
         "macro twice dup + end
-proc helper int -- int do 1 + end
-proc main -- do 20 twice helper drop end
-" "frogc-inspect	4
+func helper int -- int do 1 + end
+func main -- do 20 twice helper drop end
+" "frogc-inspect	6
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
-fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
-fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
-fields	instruction	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
-fields	expansion	procedure_module	procedure_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
-fields	block	procedure_module	procedure_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
+fields	func	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
+fields	operation	func_module	func_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
+fields	binding_local	func_module	func_index	index	source_module	name_token	name	local_id	value_type
+fields	instruction	func_module	func_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
+fields	expansion	func_module	func_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
+fields	block	func_module	func_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
 module	0	1	0	<stdin>
-procedure	0	0	helper	2	0	2	0	1
+func	0	0	helper	2	0	2	0	1
 operation	0	0	0	0	11	12	48	49	2	27	1	1	2	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[int]	[int,int]
-operation	0	0	1	0	12	13	50	51	2	29	2	0	1	2	1	procedure_call	1	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
+operation	0	0	1	0	12	13	50	51	2	29	2	0	1	2	1	func_call	1	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
 instruction	0	0	0	0	11	12	48	49	2	27	-1	1	1	2	literal	-1	-1	-1	-1	-1	-1	0	int	none	1	none	[int]	[int,int]
-instruction	0	0	1	0	12	13	50	51	2	29	-1	2	0	1	procedure_call	1	1	-1	-1	-1	-1	0	none	none	0	none	[int,int]	[int]
+instruction	0	0	1	0	12	13	50	51	2	29	-1	2	0	1	func_call	1	1	-1	-1	-1	-1	0	none	none	0	none	[int,int]	[int]
 block	0	0	0	0	11	0	2	return	0	13	-1	-1	[int]	[int]
-procedure	0	1	main	4	2	7	3	1
+func	0	1	main	4	2	7	3	1
 operation	0	1	0	0	18	19	72	74	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[]	[int]
 operation	0	1	1	0	19	20	75	80	3	20	1	0	1	1	1	macro_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
-operation	0	1	2	0	20	21	81	87	3	26	1	0	1	1	1	procedure_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
+operation	0	1	2	0	20	21	81	87	3	26	1	0	1	1	1	func_call	0	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
 operation	0	1	3	0	21	22	88	92	3	33	1	0	0	1	0	macro_call	1	2	-1	-1	-1	-1	0	none	none	none	[int]	[]
 instruction	0	1	0	0	18	19	72	74	3	17	-1	0	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	20	none	[]	[int]
 instruction	0	1	1	1	2	5	10	19	1	11	1	1	0	0	bind_locals	-1	-1	-1	-1	-1	0	1	none	none	0	none	[int]	[]
 instruction	0	1	2	1	2	5	10	19	1	11	1	0	0	1	restore_peek_locals	-1	-1	-1	-1	-1	0	1	none	none	0	none	[]	[int]
 instruction	0	1	3	1	5	6	20	21	1	21	1	1	1	2	local_load	1	3	-1	-1	0	-1	0	int	none	0	none	[int]	[int,int]
-instruction	0	1	4	0	3	4	16	17	1	17	0	2	0	1	procedure_call	1	1	-1	-1	-1	-1	0	none	none	0	none	[int,int]	[int]
-instruction	0	1	5	0	20	21	81	87	3	26	-1	1	0	1	procedure_call	0	0	-1	-1	-1	-1	0	none	none	0	none	[int]	[int]
+instruction	0	1	4	0	3	4	16	17	1	17	0	2	0	1	func_call	1	1	-1	-1	-1	-1	0	none	none	0	none	[int,int]	[int]
+instruction	0	1	5	0	20	21	81	87	3	26	-1	1	0	1	func_call	0	0	-1	-1	-1	-1	0	none	none	0	none	[int]	[int]
 instruction	0	1	6	1	20	23	76	84	3	12	2	1	0	0	bind_locals	-1	-1	-1	-1	-1	1	1	none	none	0	none	[int]	[]
 expansion	0	1	0	-1	0	19	0	0	1	4	1	0	1	[int]	[int]
 expansion	0	1	1	0	0	2	1	0	1	3	1	0	2	[int]	[int,int]
@@ -2104,31 +2126,31 @@ block	0	1	0	0	18	0	7	return	0	22	-1	-1	[]	[]
 module	1	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-stdin" context frog-cli-inspect-stdin
 
-        "proc early -- do end
-proc main -- do end
-proc late -- do nope end
+        "func early -- do end
+func main -- do end
+func late -- do nope end
 " "" "<stdin>:3:17:
-  proc late -- do nope end
+  func late -- do nope end
                   ^^^^
 error: unknown word: nope
 " 1 "cli/inspect-stdin-late-error" context frog-cli-inspect-stdin
 
         "// note
-proc main -- do end
-" "frogc-inspect	5
+func main -- do end
+" "frogc-inspect	7
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
-fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
-fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
-fields	instruction	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
-fields	expansion	procedure_module	procedure_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
-fields	block	procedure_module	procedure_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
+fields	func	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
+fields	operation	func_module	func_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
+fields	binding_local	func_module	func_index	index	source_module	name_token	name	local_id	value_type
+fields	instruction	func_module	func_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
+fields	expansion	func_module	func_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
+fields	block	func_module	func_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
 fields	lexeme	module	index	start_byte	length	kind	text
 fields	region	module	id	parent	kind	start_token	end_token	start_byte	end_byte
 module	0	1	0	<stdin>
 lexeme	0	0	0	7	comment	//<space>note
 lexeme	0	1	7	1	whitespace	\\n
-lexeme	0	2	8	4	token	proc
+lexeme	0	2	8	4	token	func
 lexeme	0	3	12	1	whitespace	<space>
 lexeme	0	4	13	4	token	main
 lexeme	0	5	17	1	whitespace	<space>
@@ -2140,22 +2162,22 @@ lexeme	0	10	24	3	token	end
 lexeme	0	11	27	1	whitespace	\\n
 region	0	0	-1	module	0	5	0	28
 region	0	1	0	declaration	0	5	8	27
-procedure	0	0	main	0	0	0	0	1
+func	0	0	main	0	0	0	0	1
 block	0	0	0	0	4	0	0	return	0	4	-1	-1	[]	[]
 module	1	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-lexemes" context frog-cli-inspect-lexemes
 
-        "proc
+        "func
 " "" "<stdin>:2:1:\n  \n  ^
-error: expected procedure name
-" 1 "cli/check-incomplete-procedure" context frog-cli-check-stdin
+error: expected function name
+" 1 "cli/check-incomplete-function" context frog-cli-check-stdin
 
         "from
 " "" "<stdin>:2:1:\n  \n  ^
 error: expected import path string
 " 1 "cli/check-incomplete-import" context frog-cli-check-stdin
 
-        "proc main -- do
+        "func main -- do
   \"unfinished
 " "" "<stdin>:2:3:
     \"unfinished
@@ -2163,7 +2185,7 @@ error: expected import path string
 error: unterminated string literal
 " 1 "cli/check-incomplete-string" context frog-cli-check-stdin
 
-        "proc main -- do
+        "func main -- do
   '
 " "" "<stdin>:2:3:
     '
@@ -2171,10 +2193,10 @@ error: unterminated string literal
 error: unterminated character literal
 " 1 "cli/check-incomplete-character" context frog-cli-check-stdin
 
-        "record Shape field
+        "struct Shape field
 " "" "<stdin>:2:1:\n  \n  ^
-error: expected record field type
-" 1 "cli/check-incomplete-record-field" context frog-cli-check-stdin
+error: expected struct field type
+" 1 "cli/check-incomplete-struct-field" context frog-cli-check-stdin
 
         "from \"missing.frog\" import value as
 " "" "<stdin>:2:1:\n  \n  ^
@@ -2191,7 +2213,7 @@ error: expected C type string
 error: expected -- in C call signature
 " 1 "cli/check-incomplete-c-call" context frog-cli-check-stdin
 
-        "proc main -- do
+        "func main -- do
   \"unfinished
 " "" "<stdin>:2:3:
     \"unfinished
@@ -2199,46 +2221,46 @@ error: expected -- in C call signature
 error: unterminated string literal
 " 1 "cli/inspect-lexemes-incomplete-string" context frog-cli-inspect-lexemes
 
-        "proc main -- do else end
+        "func main -- do else end
 " "" "<stdin>:1:17:
-  proc main -- do else end
+  func main -- do else end
                   ^^^^
 error: control-flow block stack underflow
 " 1 "cli/check-stray-else" context frog-cli-check-stdin
 
         "const value 1 0 / 2 end
-proc main -- do value drop end
+func main -- do value drop end
 " "" "<stdin>:1:17:
   const value 1 0 / 2 end
                   ^
 error: constant division by zero
 " 1 "cli/check-constant-stops-after-error" context frog-cli-check-stdin
 
-        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	4
+        "inspect" "test/cases/cli/inspect_relative/main.frog" "frogc-inspect	6
 fields	module	id	root	builtins	path
-fields	procedure	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
-fields	operation	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
-fields	binding_local	procedure_module	procedure_index	index	source_module	name_token	name	local_id	value_type
-fields	instruction	procedure_module	procedure_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
-fields	expansion	procedure_module	procedure_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
-fields	block	procedure_module	procedure_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
+fields	func	module	index	name	operation_count	binding_local_count	instruction_count	expansion_count	block_count
+fields	operation	func_module	func_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	before_depth	minimum_depth	after_depth	input_count	output_count	kind	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	intrinsic	private_operation	before_types	after_types
+fields	binding_local	func_module	func_index	index	source_module	name_token	name	local_id	value_type
+fields	instruction	func_module	func_index	index	source_module	start_token	end_token	start_byte	end_byte	line	column	expansion	before_depth	minimum_depth	after_depth	operation	target_module	target_index	secondary_module	secondary_index	local_id	binding_local_start	binding_local_count	value_type	secondary_type	payload	private_operation	before_types	after_types
+fields	expansion	func_module	func_index	id	parent	invocation_module	invocation_token	macro_module	macro_index	instruction_start	instruction_count	before_depth	minimum_depth	after_depth	before_types	after_types
+fields	block	func_module	func_index	index	source_module	start_token	instruction_start	instruction_count	terminator	terminator_module	terminator_token	first_target	second_target	entry_types	exit_types
 module	0	1	0	test/cases/cli/inspect_relative/main.frog
-procedure	0	0	main	3	1	3	1	1
+func	0	0	main	3	1	3	1	1
 operation	0	0	0	0	8	9	53	55	3	17	0	0	1	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[]	[int]
-operation	0	0	1	0	9	10	56	65	3	20	1	0	1	1	1	procedure_call	1	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
+operation	0	0	1	0	9	10	56	65	3	20	1	0	1	1	1	func_call	1	0	-1	-1	-1	-1	0	none	none	none	[int]	[int]
 operation	0	0	2	0	10	11	66	70	3	30	1	0	0	1	0	macro_call	2	2	-1	-1	-1	-1	0	none	none	none	[int]	[]
 instruction	0	0	0	0	8	9	53	55	3	17	-1	0	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	41	none	[]	[int]
-instruction	0	0	1	0	9	10	56	65	3	20	-1	1	0	1	procedure_call	1	0	-1	-1	-1	-1	0	none	none	0	none	[int]	[int]
+instruction	0	0	1	0	9	10	56	65	3	20	-1	1	0	1	func_call	1	0	-1	-1	-1	-1	0	none	none	0	none	[int]	[int]
 instruction	0	0	2	2	20	23	76	84	3	12	0	1	0	0	bind_locals	-1	-1	-1	-1	-1	0	1	none	none	0	none	[int]	[]
 expansion	0	0	0	-1	0	10	2	2	2	1	1	0	0	[int]	[]
 binding_local	0	0	0	2	21	a	0	int
 block	0	0	0	0	8	0	3	return	0	11	-1	-1	[]	[]
 module	1	0	0	helper.frog
-procedure	1	0	increment	2	0	2	0	1
+func	1	0	increment	2	0	2	0	1
 operation	1	0	0	1	6	7	29	30	1	30	1	1	2	0	1	literal	-1	-1	-1	-1	-1	-1	0	int	none	none	[int]	[int,int]
-operation	1	0	1	1	7	8	31	32	1	32	2	0	1	2	1	procedure_call	2	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
+operation	1	0	1	1	7	8	31	32	1	32	2	0	1	2	1	func_call	2	1	-1	-1	-1	-1	0	none	none	none	[int,int]	[int]
 instruction	1	0	0	1	6	7	29	30	1	30	-1	1	1	2	literal	-1	-1	-1	-1	-1	-1	0	int	none	1	none	[int]	[int,int]
-instruction	1	0	1	1	7	8	31	32	1	32	-1	2	0	1	procedure_call	2	1	-1	-1	-1	-1	0	none	none	0	none	[int,int]	[int]
+instruction	1	0	1	1	7	8	31	32	1	32	-1	2	0	1	func_call	2	1	-1	-1	-1	-1	0	none	none	0	none	[int,int]	[int]
 block	1	0	0	1	6	0	2	return	1	8	-1	-1	[int]	[int]
 module	2	0	1	stdlib/builtins.frog
 " "" 0 "cli/inspect-file-relative-import" context frog-cli-case-2
@@ -2277,48 +2299,48 @@ Try `frogc --help`.
 Try `frogc --help`.
 " 2 "cli/unknown-command" context frog-cli-case-1
 
-        "run" "-c" "proc main -- do 42 print end" "42
+        "run" "-c" "func main -- do 42 print end" "42
 " "" 0 "cli/run-code" context frog-cli-case-3
 
-        "run" "-c" "proc main -- do false \"normal failure\" assert end" "" "normal failure
+        "run" "-c" "func main -- do false \"normal failure\" assert end" "" "normal failure
 " 1 "cli/assert-normal" context frog-cli-case-3
 
-        "--release" "run" "-c" "proc main -- do false \"ignored\" assert 42 print end" "42
+        "--release" "run" "-c" "func main -- do false \"ignored\" assert 42 print end" "42
 " "" 0 "cli/release-implicit-assert" context frog-cli-case-4
 
-        "--release" "run" "-c" "proc condition -- bool do 1 print false end proc message -- String do 2 print \"ignored\" end proc main -- do condition message assert 3 print end" "1
+        "--release" "run" "-c" "func condition -- bool do 1 print false end func message -- String do 2 print \"ignored\" end func main -- do condition message assert 3 print end" "1
 2
 3
 " "" 0 "cli/release-assert-operands" context frog-cli-case-4
 
-        "--release" "run" "-c" "proc assert bool String -- do drop drop 7 print end proc main -- do false \"user\" assert end" "7
+        "--release" "run" "-c" "func assert bool String -- do drop drop 7 print end func main -- do false \"user\" assert end" "7
 " "" 0 "cli/release-shadowed-assert" context frog-cli-case-4
 
-        "--release" "run" "-c" "from \"stdlib/builtins.frog\" import assert as builtin-assert proc main -- do false \"explicit failure\" builtin-assert end" "" "explicit failure
+        "--release" "run" "-c" "from \"stdlib/builtins.frog\" import assert as builtin-assert func main -- do false \"explicit failure\" builtin-assert end" "" "explicit failure
 " 1 "cli/release-explicit-assert" context frog-cli-case-4
 
-        "--release" "run" "-c" "fn Check bool String -- end from \"stdlib/builtins.frog\" import assert as builtin-assert proc main -- do false \"reference failure\" Check:ref:builtin-assert Check:call end" "" "reference failure
+        "--release" "run" "-c" "fn Check bool String -- end from \"stdlib/builtins.frog\" import assert as builtin-assert func main -- do false \"reference failure\" Check:ref:builtin-assert Check:call end" "" "reference failure
 " 1 "cli/release-assert-reference" context frog-cli-case-4
 
-        "--release" "run" "-c" "proc assert int -- do drop end proc main -- do false \"ignored\" assert 8 print end" "8
+        "--release" "run" "-c" "func assert int -- do drop end func main -- do false \"ignored\" assert 8 print end" "8
 " "" 0 "cli/release-unmatched-assert-overload" context frog-cli-case-4
 
-        "--release" "run" "-c" "proc main -- do false 1 assert end" "" "<command>:1:25:
-  proc main -- do false 1 assert end
+        "--release" "run" "-c" "func main -- do false 1 assert end" "" "<command>:1:25:
+  func main -- do false 1 assert end
                           ^^^^^^
 error: assert: stack contract mismatch: expected [bool String], actual [bool int]
 " 1 "cli/release-assert-contract" context frog-cli-case-4
 
-        "--release" "--debug" "run" "-c" "proc main -- do false \"ignored\" assert end" "" "frogc: debug: assert: before [bool String]
+        "--release" "--debug" "run" "-c" "func main -- do false \"ignored\" assert end" "" "frogc: debug: assert: before [bool String]
 frogc: debug: assert: after []
 " 0 "cli/release-debug-order" context frog-cli-case-5
 
-        "--debug" "--release" "run" "-c" "proc main -- do false \"ignored\" assert end" "" "frogc: debug: assert: before [bool String]
+        "--debug" "--release" "run" "-c" "func main -- do false \"ignored\" assert end" "" "frogc: debug: assert: before [bool String]
 frogc: debug: assert: after []
 " 0 "cli/debug-release-order" context frog-cli-case-5
 
-        "run" "-c" "proc main -- do nope end" "" "<command>:1:17:
-  proc main -- do nope end
+        "run" "-c" "func main -- do nope end" "" "<command>:1:17:
+  func main -- do nope end
                   ^^^^
 error: unknown word: nope
 " 1 "cli/run-code-diagnostic-path" context frog-cli-case-3
@@ -2326,14 +2348,14 @@ error: unknown word: nope
         "build" "-r" "test/cases/cli/build_run.frog" "42
 " "" 0 "cli/build-run" context frog-cli-case-3
 
-        "--debug" "run" "-c" "proc main -- do 1 2 + print end" "3
+        "--debug" "run" "-c" "func main -- do 1 2 + print end" "3
 " "frogc: debug: +: before [int int]
 frogc: debug: +: after [int]
 frogc: debug: print: before [int]
 frogc: debug: print: after []
 " 0 "cli/debug-run-optimized" context frog-cli-case-4
 
-        "--debug" "run" "-c" "proc main -- do 1 dup ? + print end" "2
+        "--debug" "run" "-c" "func main -- do 1 dup ? + print end" "2
 " "frogc: debug: dup: before [int]
 frogc: debug: dup: after [int int]
 frogc: debug: ?: before [int int]
@@ -2344,9 +2366,9 @@ frogc: debug: print: before [int]
 frogc: debug: print: after []
 " 0 "cli/debug-run-macro" context frog-cli-case-4
 
-        "--debug" "run" "-c" "proc main -- do true 1 + end" "" "frogc: debug: +: before [bool int]
+        "--debug" "run" "-c" "func main -- do true 1 + end" "" "frogc: debug: +: before [bool int]
 <command>:1:24:
-  proc main -- do true 1 + end
+  func main -- do true 1 + end
                          ^
 error: +: stack contract mismatch: expected [int int], actual [bool int]
 " 1 "cli/debug-run-error" context frog-cli-case-4

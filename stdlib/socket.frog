@@ -28,9 +28,9 @@ c-value c-sigpipe SIGPIPE -- CInt end
 c-value c-sig-ign SIG_IGN -- CSignalHandler end
 c-value c-sig-err SIG_ERR -- CSignalHandler end
 
-proc socket-null-pointer? ptr -- bool do int cast 0 == end
+func socket-null-pointer? ptr -- bool do int cast 0 == end
 
-proc descriptor-read int ptr int -- int do
+func descriptor-read int ptr int -- int do
     let descriptor bytes length do
         if length 0 < do
             0 1 -
@@ -47,7 +47,7 @@ proc descriptor-read int ptr int -- int do
     end
 end
 
-proc descriptor-write int ptr int -- int do
+func descriptor-write int ptr int -- int do
     let descriptor bytes length do
         if length 0 < do
             0 1 -
@@ -64,7 +64,7 @@ proc descriptor-write int ptr int -- int do
     end
 end
 
-proc accept-connection int -- int do
+func accept-connection int -- int do
     let listener do
         listener 0 ptr cast 0 ptr cast c-accept
         while dup 0 < c-errno c-eintr == && do
@@ -75,18 +75,18 @@ proc accept-connection int -- int do
     end
 end
 
-proc local-socket-pair ptr -- int do
+func local-socket-pair ptr -- int do
     let descriptors do
         c-af-unix c-sock-stream 0 descriptors c-socketpair
         if dup 0 < do drop 0 1 - else drop 0 end
     end
 end
 
-proc shutdown-write int -- int do
+func shutdown-write int -- int do
     c-shut-wr c-shutdown
 end
 
-proc ignore-sigpipe -- bool do
+func ignore-sigpipe -- bool do
     c-sigpipe c-sig-ign c-signal int cast
     c-sig-err int cast !=
 end

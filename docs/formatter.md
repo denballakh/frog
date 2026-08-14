@@ -19,13 +19,13 @@ the command succeeds.
 The formatter performs full syntax and semantic analysis before writing any
 source. Invalid input produces a diagnostic on standard error, exits with
 status 1, and leaves standard output empty. A root module may contain only
-declarations and does not need a `main` procedure. File input resolves relative
+declarations and does not need a `main` function. File input resolves relative
 imports from the input file's directory.
 
 ## Indentation rule
 
 Four spaces represent one syntax level. Two spaces represent one stack column.
-Procedure bodies, constant expressions, conditions, control-flow arms, loop
+Function bodies, constant expressions, conditions, control-flow arms, loop
 bodies, and `let` or `peek` bodies are separate flow regions.
 
 For each region, `F` is the minimum stack depth at the region entry or at a
@@ -58,7 +58,7 @@ line's syntax depth and region. The complete line still determines its final
 stack depth. This allows compact control flow to remain folded:
 
 ```frog
-proc choose -- int do
+func choose -- int do
     2 3 + if dup 5 == do drop 7 else drop 11 end
 end
 ```
@@ -91,7 +91,7 @@ Macro declarations are preserved instead of formatted because their stack
 effects can depend on the types at each expansion site.
 
 Formatting requires one resolved stack effect for every executable source
-token it visits. Macro invocations inside procedures are formatted from the
-concrete net effect resolved while analyzing that procedure. Invalid source or
+token it visits. Macro invocations inside functions are formatted from the
+concrete net effect resolved while analyzing that function. Invalid source or
 an invalid loaded dependency produces a diagnostic instead of formatted
 output.

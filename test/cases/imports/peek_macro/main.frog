@@ -1,5 +1,5 @@
 from "lib.frog" import preserve-sum
 
-proc main -- do
+func main -- do
     3 4 preserve-sum print print print
 end

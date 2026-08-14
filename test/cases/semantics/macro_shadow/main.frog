@@ -1,12 +1,12 @@
 from "exported.frog" import imported
 
 macro early 10 + end
-proc early int -- int do 100 + end
+func early int -- int do 100 + end
 
-proc late int -- int do 200 + end
+func late int -- int do 200 + end
 macro late 20 + end
 
-proc main -- do
+func main -- do
     1 early print
     1 late print
     1 imported print

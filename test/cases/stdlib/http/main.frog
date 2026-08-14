@@ -19,13 +19,13 @@ const descriptor-byte-offset 4 end
 const read-chunk-bytes 4096 end
 const large-body-length 20000 end
 
-proc assert bool -- do
+func assert bool -- do
     let condition do
         if condition do else 1 exit end
     end
 end
 
-proc request-target-equal HttpRequest* String -- bool do
+func request-target-equal HttpRequest* String -- bool do
     let request expected do
         request @HttpRequest.target request @HttpRequest.target_len
             expected String.bytes expected String.len
@@ -33,7 +33,7 @@ proc request-target-equal HttpRequest* String -- bool do
     end
 end
 
-proc large-response -- HttpResponse* do
+func large-response -- HttpResponse* do
     large-body-length alloc
     let source do
         0
@@ -52,7 +52,7 @@ proc large-response -- HttpResponse* do
     end
 end
 
-proc test-handler HttpRequest* -- HttpResponse* do
+func test-handler HttpRequest* -- HttpResponse* do
     let request do
         if request "/large" request-target-equal do
             large-response
@@ -70,7 +70,7 @@ proc test-handler HttpRequest* -- HttpResponse* do
     end
 end
 
-proc write-all-from int ptr int int -- bool do
+func write-all-from int ptr int int -- bool do
     let descriptor bytes length offset do
         if offset length == do
             true
@@ -87,11 +87,11 @@ proc write-all-from int ptr int int -- bool do
     end
 end
 
-proc write-all int ptr int -- bool do
+func write-all int ptr int -- bool do
     0 write-all-from
 end
 
-proc read-to-end int ptr ByteBuffer* -- bool do
+func read-to-end int ptr ByteBuffer* -- bool do
     let descriptor scratch buffer do
         descriptor scratch read-chunk-bytes descriptor-read
         let count do
@@ -107,7 +107,7 @@ proc read-to-end int ptr ByteBuffer* -- bool do
     end
 end
 
-proc read-response int -- ByteBuffer* bool do
+func read-response int -- ByteBuffer* bool do
     let descriptor do
         0 byte-buffer-new
         let buffer do
@@ -123,7 +123,7 @@ proc read-response int -- ByteBuffer* bool do
     end
 end
 
-proc open-socket-pair -- int int do
+func open-socket-pair -- int int do
     descriptor-pair-bytes alloc
     let descriptors do
         descriptors local-socket-pair 0 == assert
@@ -133,7 +133,7 @@ proc open-socket-pair -- int int do
     end
 end
 
-proc serve-child int int int -- do
+func serve-child int int int -- do
     let server client expected-status do
         client close
         let client-close-status do
@@ -149,7 +149,7 @@ proc serve-child int int int -- do
     end
 end
 
-proc start-server int -- int int do
+func start-server int -- int int do
     let expected-status do
         open-socket-pair
         let server client do
@@ -166,7 +166,7 @@ proc start-server int -- int int do
     end
 end
 
-proc response-equal ByteBuffer* String -- bool do
+func response-equal ByteBuffer* String -- bool do
     let response expected do
         response @ByteBuffer.bytes response @ByteBuffer.len
             expected String.bytes expected String.len
@@ -174,7 +174,7 @@ proc response-equal ByteBuffer* String -- bool do
     end
 end
 
-proc run-request-fragments String String String -- do
+func run-request-fragments String String String -- do
     let first second expected do
         http-serve-ok start-server
         let client child do
@@ -208,11 +208,11 @@ proc run-request-fragments String String String -- do
     end
 end
 
-proc run-request String String -- do
+func run-request String String -- do
     let request expected do request "" expected run-request-fragments end
 end
 
-proc response-has-large-body ByteBuffer* -- bool do
+func response-has-large-body ByteBuffer* -- bool do
     let response do
         "HTTP/1.1 200 \r\nContent-Length: 20000\r\nConnection: close\r\n\r\n"
         let header do
@@ -239,7 +239,7 @@ proc response-has-large-body ByteBuffer* -- bool do
     end
 end
 
-proc run-large-request -- do
+func run-large-request -- do
     http-serve-ok start-server
     let client child do
         "GET /large HTTP/1.1\r\nHost: local\r\n\r\n"
@@ -273,7 +273,7 @@ proc run-large-request -- do
     end
 end
 
-proc run-peer-closed -- do
+func run-peer-closed -- do
     http-serve-peer-closed start-server
     let client child do
         client shutdown-write 0 ==
@@ -300,7 +300,7 @@ proc run-peer-closed -- do
     end
 end
 
-proc main -- do
+func main -- do
     "GET /frog HTTP/1.1\r\nHost: exam"
       "ple.test\r\nX-Ignored: yes\r\n\r\n"
         "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"

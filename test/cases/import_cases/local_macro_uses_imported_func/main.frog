@@ -1,0 +1,7 @@
+from "math.frog" import inc
+
+macro add_two inc inc end
+
+func main -- do
+    3 add_two print
+end

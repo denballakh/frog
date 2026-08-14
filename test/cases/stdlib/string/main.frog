@@ -17,13 +17,13 @@ from "stdlib/string.frog" import (
 )
 from "stdlib/libc.frog" import ( alloc free exit )
 
-proc assert bool -- do
+func assert bool -- do
     let condition do
         if condition do else 1 exit end
     end
 end
 
-proc main -- do
+func main -- do
     "same" "same" string-equal assert
     "same" "different" string-equal ! assert
     "abcabc" String.bytes 6 "abc" String.bytes 3 bytes-index-of 0 == assert

@@ -9,20 +9,20 @@ from "stdlib/string.frog" import (
 )
 from "stdlib/libc.frog" import ( alloc free exit )
 
-proc assert bool -- do
+func assert bool -- do
     let condition do
         if condition do else 1 exit end
     end
 end
 
-proc assert-null-result JsonValue bool -- do
+func assert-null-result JsonValue bool -- do
     let value found do
         found ! assert
         value JsonValue.null? assert
     end
 end
 
-proc parse String -- JsonValue do
+func parse String -- JsonValue do
     json-parse
     let value success do
         success assert
@@ -30,15 +30,15 @@ proc parse String -- JsonValue do
     end
 end
 
-proc assert-reject String -- do
+func assert-reject String -- do
     json-parse assert-null-result
 end
 
-proc assert-reject-bytes ptr int -- do
+func assert-reject-bytes ptr int -- do
     json-parse-bytes assert-null-result
 end
 
-proc assert-one-byte-reject int -- do
+func assert-one-byte-reject int -- do
     let byte do
         1 alloc
         let bytes do
@@ -49,7 +49,7 @@ proc assert-one-byte-reject int -- do
     end
 end
 
-proc assert-boolean JsonValue bool -- do
+func assert-boolean JsonValue bool -- do
     let value expected do
         value json-boolean
         let actual success do
@@ -59,7 +59,7 @@ proc assert-boolean JsonValue bool -- do
     end
 end
 
-proc assert-string JsonValue String -- do
+func assert-string JsonValue String -- do
     let value expected do
         value json-string-bytes
         let bytes length success do
@@ -69,7 +69,7 @@ proc assert-string JsonValue String -- do
     end
 end
 
-proc assert-number-bytes JsonValue String -- do
+func assert-number-bytes JsonValue String -- do
     let value expected do
         value json-number-bytes
         let bytes length success do
@@ -79,7 +79,7 @@ proc assert-number-bytes JsonValue String -- do
     end
 end
 
-proc assert-number-int-value JsonValue int -- do
+func assert-number-int-value JsonValue int -- do
     let value expected do
         value json-number-int
         let actual success do
@@ -89,7 +89,7 @@ proc assert-number-int-value JsonValue int -- do
     end
 end
 
-proc assert-number-not-int JsonValue -- do
+func assert-number-not-int JsonValue -- do
     json-number-int
     let ignored success do
         ignored drop
@@ -97,7 +97,7 @@ proc assert-number-not-int JsonValue -- do
     end
 end
 
-proc assert-int-number String String int -- do
+func assert-int-number String String int -- do
     let source lexeme expected do
         source parse
         let value do
@@ -109,7 +109,7 @@ proc assert-int-number String String int -- do
     end
 end
 
-proc assert-non-int-number String String -- do
+func assert-non-int-number String String -- do
     let source lexeme do
         source parse
         let value do
@@ -121,7 +121,7 @@ proc assert-non-int-number String String -- do
     end
 end
 
-proc assert-array-length JsonValue int -- do
+func assert-array-length JsonValue int -- do
     let value expected do
         value json-array-length
         let actual success do
@@ -131,7 +131,7 @@ proc assert-array-length JsonValue int -- do
     end
 end
 
-proc nested-array-json int -- ByteBuffer* do
+func nested-array-json int -- ByteBuffer* do
     let depth do
         depth 2 * 1 + byte-buffer-new
         let buffer do
@@ -153,7 +153,7 @@ proc nested-array-json int -- ByteBuffer* do
     end
 end
 
-proc main -- do
+func main -- do
     "null" parse
     let value do
         value JsonValue.null? assert

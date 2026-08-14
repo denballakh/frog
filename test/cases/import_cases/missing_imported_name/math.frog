@@ -1,1 +1,1 @@
-proc dec int -- int do 1 - end
+func dec int -- int do 1 - end

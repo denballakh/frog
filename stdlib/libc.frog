@@ -89,9 +89,9 @@ c-call c-memcpy memcpy CPtr CConstPtr CSize -- CPtr end
 
 const libc-status-bytes 8 end
 
-proc exit int -- do c-exit end
+func exit int -- do c-exit end
 
-proc alloc int -- ptr do
+func alloc int -- ptr do
     let size do
         if size 0 < do 1 exit end
         size c-malloc
@@ -99,27 +99,27 @@ proc alloc int -- ptr do
     end
 end
 
-proc free ptr -- do c-free end
-proc putc int -- do c-putchar drop end
-proc getc -- int do c-getchar end
-proc eputc int -- do c-stderr c-fputc drop end
+func free ptr -- do c-free end
+func putc int -- do c-putchar drop end
+func getc -- int do c-getchar end
+func eputc int -- do c-stderr c-fputc drop end
 
-proc fork -- int do
+func fork -- int do
     if 0 ptr cast c-fflush 0 != do 0 1 - else c-fork end
 end
 
-proc create-file ptr -- int do
+func create-file ptr -- int do
     c-o-wronly c-o-creat | c-o-trunc | 0o600 c-open
 end
 
-proc dup2 int int -- int do c-dup2 end
-proc close int -- int do c-close end
-proc chdir ptr -- int do c-chdir end
-proc get-current-directory ptr int -- bool do c-getcwd NULL != end
-proc execv ptr ptr -- int do c-execv end
-proc execvp ptr ptr -- int do c-execvp end
+func dup2 int int -- int do c-dup2 end
+func close int -- int do c-close end
+func chdir ptr -- int do c-chdir end
+func get-current-directory ptr int -- bool do c-getcwd NULL != end
+func execv ptr ptr -- int do c-execv end
+func execvp ptr ptr -- int do c-execvp end
 
-proc ensure-directory ptr -- int do
+func ensure-directory ptr -- int do
     let path do
         path 0o777 c-mkdir
         if dup 0 == do
@@ -142,7 +142,7 @@ proc ensure-directory ptr -- int do
     end
 end
 
-proc wait-child int -- int do
+func wait-child int -- int do
     let child do
         libc-status-bytes alloc
         let status do
@@ -174,25 +174,25 @@ proc wait-child int -- int do
     end
 end
 
-proc finish-child int -- do
+func finish-child int -- do
     let status do
         if c-stdout c-fflush 0 != do 1 else status end
         c-_exit
     end
 end
 
-proc reset-signal int -- do c-sig-dfl c-signal drop end
+func reset-signal int -- do c-sig-dfl c-signal drop end
 
-proc reset-child-signals -- do
+func reset-child-signals -- do
     c-sigint reset-signal
     c-sigterm reset-signal
     c-sigpipe reset-signal
     c-sighup reset-signal
 end
 
-proc read-file-failure -- ptr int bool do 0 ptr cast 0 false end
+func read-file-failure -- ptr int bool do 0 ptr cast 0 false end
 
-proc read-file-path ptr int -- ptr bool do
+func read-file-path ptr int -- ptr bool do
     let bytes length do
         if length 0 < do
             0 ptr cast false
@@ -215,12 +215,12 @@ proc read-file-path ptr int -- ptr bool do
     end
 end
 
-proc read-file-close-failure ptr -- ptr int bool do
+func read-file-close-failure ptr -- ptr int bool do
     c-fclose drop
     read-file-failure
 end
 
-proc read-file-data-failure ptr ptr -- ptr int bool do
+func read-file-data-failure ptr ptr -- ptr int bool do
     let data file do
         data c-free
         file c-fclose drop
@@ -228,7 +228,7 @@ proc read-file-data-failure ptr ptr -- ptr int bool do
     end
 end
 
-proc read-open-file ptr -- ptr int bool do
+func read-open-file ptr -- ptr int bool do
     let file do
         if file 0 c-seek-end c-fseek 0 != do
             file read-file-close-failure
@@ -265,7 +265,7 @@ proc read-open-file ptr -- ptr int bool do
     end
 end
 
-proc read-file ptr int -- ptr int bool do
+func read-file ptr int -- ptr int bool do
     read-file-path
     let path valid do
         if valid ! do

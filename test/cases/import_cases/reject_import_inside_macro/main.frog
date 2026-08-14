@@ -1,5 +1,5 @@
 macro bad from "math.frog" import inc end
 
-proc main -- do
+func main -- do
     bad
 end

@@ -1,17 +1,17 @@
-record Holder
+struct Holder
     value String
 end
 
-union MaybeString
+enum MaybeString
     case none
     case some String
 end
 
 fn StringIdentity String -- String end
 
-proc identity String -- String do end
+func identity String -- String do end
 
-proc main -- do
+func main -- do
     "typed" identity String.len print
 
     Holder:alloc
@@ -20,6 +20,6 @@ proc main -- do
         holder @Holder.value String.len print
     end
 
-    "union" MaybeString:some MaybeString.some String.len print
+    "enum" MaybeString:some MaybeString.some String.len print
     "call" StringIdentity:ref:identity StringIdentity:call String.len print
 end

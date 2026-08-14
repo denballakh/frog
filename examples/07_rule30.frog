@@ -1,12 +1,12 @@
 from "stdlib/libc.frog" import ( alloc putc )
 
-proc setcell int ptr int -- do
+func setcell int ptr int -- do
     let value buffer index do
         value u8 cast buffer index + u8* cast !
     end
 end
 
-proc clear ptr -- do
+func clear ptr -- do
     let buf do
         0
         while dup 40 < do
@@ -19,7 +19,7 @@ proc clear ptr -- do
     end
 end
 
-proc rendercell int -- do
+func rendercell int -- do
     if dup 0 == do
         drop ' ' putc
     else
@@ -27,7 +27,7 @@ proc rendercell int -- do
     end
 end
 
-proc render ptr -- do
+func render ptr -- do
     let buf do
         0
         while dup 40 < do
@@ -41,7 +41,7 @@ proc render ptr -- do
     end
 end
 
-proc step ptr ptr -- do
+func step ptr ptr -- do
     let src dst do
         0
         while dup 40 < do
@@ -70,7 +70,7 @@ proc step ptr ptr -- do
     end
 end
 
-proc main -- do
+func main -- do
     40 alloc 40 alloc
     let a b do
         a clear

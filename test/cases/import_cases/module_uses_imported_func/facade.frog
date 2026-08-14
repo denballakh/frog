@@ -1,0 +1,4 @@
+
+from "math.frog" import inc
+
+func add_two int -- int do inc inc end

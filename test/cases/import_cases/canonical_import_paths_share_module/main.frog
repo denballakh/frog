@@ -1,6 +1,6 @@
 from "pkg/math.frog" import value
 from "pkg/../pkg/math.frog" import value
 
-proc main -- do
+func main -- do
     value print
 end

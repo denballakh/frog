@@ -1,0 +1,24 @@
+struct Point
+    x int
+    y int
+end
+
+func squared-distance Point -- int do
+    let point do
+        point @Point.x dup *
+          point @Point.y dup *
+        +
+    end
+end
+
+func main -- do
+    4 3 Point:new !Point.x !Point.y squared-distance print
+
+    Point:alloc
+    let point do
+        3 point !Point.x
+        4 point !Point.y
+        point @.x print
+        point @.y print
+    end
+end

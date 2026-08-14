@@ -1,2 +1,2 @@
 macro __intrinsic_user end
-proc main -- do end
+func main -- do end

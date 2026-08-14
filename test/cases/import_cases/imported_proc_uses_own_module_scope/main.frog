@@ -1,8 +1,0 @@
-from "lib.frog" import value
-
-proc helper -- int do 99 end
-
-proc main -- do
-    value print
-    helper print
-end

@@ -9,7 +9,7 @@ same boundary state.
 ## Stack columns
 
 Four spaces represent one syntax level. Two spaces represent one stack column.
-Procedure bodies, constant expressions, conditions, control-flow arms, loop
+Function bodies, constant expressions, conditions, control-flow arms, loop
 bodies, and `let` or `peek` bodies are separate flow regions.
 
 For one flow region, let `F` be the minimum stack depth at its entry or at a
@@ -98,7 +98,7 @@ recompute the boundary depths of every resulting line.
 ## Structured syntax
 
 Stack columns apply to sequences of executable tokens. Declarations, imports,
-record and union members, and `if`, `elif`, `else`, `while`, `let`, `peek`,
+struct and enum members, and `if`, `elif`, `else`, `while`, `let`, `peek`,
 `do`, and `end` establish ordinary syntactic indentation and formatting
 regions. Multiline conditions and bodies apply the stack-column rule within
 their respective regions. If one physical line crosses regions, its first
@@ -107,7 +107,7 @@ determines its final boundary depth. A syntax token that starts a line keeps
 ordinary syntax indentation.
 
 Formatting requires the resolved stack effect of every source token it formats,
-including overloaded procedure and macro invocation tokens. Literals and other
+including overloaded function and macro invocation tokens. Literals and other
 producers have effect `-- value`. Macro declarations are not formatted because
 their effects can depend on expansion context; physical lines whose first code
 token belongs to a macro declaration remain byte-for-byte unchanged. A
@@ -142,10 +142,10 @@ Additional useful tools enabled by the same compiler model:
 - call graphs, module-dependency graphs, unused-symbol detection, and other
   semantic checks;
 - stack-aware source refactoring, including safe rename and extraction of a
-  selected flow region into a procedure with an inferred stack effect;
-- test coverage and profiling reported in terms of Frog procedures and source
+  selected flow region into a function with an inferred stack effect;
+- test coverage and profiling reported in terms of Frog functions and source
   operations rather than generated C;
 - API documentation generated from exported declarations, stack effects,
-  records, unions, C bindings, and source comments;
+  structs, enums, C bindings, and source comments;
 - a WebAssembly backend and browser playground, once backend-independent IR and
   execution are established.

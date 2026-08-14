@@ -1,4 +1,4 @@
 macro broken else end
 
-proc main -- do
+func main -- do
 end

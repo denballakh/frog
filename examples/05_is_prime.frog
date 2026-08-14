@@ -1,4 +1,4 @@
-proc is_prime int -- bool do
+func is_prime int -- bool do
   // n
     dup 2 <
   // n f
@@ -40,18 +40,18 @@ proc is_prime int -- bool do
   // !f
 end
 
-proc is_prime_minimized int -- bool do
+func is_prime_minimized int -- bool do
     dup 2 < 2
     while rot dup rot dup rot < swap2 swap swap2
     do rot dup rot dup rot swap % 0 == swap2 rot rot || rot 1 + end
     drop swap drop !
 end
 
-proc show int -- do
+func show int -- do
     dup print is_prime print
 end
 
-proc main -- do
+func main -- do
     0 show
     1 show
     2 show

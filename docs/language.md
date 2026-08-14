@@ -1,15 +1,15 @@
 # FrogLang Language Reference
 
-FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal records, tagged unions, first-class function references, imports, constants, macros, C interop declarations, and block keywords such as `proc`, `record`, `union`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
+FrogLang is a small stack-based, concatenative, statically typed language. Programs use postfix stack operations, explicit stack-effect signatures, nominal structs, enums, first-class function references, imports, constants, macros, C interop declarations, and block keywords such as `func`, `struct`, `enum`, `fn`, `const`, `macro`, `if`, `else`, `while`, `do`, `end`, `let`, and `peek`.
 
 ## Contents
 
 - [Diagnostics](#diagnostics)
 - [Values and literals](#values-and-literals)
 - [Stack effects](#stack-effects)
-- [Procedures](#procedures)
-- [Records](#records)
-- [Tagged unions](#tagged-unions)
+- [Functions](#functions)
+- [Structs](#structs)
+- [Enums](#enums)
 - [Function references](#function-references)
 - [C interop](#c-interop)
 - [Macros](#macros)
@@ -50,8 +50,8 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 
 ## Values and literals
 
-- Supported runtime value classes are `int`, the exact-width integer types, `bool`, `ptr`, typed pointers, `String`, nominal record and union values, nominal function references, and `type`.
-- Procedure, record-field, union-payload, and function-reference signatures can name `int`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `bool`, `ptr`, `String`, and visible nominal types.
+- Supported runtime value classes are `int`, the exact-width integer types, `bool`, `ptr`, typed pointers, `String`, nominal struct and enum values, nominal function references, and `type`.
+- Function, struct-field, enum-payload, and function-reference signatures can name `int`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `bool`, `ptr`, `String`, and visible nominal types.
 - `int` is a target-sized signed integer. Integer literals are decimal, binary (`0b`), octal (`0o`), or hexadecimal (`0x`) chunks with an optional leading `+` or `-`. Literals outside the target `int` range are unsupported. Base prefixes are lowercase; hexadecimal digits may be uppercase or lowercase. A standalone `+` or `-` remains an arithmetic word.
 - `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, and `u64` are distinct static integer types. Integer literals are still `int`, so conversion to or between exact-width types requires `cast`; no implicit integer conversion is performed.
 - A trailing `*` names a typed pointer: `i8*`, `String*`, `Node*`, and `Node**` are valid. Pointer types are structural and canonicalized by their pointee, so repeated spelling and imported aliases of the same nominal type yield the same pointer type. Different pointee types remain distinct. `ptr` is the untyped raw-pointer boundary; casts are available between `ptr` and a typed pointer, but no implicit conversion is performed.
@@ -70,72 +70,72 @@ Stack effects are written with inputs before `--` and outputs after it. For exam
 
 The rightmost stack item is the top of the stack. For example, after `1 2 3`, the stack is `1 2 3`, with `3` on top.
 
-`frogc --debug` traces the complete compile-time type stack immediately before and after each outer source word. The trace is written to standard error, lists types from the bottom of the stack to the top, and does not change generated C or program output. Procedure calls, intrinsics, macros, local and constant references, type words, and nominal operations are traced. Literals, declarations, control keywords, `let`, and `peek` are not separate trace entries. A macro reports its aggregate effect under the caller's spelling; its expansion details are not exposed. If a word fails, its `before` entry precedes the normal diagnostic and there is no `after` entry.
+`frogc --debug` traces the complete compile-time type stack immediately before and after each outer source word. The trace is written to standard error, lists types from the bottom of the stack to the top, and does not change generated C or program output. Function calls, intrinsics, macros, local and constant references, type words, and nominal operations are traced. Literals, declarations, control keywords, `let`, and `peek` are not separate trace entries. A macro reports its aggregate effect under the caller's spelling; its expansion details are not exposed. If a word fails, its `before` entry precedes the normal diagnostic and there is no `after` entry.
 
 `frogc --release` omits calls resolved implicitly to the builtin `assert`, but
 still evaluates their operands. Explicitly imported, aliased, or shadowing
 assertions continue to run. Global `--debug` and `--release` options may appear
 in either order before a subcommand or before filter input.
 
-## Procedures
+## Functions
 
-Procedures use explicit stack-effect signatures:
+Functions declared with `func` use explicit stack-effect signatures:
 
 ```frog
-proc inc int -- int do
+func inc int -- int do
     1 +
 end
 ```
 
-Procedure calls are statically checked against declared stack contracts.
+Function calls are statically checked against declared stack contracts.
 
-A root program must define exactly one `main` procedure with the contract
+A root program must define exactly one `main` function with the contract
 `--`. Empty files and declaration-only root files without `main` are invalid.
 In every module, top-level source is limited to
-procedure, C interop, constant, record, union, function-reference, macro, and
+function, C interop, constant, struct, enum, function-reference, macro, and
 import declarations. Standalone executable instructions at the top level are
 rejected.
 
-## Records
+## Structs
 
-Records define nominal value types with typed fields; `Name*` is the corresponding typed pointer type:
+Structs define nominal value types with typed fields; `Name*` is the corresponding typed pointer type:
 
 ```frog
-record Node
+struct Node
     next Node*
     value int
     ready bool
 end
 
-proc value-of Node -- int do @Node.value end
+func value-of Node -- int do @Node.value end
 
-proc main -- do
+func main -- do
     true 41 Node:new !Node.value !Node.ready value-of print
 end
 ```
 
-`record Name field Type ... end` is a top-level declaration. Record and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Record, union, and function-reference fields store their values directly. A recursive inline record or union field is rejected; use a typed pointer such as `Name*` to make a recursive edge.
+`struct Name field Type ... end` is a top-level declaration. Struct and field names are ASCII-style identifiers. Field types may be primitive, typed-pointer, or visible nominal types. Struct, enum, and function-reference fields store their values directly. A recursive inline struct or enum field is rejected; use a typed pointer such as `Name*` to make a recursive edge.
 
-`Name:new` has stack effect `-- Name` and produces a zero-initialized value. `Name:alloc` has stack effect `-- Name*` and allocates a zero-initialized pointed-to value. `Name:sizeof` has stack effect `-- int` and pushes the size of the value without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable record. There are no default field values, implicit allocation, ownership tracking, or garbage collection.
+`Name:new` has stack effect `-- Name` and produces a zero-initialized value. `Name:alloc` has stack effect `-- Name*` and allocates a zero-initialized pointed-to value. `Name:sizeof` has stack effect `-- int` and pushes the size of the value without allocating. `String` may be used as a field type but is a reserved built-in type, not a user-declarable struct. There are no default field values, implicit allocation, ownership tracking, or garbage collection.
 
-`@Name.field` reads a field with stack effects `Name -- FieldType` and `Name* -- FieldType`. `!Name.field` is a functional setter for a value (`FieldType Name -- Name`) and a mutating setter for a pointer (`FieldType Name* --`). `@.field` and `!.field` infer `Name` from the value or pointer on top of the static stack after macro expansion, with the same respective stack effects. Exact macros named `@.field` or `!.field` take precedence over inferred access. Type-level operations use `:`, union variants use `.`, and record access uses the familiar read/write sigils.
+`@Name.field` reads a field with stack effects `Name -- FieldType` and `Name* -- FieldType`. `!Name.field` is a functional setter for a value (`FieldType Name -- Name`) and a mutating setter for a pointer (`FieldType Name* --`). `@.field` and `!.field` infer `Name` from the value or pointer on top of the static stack after macro expansion, with the same respective stack effects. Exact macros named `@.field` or `!.field` take precedence over inferred access. Type-level operations use `:`, enum variants use `.`, and struct access uses the familiar read/write sigils.
 
-Record value and pointer types are nominal. Two declarations with identical fields are different types, and field access requires a value or pointer to the declared owner type. Explicit `ptr` to record-pointer and record-pointer to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different record pointer types are rejected.
+Struct value and pointer types are nominal. Two declarations with identical fields are different types, and field access requires a value or pointer to the declared owner type. Explicit `ptr` to struct-pointer and struct-pointer to `ptr` casts are available for raw allocation and C interop boundaries; direct casts between different struct pointer types are rejected.
 
-See the runnable [records example](../examples/09_records.frog).
+See the runnable [structs example](../examples/09_structs.frog).
 
-## Tagged unions
+## Enums
 
-Tagged unions define nominal alternatives with zero or one typed payload per variant:
+Enums define nominal alternatives with zero or one typed payload per variant:
 
 ```frog
-union Result
+enum Result
     case ok int
     case error ptr
     case cancelled
 end
 
-proc main -- do
+func main -- do
     42 Result:ok
     if dup Result.ok? do
         Result.ok print
@@ -145,17 +145,17 @@ proc main -- do
 end
 ```
 
-`union Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. A union must declare at least one uniquely named variant. Payload types may be primitive, typed-pointer, or visible nominal types.
+`enum Name case Variant [PayloadType] ... end` is a top-level declaration. Repeating `case` makes payloadless variants unambiguous without relying on line breaks. An enum must declare at least one uniquely named variant. Payload types may be primitive, typed-pointer, or visible nominal types.
 
 `Name:variant` constructs a value, copying the declared payload when present. `Name.variant?` validates the stored tag, consumes the value, and produces a boolean (`Name -- bool`). Use `dup Name.variant?` when both the value and the predicate result are needed. `Name.variant` validates that the value has exactly that variant, consumes the value, and produces its payload; for a payloadless variant it only validates and consumes the value. Invalid tags and wrong-variant projections terminate the program with status 1.
 
-Union values and their payloads pass and copy by value. There is no allocation, ownership tracking, or size operation for unions.
+Enum values and their payloads pass and copy by value. There is no allocation, ownership tracking, or size operation for enums.
 
-Union types are nominal. Structurally identical declarations remain distinct, including through casts. Imported aliases and reexports retain the defining union's identity. Branching uses the existing `if`/`elif` constructs; matching is not exhaustiveness-checked.
+Enum types are nominal. Structurally identical declarations remain distinct, including through casts. Imported aliases and reexports retain the defining enum's identity. Branching uses the existing `if`/`elif` constructs; matching is not exhaustiveness-checked.
 
-An exact user-defined or imported macro may shadow a qualified record or union operation. Without such a macro, qualified nominal operations resolve before locals and procedures with the same spelling.
+An exact user-defined or imported macro may shadow a qualified struct or enum operation. Without such a macro, qualified nominal operations resolve before locals and functions with the same spelling.
 
-See the runnable [tagged-unions example](../examples/10_tagged_unions.frog).
+See the runnable [tagged-enums example](../examples/10_tagged_enums.frog).
 
 ## Function references
 
@@ -164,26 +164,26 @@ Named function-reference types describe a static Frog stack contract:
 ```frog
 fn Mapper int -- int end
 
-proc inc int -- int do 1 + end
+func inc int -- int do 1 + end
 
-proc apply int Mapper -- int do
+func apply int Mapper -- int do
     Mapper:call
 end
 
-proc main -- do
+func main -- do
     41 Mapper:ref:inc apply print
 end
 ```
 
-`fn Name <inputs> -- <outputs> end` is a top-level declaration. `Name:ref:procedure` produces a `Name` reference only when `procedure` resolves to a visible Frog procedure with exactly the declared input and output counts and types. Forward references, imported procedure aliases, recursive procedures, and C-call procedures are supported.
+`fn Name <inputs> -- <outputs> end` declares a nominal function-reference type; it does not declare an executable function. `Name:ref:function` produces a `Name` reference only when `function` resolves to a visible Frog function with exactly the declared input and output counts and types. Forward references, imported function aliases, recursive functions, and `c-call` functions are supported.
 
-Procedures may be overloaded by their complete ordered input contract. Their outputs do not distinguish overloads, so two procedures with the same name and inputs are a duplicate even if their outputs differ. A call selects the single visible overload whose inputs exactly match the top of the static stack; no match is a contract mismatch and multiple matches are ambiguous. Imports, aliases, and reexports preserve the complete overload family. User and imported overloads are considered before builtin procedures, but an unmatched user overload does not hide a matching builtin signature.
+Functions may be overloaded by their complete ordered input contract. Their outputs do not distinguish overloads, so two functions with the same name and inputs are a duplicate even if their outputs differ. A call selects the single visible overload whose inputs exactly match the top of the static stack; no match is a contract mismatch and multiple matches are ambiguous. Imports, aliases, and reexports preserve the complete overload family. User and imported overloads are considered before builtin functions, but an unmatched user overload does not hide a matching builtin signature.
 
-`Name:call` has stack effect `<inputs> Name -- <outputs>`: the function reference is on top of its inputs. Function-reference types are nominal, so independently declared types with identical contracts are not interchangeable. They may appear in procedure signatures, record fields, union payloads, and other function-reference contracts.
+`Name:call` has stack effect `<inputs> Name -- <outputs>`: the function reference is on top of its inputs. Function-reference types are nominal, so independently declared types with identical contracts are not interchangeable. They may appear in function signatures, struct fields, enum payloads, and other function-reference contracts.
 
-A function reference is opaque and can call only a procedure whose complete resolved contract matches the declared function-reference type. Function references cannot be cast to or from `int` or `ptr`, have no allocation or lifetime operations, and do not expose an underlying identity value.
+A function reference is opaque and can call only a function whose complete resolved contract matches the declared function-reference type. Function references cannot be cast to or from `int` or `ptr`, have no allocation or lifetime operations, and do not expose an underlying identity value.
 
-There are no anonymous functions, captured environments, closures, implicit contract coercions, or C callback conversions. Exact macros may shadow `Name:ref:procedure` or `Name:call`; otherwise qualified function operations have the same precedence over locals and procedures as other nominal operations.
+There are no anonymous functions, captured environments, closures, implicit contract coercions, or C callback conversions. Exact macros may shadow `Name:ref:function` or `Name:call`; otherwise qualified function-reference operations have the same precedence over locals and ordinary functions as other nominal operations.
 
 ## C interop
 
@@ -203,7 +203,7 @@ c-call length strlen CBytes -- CSize end
 c-call allocate malloc CSize -- CPtr end
 c-call release free CPtr -- end
 
-proc main -- do
+func main -- do
     -9 magnitude print
     "frog" String.bytes length print
     8 allocate release
@@ -214,7 +214,7 @@ end
 
 `c-type Name int|bool|ptr "C type name" end` maps a trusted C type name to a Frog representation. For example, `"size_t"` maps `size_t` to Frog `int`, `"FILE *"` maps `FILE *` to Frog `ptr`, and `"void (*)(int)"` may be represented as Frog `ptr`. `int` values use ordinary C integer conversion, `bool` results are normalized to `true` or `false`, and `ptr` values use the target's object-pointer/integer representation.
 
-`c-call FrogName CSymbol Inputs -- [Output] end` binds a C function or function-like macro. Its Frog contract has fixed arity, even when the header declaration is variadic. `c-value FrogName CSymbol -- Output end` binds a C object or object-like macro. Calls and values are Frog procedures, so they can be imported, aliased, reexported, and used as function-reference targets. C types can likewise be imported and reexported, including under aliases.
+`c-call FrogName CSymbol Inputs -- [Output] end` binds a C function or function-like macro as a Frog function. Its Frog contract has fixed arity, even when the header declaration is variadic. `c-value FrogName CSymbol -- Output end` binds a C object or object-like macro as a Frog function. Both kinds of binding can be imported, aliased, reexported, and used as function-reference targets. C types can likewise be imported and reexported, including under aliases.
 
 The C symbol must be an ASCII C identifier that is not a C11 keyword or a Frog-reserved name. The `frog_` prefix, `main`, `Cell`, and `FrogString` are reserved. The [C interop example](../examples/11_c_ffi.frog) uses standard-library headers. A separately linked helper needs a local header that declares the functions or objects it exposes:
 
@@ -233,14 +233,14 @@ Macros are compile-time token substitutions:
 macro dup let x do x x end end
 macro swap let x y do y x end end
 
-proc main -- do
+func main -- do
     1 2 swap drop drop
 end
 ```
 
-`macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. User-defined and imported macros expand before normal word resolution, so they can shadow intrinsics or procedures with the same name.
+`macro name <body> end` records `<body>` as a token sequence. Macro declarations are collected before the remaining code is compiled, so macros have whole-file scope and can be used before or after their declaration. User-defined and imported macros expand before normal word resolution, so they can shadow intrinsics or functions with the same name.
 
-Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `proc`, `c-include`, `c-type`, `c-call`, `c-value`, `record`, `union`, `fn`, `const`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
+Macro bodies are syntax-checked for normal block structure and may use function-body constructs such as `if`, `while`, and `let`. `func`, `c-include`, `c-type`, `c-call`, `c-value`, `struct`, `enum`, `fn`, `const`, and nested `macro` declarations are not valid inside a macro body. Recursive macro expansion is rejected.
 
 ## Compile-time constants
 
@@ -250,7 +250,7 @@ Constants evaluate a restricted postfix expression once during compilation and e
 const max-int 1 62 u32 cast << 1 62 u32 cast << 1 - + end
 const answer-and-ready 6 7 * true end
 
-proc main -- do
+func main -- do
     max-int print
     answer-and-ready print print // true, then 42
 end
@@ -258,15 +258,15 @@ end
 
 `const name <expression> end` starts evaluation with an empty stack, infers the result arity and types, and requires at least one result. Results may be integer types, `bool`, or `String`; character literals produce `int`. Multiple results retain their bottom-to-top order. Evaluation happens once during compilation; each use pushes the stored results without reevaluating the expression at runtime.
 
-Constant expressions accept literals, visible constant references, explicit integer casts, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. Operators require the same exact contracts as runtime operators; in particular, shift counts are `u32`. They do not execute macros, other procedures, control flow, local bindings, allocation, memory or I/O operations, or nominal-type operations. Overflow checks apply to `int` constant arithmetic; exact-width arithmetic follows its C-style result conversion. Division by zero and invalid `int` shifts are compile errors.
+Constant expressions accept literals, visible constant references, explicit integer casts, arithmetic and bitwise words (`+`, `-`, `*`, `/`, `%`, `/%`, `<<`, `>>`, `|`, `&`, `^`, `~`), boolean words (`&&`, `||`, `!`), and integer comparisons. Operators require the same exact contracts as runtime operators; in particular, shift counts are `u32`. They do not execute macros, other functions, control flow, local bindings, allocation, memory or I/O operations, or nominal-type operations. Overflow checks apply to `int` constant arithmetic; exact-width arithmetic follows its C-style result conversion. Division by zero and invalid `int` shifts are compile errors.
 
-Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or procedure, and finally a builtins definition.
+Constants have whole-module scope, may refer forward to later constants, and are evaluated eagerly even when unused. Direct and indirect recursive definitions are rejected. Constants are importable, aliasable, and reexportable; their expressions resolve names in the module where they were defined. A macro may expand to a constant use, but macros are not executed inside constant definitions. Normal resolution prefers an exact macro, then types and intrinsics, then a local binding, then a constant or function, and finally a builtins definition.
 
 ## Implicit builtins module
 
-The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) from Frog source for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, `NULL`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `NULL` and `assert` are ordinary procedures.
+The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) from Frog source for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, `NULL`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `NULL` and `assert` are ordinary functions.
 
-Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or matching procedure overload, and finally a matching builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
+Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or matching function overload, and finally a matching builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
 
 - `dup`: `a -- a a`
 - `dup2`: `a b -- a b a b`
@@ -277,39 +277,39 @@ Builtins are fallback definitions. Resolution prefers a user-defined or imported
 - `NULL`: `-- ptr`; produces the null untyped pointer. Test pointers explicitly with `value NULL ==` or `value NULL !=`.
 - `assert`: `bool String --`; a true condition does nothing. A false condition writes the message followed by a newline to standard error and terminates the program with status 1.
 
-In release mode, calls resolved implicitly to this builtin `assert` consume their operands without invoking the assertion procedure. Operand expressions are still evaluated in source order. User-defined assertions, explicit imports or aliases of the builtin procedure, and function-reference calls retain their normal behavior.
+In release mode, calls resolved implicitly to this builtin `assert` consume their operands without invoking the assertion function. Operand expressions are still evaluated in source order. User-defined assertions, explicit imports or aliases of the builtin function, and function-reference calls retain their normal behavior.
 
 ## Compiler intrinsics
 
 Words beginning with `__intrinsic_` are low-level compiler operations. They can
-be called in procedure bodies in any module and are resolved before local,
-constant, procedure, or builtin words. Their names remain reserved: procedures,
+be called in function bodies in any module and are resolved before local,
+constant, function, or builtin words. Their names remain reserved: functions,
 macros, constants, nominal types, C bindings, and import aliases cannot declare
 names with this prefix.
 
 The standard operators use typed intrinsics such as `__intrinsic_add_int` and
 `__intrinsic_load_i8`. Direct calls have the same exact stack contracts as the
-corresponding operations and bypass shadowable builtin procedures.
+corresponding operations and bypass shadowable builtin functions.
 `__intrinsic_assert_fail` has stack effect `String --`; it writes the string and
 a newline to standard error, then terminates the program with status 1.
 
 ## Imports
 
-Imports make procedures, C calls and values, C types, constants, records, unions, function-reference types, and macros from another Frog file visible in the importing module:
+Imports make functions, C calls and values, C types, constants, structs, enums, function-reference types, and macros from another Frog file visible in the importing module:
 
 ```frog
 from "math.frog" import inc
 from "math.frog" import inc as bump
 from "math.frog" import ( inc dec add2 )
 
-proc main -- do
+func main -- do
     41 inc print
 end
 ```
 
 Only `from "path" import ...` is supported. Module alias imports such as `import "math.frog" as math` and wildcard imports are not supported. Grouped imports are whitespace-separated; commas are rejected.
 
-Import declarations are collected before procedure bodies are compiled, so imported names can be used before the import declaration appears in the file.
+Import declarations are collected before function bodies are compiled, so imported names can be used before the import declaration appears in the file.
 
 Import paths beginning with `stdlib/` are resolved from the compiler
 distribution's standard-library root. They do not fall back to the importing
@@ -336,14 +336,14 @@ from "math.frog" import inc as bump
 // main.frog
 from "facade.frog" import bump
 
-proc main -- do
+func main -- do
     41 bump print
 end
 ```
 
-Imported files must contain declarations only at the top level. They contribute procedure, C call, C value, C type, constant, record, union, function-reference-type, and macro declarations, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `@.value`, `M:some`, `M.some?`, and `F:call`.
+Imported files must contain declarations only at the top level. They contribute function, C call, C value, C type, constant, struct, enum, function-reference-type, and macro declarations, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `@.value`, `M:some`, `M.some?`, and `F:call`.
 
-Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
+Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper functions and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 
 Import cycles are rejected. Importing the same canonical file more than once is allowed, but two different symbols cannot be imported under the same visible name.
 
@@ -356,7 +356,7 @@ Import cycles are rejected. Importing the same canonical file more than once is 
 Example:
 
 ```frog
-proc main -- do
+func main -- do
     1 2 3
     let a b c do
         a print // 1
@@ -367,7 +367,7 @@ end
 ```
 
 ```frog
-proc main -- do
+func main -- do
     1 2
     peek a b do
         a b + print // 3
@@ -422,7 +422,7 @@ must match exactly: Frog never widens or narrows them implicitly.
 ### Casts
 
 - `cast`: `x type -- y`
-- Casts allow same-type, conversions among `int` and the exact-width integer types, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/typed-pointer. `String`, record and union values, and function-reference types support only same-type casts.
+- Casts allow same-type, conversions among `int` and the exact-width integer types, `int`/`bool`, `bool`/`int`, `int`/`ptr`, `ptr`/`int`, and `ptr`/typed-pointer. `String`, struct and enum values, and function-reference types support only same-type casts.
 - Casting `int` to `bool` produces `false` for zero and `true` for every nonzero value.
 - The destination type is pushed with a primitive, typed-pointer, or visible nominal type word.
 

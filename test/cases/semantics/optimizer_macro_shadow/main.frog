@@ -1,5 +1,5 @@
 macro + drop drop 41 end
 
-proc main -- do
+func main -- do
     2 3 + print
 end

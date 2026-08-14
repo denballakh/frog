@@ -7,27 +7,27 @@ from "stdlib/containers.frog" import (
 )
 from "stdlib/libc.frog" import ( alloc free exit )
 
-proc assert bool -- do
+func assert bool -- do
     let condition do
         if condition do else 1 exit end
     end
 end
 
-proc assert-null ptr bool -- do
+func assert-null ptr bool -- do
     let value found do
         found ! assert
         value int cast 0 == assert
     end
 end
 
-proc assert-value ptr bool int -- do
+func assert-value ptr bool int -- do
     let value found expected do
         found assert
         value int cast expected == assert
     end
 end
 
-proc main -- do
+func main -- do
     0 ptr-array-new
     let empty-array do
         empty-array container-count 0 == assert

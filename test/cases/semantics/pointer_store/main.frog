@@ -1,6 +1,6 @@
 from "stdlib/libc.frog" import alloc
 
-proc main -- do
+func main -- do
     8 alloc
     let slot do
         "A" String.bytes slot ptr* cast !

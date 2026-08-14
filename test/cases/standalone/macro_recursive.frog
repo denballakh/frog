@@ -1,6 +1,6 @@
 macro a b end
 macro b a end
 
-proc main -- do
+func main -- do
     a
 end

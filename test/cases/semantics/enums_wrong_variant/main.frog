@@ -1,0 +1,8 @@
+enum Maybe
+    case none
+    case some int
+end
+
+func main -- do
+    Maybe:none Maybe.some print
+end

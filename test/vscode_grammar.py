@@ -84,16 +84,21 @@ def main() -> None:
         assert type_regex.fullmatch(spelling), spelling
         assert type_regex.fullmatch(spelling + '*'), spelling + '*'
         assert type_regex.fullmatch(spelling + '**'), spelling + '**'
-    assert re.compile(keyword_pattern).fullmatch('record')
-    assert re.compile(keyword_pattern).fullmatch('union')
-    assert re.compile(keyword_pattern).fullmatch('case')
-    assert re.compile(keyword_pattern).fullmatch('fn')
-    assert re.compile(keyword_pattern).fullmatch('const')
-    assert re.compile(keyword_pattern).fullmatch('peek')
-    assert re.compile(keyword_pattern).fullmatch('c-include')
-    assert re.compile(keyword_pattern).fullmatch('c-type')
-    assert re.compile(keyword_pattern).fullmatch('c-call')
-    assert re.compile(keyword_pattern).fullmatch('c-value')
+    keyword_regex = re.compile(keyword_pattern)
+    assert keyword_regex.fullmatch('func')
+    assert keyword_regex.fullmatch('struct')
+    assert keyword_regex.fullmatch('enum')
+    assert keyword_regex.fullmatch('case')
+    assert keyword_regex.fullmatch('fn')
+    assert keyword_regex.fullmatch('const')
+    assert keyword_regex.fullmatch('peek')
+    assert keyword_regex.fullmatch('c-include')
+    assert keyword_regex.fullmatch('c-type')
+    assert keyword_regex.fullmatch('c-call')
+    assert keyword_regex.fullmatch('c-value')
+    assert keyword_regex.fullmatch('proc') is None
+    assert keyword_regex.fullmatch('record') is None
+    assert keyword_regex.fullmatch('union') is None
     assert type_regex.fullmatch('LegacyAbiType') is None
     special_regex = re.compile(special_pattern)
     assert special_regex.fullmatch('Node:alloc')

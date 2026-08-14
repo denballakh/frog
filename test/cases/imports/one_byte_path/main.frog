@@ -1,5 +1,5 @@
 from "a" import value
 
-proc main -- do
+func main -- do
     value print
 end

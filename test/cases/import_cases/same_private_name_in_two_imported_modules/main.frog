@@ -1,7 +1,7 @@
 from "left.frog" import value as left
 from "right.frog" import value as right
 
-proc main -- do
+func main -- do
     left print
     right print
 end

@@ -1,0 +1,2 @@
+enum __intrinsic_user case value end
+func main -- do end

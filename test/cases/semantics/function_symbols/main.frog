@@ -1,0 +1,16 @@
+func alpha9 -- do end
+func with_under -- do end
+func same-name -- do end
+func same:name -- do end
+func @getter? -- do end
+func !setter~ -- do end
+func !@?~ -- do end
+func ++ -- do end
+func café -- do end
+
+func main -- do
+    alpha9
+    with_under
+    ++
+    café
+end

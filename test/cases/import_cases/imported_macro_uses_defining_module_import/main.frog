@@ -1,5 +1,5 @@
 from "facade.frog" import bump
 
-proc main -- do
+func main -- do
     5 bump print
 end

@@ -1,5 +1,5 @@
 from "left.frog" import value
 from "right.frog" import value
 
-proc main -- do
+func main -- do
 end

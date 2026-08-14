@@ -1,6 +1,6 @@
 from "lib.frog" import ( shared shared-macro )
 
-proc main -- do
+func main -- do
     "same" dup String.len
     let root root-length do
         shared dup String.len

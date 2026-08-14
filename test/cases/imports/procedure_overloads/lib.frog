@@ -1,8 +1,0 @@
-fn BoolChoice bool -- int end
-
-proc choose int -- int do 10 + end
-proc choose bool -- int do drop 20 end
-
-proc masked int -- int do 100 + end
-proc masked bool -- int do drop 200 end
-macro masked drop 77 end

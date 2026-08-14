@@ -1,23 +1,23 @@
-record Point
+struct Point
     x int
     y int
 end
 
-union Maybe
+enum Maybe
     case none
     case some int
 end
 
 fn Mapper int -- int end
 
-proc choose int -- int do 1 + end
-proc choose bool -- bool do ! end
+func choose int -- int do 1 + end
+func choose bool -- bool do ! end
 
 macro dispatch choose end
 macro nested dispatch end
 macro never-used choose end
 
-proc main -- do
+func main -- do
     Point:new @Point.x drop
     Maybe:none drop
     7 Maybe:some drop

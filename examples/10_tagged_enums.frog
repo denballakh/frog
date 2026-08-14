@@ -1,0 +1,33 @@
+from "stdlib/libc.frog" import putc
+
+enum Division
+    case value int
+    case divide_by_zero
+end
+
+func safe-divide int int -- Division do
+    let numerator denominator do
+        if denominator 0 == do
+            Division:divide_by_zero
+        else
+            numerator denominator / Division:value
+        end
+    end
+end
+
+func show-result Division -- do
+    if dup Division.value? do
+        Division.value print
+    else
+        Division.divide_by_zero
+        'E' putc
+        10 putc
+    end
+end
+
+func main -- do
+    20 4 safe-divide show-result
+    20 0 safe-divide show-result
+
+    12 Division:value show-result
+end

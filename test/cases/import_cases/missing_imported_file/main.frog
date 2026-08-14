@@ -1,4 +1,4 @@
 from "missing.frog" import inc
 
-proc main -- do
+func main -- do
 end

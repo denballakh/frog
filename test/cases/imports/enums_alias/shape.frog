@@ -1,0 +1,4 @@
+enum Maybe
+    case none
+    case some int
+end

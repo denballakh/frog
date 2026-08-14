@@ -1,4 +1,4 @@
 from "\xFF" import value
 
-proc main -- do
+func main -- do
 end

@@ -1,4 +1,4 @@
-proc shared -- String do
+func shared -- String do
     "\x73ame"
 end
 

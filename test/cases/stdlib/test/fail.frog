@@ -1,6 +1,6 @@
 from "stdlib/test.frog" import ( TestSuite test-suite check test-finish )
 
-proc main -- do
+func main -- do
     test-suite
     let suite do
         false "first failure" suite check

@@ -2,7 +2,7 @@ from "./math.frog" import value as module-value
 from "stdlib/libc.frog" import ( alloc free )
 from "./stdlib/libc.frog" import local-only
 
-proc value -- int do
+func value -- int do
     1 alloc free
     local-only drop
     module-value

@@ -37,7 +37,7 @@ visible symbols, and stacks without an occurrence row.
 The command emits a versioned tab-separated stream beginning with:
 
 ```text
-frogc-cursor	1
+frogc-cursor	2
 ```
 
 Every `fields` row names the columns of the corresponding data row. Module,
@@ -49,34 +49,37 @@ The stream contains these row types:
 
 - `query` identifies the root module, requested byte, and selected token.
 - `context` identifies a semantic context at the selected boundary. A module
-  context is always present. Procedure and constant contexts appear when the
+  context is always present. Function and constant contexts appear when the
   source position has retained semantic state. A macro-body position can have
-  several procedure contexts because each caller stack produces a specialized
+  several function contexts because each caller stack produces a specialized
   expansion.
 - `occurrence` describes each declaration, import binding, or reference whose
   source span contains the requested byte. Its semantic class distinguishes
-  procedures, macros, constants, locals, records and fields, unions and cases,
-  function types, C types, primitive types, and intrinsics.
+  functions, macros, constants, locals, structs and fields, enums and cases,
+  function-reference types, C types, primitive types, and intrinsics. Their
+  exact semantic classes are `func`, `struct_type`, `struct_field`,
+  `enum_type`, `enum_case`, and `function_type`; `function_type` remains
+  specific to nominal `fn` declarations.
 - `visible` lists lexically declared names available in a context. Rank `0` is
   a local, rank `1` is a module-scope name, and rank `2` is an implicit builtin.
   A local hides same-named outer locals, ordinary module names, and builtins.
   Module macros and nominal type words remain visible because Frog resolves
   them before locals. Primitive types and other syntax-provided words are not
   emitted as `visible` rows. Overload families produce multiple rows; a module
-  procedure suppresses only a builtin overload with the same input types.
+  function suppresses only a builtin overload with the same input types.
 - `stack` gives the typed operand stack for a semantic context. Stack types use
   the same spelling as [`frogc inspect`](./inspect.md).
 
 Declaration and reference identities use the canonical defining module and
-declaration-table index. A record field or union case adds its member index; a
-local uses its owning procedure identity and procedure-local ID. Imported
+declaration-table index. A struct field or enum case adds its member index; a
+local uses its owning function identity and function-local ID. Imported
 aliases keep that canonical identity and separately report the module and scope
 index of the binding whose spelling was used. Missing identities or bindings
 are written as `-1`.
 
 Compound words have separate spans. For example, a query within `Point` in
-`@Point.x` reports the record identity, while a query within `x` reports the
-field identity. Union operations and function references split their owner and
+`@Point.x` reports the struct identity, while a query within `x` reports the
+field identity. Enum operations and function references split their owner and
 member spans in the same way.
 
 Use [`frogc inspect`](./inspect.md) when you need the complete analyzed program,

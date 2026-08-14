@@ -1,6 +1,6 @@
-proc dec int -- int do 1 - end
-proc fib_step int int -- int int do dup rot + end
-proc main -- do
+func dec int -- int do 1 - end
+func fib_step int int -- int int do dup rot + end
+func main -- do
     0 1 15
     while dup 0 > do
         rot rot

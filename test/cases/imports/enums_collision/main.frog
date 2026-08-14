@@ -1,0 +1,7 @@
+from "shape.frog" import Maybe as Local
+
+enum Local
+    case none
+end
+
+func main -- do end

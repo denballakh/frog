@@ -1,1 +1,1 @@
-proc inc int -- int do 1 + end
+func inc int -- int do 1 + end

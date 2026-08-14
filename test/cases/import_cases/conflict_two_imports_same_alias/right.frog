@@ -1,1 +1,1 @@
-proc other -- int do 2 end
+func other -- int do 2 end

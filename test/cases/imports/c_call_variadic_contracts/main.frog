@@ -1,7 +1,7 @@
 from "first.frog" import ( open-two close-file )
 from "second.frog" import open-three
 
-proc main -- do
+func main -- do
     "/dev/null" String.bytes 0 open-two close-file drop
     "/dev/null" String.bytes 0 0 open-three close-file drop
 end

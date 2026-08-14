@@ -1,6 +1,0 @@
-proc inc int -- int do 2 + end
-
-proc main -- do
-end
-
-from "math.frog" import inc

@@ -10,7 +10,7 @@ from "example_cases.frog" import run-example-cases
 
 const pointer-bytes 8 end
 
-proc main -- do
+func main -- do
     args
     let argv argc do
         if argc 3 != do 2 exit end

@@ -5,13 +5,13 @@ from "framework.frog" import (
     frog-inline-error-raw
 )
 
-proc run-inline-cases FrogTestContext* -- do
+func run-inline-cases FrogTestContext* -- do
     let context do
 
         // basics (7)
         "1 2 + print" "3\n" "" 0 "code/basics/01" context frog-inline-run-body
         "1 + print" "frogc: +: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/basics/02" context frog-inline-error-body
-        "1 2 +" "<stdin>:3:1:\n  end\n  ^^^\nerror: main: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/basics/03" context frog-inline-error-body
+        "1 2 +" "<stdin>:3:1:\n  end\n  ^^^\nerror: main: function output contract mismatch: expected [], actual [int]\n" 1 "code/basics/03" context frog-inline-error-body
         "? 1 ? 2 ? 3 ? 4 ? + ? + ? + ? print ?" "10\n" "" 0 "code/basics/04" context frog-inline-run-body
         "+" "frogc: +: stack contract mismatch: expected [int int], actual []\n" 1 "code/basics/05" context frog-inline-error-body
         "~" "frogc: ~: stack contract mismatch: expected [int], actual []\n" 1 "code/basics/06" context frog-inline-error-body
@@ -111,15 +111,15 @@ proc run-inline-cases FrogTestContext* -- do
         "if 1 2 == do 5 else 7 end print" "7\n" "" 0 "code/if_blocks/02" context frog-inline-run-body
         "if 1 2 != do 5 else 7 end print" "5\n" "" 0 "code/if_blocks/03" context frog-inline-run-body
         "if 1 2 != do 5 else 7 8 end print" "frogc: if branches leave different stack shapes\n" 1 "code/if_blocks/04" context frog-inline-error-body
-        "if 1 2 != do 5 else 7 end" "frogc: main: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/if_blocks/05" context frog-inline-error-body
+        "if 1 2 != do 5 else 7 end" "frogc: main: function output contract mismatch: expected [], actual [int]\n" 1 "code/if_blocks/05" context frog-inline-error-body
         "if 1 2 != do 5 else end" "frogc: if branches leave different stack shapes\n" 1 "code/if_blocks/06" context frog-inline-error-body
         "if 1 2 != do 5 end" "<stdin>:2:20:\n      if 1 2 != do 5 end\n                     ^^^\nerror: control-flow stack shape mismatch\n" 1 "code/if_blocks/07" context frog-inline-error-body
         "if 1 2 != do 5 print end" "5\n" "" 0 "code/if_blocks/08" context frog-inline-run-body
         "5 if 1 2 == do drop 7 end print" "5\n" "" 0 "code/if_blocks/09" context frog-inline-run-body
         "5 if 1 2 != do drop 7 end print" "7\n" "" 0 "code/if_blocks/10" context frog-inline-run-body
-        "if" "frogc: unterminated procedure body\n" 1 "code/if_blocks/11" context frog-inline-error-body
-        "if 1 2 == do" "frogc: unterminated procedure body\n" 1 "code/if_blocks/12" context frog-inline-error-body
-        "if 1 2 == do 5 print else" "frogc: unterminated procedure body\n" 1 "code/if_blocks/13" context frog-inline-error-body
+        "if" "frogc: unterminated function body\n" 1 "code/if_blocks/11" context frog-inline-error-body
+        "if 1 2 == do" "frogc: unterminated function body\n" 1 "code/if_blocks/12" context frog-inline-error-body
+        "if 1 2 == do 5 print else" "frogc: unterminated function body\n" 1 "code/if_blocks/13" context frog-inline-error-body
         "if 1 2 == else 5 end" "frogc: else requires a preceding if arm and do\n" 1 "code/if_blocks/14" context frog-inline-error-body
         "if do end" "frogc: if or while requires a condition before do\n" 1 "code/if_blocks/15" context frog-inline-error-body
         "if 1 do end" "frogc: compile-time stack type mismatch\n" 1 "code/if_blocks/16" context frog-inline-error-body
@@ -149,10 +149,10 @@ proc run-inline-cases FrogTestContext* -- do
 5
 " "" 0 "code/while_blocks/02" context frog-inline-run-body
         "0 while dup 3 < if dup do drop true end do 1 + end print" "3\n" "" 0 "code/while_blocks/03" context frog-inline-run-body
-        "while else" "frogc: unterminated procedure body\n" 1 "code/while_blocks/04" context frog-inline-error-body
+        "while else" "frogc: unterminated function body\n" 1 "code/while_blocks/04" context frog-inline-error-body
         "while end" "frogc: while requires do before end\n" 1 "code/while_blocks/05" context frog-inline-error-body
-        "while" "frogc: unterminated procedure body\n" 1 "code/while_blocks/06" context frog-inline-error-body
-        "while 1 2 == do" "frogc: unterminated procedure body\n" 1 "code/while_blocks/07" context frog-inline-error-body
+        "while" "frogc: unterminated function body\n" 1 "code/while_blocks/06" context frog-inline-error-body
+        "while 1 2 == do" "frogc: unterminated function body\n" 1 "code/while_blocks/07" context frog-inline-error-body
         "while do end" "frogc: if or while requires a condition before do\n" 1 "code/while_blocks/08" context frog-inline-error-body
         "while 1 do end" "frogc: compile-time stack type mismatch\n" 1 "code/while_blocks/09" context frog-inline-error-body
         "while 1 2 do end" "frogc: compile-time stack type mismatch\n" 1 "code/while_blocks/10" context frog-inline-error-body
@@ -179,18 +179,18 @@ macro two one one end" "5 two print" "" "7\n" "" 0 "code/macros/07" context frog
 macro b a end" "a" "" "frogc: a: recursive macro expansion\n" 1 "code/macros/09" context frog-inline-error-source
         "macro outer macro inner 1 end end
 
-proc main -- do
+func main -- do
 end
 " "frogc: declarations are not allowed in macro bodies\n" 1 "code/macros/10" context frog-inline-error-raw
         "macro m else end
 
-proc main -- do
+func main -- do
 end
 " "frogc: else outside macro if block\n" 1 "code/macros/11" context frog-inline-error-raw
         "macro" "frogc: expected macro name\n" 1 "code/macros/12" context frog-inline-error-raw
         "macro 123 end
 
-proc main -- do
+func main -- do
 end
 " "frogc: expected word token\n" 1 "code/macros/13" context frog-inline-error-raw
 
@@ -219,25 +219,25 @@ end
  print" "1\n" "" 0 "code/literals_and_comments/15" context frog-inline-run-body
 
         // words (2)
-        "proc" "frogc: expected procedure name\n" 1 "code/words/01" context frog-inline-error-raw
+        "func" "frogc: expected function name\n" 1 "code/words/01" context frog-inline-error-raw
         "somerandomword" "frogc: unknown word: somerandomword\n" 1 "code/words/02" context frog-inline-error-body
 
-        // procedures (15)
-        "proc a int -- int do 2 * end" "5 a print" "" "10\n" "" 0 "code/procedures/01" context frog-inline-run-source
-        "proc a do 2 * end" "" "" "frogc: unknown type in procedure signature: do\n" 1 "code/procedures/02" context frog-inline-error-source
-        "proc a int do 2 * end" "" "" "frogc: unknown type in procedure signature: do\n" 1 "code/procedures/03" context frog-inline-error-source
-        "proc a -- do 2 * end" "" "" "frogc: *: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/04" context frog-inline-error-source
-        "proc a int -- do 2 * end" "" "" "frogc: a: procedure output contract mismatch: expected [], actual [int]\n" 1 "code/procedures/05" context frog-inline-error-source
-        "proc a int -- int int do 2 * end" "" "" "frogc: a: procedure output contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/06" context frog-inline-error-source
-        "proc a int -- int do drop 5 end" "5 a print" "" "5\n" "" 0 "code/procedures/07" context frog-inline-run-source
-        "proc a bool -- int do drop 5 end" "5 a print" "" "frogc: a: stack contract mismatch: expected [bool], actual [int]\n" 1 "code/procedures/08" context frog-inline-error-source
-        "proc a int int -- int do + end" "5 a print" "" "frogc: a: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/procedures/09" context frog-inline-error-source
-        "proc a x -- y do + end" "5 a print" "" "frogc: unknown type in procedure signature: x\n" 1 "code/procedures/10" context frog-inline-error-source
-        "proc a int int -- int do + end" "5 7 a print" "" "12\n" "" 0 "code/procedures/11" context frog-inline-run-source
-        "proc ++ int -- int do 1 + end" "5 ++ print" "" "6\n" "" 0 "code/procedures/12" context frog-inline-run-source
-        "proc a -- int bool do true 1 end" "" "" "frogc: a: procedure output contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/procedures/13" context frog-inline-error-source
-        "proc take int bool -- do drop drop end" "\"keep\" true 1 take drop" "" "frogc: take: stack contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/procedures/14" context frog-inline-error-source
-        "" "int" "" "frogc: main: procedure output contract mismatch: expected [], actual [type]\n" 1 "code/procedures/15" context frog-inline-error-source
+        // functions (15)
+        "func a int -- int do 2 * end" "5 a print" "" "10\n" "" 0 "code/functions/01" context frog-inline-run-source
+        "func a do 2 * end" "" "" "frogc: unknown type in function signature: do\n" 1 "code/functions/02" context frog-inline-error-source
+        "func a int do 2 * end" "" "" "frogc: unknown type in function signature: do\n" 1 "code/functions/03" context frog-inline-error-source
+        "func a -- do 2 * end" "" "" "frogc: *: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/functions/04" context frog-inline-error-source
+        "func a int -- do 2 * end" "" "" "frogc: a: function output contract mismatch: expected [], actual [int]\n" 1 "code/functions/05" context frog-inline-error-source
+        "func a int -- int int do 2 * end" "" "" "frogc: a: function output contract mismatch: expected [int int], actual [int]\n" 1 "code/functions/06" context frog-inline-error-source
+        "func a int -- int do drop 5 end" "5 a print" "" "5\n" "" 0 "code/functions/07" context frog-inline-run-source
+        "func a bool -- int do drop 5 end" "5 a print" "" "frogc: a: stack contract mismatch: expected [bool], actual [int]\n" 1 "code/functions/08" context frog-inline-error-source
+        "func a int int -- int do + end" "5 a print" "" "frogc: a: stack contract mismatch: expected [int int], actual [int]\n" 1 "code/functions/09" context frog-inline-error-source
+        "func a x -- y do + end" "5 a print" "" "frogc: unknown type in function signature: x\n" 1 "code/functions/10" context frog-inline-error-source
+        "func a int int -- int do + end" "5 7 a print" "" "12\n" "" 0 "code/functions/11" context frog-inline-run-source
+        "func ++ int -- int do 1 + end" "5 ++ print" "" "6\n" "" 0 "code/functions/12" context frog-inline-run-source
+        "func a -- int bool do true 1 end" "" "" "frogc: a: function output contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/functions/13" context frog-inline-error-source
+        "func take int bool -- do drop drop end" "\"keep\" true 1 take drop" "" "frogc: take: stack contract mismatch: expected [int bool], actual [bool int]\n" 1 "code/functions/14" context frog-inline-error-source
+        "" "int" "" "frogc: main: function output contract mismatch: expected [], actual [type]\n" 1 "code/functions/15" context frog-inline-error-source
 
         // c_ffi (10)
         "from \"stdlib/libc.frog\" import alloc
@@ -307,10 +307,10 @@ c-call set-handler signal CInt Handler -- Handler end" "hangup default-handler s
         "1 ptr cast int cast print" "1\n" "" 0 "code/casts_and_memory/07" context frog-inline-run-body
         "9223372036854775807 print" "9223372036854775807\n" "" 0 "code/casts_and_memory/08" context frog-inline-run-body
         "from \"stdlib/libc.frog\" import alloc" "9 alloc let p do 4660 u16 cast p 1 + u16* cast ! p 1 + u16* cast @ int cast print end" "" "4660\n" "" 0 "code/casts_and_memory/09" context frog-inline-run-source
-        "proc forward -- int do later end
-proc later -- int do 42 end" "forward print" "" "42\n" "" 0 "code/casts_and_memory/10" context frog-inline-run-source
-        "proc sink int -- do drop end" "1 sink" "" "" "" 0 "code/casts_and_memory/11" context frog-inline-run-source
-        "proc countdown int -- int do
+        "func forward -- int do later end
+func later -- int do 42 end" "forward print" "" "42\n" "" 0 "code/casts_and_memory/10" context frog-inline-run-source
+        "func sink int -- do drop end" "1 sink" "" "" "" 0 "code/casts_and_memory/11" context frog-inline-run-source
+        "func countdown int -- int do
     if dup 0 == do drop 0 else 1 - countdown end
 end" "3 countdown print" "" "0\n" "" 0 "code/casts_and_memory/12" context frog-inline-run-source
         "from \"stdlib/libc.frog\" import alloc" "4 alloc let p do 42 i8 cast p i8* cast ! p i8* cast @ int cast print end" "" "42\n" "" 0 "code/casts_and_memory/13" context frog-inline-run-source
@@ -325,7 +325,7 @@ end" "3 countdown print" "" "0\n" "" 0 "code/casts_and_memory/12" context frog-i
 " "" 0 "code/casts_and_memory/16" context frog-inline-run-source
         "from \"stdlib/libc.frog\" import alloc
 
-proc cell ptr int -- int do + u8* cast @ int cast end" "4 alloc let p do 42 u8 cast p u8* cast ! p 0 cell print end" "" "42\n" "" 0 "code/casts_and_memory/17" context frog-inline-run-source
+func cell ptr int -- int do + u8* cast @ int cast end" "4 alloc let p do 42 u8 cast p u8* cast ! p 0 cell print end" "" "42\n" "" 0 "code/casts_and_memory/17" context frog-inline-run-source
         "from \"stdlib/libc.frog\" import ( putc read-file )" "\"README.md\" dup String.bytes swap String.len read-file let data length success do success print length 0 > print data u8* cast @ int cast putc 10 putc end" "" "true
 true
 #
@@ -340,7 +340,7 @@ b
 " "" 0 "build/frog-test-case.exe" "code/process_arguments/01" context frog-inline-run-source-program
 
         // program_structure (2)
-        "" "<stdin>:1:1:\n  \n  ^\nerror: missing main procedure\n" 1 "code/program_structure/01" context frog-inline-error-raw
+        "" "<stdin>:1:1:\n  \n  ^\nerror: missing main function\n" 1 "code/program_structure/01" context frog-inline-error-raw
         "1 print\n" "<stdin>:1:1:\n  1 print\n  ^\nerror: unexpected top-level token: 1\n" 1 "code/program_structure/02" context frog-inline-error-raw
     end
 end

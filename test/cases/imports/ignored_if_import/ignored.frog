@@ -1,4 +1,4 @@
-proc value -- do
+func value -- do
     if true do
         from "source.frog" import value
     end

@@ -1,4 +1,4 @@
-proc helper int -- int do
+func helper int -- int do
     10 +
 end
 

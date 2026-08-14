@@ -1,24 +1,24 @@
-record Label
+struct Label
     text String
 end
 
-record Pair
+struct Pair
     x int
     label Label
 end
 
-record Node
+struct Node
     next Node*
 end
 
-union Packet
+enum Packet
     case pair Pair
     case text String
 end
 
-proc copy-pair Pair -- Pair do end
+func copy-pair Pair -- Pair do end
 
-proc main -- do
+func main -- do
     Pair:new @Pair.x print
     Pair:new @.label @Label.text String.len print
 
@@ -40,7 +40,7 @@ proc main -- do
         packet Packet.pair? print
         packet Packet.pair @.x print
     end
-    "union" Packet:text Packet.text String.len print
+    "enum" Packet:text Packet.text String.len print
 
     Pair:alloc
     let pair do

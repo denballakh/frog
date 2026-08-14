@@ -1,6 +1,6 @@
 from "libc.frog" import ( alloc free )
 
-proc bytes-copy ptr ptr int -- do
+func bytes-copy ptr ptr int -- do
     let source destination count do
         0
         while dup count < do
@@ -13,7 +13,7 @@ proc bytes-copy ptr ptr int -- do
     end
 end
 
-proc bytes-equal ptr int ptr int -- bool do
+func bytes-equal ptr int ptr int -- bool do
     let first first-length second second-length do
         if first-length second-length != do
             false
@@ -35,7 +35,7 @@ proc bytes-equal ptr int ptr int -- bool do
     end
 end
 
-proc bytes-index-of ptr int ptr int -- int do
+func bytes-index-of ptr int ptr int -- int do
     let bytes bytes-length needle needle-length do
         if needle-length 0 == do
             0
@@ -66,11 +66,11 @@ proc bytes-index-of ptr int ptr int -- int do
     end
 end
 
-proc bytes-contain ptr int ptr int -- bool do
+func bytes-contain ptr int ptr int -- bool do
     bytes-index-of 0 >=
 end
 
-proc bytes-starts-with ptr int ptr int -- bool do
+func bytes-starts-with ptr int ptr int -- bool do
     let bytes bytes-length prefix prefix-length do
         if bytes-length 0 < prefix-length 0 < || do
             false
@@ -82,7 +82,7 @@ proc bytes-starts-with ptr int ptr int -- bool do
     end
 end
 
-proc bytes-count ptr int ptr int -- int do
+func bytes-count ptr int ptr int -- int do
     let bytes bytes-length needle needle-length do
         if needle-length 0 == do
             0
@@ -108,7 +108,7 @@ proc bytes-count ptr int ptr int -- int do
     end
 end
 
-proc string-equal String String -- bool do
+func string-equal String String -- bool do
     let first second do
         first String.bytes first String.len
             second String.bytes second String.len
@@ -116,7 +116,7 @@ proc string-equal String String -- bool do
     end
 end
 
-proc string-starts-with String String -- bool do
+func string-starts-with String String -- bool do
     let value prefix do
         value String.bytes value String.len
             prefix String.bytes prefix String.len
@@ -124,13 +124,13 @@ proc string-starts-with String String -- bool do
     end
 end
 
-record ByteBuffer
+struct ByteBuffer
     bytes ptr
     len int
     capacity int
 end
 
-proc byte-buffer-new int -- ByteBuffer* do
+func byte-buffer-new int -- ByteBuffer* do
     let capacity do
         capacity alloc
         let bytes do
@@ -145,7 +145,7 @@ proc byte-buffer-new int -- ByteBuffer* do
     end
 end
 
-proc byte-buffer-push int ByteBuffer* -- do
+func byte-buffer-push int ByteBuffer* -- do
     let byte buffer do
         if buffer @ByteBuffer.len buffer @ByteBuffer.capacity == do
             if buffer @ByteBuffer.capacity 0 == do
@@ -168,7 +168,7 @@ proc byte-buffer-push int ByteBuffer* -- do
     end
 end
 
-proc byte-buffer-append-bytes ptr int ByteBuffer* -- do
+func byte-buffer-append-bytes ptr int ByteBuffer* -- do
     let bytes length buffer do
         0
         while dup length < do
@@ -181,13 +181,13 @@ proc byte-buffer-append-bytes ptr int ByteBuffer* -- do
     end
 end
 
-proc byte-buffer-append-string String ByteBuffer* -- do
+func byte-buffer-append-string String ByteBuffer* -- do
     let value buffer do
         value String.bytes value String.len buffer byte-buffer-append-bytes
     end
 end
 
-proc byte-buffer-equal-string ByteBuffer* String -- bool do
+func byte-buffer-equal-string ByteBuffer* String -- bool do
     let buffer value do
         buffer @ByteBuffer.bytes buffer @ByteBuffer.len
             value String.bytes value String.len
@@ -195,7 +195,7 @@ proc byte-buffer-equal-string ByteBuffer* String -- bool do
     end
 end
 
-proc byte-buffer-free ByteBuffer* -- do
+func byte-buffer-free ByteBuffer* -- do
     let buffer do
         buffer @ByteBuffer.bytes free
         buffer ptr cast free

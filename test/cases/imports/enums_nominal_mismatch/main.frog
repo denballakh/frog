@@ -1,0 +1,12 @@
+from "shape.frog" import Imported
+
+enum Local
+    case none
+    case some int
+end
+
+func unwrap Imported -- int do Imported.some end
+
+func main -- do
+    1 Local:some unwrap print
+end

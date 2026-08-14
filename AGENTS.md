@@ -16,7 +16,7 @@ If the error message or log line is incorrect, misleading, useless or in any oth
 
 FrogLang is a small stack-based, concatenative, statically typed language compiled to C. `compiler/frogc.frog` implements the compiler, typechecker, C emitter, and CLI process/file orchestration. Python is test-only; the repository has no Python language implementation or Frog interpreter.
 
-Frog programs use postfix stack operations, explicit stack-effect procedure signatures, nominal records, tagged unions, first-class function references, compile-time imports and macros, and block keywords such as `proc`, `record`, `union`, `fn`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
+Frog programs use postfix stack operations, explicit stack-effect function signatures, nominal structs, enums, first-class function references, compile-time imports and macros, and block keywords such as `func`, `struct`, `enum`, `fn`, `macro`, `if`, `else`, `while`, `do`, `end`, and `let`.
 
 ## Repository Layout
 
@@ -37,12 +37,12 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
   through explicit C interop and implement library policy in Frog.
 - `stdlib/builtins.frog`: Ordinary Frog declarations for the implicitly loaded,
-  shadowable standard macros and procedures.
+  shadowable standard macros and functions.
 - `stdlib/string.frog`: Literal-string comparison, byte-range helpers, and the
-  manually managed growable `ByteBuffer` record.
+  manually managed growable `ByteBuffer` struct.
 - `stdlib/containers.frog`: Pointer arrays, pointer lists, and fixed-bucket
   string maps. Containers borrow values; string maps copy and own their keys.
-- `stdlib/json.frog`: RFC 8259 value parsing into manually owned tagged-union
+- `stdlib/json.frog`: RFC 8259 value parsing into manually owned enum
   trees, with borrowed scalar and child lookup helpers.
 - `stdlib/socket.frog`: POSIX descriptor I/O, accept, local socket-pair,
   half-close, and SIGPIPE wrappers implemented over direct C bindings.
@@ -87,7 +87,7 @@ Useful direct commands:
 - Query source semantics: `build/frogc cursor --byte 0 examples/01_simple.frog`
 - Format a file to standard output: `build/frogc fmt examples/01_simple.frog`
 - Compile and run a file: `build/frogc run examples/01_simple.frog`
-- Compile and run inline source: `build/frogc run -c 'proc main -- do 1 2 + print end'`
+- Compile and run inline source: `build/frogc run -c 'func main -- do 1 2 + print end'`
 - Build a file: `build/frogc build examples/01_simple.frog`
 - Build and run: `build/frogc build -r examples/01_simple.frog`
 - Release-mode run: `build/frogc --release run examples/01_simple.frog`
@@ -110,7 +110,7 @@ Useful direct commands:
 - `just check` is not a substitute for `just test`; it omits bootstrap, Frog regressions, and host-policy checks.
 - `just test` runs the Frog-owned corpus and then the small Python host-policy runner. Do not run its components concurrently because they share generated build files.
 - Successful Frog cases compile through stdin-to-stdout mode with strict C11 warnings before execution. Cases check exact stdout, stderr, and status; compiler failures ignore partial C on stdout but require the exact diagnostic and status 1.
-- `test/inline_cases.frog` materializes concise bodies inside an explicit `proc main -- do ... end`; declaration-order and malformed structural cases use the corresponding whole-source helper.
+- `test/inline_cases.frog` materializes concise bodies inside an explicit `func main -- do ... end`; declaration-order and malformed structural cases use the corresponding whole-source helper.
 - Multi-file import cases are checked-in fixtures under `test/cases/import_cases/`; their manifest is `test/import_cases.frog`.
 - `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, lexical symlink-root policy, and slashless compiler-path policy. `just frog-regressions` invokes it with the private `--supervise-frog-runner` mode, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
 - Python host-policy artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
@@ -132,16 +132,20 @@ Useful direct commands:
   the input file. Formatting accepts declaration-only root modules without
   `main` but still requires every formatted operation to have one resolved
   stack effect. Macro declarations are preserved rather than formatted;
-  analyzed macro invocations in procedures use their concrete net effects.
+  analyzed macro invocations in functions use their concrete net effects.
 - `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
 - `build -r FILE` runs the resulting executable.
 - CLI argument parsing, path construction, build policy, process setup, and exit-status forwarding are implemented in Frog in `compiler/frogc.frog` over the bindings in `stdlib/libc.frog`.
-- `inspect --lexemes` emits lossless lexemes and syntax regions in format 5.
-  It composes with `--builtins` in either order. Ordinary inspection remains
-  format 4.
-- `cursor --byte OFFSET [FILE]` emits format 1 semantic contexts,
+- `inspect --lexemes` emits lossless lexemes and syntax regions in format 7.
+  It composes with `--builtins` in either order. Ordinary inspection uses
+  format 6. Direct function rows and calls use `func` and `func_call`, with
+  `func_module` and `func_index` ownership fields; `function_type` and
+  `function_call` remain specific to nominal `fn` function references.
+- `cursor --byte OFFSET [FILE]` emits format 2 semantic contexts,
   occurrences, visible names, and typed stacks for a root-source byte offset.
+  Its renamed semantic classes are `func`, `struct_type`, `struct_field`,
+  `enum_type`, and `enum_case`; `function_type` remains specific to `fn`.
   The offset may equal the source length; imported source positions require a
   separate invocation with that file as the root.
 
@@ -154,20 +158,20 @@ not in this maintenance guide.
 - The compiler reads root source bytes from stdin and writes generated C to stdout. Root imports are loaded relative to the compiler process's working directory; nested imports are loaded relative to the importing module's lexical path. Imports beginning exactly with `stdlib/` instead resolve from the standard-library search root derived from the compiler distribution.
 - The supported import syntax is `from "path.frog" import name`, `from "path.frog" import name as alias`, and grouped whitespace-separated imports such as `from "path.frog" import ( x y z )`. Wildcards, commas, and `import "path.frog" as mod` are rejected for now.
 - Other relative import paths, including `./stdlib/...`, are resolved from the directory containing the importing module. Canonicalization is lexical and does not resolve symlinks. A `stdlib/...` import never falls back to an importer-relative file.
-- Imported files contribute procedures, records, unions, function-reference types, and macros. Every module permits declarations only at the top level, and only the root module's `main` runs.
+- Imported files contribute functions, structs, enums, function-reference types, and macros. Every module permits declarations only at the top level, and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
-- `stdlib/builtins.frog` is loaded once as a normal module after the root's explicit import graph. Every other module resolves its otherwise-unknown macro and ordinary-procedure words from that module as a final, shadowable fallback; the builtins module does not implicitly import itself.
-- `container-count` and `container-empty?` are structural container macros over the shared `count` field of `PtrArray`, `PtrList`, and `StringMap`; preserve their record-agnostic behavior.
+- `stdlib/builtins.frog` is loaded once as a normal module after the root's explicit import graph. Every other module resolves its otherwise-unknown macro and ordinary-function words from that module as a final, shadowable fallback; the builtins module does not implicitly import itself.
+- `container-count` and `container-empty?` are structural container macros over the shared `count` field of `PtrArray`, `PtrList`, and `StringMap`; preserve their struct-agnostic behavior.
 - Parsed `JsonValue` roots exclusively own every descendant. `json-free` recursively releases a root; scalar byte ranges and array/object children returned by lookup helpers are borrowed and must not be freed separately.
 - `http-serve-connection` owns and closes its connected descriptor; `http-serve-one` borrows its listener. HTTP handlers borrow the request only during the call and transfer an owned copied-body response back to the server.
-- Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources and declaration-only root sources without `main` are invalid. Top-level executable instructions are invalid in every module.
-- Loading, resolution, and procedure analysis finish before C emission. The
+- Every root program must define exactly one `func main -- do ... end` with no inputs or outputs. Empty sources and declaration-only root sources without `main` are invalid. Top-level executable instructions are invalid in every module.
+- Loading, resolution, and function analysis finish before C emission. The
   analyzer retains typed instructions and control-flow graphs; the C backend
-  emits procedure bodies from that IR rather than replaying source tokens.
+  emits function bodies from that IR rather than replaying source tokens.
   Failures include stack underflow, unknown words, contract mismatches, invalid
   control-flow stack shapes, and non-empty final stacks.
-- Diagnostics are owned records on `Program`; compiler phases add the first
+- Diagnostics are owned structs on `Program`; compiler phases add the first
   diagnostic and return. CLI commands render it and choose the exit status.
   `Program.sources` can supply owned source bytes by canonical path before
   filesystem lookup, and filesystem lookup can be disabled for an embedding
@@ -176,22 +180,24 @@ not in this maintenance guide.
   that partition its source bytes, plus explicit module, declaration, and
   nested control-flow syntax regions with half-open token and byte ranges.
 - Analyzed programs retain canonical declaration/reference occurrences,
-  import-binding identities, procedure-local visibility intervals, and typed
+  import-binding identities, function-local visibility intervals, and typed
   cursor states. Macro-body states are caller-specialized and retain nested
   expansion parents; unused macro bodies do not fabricate semantic contexts.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Global `--release` may be combined with it in either order and omits only implicitly resolved builtin assertion calls while preserving operand evaluation. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
-- Generated procedures use normal C parameters and return values. `int`, `bool`,
+- Generated functions use normal C parameters and return values. `int`, `bool`,
   exact-width integers, `ptr`, and typed pointers use their corresponding
   native C types. A measurement pass registers each `(stack depth, static type
   ID)` pair, and emission gives every registered pair a distinct local such as
   `frog_value_0_1`; generated code has no runtime operand-stack object or
-  per-procedure operand-stack array. Multi-result C structs are keyed by the
+  per-function operand-stack array. Multi-result C structs are keyed by the
   complete ordered output-type vector, not only by result count.
 - Generated C emits source-requested headers, C-type assertions, and mechanical C-binding wrappers before compiler-private runtime headers. This ordering ensures a `c-call` or `c-value` cannot rely on declarations leaked by the runtime implementation.
-- Generated C procedure names use `frog_proc_<global-id>_<source-name>`. ASCII
-  letters, digits, and `_` remain readable; `-` and `:` become `_`; `!`, `@`,
-  `?`, and `~` are omitted; every other UTF-8 byte is encoded as uppercase
-  `_HH`. Numeric global IDs remain the function-reference dispatch identity.
+- Generated C function names use `frog_func_<global-id>_<source-name>`, while
+  nominal C type names use `frog_struct_<type-id>` and `frog_enum_<type-id>`.
+  In a function source-name suffix, ASCII letters, digits, and `_` remain
+  readable; `-` and `:` become `_`; `!`, `@`, `?`, and `~` are omitted; every
+  other UTF-8 byte is encoded as uppercase `_HH`. Numeric global IDs remain the
+  function-reference dispatch identity.
 - `compiler/frogc.c` must remain a checked fixed point: compiling `compiler/frogc.frog` with the seed and recompiling it with the result must reproduce the same C bytes.
 - `bootstrap-update` compiles candidate compiler generations as standalone binaries and invokes their no-argument stdin-to-stdout filter mode.
 - The compiler executable is kept under `build/` beside the repository's
@@ -204,11 +210,11 @@ not in this maintenance guide.
 ## Language Semantics
 
 - User-facing language documentation lives in `docs/language.md`; update it when changing Frog syntax, semantics, intrinsics, examples, diagnostics that users see, or generated-C behavior.
-- `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `proc`, nested `macro`, or import declarations.
+- `macro name <body> end` records `<body>` as a compile-time token sequence in the defining module. Macro bodies may use function-body block constructs such as `if`, `while`, and `let`, but not nested `func`, nested `macro`, or import declarations.
 - `let a b c do ... end` binds visible stack values in source order: after `1 2 3`, `let a b c do` binds `a = 1`, `b = 2`, and `c = 3`. The implementation emits reverse-order pops to achieve this.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
-- `assert` is a shadowable procedure in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs. Release mode suppresses only implicit calls to that builtin identity; explicit imports, function references, and shadowing procedures retain normal behavior.
-- `NULL` is a shadowable procedure in the implicit builtins module with stack effect `-- ptr`. Compare pointers explicitly with `NULL ==` or `NULL !=`; `stdlib/libc.frog` does not provide a separate null-pointer predicate.
+- `assert` is a shadowable function in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs. Release mode suppresses only implicit calls to that builtin identity; explicit imports, function references, and shadowing functions retain normal behavior.
+- `NULL` is a shadowable function in the implicit builtins module with stack effect `-- ptr`. Compare pointers explicitly with `NULL ==` or `NULL !=`; `stdlib/libc.frog` does not provide a separate null-pointer predicate.
 - Character literals contain one raw Unicode codepoint; `\'` is the only
   character escape and represents a single quote. Preserve raw `'\'` as the
   backslash character and keep other backslash spellings invalid.
@@ -222,37 +228,37 @@ not in this maintenance guide.
   `Node**`. Pointer identity follows the pointee's resolved type identity, so
   imported aliases of one nominal type produce the same pointer type. `ptr`
   is the untyped boundary and explicit `ptr`/typed-pointer casts cross it.
-- The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
+- The ordinary `read-file` function from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; use `ptr* cast @` to load and `ptr* cast !` to store one pointer-sized entry.
-- `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.
-- `__intrinsic_*` words are compiler operations callable from procedure bodies in every module. The prefix remains reserved for declarations and import aliases. `__intrinsic_assert_fail` consumes a `String`, writes it with a newline to standard error, and exits with status 1.
+- `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary functions imported from `stdlib/libc.frog`, not language intrinsics.
+- `__intrinsic_*` words are compiler operations callable from function bodies in every module. The prefix remains reserved for declarations and import aliases. `__intrinsic_assert_fail` consumes a `String`, writes it with a newline to standard error, and exits with status 1.
 - C interop declarations explicitly request system or local headers, name Frog-visible C types with trusted raw C type names, and bind calls or values. Calls retain fixed Frog arity even for variadic C declarations. Header declarations are authoritative: the compiler synthesizes neither C declarations nor dynamic loading.
 - Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Generated C wrappers perform only mechanical native-value/C-ABI conversion; wait/status and child-process policy stay in Frog.
-- `record Name field Type ... end` defines a nominal value type. `Name:new` returns a zero value, `Name:alloc` returns a zeroed `Name*`, and `Name:sizeof` returns the native value size. Getters accept `Name` or `Name*`; setters return a modified `Name` or mutate through `Name*`.
-- `@.field` and `!.field` infer the nominal record from the top static `Name` or `Name*` value after macro expansion. Exact macros with those spellings take precedence; cover direct, macro-expanded, and imported-alias access when changing this behavior.
-- Records use native C struct layout and copy by value. Recursive aggregate edges require typed pointers; explicit `ptr`/record-pointer casts cross the pointer boundary, while record values do not cast to pointers.
-- `union Name case Variant [PayloadType] ... end` defines a nominal by-value tagged union. `Name:variant` constructs, `Name.variant?` consumes and tests a validated value, and `Name.variant` performs a checked projection. Use `dup` explicitly when a tested value must remain on the operand stack.
-- Tagged unions and payloads copy by value. Aggregate definitions are dependency ordered across records and unions, and direct or mutual by-value recursion is rejected; pointer edges do not participate in that recursion.
-- `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract. `Name:ref:procedure` creates an opaque one-Cell reference after exact contract checking, and `Name:call` consumes inputs followed by the reference and produces the declared outputs.
-- Function calls dispatch only to generated procedure IDs with the exact resolved contract. Function references have no pointer/integer casts, allocation, lifetime, closure environment, anonymous syntax, implicit coercion, or C callback conversion.
-- Procedures may share a name only when their resolved ordered input contracts differ. Calls select exactly one matching visible input contract; outputs do not participate. Imports, aliases, and reexports preserve overload families, and builtin procedure candidates remain a final fallback for unmatched user/imported signatures.
+- `struct Name field Type ... end` defines a nominal value type. `Name:new` returns a zero value, `Name:alloc` returns a zeroed `Name*`, and `Name:sizeof` returns the native value size. Getters accept `Name` or `Name*`; setters return a modified `Name` or mutate through `Name*`.
+- `@.field` and `!.field` infer the nominal struct from the top static `Name` or `Name*` value after macro expansion. Exact macros with those spellings take precedence; cover direct, macro-expanded, and imported-alias access when changing this behavior.
+- Structs use native C struct layout and copy by value. Recursive aggregate edges require typed pointers; explicit `ptr`/struct-pointer casts cross the pointer boundary, while struct values do not cast to pointers.
+- `enum Name case Variant [PayloadType] ... end` defines a nominal by-value enum. `Name:variant` constructs, `Name.variant?` consumes and tests a validated value, and `Name.variant` performs a checked projection. Use `dup` explicitly when a tested value must remain on the operand stack.
+- Enum values and payloads copy by value. Aggregate definitions are dependency ordered across structs and enums, and direct or mutual by-value recursion is rejected; pointer edges do not participate in that recursion.
+- `fn Name <inputs> -- <outputs> end` defines a nominal first-class function-reference contract. `Name:ref:function` creates an opaque one-Cell reference after exact contract checking, and `Name:call` consumes inputs followed by the reference and produces the declared outputs.
+- Function calls dispatch only to generated function IDs with the exact resolved contract. Function references have no pointer/integer casts, allocation, lifetime, closure environment, anonymous syntax, implicit coercion, or C callback conversion.
+- Functions may share a name only when their resolved ordered input contracts differ. Calls select exactly one matching visible input contract; outputs do not participate. Imports, aliases, and reexports preserve overload families, and builtin function candidates remain a final fallback for unmatched user/imported signatures.
 
 ## Implementation Conventions And Gotchas
 
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
 - Operators are public overloaded builtins lowered to `__intrinsic_*` compiler operations. Intrinsic invocation is module-independent and bypasses builtin shadowing, while declarations and import aliases cannot use the reserved prefix. Update intrinsic contracts, emitted C/runtime support, bootstrap and regression coverage, user-facing docs, and the VS Code grammar together.
 - Name direct compiler-internal pointer-field accessors `@object-field` and `!object-field`, used as `object @object-field` and `value object !object-field`. Keep indexed table operations and computed helpers under descriptive names instead of treating them as direct accessors.
-- Compiler module state is the nominal `ModuleContext` record. Use generated `@ModuleContext.field` / `!ModuleContext.field` operations, keep semantic module values nominal, and confine raw casts to storage boundaries and null/identity checks; do not recreate manual `ctx-*` offset/accessor families.
-- Fixed compiler metadata rows may use nominal records while their table bases remain contiguous raw allocations. Cast once in the row-address helper, size rows with `Type:sizeof`, and use generated typed field operations; `LocalEntry`, `ImportEntry`, `ScopeEntry`, and `BlockFrame` follow this pattern. `ConstantEvaluator` is a nominal record whose `values` field points to a separately grown raw value buffer.
+- Compiler module state is the nominal `ModuleContext` struct. Use generated `@ModuleContext.field` / `!ModuleContext.field` operations, keep semantic module values nominal, and confine raw casts to storage boundaries and null/identity checks; do not recreate manual `ctx-*` offset/accessor families.
+- Fixed compiler metadata rows may use nominal structs while their table bases remain contiguous raw allocations. Cast once in the row-address helper, size rows with `Type:sizeof`, and use generated typed field operations; `LocalEntry`, `ImportEntry`, `ScopeEntry`, and `BlockFrame` follow this pattern. `ConstantEvaluator` is a nominal struct whose `values` field points to a separately grown raw value buffer.
 - `String` lowers to a native copied `{ bytes, len }` descriptor. `String.bytes` and `String.len` expose its fields; copying does not copy bytes, byte storage is writable and shared by equal pooled literals, and generated globals and macro expansion must retain the defining module's pooled literal identity.
-- Record and union type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and union instance operations use `.`.
-- Exact macros may shadow generated nominal operations; otherwise record, union, and function operations resolve before locals and procedures with the same qualified spelling.
-- The compiler loads `stdlib/builtins.frog` through the normal canonical module loader for every compilation and stores that module as the final fallback scope. It contains declarations directly; do not recreate an embedded source string. Ordinary non-C-bound procedures and macros are fallback words, while C-bound procedures remain private.
-- Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract procedure IDs.
+- Struct and enum type IDs share one program-global nominal allocator. Imported aliases and reexports retain the defining identity; type-level construction/allocation uses `:`, while fields and enum instance operations use `.`.
+- Exact macros may shadow generated nominal operations; otherwise struct, enum, and function operations resolve before locals and functions with the same qualified spelling.
+- The compiler loads `stdlib/builtins.frog` through the normal canonical module loader for every compilation and stores that module as the final fallback scope. It contains declarations directly; do not recreate an embedded source string. Ordinary non-C-bound functions and macros are fallback words, while C-bound functions remain private.
+- Function-reference type IDs use a separate non-overlapping nominal range. Imported aliases and reexports retain the defining identity, and each generated indirect-call switch whitelists only exact-contract function IDs.
 - The optimizer folds only adjacent integer literals followed by an unshadowed intrinsic `+`, and only after proving the sum fits signed 64-bit. Overflow behavior and exact macro precedence must remain unchanged.
 - Generated scalar operand locals use `(void)&frog_value_N` to satisfy strict unused-variable diagnostics without reading an uninitialized value; `(void)frog_value_N` is not equivalent.
 - Frog `int` is `intptr_t` in generated C. Fixed-width memory accesses must remain byte-safe through `memcpy` helpers.
-- A tagged union whose variants all have no payload emits only its tag field;
+- An enum whose variants all have no payload emits only its tag field;
   do not add an unused payload union to its generated C representation.
 - When adding a keyword, update native declaration/body scanning, macro validation, compilation, tests, docs, and `ide/vscode/frog_grammar.json`.
 - User-facing compiler failures use stable source-located diagnostics on standard error when a token is available: `PATH:LINE:COLUMN:\n  SOURCE-LINE\n  CARETS\nerror: MESSAGE\n`. Use `<stdin>` for filter input and `<command>` for `run -c`; preserve imported modules' paths. Columns are visual columns: UTF-8 codepoints advance one column and tabs expand to 8-column stops. Attribute macro-expansion errors to the outer call token, and keep focused exact-output coverage for root, CLI, imported-module, tab, UTF-8, and macro cases.

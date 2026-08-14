@@ -18,7 +18,7 @@ macro discard64 discard32 discard32 end
 macro discard128 discard64 discard64 end
 macro discard256 discard128 discard128 end
 
-proc main -- do
+func main -- do
     push256
     discard256
     42 print

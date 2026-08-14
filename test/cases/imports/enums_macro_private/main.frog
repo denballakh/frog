@@ -1,0 +1,5 @@
+from "lib.frog" import unwrap-hidden
+
+func main -- do
+    21 unwrap-hidden print
+end

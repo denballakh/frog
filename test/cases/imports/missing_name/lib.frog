@@ -1,3 +1,3 @@
-proc present -- int do
+func present -- int do
     1
 end

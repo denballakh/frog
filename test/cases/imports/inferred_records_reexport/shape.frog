@@ -1,3 +1,0 @@
-record Point
-    value int
-end

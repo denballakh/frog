@@ -1,1 +1,1 @@
-proc value -- int do 42 end
+func value -- int do 42 end

@@ -2,7 +2,7 @@ macro hidden-binding
     9 let hidden do hidden drop end
 end
 
-proc main -- do
+func main -- do
     1 2
     peek first second do
         first second + drop
@@ -21,7 +21,7 @@ proc main -- do
     end
 end
 
-proc secondary -- do
+func secondary -- do
     7
     let value do
         value drop

@@ -1,4 +1,4 @@
-proc main -- do
+func main -- do
     1 2 3
     let a b c do
         a b c ? print print print

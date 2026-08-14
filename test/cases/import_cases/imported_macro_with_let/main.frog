@@ -1,5 +1,5 @@
 from "macros.frog" import over
 
-proc main -- do
+func main -- do
     1 2 over print print print
 end

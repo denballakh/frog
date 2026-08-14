@@ -1,6 +1,6 @@
 from "stdlib/libc.frog" import ( putc exit read-file )
 
-proc main -- do
+func main -- do
     "README.md"
     let path do
         path String.bytes path String.len read-file

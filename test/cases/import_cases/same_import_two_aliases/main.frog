@@ -1,7 +1,7 @@
 from "math.frog" import inc
 from "math.frog" import inc as bump
 
-proc main -- do
+func main -- do
     1 inc print
     1 bump print
 end

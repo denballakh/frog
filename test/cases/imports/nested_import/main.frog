@@ -1,3 +1,3 @@
-proc main -- do
+func main -- do
     from "lib.frog" import value
 end

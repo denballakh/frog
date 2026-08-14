@@ -1,4 +1,4 @@
-proc main -- do
+func main -- do
     // imports are collected before bodies are compiled
     10 inc print
 end

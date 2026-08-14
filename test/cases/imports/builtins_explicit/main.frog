@@ -3,7 +3,7 @@ from "stdlib/builtins.frog" import (
     assert as builtin-assert
 )
 
-proc main -- do
+func main -- do
     true "must not fail" builtin-assert
     21 builtin-dup + print
 end

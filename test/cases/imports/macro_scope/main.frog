@@ -1,5 +1,5 @@
 from "macros.frog" import expand
 
-proc main -- do
+func main -- do
     5 expand print
 end

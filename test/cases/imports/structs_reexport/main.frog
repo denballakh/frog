@@ -1,0 +1,9 @@
+from "facade.frog" import ( Point read )
+
+func main -- do
+    Point:alloc
+    let point do
+        13 point !Point.x
+        point read print
+    end
+end

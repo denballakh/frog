@@ -1,4 +1,4 @@
 macro if 1 end
 
-proc main -- do
+func main -- do
 end

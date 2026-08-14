@@ -1,6 +1,6 @@
 from "dep.frog" import imported
 
-proc local int -- int do
+func local int -- int do
     10 +
 end
 

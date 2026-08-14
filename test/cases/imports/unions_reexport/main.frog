@@ -1,5 +1,0 @@
-from "facade.frog" import Maybe
-
-proc main -- do
-    13 Maybe:some Maybe.some print
-end

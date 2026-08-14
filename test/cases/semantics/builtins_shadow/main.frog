@@ -1,10 +1,10 @@
 from "fallbacks.frog" import exercise-builtins
 
-proc drop int -- int do 1 + end
+func drop int -- int do 1 + end
 macro swap let first second do first second end end
-proc assert bool String -- int do let condition message do 99 end end
+func assert bool String -- int do let condition message do 99 end end
 
-proc main -- do
+func main -- do
     41 drop print
 
     7

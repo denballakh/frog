@@ -1,0 +1,69 @@
+enum EnumOnly
+    case first
+    case second
+end
+
+func maybe-value Maybe -- int do Maybe.some end
+
+enum Maybe
+    case none
+    case some int
+end
+
+func is-none Maybe -- bool do Maybe.none? end
+
+struct Payload
+    value int
+    maybe Maybe
+end
+
+enum Box
+    case empty
+    case full Payload*
+end
+
+enum Chain
+    case stop
+    case next Chain*
+end
+
+enum Scalar
+    case flag bool
+    case address ptr
+end
+
+func main -- do
+    EnumOnly:first
+    let value do
+        value EnumOnly.first? print
+        value EnumOnly.first
+    end
+
+    Maybe:none is-none print
+    Maybe:none Maybe.some? print
+    Maybe:none Maybe.none
+    Maybe:none Maybe cast Maybe.none
+    9 Maybe:some
+    let value do
+        value Maybe.some? print
+        value maybe-value print
+    end
+
+    Payload:alloc
+    let payload do
+        7 payload !Payload.value
+        Maybe:none payload !Payload.maybe
+        payload @Payload.maybe Maybe.none
+        payload Box:full
+        let boxed do
+            boxed Box.full? print
+            boxed Box.full @Payload.value print
+        end
+    end
+
+    0 ptr cast Chain* cast Chain:next Chain.next? print
+
+
+    true Scalar:flag Scalar.flag print
+    0 ptr cast Scalar:address Scalar.address int cast 0 == print
+end

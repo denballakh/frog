@@ -2,7 +2,7 @@ from "modules/math.frog" import ( inc as up dec )
 from "modules/math.frog" import inc
 from "modules/../modules/math.frog" import inc
 
-proc main -- do
+func main -- do
     5 up print
     5 dec print
     5 inc print

@@ -1,9 +1,0 @@
-fn Mapper int -- int end
-
-proc inc int -- int do 1 + end
-
-macro Mapper:ref:inc 99 end
-
-proc main -- do
-    Mapper:ref:inc print
-end

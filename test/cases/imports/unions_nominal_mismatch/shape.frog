@@ -1,4 +1,0 @@
-union Imported
-    case none
-    case some int
-end

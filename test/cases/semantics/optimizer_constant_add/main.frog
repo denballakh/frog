@@ -1,6 +1,6 @@
 macro constant-add 4 5 + end
 
-proc main -- do
+func main -- do
     2 3 + print
     0x10 0b10 + print
     1 2 dynamic-add print
@@ -16,4 +16,4 @@ proc main -- do
     end
 end
 
-proc dynamic-add int int -- int do + end
+func dynamic-add int int -- int do + end

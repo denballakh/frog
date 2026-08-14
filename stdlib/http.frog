@@ -20,14 +20,14 @@ from "string.frog" import (
     byte-buffer-free
 )
 
-record HttpRequest
+struct HttpRequest
     head bool
     target ptr
     target_len int
     storage ptr
 end
 
-record HttpResponse
+struct HttpResponse
     status int
     body ptr
     body_len int
@@ -48,11 +48,11 @@ const http-read-closed 1 end
 const http-read-reject 2 end
 const http-read-io-error 3 end
 
-proc http-null-request -- HttpRequest* do
+func http-null-request -- HttpRequest* do
     0 ptr cast HttpRequest* cast
 end
 
-proc http-response-forbids-body? int -- bool do
+func http-response-forbids-body? int -- bool do
     let status do
         status 204 ==
         status 205 == ||
@@ -60,7 +60,7 @@ proc http-response-forbids-body? int -- bool do
     end
 end
 
-proc http-response-bytes int ptr int -- HttpResponse* do
+func http-response-bytes int ptr int -- HttpResponse* do
     let status bytes length do
         if status 200 < status 599 > || do 1 exit end
         if length 0 < do 1 exit end
@@ -80,24 +80,24 @@ proc http-response-bytes int ptr int -- HttpResponse* do
     end
 end
 
-proc http-response int String -- HttpResponse* do
+func http-response int String -- HttpResponse* do
     let status body do
         status body String.bytes body String.len http-response-bytes
     end
 end
 
-proc http-response-free HttpResponse* -- do
+func http-response-free HttpResponse* -- do
     let response do
         response @HttpResponse.body free
         response ptr cast free
     end
 end
 
-proc http-byte-space-or-tab? int -- bool do
+func http-byte-space-or-tab? int -- bool do
     let byte do byte 32 == byte 9 == || end
 end
 
-proc http-token-byte? int -- bool do
+func http-token-byte? int -- bool do
     let byte do
         byte 48 >= byte 57 <= &&
         byte 65 >= byte 90 <= && ||
@@ -120,24 +120,24 @@ proc http-token-byte? int -- bool do
     end
 end
 
-proc http-header-value-byte? int -- bool do
+func http-header-value-byte? int -- bool do
     let byte do
         byte 9 ==
         byte 32 >= byte 127 != && ||
     end
 end
 
-proc http-target-byte? int -- bool do
+func http-target-byte? int -- bool do
     let byte do byte 33 >= byte 127 != && end
 end
 
-proc http-ascii-lower int -- int do
+func http-ascii-lower int -- int do
     let byte do
         if byte 65 >= byte 90 <= && do byte 32 + else byte end
     end
 end
 
-proc http-bytes-case-equal ptr int String -- bool do
+func http-bytes-case-equal ptr int String -- bool do
     let bytes length expected do
         if length expected String.len != do
             false
@@ -157,7 +157,7 @@ proc http-bytes-case-equal ptr int String -- bool do
     end
 end
 
-proc http-token-range? ptr int int -- bool do
+func http-token-range? ptr int int -- bool do
     let bytes start finish do
         start true
         while peek index valid do index finish < valid && end
@@ -171,7 +171,7 @@ proc http-token-range? ptr int int -- bool do
     end
 end
 
-proc http-header-value-range? ptr int int -- bool do
+func http-header-value-range? ptr int int -- bool do
     let bytes start finish do
         start true
         while peek index valid do index finish < valid && end
@@ -185,7 +185,7 @@ proc http-header-value-range? ptr int int -- bool do
     end
 end
 
-proc http-target-range? ptr int -- bool do
+func http-target-range? ptr int -- bool do
     let bytes length do
         0 true
         while peek index valid do index length < valid && end
@@ -199,7 +199,7 @@ proc http-target-range? ptr int -- bool do
     end
 end
 
-proc http-find-crlf ptr int int -- int do
+func http-find-crlf ptr int int -- int do
     let bytes start finish do
         start false
         while peek index found do index 1 + finish < found ! && end
@@ -218,7 +218,7 @@ proc http-find-crlf ptr int int -- int do
     end
 end
 
-proc http-find-header-end ptr int -- int do
+func http-find-header-end ptr int -- int do
     let bytes length do
         0 false
         while peek index found do index 3 + length < found ! && end
@@ -239,7 +239,7 @@ proc http-find-header-end ptr int -- int do
     end
 end
 
-proc http-method-target ptr int String -- ptr int bool do
+func http-method-target ptr int String -- ptr int bool do
     let bytes line-end prefix do
         " HTTP/1.1"
         let suffix do
@@ -266,7 +266,7 @@ proc http-method-target ptr int String -- ptr int bool do
     end
 end
 
-proc http-request-line ptr int -- bool ptr int bool do
+func http-request-line ptr int -- bool ptr int bool do
     let bytes line-end do
         bytes line-end "GET " http-method-target
         let target target-length valid do
@@ -286,7 +286,7 @@ proc http-request-line ptr int -- bool ptr int bool do
     end
 end
 
-proc http-validate-header ptr int int bool bool -- bool bool bool do
+func http-validate-header ptr int int bool bool -- bool bool bool do
     let bytes start finish has-host has-content-length do
         start
         while peek index do
@@ -355,7 +355,7 @@ proc http-validate-header ptr int int bool bool -- bool bool bool do
     end
 end
 
-proc http-validate-headers ptr int int -- bool do
+func http-validate-headers ptr int int -- bool do
     let bytes length start do
         start false false true false
         while peek position has-host has-content-length valid done do
@@ -395,7 +395,7 @@ proc http-validate-headers ptr int int -- bool do
     end
 end
 
-proc http-parse-request ptr int -- HttpRequest* bool do
+func http-parse-request ptr int -- HttpRequest* bool do
     let storage length do
         storage 0 length http-find-crlf
         let line-end do
@@ -424,7 +424,7 @@ proc http-parse-request ptr int -- HttpRequest* bool do
     end
 end
 
-proc http-read-request int -- HttpRequest* int do
+func http-read-request int -- HttpRequest* int do
     let descriptor do
         http-request-buffer-size alloc
         let storage do
@@ -484,21 +484,21 @@ proc http-read-request int -- HttpRequest* int do
     end
 end
 
-proc http-request-free HttpRequest* -- do
+func http-request-free HttpRequest* -- do
     let request do
         request @HttpRequest.storage free
         request ptr cast free
     end
 end
 
-proc http-buffer-append-decimal int ByteBuffer* -- do
+func http-buffer-append-decimal int ByteBuffer* -- do
     let value buffer do
         if value 10 >= do value 10 / buffer http-buffer-append-decimal end
         value 10 % 48 + buffer byte-buffer-push
     end
 end
 
-proc http-write-all int ptr int -- bool do
+func http-write-all int ptr int -- bool do
     let descriptor bytes length do
         0 true
         while peek offset valid do offset length < valid && end
@@ -522,7 +522,7 @@ proc http-write-all int ptr int -- bool do
     end
 end
 
-proc http-response-header HttpResponse* -- ByteBuffer* do
+func http-response-header HttpResponse* -- ByteBuffer* do
     let response do
         96 byte-buffer-new
         let buffer do
@@ -543,7 +543,7 @@ proc http-response-header HttpResponse* -- ByteBuffer* do
     end
 end
 
-proc http-send-response int bool HttpResponse* -- bool do
+func http-send-response int bool HttpResponse* -- bool do
     let descriptor head response do
         response http-response-header
         let header do
@@ -563,7 +563,7 @@ proc http-send-response int bool HttpResponse* -- bool do
     end
 end
 
-proc http-send-rejection int -- bool do
+func http-send-rejection int -- bool do
     let descriptor do
         400 0 ptr cast 0 http-response-bytes
         let response do
@@ -576,7 +576,7 @@ proc http-send-rejection int -- bool do
     end
 end
 
-proc http-serve-connected int HttpHandler -- int do
+func http-serve-connected int HttpHandler -- int do
     let descriptor handler do
         descriptor http-read-request
         let request read-status do
@@ -606,7 +606,7 @@ proc http-serve-connected int HttpHandler -- int do
     end
 end
 
-proc http-serve-connection int HttpHandler -- int do
+func http-serve-connection int HttpHandler -- int do
     let descriptor handler do
         if ignore-sigpipe ! do
             descriptor close drop
@@ -617,7 +617,7 @@ proc http-serve-connection int HttpHandler -- int do
     end
 end
 
-proc http-serve-one int HttpHandler -- int do
+func http-serve-one int HttpHandler -- int do
     let listener handler do
         if ignore-sigpipe ! do
             http-serve-signal-error

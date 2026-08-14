@@ -1,5 +1,0 @@
-from "facade.frog" import ( Mapper inc )
-
-proc main -- do
-    42 Mapper:ref:inc Mapper:call print
-end

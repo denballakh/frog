@@ -1,0 +1,2 @@
+struct __intrinsic_user value int end
+func main -- do end

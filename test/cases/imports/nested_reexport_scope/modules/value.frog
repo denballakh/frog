@@ -1,7 +1,7 @@
-proc helper -- int do
+func helper -- int do
     7
 end
 
-proc value -- int do
+func value -- int do
     helper
 end

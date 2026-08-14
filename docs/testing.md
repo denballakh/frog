@@ -33,7 +33,7 @@ import, and CLI cases. Successful programs are compiled to C, built with strict
 C11 warnings, and executed. Tests compare exact output, diagnostics, and exit
 status, and also check selected generated-C properties.
 
-CLI cases also verify that `frogc check [FILE]` analyzes every procedure without
+CLI cases also verify that `frogc check [FILE]` analyzes every function without
 emitting C, using standard input when `FILE` is omitted. Formatter cases cover
 line-boundary stack indentation, folded physical lines, structured regions,
 comments, multiline literals, LF/CRLF/lone-CR preservation, idempotence,
@@ -61,7 +61,7 @@ The case manifests are:
 - `test/example_cases.frog` for every checked-in example.
 
 Fixtures live under `test/cases/`. Inline helpers wrap ordinary snippet bodies
-in `proc main -- do ... end`; malformed whole-program cases provide their source
+in `func main -- do ... end`; malformed whole-program cases provide their source
 verbatim.
 
 Run only this corpus with:

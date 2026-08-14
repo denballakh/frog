@@ -1,0 +1,9 @@
+fn Mapper int -- int end
+
+func inc int -- int do 1 + end
+
+macro Mapper:ref:inc 99 end
+
+func main -- do
+    Mapper:ref:inc print
+end

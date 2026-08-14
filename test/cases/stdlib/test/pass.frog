@@ -8,7 +8,7 @@ from "stdlib/test.frog" import (
     test-finish
 )
 
-proc main -- do
+func main -- do
     test-suite
     let suite do
         true "boolean" suite check

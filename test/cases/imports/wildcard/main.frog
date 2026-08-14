@@ -1,4 +1,4 @@
 from "lib.frog" import *
 
-proc main -- do
+func main -- do
 end

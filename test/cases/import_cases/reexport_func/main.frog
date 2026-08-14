@@ -1,0 +1,5 @@
+from "facade.frog" import inc
+
+func main -- do
+    4 inc print
+end

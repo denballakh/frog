@@ -1,0 +1,114 @@
+fn Mapper int -- int end
+fn Unit -- end
+fn Add int int -- int end
+fn Duplicate int -- int int end
+fn Answer -- int end
+fn BoxValue Box* -- int end
+fn MaybeValue Maybe -- int end
+fn Apply Mapper int -- int end
+fn Factory -- Mapper end
+fn BoolUnary bool -- bool end
+fn PtrUnary ptr -- ptr end
+fn Self Self -- Self end
+fn Countdown int -- int end
+fn Pair -- int int end
+
+func before-inc -- int do 41 Mapper:ref:inc Mapper:call end
+
+struct Box
+    value int
+end
+
+struct Stored
+    mapper Mapper
+end
+
+enum Maybe
+    case none
+    case some int
+end
+
+enum OptionalMapper
+    case none
+    case some Mapper
+end
+
+func inc int -- int do 1 + end
+func unit -- do end
+func add int int -- int do + end
+func duplicate int -- int int do dup end
+c-include local "test/cases/semantics/function_references_layout/helper.h" end
+c-type CInt int "int" end
+c-call ffi-answer ffi_test_answer -- CInt end
+func box-value Box* -- int do @Box.value end
+func maybe-value Maybe -- int do Maybe.some end
+func apply Mapper int -- int do
+    let mapper value do
+        value mapper Mapper:call
+    end
+end
+func factory -- Mapper do Mapper:ref:inc end
+func negate bool -- bool do ! end
+func ptr-id ptr -- ptr do end
+func self-id Self -- Self do end
+func countdown int -- int do
+    if dup 0 == do else 1 - countdown end
+end
+func pair -- int int do 11 22 end
+func subtract int int -- int do - end
+
+func main -- do
+    Unit:ref:unit Unit:call
+    before-inc print
+
+    Mapper:ref:inc
+    let mapper do
+        1 mapper Mapper:call print
+        2 mapper Mapper:call print
+    end
+
+    20 22 Add:ref:add Add:call print
+    7 Duplicate:ref:duplicate Duplicate:call print print
+    Answer:ref:ffi-answer Answer:call print
+
+    Box:alloc
+    let box do
+        8 box !Box.value
+        box BoxValue:ref:box-value BoxValue:call print
+    end
+    5 Maybe:some MaybeValue:ref:maybe-value MaybeValue:call print
+
+    Mapper:ref:inc 41 Apply:ref:apply Apply:call print
+    Factory:ref:factory Factory:call
+    let mapper do
+        41 mapper Mapper:call print
+    end
+
+
+    Stored:alloc
+    let stored do
+        Mapper:ref:inc stored !Stored.mapper
+        4 stored @Stored.mapper Mapper:call print
+    end
+    Mapper:ref:inc OptionalMapper:some OptionalMapper.some
+    let mapper do
+        5 mapper Mapper:call print
+    end
+    false BoolUnary:ref:negate BoolUnary:call print
+    0 ptr cast PtrUnary:ref:ptr-id PtrUnary:call int cast 0 == print
+    Self:ref:self-id dup Self:call drop
+    3 Countdown:ref:countdown Countdown:call print
+    99 pair
+    let prefix first second do
+        first print
+        second print
+        prefix print
+    end
+    77 Pair:ref:pair Pair:call
+    let prefix first second do
+        first print
+        second print
+        prefix print
+    end
+    20 3 subtract print
+end

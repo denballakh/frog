@@ -2,6 +2,6 @@ c-include local "test/cases/semantics/private_c_symbol/helper.h" end
 c-type CInt int "int" end
 c-call probe __intrinsic_symbol -- CInt end
 
-proc main -- do
+func main -- do
     probe print
 end

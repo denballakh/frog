@@ -1,1 +1,1 @@
-proc value -- do nope end
+func value -- do nope end

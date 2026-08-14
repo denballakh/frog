@@ -1,3 +1,0 @@
-
-proc helper -- int do 7 end
-proc value -- int do helper end

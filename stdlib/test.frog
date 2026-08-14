@@ -1,12 +1,12 @@
 from "libc.frog" import ( free eputc exit )
 from "string.frog" import bytes-equal
 
-record TestSuite
+struct TestSuite
     checks int
     failures int
 end
 
-proc test-emit-error String -- do
+func test-emit-error String -- do
     let value do
         0
         while dup value String.len < do
@@ -19,17 +19,17 @@ proc test-emit-error String -- do
     end
 end
 
-proc test-report-failure String -- do
+func test-report-failure String -- do
     "FAIL: " test-emit-error
     test-emit-error
     10 eputc
 end
 
-proc test-suite -- TestSuite* do
+func test-suite -- TestSuite* do
     TestSuite:alloc
 end
 
-proc check bool String TestSuite* -- do
+func check bool String TestSuite* -- do
     let condition name suite do
         suite @TestSuite.checks 1 + suite !TestSuite.checks
         if condition do
@@ -40,20 +40,20 @@ proc check bool String TestSuite* -- do
     end
 end
 
-proc check-int-equal int int String TestSuite* -- do
+func check-int-equal int int String TestSuite* -- do
     let actual expected name suite do
         actual expected == name suite check
     end
 end
 
-proc check-bytes-equal ptr int ptr int String TestSuite* -- do
+func check-bytes-equal ptr int ptr int String TestSuite* -- do
     let actual actual-length expected expected-length name suite do
         actual actual-length expected expected-length bytes-equal
         name suite check
     end
 end
 
-proc check-string-equal String String String TestSuite* -- do
+func check-string-equal String String String TestSuite* -- do
     let actual expected name suite do
         actual String.bytes actual String.len
             expected String.bytes expected String.len
@@ -61,7 +61,7 @@ proc check-string-equal String String String TestSuite* -- do
     end
 end
 
-proc test-finish TestSuite* -- do
+func test-finish TestSuite* -- do
     let suite do
         suite @TestSuite.failures
         let failures do

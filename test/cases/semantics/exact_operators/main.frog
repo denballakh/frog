@@ -1,6 +1,6 @@
 from "stdlib/libc.frog" import alloc
 
-proc main -- do
+func main -- do
     7 i8 cast 3 i8 cast + int cast print
     1 u32 cast 3 u32 cast << int cast print
     2 u16 cast 3 u16 cast < print

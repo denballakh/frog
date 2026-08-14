@@ -1,7 +1,0 @@
-from "shape.frog" import Point
-
-record Point
-    x int
-end
-
-proc main -- do end

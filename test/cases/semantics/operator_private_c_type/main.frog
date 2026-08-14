@@ -1,2 +1,2 @@
 c-type __intrinsic_user int "int" end
-proc main -- do end
+func main -- do end

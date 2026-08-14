@@ -1,1 +1,1 @@
-proc increment int -- int do 1 + end
+func increment int -- int do 1 + end

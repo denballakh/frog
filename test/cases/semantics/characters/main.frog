@@ -1,4 +1,4 @@
-proc main -- do
+func main -- do
     'A' print
     'é' print
     '€' print

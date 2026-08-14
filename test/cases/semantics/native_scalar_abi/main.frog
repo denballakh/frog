@@ -1,20 +1,20 @@
 fn RefPair i8 bool -- i8 bool end
 fn RefBool bool -- bool end
 
-union NativeValue
+enum NativeValue
     case flag bool
     case byte i8
     case address ptr
 end
 
-proc pair-int-bool int bool -- int bool do end
-proc pair-bool-int bool int -- bool int do end
-proc ref-pair i8 bool -- i8 bool do end
-proc ref-bool bool -- bool do end
+func pair-int-bool int bool -- int bool do end
+func pair-bool-int bool int -- bool int do end
+func ref-pair i8 bool -- i8 bool do end
+func ref-bool bool -- bool do end
 
-proc native-roundtrip int bool i8 i16 i32 i64 u8 u16 u32 u64 ptr i8* -- int bool i8 i16 i32 i64 u8 u16 u32 u64 ptr i8* do end
+func native-roundtrip int bool i8 i16 i32 i64 u8 u16 u32 u64 ptr i8* -- int bool i8 i16 i32 i64 u8 u16 u32 u64 ptr i8* do end
 
-proc local-reuse bool -- do
+func local-reuse bool -- do
     drop
     if true do
         1 i8 cast drop
@@ -23,14 +23,14 @@ proc local-reuse bool -- do
     end
 end
 
-proc control i8 bool -- i8 bool do
+func control i8 bool -- i8 bool do
     let value condition do
         if condition do value else value end
           true
     end
 end
 
-proc main -- do
+func main -- do
     7 true pair-int-bool print print
     false 8 pair-bool-int print print
     9 i8 cast true RefPair:ref:ref-pair RefPair:call print int cast print

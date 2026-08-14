@@ -1,0 +1,5 @@
+from "facade.frog" import add_two
+
+func main -- do
+    4 add_two print
+end

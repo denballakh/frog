@@ -1,3 +1,0 @@
-from "lib.frog" import Mapper as int
-
-proc main -- do end

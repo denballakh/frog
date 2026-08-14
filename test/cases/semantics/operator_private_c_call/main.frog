@@ -1,2 +1,2 @@
 c-call __intrinsic_user puts ptr -- int end
-proc main -- do end
+func main -- do end

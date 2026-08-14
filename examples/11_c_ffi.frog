@@ -11,7 +11,7 @@ c-call length strlen CBytes -- CSize end
 c-call allocate malloc CSize -- CPtr end
 c-call release free CPtr -- end
 
-proc main -- do
+func main -- do
     -42 magnitude print
     "frog" String.bytes length print
     32 allocate release

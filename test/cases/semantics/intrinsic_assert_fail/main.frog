@@ -1,3 +1,3 @@
-proc main -- do
+func main -- do
     "intrinsic failure" __intrinsic_assert_fail
 end

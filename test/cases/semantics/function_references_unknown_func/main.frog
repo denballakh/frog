@@ -1,0 +1,13 @@
+fn Mapper int -- int end
+
+struct Slot
+    value Mapper
+end
+
+func main -- do
+    Slot:alloc
+    let slot do
+        1 62 u32 cast << i64 cast slot ptr cast i64* cast !
+        1 slot @Slot.value Mapper:call drop
+    end
+end

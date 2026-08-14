@@ -22,7 +22,7 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\b(proc|c-include|c-type|c-call|c-value|record|union|case|fn|macro|const|from|import|as|if|elif|else|while|do|end|let|peek)\\b",
+          "match": "\\b(func|c-include|c-type|c-call|c-value|struct|enum|case|fn|macro|const|from|import|as|if|elif|else|while|do|end|let|peek)\\b",
           "name": "keyword.control.frog"
         }
       ]

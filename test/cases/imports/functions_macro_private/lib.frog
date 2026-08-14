@@ -1,9 +1,0 @@
-fn Hidden int -- int end
-
-proc double int -- int do 2 * end
-
-macro apply-hidden
-    let value do
-        value Hidden:ref:double Hidden:call
-    end
-end
