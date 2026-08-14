@@ -21,6 +21,7 @@ just frogc-seed
 build/frogc -h
 build/frogc check examples/01_simple.frog
 build/frogc inspect examples/01_simple.frog
+build/frogc cursor --byte 0 examples/01_simple.frog
 build/frogc run examples/01_simple.frog
 ```
 
@@ -28,9 +29,9 @@ Every root program must define exactly one `proc main -- do ... end` with no inp
 
 ## Command-line interface
 
-`build/frogc -h` shows CLI help. With no arguments, `build/frogc` is a compiler filter: it reads Frog source from standard input and writes generated C to standard output. `check` performs full semantic analysis without generating C; it reads the named file, or standard input when no file is given. `inspect` accepts input the same way and prints the analyzed program for developer tools. Pass `--builtins` to include implicitly imported builtin procedure bodies. Pass `--lexemes` to include lossless source lexemes and syntax regions; both options may be combined. The versioned output is a diagnostic interface and may change between versions. See the [compiler inspection reference](./docs/inspect.md) for its schemas and escaping rules. Imported module paths are relative to the root source directory. `run` writes reusable scratch artifacts under `build/`, compiles them, and executes the binary. `build` writes the source-adjacent `.c` and executable directly; `build -r` runs the resulting executable.
+`build/frogc -h` shows CLI help. With no arguments, `build/frogc` is a compiler filter: it reads Frog source from standard input and writes generated C to standard output. `check` performs full semantic analysis without generating C; it reads the named file, or standard input when no file is given. `inspect` accepts input the same way and prints the analyzed program for developer tools. Pass `--builtins` to include implicitly imported builtin procedure bodies. Pass `--lexemes` to include lossless source lexemes and syntax regions; both options may be combined. `cursor --byte OFFSET [FILE]` reports semantic identities, visible names, and typed stacks at a root-source byte position. These versioned outputs are diagnostic interfaces and may change between versions. See the [compiler inspection reference](./docs/inspect.md) and [semantic cursor reference](./docs/cursor.md). Imported module paths are relative to the root source directory. `run` writes reusable scratch artifacts under `build/`, compiles them, and executes the binary. `build` writes the source-adjacent `.c` and executable directly; `build -r` runs the resulting executable.
 
-Prefix a filter, `check`, `inspect`, `run`, or `build` invocation with `--debug` to trace compile-time type stacks to standard error. Use `--release` to omit calls to the implicit builtin `assert` while retaining operand evaluation. See the [language reference](./docs/language.md) for details.
+Prefix a filter, `check`, `inspect`, `cursor`, `run`, or `build` invocation with `--debug` to trace compile-time type stacks to standard error. Use `--release` to omit calls to the implicit builtin `assert` while retaining operand evaluation. See the [language reference](./docs/language.md) for details.
 
 ## Bootstrap
 
@@ -61,6 +62,7 @@ build/frogc < compiler/frogc.frog > build/frogc.next.c
 - [Language reference](./docs/language.md)
 - [Standard library](./docs/stdlib.md)
 - [Compiler inspection output](./docs/inspect.md)
+- [Semantic cursor queries](./docs/cursor.md)
 - [Testing and bootstrap verification](./docs/testing.md)
 - [VS Code support](./docs/ide/vscode.md)
 - [Examples](./examples/README.md)

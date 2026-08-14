@@ -22,6 +22,9 @@ This interface is intended for compiler tests and early developer-tool
 prototypes. Consumers must check the format number; it is not a stable public
 serialization format.
 
+For a position-oriented view of resolved identities, visible names, and the
+typed stack, use [`frogc cursor`](./cursor.md).
+
 ## Format 4: analyzed program
 
 Ordinary `inspect` emits format 4. Its rows describe:

@@ -28,6 +28,8 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
 - `docs/stdlib.md`: User-facing standard-library module reference.
 - `docs/inspect.md`: Developer-facing reference for versioned `frogc inspect`
   output.
+- `docs/cursor.md`: Developer-facing reference for versioned `frogc cursor`
+  semantic queries.
 - `docs/testing.md`: Test suite layout and commands.
 - `TODO.md`: User-approved future improvements and cleanup ideas.
 - `stdlib/`: Dependency-free Frog modules. They declare external dependencies
@@ -78,6 +80,7 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
 Useful direct commands:
 
 - CLI help: `build/frogc -h`
+- Query source semantics: `build/frogc cursor --byte 0 examples/01_simple.frog`
 - Compile and run a file: `build/frogc run examples/01_simple.frog`
 - Compile and run inline source: `build/frogc run -c 'proc main -- do 1 2 + print end'`
 - Build a file: `build/frogc build examples/01_simple.frog`
@@ -110,7 +113,7 @@ Useful direct commands:
 
 - Entrypoint is `build/frogc` (or `just cli <args>`).
 - With no arguments, it is a compiler filter: it reads Frog source from standard input and writes generated C to standard output.
-- Subcommands are `check`, `inspect`, `run`, and `build`; each has
+- Subcommands are `check`, `inspect`, `cursor`, `run`, and `build`; each has
   `-h`/`--help`.
 - `run` accepts `-c CODE` or one file path. It invokes the compiler core in a child process, writes reusable C/executable scratch artifacts under `build/`, and executes the binary.
 - `build FILE` compiles Frog directly to a source-adjacent `.c`, then compiles C directly to an `.exe`; `-o FILE` selects a different executable destination.
@@ -119,6 +122,10 @@ Useful direct commands:
 - `inspect --lexemes` emits lossless lexemes and syntax regions in format 5.
   It composes with `--builtins` in either order. Ordinary inspection remains
   format 4.
+- `cursor --byte OFFSET [FILE]` emits format 1 semantic contexts,
+  occurrences, visible names, and typed stacks for a root-source byte offset.
+  The offset may equal the source length; imported source positions require a
+  separate invocation with that file as the root.
 
 Use `build/frogc -h` for current CLI help. Exact help text belongs in CLI tests,
 not in this maintenance guide.
@@ -150,6 +157,10 @@ not in this maintenance guide.
 - Each loaded module retains lossless token, comment, and whitespace lexemes
   that partition its source bytes, plus explicit module, declaration, and
   nested control-flow syntax regions with half-open token and byte ranges.
+- Analyzed programs retain canonical declaration/reference occurrences,
+  import-binding identities, procedure-local visibility intervals, and typed
+  cursor states. Macro-body states are caller-specialized and retain nested
+  expansion parents; unused macro bodies do not fabricate semantic contexts.
 - Global `--debug` traces outer source-word type stacks to stderr during the measurement pass only. Global `--release` may be combined with it in either order and omits only implicitly resolved builtin assertion calls while preserving operand evaluation. Optimized source words must still be traced without changing the measured slot bound or generated C bytes.
 - Generated procedures use normal C parameters and return values. `int`, `bool`,
   exact-width integers, `ptr`, and typed pointers use their corresponding

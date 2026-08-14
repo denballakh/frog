@@ -24,6 +24,11 @@ relative imports, resolved cross-module targets, and typed control-flow blocks,
 and require semantic failures to leave standard output empty. Format-5 cases
 also verify lossless token, comment, and whitespace coverage, explicit syntax
 regions, escaped lexeme text, and combined `--builtins --lexemes` inspection.
+Cursor cases verify command-line errors, byte and trivia selection, end of file,
+canonical declaration and import-alias identities, overload selection, local
+and builtin shadowing, macro/type/local resolution precedence, compound
+owner/member spans, specialized macro contexts, and empty standard output after
+analysis failure.
 
 The case manifests are:
 

@@ -1,0 +1,6 @@
+from "lib.frog" import step as advance
+
+proc main -- do
+    1 advance drop
+    true advance drop
+end

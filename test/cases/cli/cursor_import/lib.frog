@@ -1,0 +1,2 @@
+proc step int -- int do 1 + end
+proc step bool -- bool do ! end

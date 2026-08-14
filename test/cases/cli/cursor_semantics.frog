@@ -1,0 +1,37 @@
+record Point
+    x int
+    y int
+end
+
+union Maybe
+    case none
+    case some int
+end
+
+fn Mapper int -- int end
+
+proc choose int -- int do 1 + end
+proc choose bool -- bool do ! end
+
+macro dispatch choose end
+macro nested dispatch end
+macro never-used choose end
+
+proc main -- do
+    Point:new @Point.x drop
+    Maybe:none drop
+    7 Maybe:some drop
+    8 Mapper:ref:choose Mapper:call drop
+
+    1 nested drop
+    true nested drop
+
+    10
+    let shadow-name do
+        shadow-name
+        let shadow-name do
+            shadow-name 0 + drop
+        end
+        shadow-name 1 + drop
+    end
+end

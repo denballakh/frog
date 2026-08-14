@@ -88,6 +88,7 @@ record ModuleContext
     functions ptr
     function_count int
     function_types ptr
+    function_type_tokens ptr
     function_type_count int
     constants ptr
     constant_count int
@@ -104,6 +105,8 @@ record ConstantEvaluator
     capacity int
     module ModuleContext*
     token int
+    constant_index int
+    cursor_state int
 end
 
 record ImportEntry
@@ -118,7 +121,9 @@ end
 record CTypeEntry
     name_start int
     name_length int
+    name_token int
     frog_type int
+    frog_type_token int
     type_token int
 end
 
@@ -1666,15 +1671,28 @@ proc function-signature-type-at ModuleContext* int -- int do
     end
 end
 
+proc function-signature-token-at ModuleContext* int -- int do
+    let ctx index do
+        ctx @ModuleContext.function_type_tokens index cell-bytes * field-read
+    end
+end
+
 proc set-function-signature-type int ModuleContext* int -- do
     let value ctx index do
         value ctx @ModuleContext.function_types index cell-bytes * field-write
     end
 end
 
-proc add-function-signature-type ModuleContext* int -- do
-    let ctx value do
+proc set-function-signature-token int ModuleContext* int -- do
+    let value ctx index do
+        value ctx @ModuleContext.function_type_tokens index cell-bytes * field-write
+    end
+end
+
+proc add-function-signature-type ModuleContext* int int -- do
+    let ctx token value do
         value ctx ctx @ModuleContext.function_type_count set-function-signature-type
+        token ctx ctx @ModuleContext.function_type_count set-function-signature-token
         ctx @ModuleContext.function_type_count 1 + ctx !ModuleContext.function_type_count
     end
 end
@@ -1696,12 +1714,20 @@ proc add-type ModuleContext* int -- do
         ctx ctx @ModuleContext.type_count c-signature-type-at
         let signature do
             false signature !CSignatureType.active
-            0 signature !CSignatureType.token
+            0 1 - signature !CSignatureType.token
             0 ptr cast ModuleContext* cast signature !CSignatureType.definition_module
             0 1 - signature !CSignatureType.definition_index
         end
         value ctx @ModuleContext.types ctx @ModuleContext.type_count cell-bytes * field-write
         ctx @ModuleContext.type_count 1 + ctx !ModuleContext.type_count
+    end
+end
+
+
+proc add-source-type ModuleContext* int int -- do
+    let ctx token value do
+        ctx value add-type
+        token ctx ctx @ModuleContext.type_count 1 - c-signature-type-at !CSignatureType.token
     end
 end
 
@@ -2245,6 +2271,7 @@ proc scan-record-fields ModuleContext* int int -- int do
                 let field-index do
                     ctx token-index token-at @TokenEntry.start ctx field-index record-field-at !RecordFieldEntry.name_start
                     ctx token-index token-at @TokenEntry.length ctx field-index record-field-at !RecordFieldEntry.name_length
+                    token-index ctx field-index record-field-at !RecordFieldEntry.name_token
                     ctx type-token parse-type-token ctx field-index record-field-at !RecordFieldEntry.field_type
                     type-token ctx field-index record-field-at !RecordFieldEntry.type_token
                     field-index 1 + ctx !ModuleContext.record_field_count
@@ -2297,6 +2324,7 @@ proc scan-one-record ModuleContext* int -- int do
             let record-index do
                 ctx name-token token-at @TokenEntry.start ctx record-index record-type-at !RecordTypeEntry.name_start
                 ctx name-token token-at @TokenEntry.length ctx record-index record-type-at !RecordTypeEntry.name_length
+                name-token ctx record-index record-type-at !RecordTypeEntry.name_token
                 ctx @ModuleContext.record_field_count ctx record-index record-type-at !RecordTypeEntry.field_start
                 0 ctx record-index record-type-at !RecordTypeEntry.field_count
                 ctx @ModuleContext.program program-allocate-nominal-type ctx record-index record-type-at !RecordTypeEntry.record_type
@@ -2357,6 +2385,7 @@ proc scan-union-cases ModuleContext* int int -- int do
                 let case-index do
                     ctx name-token token-at @TokenEntry.start ctx case-index union-case-at !UnionCaseEntry.name_start
                     ctx name-token token-at @TokenEntry.length ctx case-index union-case-at !UnionCaseEntry.name_length
+                    name-token ctx case-index union-case-at !UnionCaseEntry.name_token
                     type-none ctx case-index union-case-at !UnionCaseEntry.payload_type
                     0 1 - ctx case-index union-case-at !UnionCaseEntry.type_token
                     ctx union-index union-type-at @UnionTypeEntry.case_count ctx case-index union-case-at !UnionCaseEntry.tag
@@ -2450,6 +2479,7 @@ proc scan-one-union ModuleContext* int -- int do
             let union-index do
                 ctx name-token token-at @TokenEntry.start ctx union-index union-type-at !UnionTypeEntry.name_start
                 ctx name-token token-at @TokenEntry.length ctx union-index union-type-at !UnionTypeEntry.name_length
+                name-token ctx union-index union-type-at !UnionTypeEntry.name_token
                 ctx @ModuleContext.union_case_count ctx union-index union-type-at !UnionTypeEntry.case_start
                 0 ctx union-index union-type-at !UnionTypeEntry.case_count
                 ctx @ModuleContext.program program-allocate-nominal-type ctx union-index union-type-at !UnionTypeEntry.union_type
@@ -2519,6 +2549,7 @@ proc scan-one-function ModuleContext* int -- int do
             let function-index do
                 ctx name-token token-at @TokenEntry.start ctx function-index function-type-at !FunctionTypeEntry.name_start
                 ctx name-token token-at @TokenEntry.length ctx function-index function-type-at !FunctionTypeEntry.name_length
+                name-token ctx function-index function-type-at !FunctionTypeEntry.name_token
                 ctx @ModuleContext.program program-allocate-function-type ctx function-index function-type-at !FunctionTypeEntry.function_type
                 ctx @ModuleContext.function_type_count ctx function-index function-type-at !FunctionTypeEntry.input_start
                 name-token 1 + 0
@@ -2533,7 +2564,7 @@ proc scan-one-function ModuleContext* int -- int do
                     end
                 do
                     let token-index count do
-                        ctx token-index parse-function-signature-type-token ctx swap add-function-signature-type
+                        ctx token-index ctx token-index parse-function-signature-type-token add-function-signature-type
                         token-index 1 + count 1 +
                     end
                 end
@@ -2559,7 +2590,7 @@ proc scan-one-function ModuleContext* int -- int do
                         end
                     do
                         let output-token output-count do
-                            ctx output-token parse-function-signature-type-token ctx swap add-function-signature-type
+                            ctx output-token ctx output-token parse-function-signature-type-token add-function-signature-type
                             output-token 1 + output-count 1 +
                         end
                     end
@@ -2799,6 +2830,7 @@ proc scan-one-macro ModuleContext* int -- int do
             let macro-index do
                 ctx name-token token-at @TokenEntry.start ctx macro-index macro-at !MacroEntry.name_start
                 ctx name-token token-at @TokenEntry.length ctx macro-index macro-at !MacroEntry.name_length
+                name-token ctx macro-index macro-at !MacroEntry.name_token
                 false ctx macro-index macro-at !MacroEntry.expanding
                 ctx name-token 1 + scan-macro-body
                 let next-token do
@@ -2907,6 +2939,7 @@ proc scan-one-constant ModuleContext* int -- int do
             let constant-index do
                 ctx name-token token-at @TokenEntry.start ctx constant-index constant-at !ConstantEntry.name_start
                 ctx name-token token-at @TokenEntry.length ctx constant-index constant-at !ConstantEntry.name_length
+                name-token ctx constant-index constant-at !ConstantEntry.name_token
                 ConstantState:new ctx constant-index constant-at !ConstantEntry.state
                 0 ptr cast ctx constant-index constant-at !ConstantEntry.values
                 0 ctx constant-index constant-at !ConstantEntry.value_count
@@ -3021,6 +3054,7 @@ proc allocate-proc ModuleContext* int -- int do
         let proc-index do
             ctx name-token token-at @TokenEntry.start ctx proc-index procedure-at !ProcedureEntry.name_start
             ctx name-token token-at @TokenEntry.length ctx proc-index procedure-at !ProcedureEntry.name_length
+            name-token ctx proc-index procedure-at !ProcedureEntry.name_token
             proc-index ctx proc-index procedure-at !ProcedureEntry.index
             ctx @ModuleContext.program program-allocate-proc-id ctx proc-index procedure-at !ProcedureEntry.global_id
             CBinding:none ctx proc-index procedure-at !ProcedureEntry.c_binding
@@ -3079,7 +3113,7 @@ proc scan-one-proc ModuleContext* int -- int do
                     end
                 do
                     let token-index count do
-                        ctx token-index parse-type-token ctx swap add-type
+                        ctx token-index ctx token-index parse-type-token add-source-type
                         token-index 1 + count 1 +
                     end
                 end
@@ -3102,7 +3136,7 @@ proc scan-one-proc ModuleContext* int -- int do
                     end
                 do
                     let token-index count do
-                        ctx token-index parse-type-token ctx swap add-type
+                        ctx token-index ctx token-index parse-type-token add-source-type
                         token-index 1 + count 1 +
                     end
                 end
@@ -3208,7 +3242,9 @@ proc scan-one-c-type ModuleContext* int -- int do
                         ctx @ModuleContext.c_type_count dup ctx swap c-type-at let index entry do
                             ctx name token-at @TokenEntry.start entry !CTypeEntry.name_start
                             ctx name token-at @TokenEntry.length entry !CTypeEntry.name_length
+                            name entry !CTypeEntry.name_token
                             frog-type entry !CTypeEntry.frog_type
+                            frog-token entry !CTypeEntry.frog_type_token
                             spelling entry !CTypeEntry.type_token
                             index 1 + ctx !ModuleContext.c_type_count
                             end-token 1 +
@@ -3669,6 +3705,9 @@ record LocalEntry
     value_type int
     id int
     module ModuleContext*
+    declaration_expansion_id int
+    binding_occurrence int
+    visibility_start_state int
 end
 
 record AnalyzedBindingLocal
@@ -3676,6 +3715,49 @@ record AnalyzedBindingLocal
     name_token int
     local_id int
     value_type int
+    declaration_expansion_id int
+    binding_occurrence int
+    visibility_start_state int
+    visibility_end_state int
+end
+
+record SemanticOccurrence
+    source_module ModuleContext*
+    start_byte int
+    end_byte int
+    owner_kind CursorOwnerKind
+    owner_module ModuleContext*
+    owner_index int
+    expansion_id int
+    state_index int
+    role OccurrenceRole
+    semantic_class SemanticClass
+    identity_module ModuleContext*
+    identity_index int
+    identity_subindex int
+    binding_module ModuleContext*
+    binding_scope_index int
+end
+
+record CursorState
+    owner_kind CursorOwnerKind
+    owner_module ModuleContext*
+    owner_index int
+    expansion_id int
+    source_module ModuleContext*
+    token int
+    scope_module ModuleContext*
+    type_start int
+    type_count int
+end
+
+record LocalVisibility
+    procedure_module ModuleContext*
+    procedure_index int
+    local_id int
+    binding_occurrence int
+    start_state int
+    end_state int
 end
 
 record StackSlotEntry
@@ -3798,6 +3880,7 @@ end
 record RecordTypeEntry
     name_start int
     name_length int
+    name_token int
     field_start int
     field_count int
     record_type int
@@ -3808,6 +3891,7 @@ end
 record RecordFieldEntry
     name_start int
     name_length int
+    name_token int
     field_type int
     type_token int
 end
@@ -3815,6 +3899,7 @@ end
 record UnionTypeEntry
     name_start int
     name_length int
+    name_token int
     case_start int
     case_count int
     union_type int
@@ -3825,6 +3910,7 @@ end
 record UnionCaseEntry
     name_start int
     name_length int
+    name_token int
     payload_type int
     type_token int
     tag int
@@ -3833,6 +3919,7 @@ end
 record FunctionTypeEntry
     name_start int
     name_length int
+    name_token int
     input_start int
     input_count int
     output_start int
@@ -3874,6 +3961,18 @@ record Program
     source_count int
     source_capacity int
     allow_filesystem_sources bool
+    semantic_occurrences ptr
+    semantic_occurrence_count int
+    semantic_occurrence_capacity int
+    cursor_states ptr
+    cursor_state_count int
+    cursor_state_capacity int
+    cursor_types ptr
+    cursor_type_count int
+    cursor_type_capacity int
+    local_visibilities ptr
+    local_visibility_count int
+    local_visibility_capacity int
 end
 
 record CompileContext
@@ -3912,6 +4011,7 @@ record CompileContext
     instruction_active bool
     instruction_minimum_type_count int
     cfg_current_block int
+    current_cursor_state int
 end
 
 record TokenEntry
@@ -3941,6 +4041,7 @@ end
 record ProcedureEntry
     name_start int
     name_length int
+    name_token int
     body_start int
     body_end int
     input_start int
@@ -3964,6 +4065,7 @@ end
 record MacroEntry
     name_start int
     name_length int
+    name_token int
     body_start int
     body_end int
     expanding bool
@@ -3972,6 +4074,7 @@ end
 record ConstantEntry
     name_start int
     name_length int
+    name_token int
     body_start int
     body_end int
     state ConstantState
@@ -4213,6 +4316,454 @@ union SyntaxRegionKind
     case module
     case declaration
     case block
+end
+
+union CursorOwnerKind
+    case none
+    case procedure
+    case constant
+end
+
+union OccurrenceRole
+    case declaration
+    case reference
+    case import_binding
+end
+
+union SemanticClass
+    case procedure
+    case macro_symbol
+    case constant
+    case local
+    case record_type
+    case record_field
+    case union_type
+    case union_case
+    case function_type
+    case c_type
+    case primitive_type
+    case intrinsic
+end
+
+proc semantic-occurrence-at Program* int -- SemanticOccurrence* do
+    let program index do
+        program @Program.semantic_occurrences index SemanticOccurrence:sizeof * + SemanticOccurrence* cast
+    end
+end
+
+proc cursor-state-at Program* int -- CursorState* do
+    let program index do
+        program @Program.cursor_states index CursorState:sizeof * + CursorState* cast
+    end
+end
+
+proc local-visibility-at Program* int -- LocalVisibility* do
+    let program index do
+        program @Program.local_visibilities index LocalVisibility:sizeof * + LocalVisibility* cast
+    end
+end
+
+proc grow-semantic-occurrences Program* -- do
+    let program do
+        if program @Program.semantic_occurrence_capacity max-int SemanticOccurrence:sizeof 2 * / > do
+            "internal semantic occurrence capacity overflow" fail
+        end
+        program @Program.semantic_occurrence_capacity 2 *
+        let capacity do
+            capacity SemanticOccurrence:sizeof * alloc
+            let occurrences do
+                program @Program.semantic_occurrences occurrences
+                program @Program.semantic_occurrence_count SemanticOccurrence:sizeof * bytes-copy
+                occurrences program !Program.semantic_occurrences
+                capacity program !Program.semantic_occurrence_capacity
+            end
+        end
+    end
+end
+
+proc grow-cursor-states Program* -- do
+    let program do
+        if program @Program.cursor_state_capacity max-int CursorState:sizeof 2 * / > do
+            "internal cursor state capacity overflow" fail
+        end
+        program @Program.cursor_state_capacity 2 *
+        let capacity do
+            capacity CursorState:sizeof * alloc
+            let states do
+                program @Program.cursor_states states
+                program @Program.cursor_state_count CursorState:sizeof * bytes-copy
+                states program !Program.cursor_states
+                capacity program !Program.cursor_state_capacity
+            end
+        end
+    end
+end
+
+proc ensure-cursor-type-capacity Program* int -- do
+    let program additional do
+        if additional 0 < program @Program.cursor_type_count max-int additional - > || do
+            "internal cursor type count overflow" fail
+        end
+        program @Program.cursor_type_count additional +
+        let required do
+            while required program @Program.cursor_type_capacity > do
+                if program @Program.cursor_type_capacity max-int cell-bytes 2 * / > do
+                    "internal cursor type capacity overflow" fail
+                end
+                program @Program.cursor_type_capacity 2 *
+                let capacity do
+                    capacity cell-bytes * alloc
+                    let types do
+                        program @Program.cursor_types types
+                        program @Program.cursor_type_count cell-bytes * bytes-copy
+                        types program !Program.cursor_types
+                        capacity program !Program.cursor_type_capacity
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc append-cursor-types Program* ptr int -- int do
+    let program types count do
+        program count ensure-cursor-type-capacity
+        program @Program.cursor_type_count
+        let start do
+            types program @Program.cursor_types start cell-bytes * + count cell-bytes * bytes-copy
+            start count + program !Program.cursor_type_count
+            start
+        end
+    end
+end
+
+proc grow-local-visibilities Program* -- do
+    let program do
+        if program @Program.local_visibility_capacity max-int LocalVisibility:sizeof 2 * / > do
+            "internal local visibility capacity overflow" fail
+        end
+        program @Program.local_visibility_capacity 2 *
+        let capacity do
+            capacity LocalVisibility:sizeof * alloc
+            let visibilities do
+                program @Program.local_visibilities visibilities
+                program @Program.local_visibility_count LocalVisibility:sizeof * bytes-copy
+                visibilities program !Program.local_visibilities
+                capacity program !Program.local_visibility_capacity
+            end
+        end
+    end
+end
+
+proc add-semantic-occurrence Program* ModuleContext* int int OccurrenceRole SemanticClass ModuleContext* int int -- int do
+    let program source-module start-byte end-byte role semantic-class identity-module identity-index identity-subindex do
+        if start-byte 0 < end-byte start-byte <= || do
+            "internal invalid semantic occurrence span" fail
+        end
+        if program @Program.semantic_occurrence_count program @Program.semantic_occurrence_capacity == do
+            program grow-semantic-occurrences
+        end
+        program @Program.semantic_occurrence_count
+        let index do
+            program index semantic-occurrence-at
+            let occurrence do
+                source-module occurrence !SemanticOccurrence.source_module
+                start-byte occurrence !SemanticOccurrence.start_byte
+                end-byte occurrence !SemanticOccurrence.end_byte
+                CursorOwnerKind:none occurrence !SemanticOccurrence.owner_kind
+                0 ptr cast ModuleContext* cast occurrence !SemanticOccurrence.owner_module
+                0 1 - occurrence !SemanticOccurrence.owner_index
+                0 1 - occurrence !SemanticOccurrence.expansion_id
+                0 1 - occurrence !SemanticOccurrence.state_index
+                role occurrence !SemanticOccurrence.role
+                semantic-class occurrence !SemanticOccurrence.semantic_class
+                identity-module occurrence !SemanticOccurrence.identity_module
+                identity-index occurrence !SemanticOccurrence.identity_index
+                identity-subindex occurrence !SemanticOccurrence.identity_subindex
+                0 ptr cast ModuleContext* cast occurrence !SemanticOccurrence.binding_module
+                0 1 - occurrence !SemanticOccurrence.binding_scope_index
+                index 1 + program !Program.semantic_occurrence_count
+                index
+            end
+        end
+    end
+end
+
+proc add-token-semantic-occurrence Program* ModuleContext* int OccurrenceRole SemanticClass ModuleContext* int int -- int do
+    let program source-module token role semantic-class identity-module identity-index identity-subindex do
+        source-module token token-at
+        let entry do
+            program source-module entry @TokenEntry.start entry @TokenEntry.start entry @TokenEntry.length +
+            role semantic-class identity-module identity-index identity-subindex add-semantic-occurrence
+        end
+    end
+end
+
+proc add-token-part-semantic-occurrence Program* ModuleContext* int int int OccurrenceRole SemanticClass ModuleContext* int int -- int do
+    let program source-module token relative-start length role semantic-class identity-module identity-index identity-subindex do
+        source-module token token-at @TokenEntry.start relative-start +
+        let start-byte do
+            program source-module start-byte start-byte length + role semantic-class
+            identity-module identity-index identity-subindex add-semantic-occurrence
+        end
+    end
+end
+
+proc add-local-visibility Program* ModuleContext* int int int int int -- int do
+    let program procedure-module procedure-index local-id binding-occurrence start-state end-state do
+        if program @Program.local_visibility_count program @Program.local_visibility_capacity == do
+            program grow-local-visibilities
+        end
+        program @Program.local_visibility_count
+        let index do
+            program index local-visibility-at
+            let visibility do
+                procedure-module visibility !LocalVisibility.procedure_module
+                procedure-index visibility !LocalVisibility.procedure_index
+                local-id visibility !LocalVisibility.local_id
+                binding-occurrence visibility !LocalVisibility.binding_occurrence
+                start-state visibility !LocalVisibility.start_state
+                end-state visibility !LocalVisibility.end_state
+                index 1 + program !Program.local_visibility_count
+                index
+            end
+        end
+    end
+end
+
+proc add-cursor-state Program* CursorOwnerKind ModuleContext* int int ModuleContext* int ModuleContext* ptr int -- int do
+    let program owner-kind owner-module owner-index expansion-id source-module token scope-module types type-count do
+        if token 0 < token source-module @ModuleContext.token_count > || do
+            "internal invalid cursor state token" fail
+        end
+        if program @Program.cursor_state_count program @Program.cursor_state_capacity == do
+            program grow-cursor-states
+        end
+        program @Program.cursor_state_count
+        let index do
+            program index cursor-state-at
+            let state do
+                owner-kind state !CursorState.owner_kind
+                owner-module state !CursorState.owner_module
+                owner-index state !CursorState.owner_index
+                expansion-id state !CursorState.expansion_id
+                source-module state !CursorState.source_module
+                token state !CursorState.token
+                scope-module state !CursorState.scope_module
+                program types type-count append-cursor-types state !CursorState.type_start
+                type-count state !CursorState.type_count
+                index 1 + program !Program.cursor_state_count
+                index
+            end
+        end
+    end
+end
+
+proc record-compile-cursor-state CompileContext* int -- int do
+    let cc token do
+        if cc @CompileContext.record_operations ! do
+            0 1 -
+        else
+            cc @CompileContext.program CursorOwnerKind:procedure
+            cc @CompileContext.procedure_module cc @CompileContext.procedure_index
+            cc @CompileContext.current_expansion_id cc @CompileContext.defining_module token
+            cc @CompileContext.scope_module cc @CompileContext.type_stack cc @CompileContext.type_count
+            add-cursor-state
+            peek state-index do state-index cc !CompileContext.current_cursor_state end
+        end
+    end
+end
+
+proc record-compile-cursor-state-with-types CompileContext* int ptr int -- int do
+    let cc token types type-count do
+        if cc @CompileContext.record_operations ! do
+            0 1 -
+        else
+            cc @CompileContext.program CursorOwnerKind:procedure
+            cc @CompileContext.procedure_module cc @CompileContext.procedure_index
+            cc @CompileContext.current_expansion_id cc @CompileContext.defining_module token
+            cc @CompileContext.scope_module types type-count add-cursor-state
+            peek state-index do state-index cc !CompileContext.current_cursor_state end
+        end
+    end
+end
+
+proc record-constant-add-cursor-states CompileContext* int -- do
+    let cc token do
+        if cc @CompileContext.record_operations do
+            cc token record-compile-cursor-state drop
+            cc @CompileContext.type_count 2 + cell-bytes * alloc
+            let types do
+                cc @CompileContext.type_stack types cc @CompileContext.type_count cell-bytes * bytes-copy
+                type-int types cc @CompileContext.type_count cell-bytes * field-write
+                cc token 1 + types cc @CompileContext.type_count 1 + record-compile-cursor-state-with-types drop
+                type-int types cc @CompileContext.type_count 1 + cell-bytes * field-write
+                cc token 2 + types cc @CompileContext.type_count 2 + record-compile-cursor-state-with-types drop
+            end
+        end
+    end
+end
+
+proc record-constant-add-occurrence CompileContext* int -- do
+    let cc token do
+        cc @CompileContext.program cc @CompileContext.defining_module token token-slice type-int type-int 0
+        find-builtin-procedure-2-from
+        let module procedure-index found do
+            if found ! do
+                "internal constant add builtin is missing" fail
+            end
+            cc token OccurrenceRole:reference SemanticClass:procedure module procedure-index 0 1 -
+            add-compile-token-occurrence
+            let occurrence-index do
+                cc occurrence-index token ScopeKind:procedure module procedure-index set-compile-occurrence-binding
+            end
+        end
+    end
+end
+
+proc find-cursor-state-for-token-from Program* ModuleContext* int ModuleContext* int int int -- int do
+    let program procedure-module procedure-index source-module token expansion-id state-index do
+        if state-index 0 < do
+            0 1 -
+        else
+            program state-index cursor-state-at
+            let state do
+                if
+                    state @CursorState.owner_kind CursorOwnerKind.procedure?
+                    state @CursorState.owner_module ptr cast int cast procedure-module ptr cast int cast == &&
+                    state @CursorState.owner_index procedure-index == &&
+                    state @CursorState.source_module ptr cast int cast source-module ptr cast int cast == &&
+                    state @CursorState.token token == &&
+                    state @CursorState.expansion_id expansion-id == &&
+                do
+                    state-index
+                else
+                    program procedure-module procedure-index source-module token expansion-id state-index 1 -
+                    find-cursor-state-for-token-from
+                end
+            end
+        end
+    end
+end
+
+proc find-compile-cursor-state-for-token CompileContext* ModuleContext* int int -- int do
+    let cc source-module token expansion-id do
+        cc @CompileContext.program cc @CompileContext.procedure_module cc @CompileContext.procedure_index
+        source-module token expansion-id cc @CompileContext.program @Program.cursor_state_count 1 -
+        find-cursor-state-for-token-from
+    end
+end
+
+proc attach-compile-occurrence CompileContext* int -- int do
+    let cc occurrence-index do
+        cc @CompileContext.program occurrence-index semantic-occurrence-at
+        let occurrence do
+            CursorOwnerKind:procedure occurrence !SemanticOccurrence.owner_kind
+            cc @CompileContext.procedure_module occurrence !SemanticOccurrence.owner_module
+            cc @CompileContext.procedure_index occurrence !SemanticOccurrence.owner_index
+            cc @CompileContext.current_expansion_id occurrence !SemanticOccurrence.expansion_id
+            cc @CompileContext.current_cursor_state occurrence !SemanticOccurrence.state_index
+            occurrence-index
+        end
+    end
+end
+
+proc add-compile-token-part-occurrence CompileContext* int int int OccurrenceRole SemanticClass ModuleContext* int int -- int do
+    let cc token relative-start length role semantic-class identity-module identity-index identity-subindex do
+        cc @CompileContext.program cc @CompileContext.defining_module token relative-start length role semantic-class
+        identity-module identity-index identity-subindex add-token-part-semantic-occurrence
+        cc swap attach-compile-occurrence
+    end
+end
+
+proc add-compile-token-occurrence CompileContext* int OccurrenceRole SemanticClass ModuleContext* int int -- int do
+    let cc token role semantic-class identity-module identity-index identity-subindex do
+        cc @CompileContext.defining_module token token-at @TokenEntry.length
+        let length do
+            cc token 0 length role semantic-class identity-module identity-index identity-subindex
+            add-compile-token-part-occurrence
+        end
+    end
+end
+
+proc set-compile-occurrence-binding-part-in CompileContext* int int int int ScopeKind ModuleContext* int ModuleContext* -- bool do
+    let cc occurrence-index token relative-start length kind definition-module definition-index scope do
+        cc @CompileContext.defining_module @ModuleContext.source
+        cc @CompileContext.defining_module token token-at @TokenEntry.start + relative-start +
+        let bytes do
+        scope bytes length kind definition-module definition-index 0 find-scope-binding-identity-bytes-from
+        let scope-index do
+            if scope-index 0 < do
+                false
+            else
+                scope cc @CompileContext.program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_module
+                scope-index cc @CompileContext.program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_scope_index
+                true
+            end
+        end
+        end
+    end
+end
+
+proc set-compile-occurrence-binding-part CompileContext* int int int int ScopeKind ModuleContext* int -- do
+    let cc occurrence-index token relative-start length kind definition-module definition-index do
+        cc occurrence-index token relative-start length kind definition-module definition-index
+        cc @CompileContext.scope_module set-compile-occurrence-binding-part-in
+        if dup ! do
+            drop
+            if
+                cc @CompileContext.scope_module ptr cast int cast
+                cc @CompileContext.program @Program.builtins_module ptr cast int cast !=
+            do
+                cc occurrence-index token relative-start length kind definition-module definition-index
+                cc @CompileContext.program @Program.builtins_module set-compile-occurrence-binding-part-in drop
+            end
+        else drop end
+    end
+end
+
+proc set-compile-occurrence-binding CompileContext* int int ScopeKind ModuleContext* int -- do
+    let cc occurrence-index token kind definition-module definition-index do
+        cc occurrence-index token 0 cc @CompileContext.defining_module token token-at @TokenEntry.length
+        kind definition-module definition-index set-compile-occurrence-binding-part
+    end
+end
+
+proc add-compile-intrinsic-part CompileContext* int int int -- do
+    let cc token relative-start length do
+        if length 0 > do
+            cc token relative-start length OccurrenceRole:reference SemanticClass:intrinsic
+            0 ptr cast ModuleContext* cast 0 1 - 0 1 - add-compile-token-part-occurrence drop
+        end
+    end
+end
+
+proc record-compile-type-occurrence CompileContext* int int -- do
+    let cc token value-type do
+        cc @CompileContext.defining_module token type-token-pointer-depth
+        let pointer-depth do
+            cc @CompileContext.defining_module token token-at @TokenEntry.length pointer-depth -
+            let base-length do
+                cc @CompileContext.program value-type semantic-type-identity
+                let semantic-class definition-module definition-index definition-subindex do
+                    cc token 0 base-length OccurrenceRole:reference semantic-class
+                    definition-module definition-index definition-subindex add-compile-token-part-occurrence
+                    let occurrence-index do
+                        if semantic-class SemanticClass.record_type? do
+                            cc occurrence-index token 0 base-length ScopeKind:record_type definition-module definition-index
+                            set-compile-occurrence-binding-part
+                        elif semantic-class SemanticClass.union_type? do
+                            cc occurrence-index token 0 base-length ScopeKind:union_type definition-module definition-index
+                            set-compile-occurrence-binding-part
+                        elif semantic-class SemanticClass.function_type? do
+                            cc occurrence-index token 0 base-length ScopeKind:function_type definition-module definition-index
+                            set-compile-occurrence-binding-part
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 
 
@@ -4557,6 +5108,12 @@ proc begin-macro-expansion CompileContext* ModuleContext* int ModuleContext* int
                     0 1 - expansion !MacroExpansion.after_type_start
                     0 expansion !MacroExpansion.after_type_count
                     cc @CompileContext.type_count expansion !MacroExpansion.minimum_type_count
+                    cc invocation-token OccurrenceRole:reference SemanticClass:macro_symbol
+                    macro-module macro-index 0 1 - add-compile-token-occurrence
+                    let occurrence-index do
+                        cc occurrence-index invocation-token ScopeKind:macro_symbol macro-module macro-index
+                        set-compile-occurrence-binding
+                    end
                     analysis @ProcedureAnalysis.macro_expansion_count 1 + analysis !ProcedureAnalysis.macro_expansion_count
                     index cc !CompileContext.current_expansion_id
                     index
@@ -5470,6 +6027,21 @@ proc record-binding-local CompileContext* LocalEntry* -- do
         do
             cc compile-context-analysis
             let analysis do
+                cc local @LocalEntry.name_token OccurrenceRole:declaration SemanticClass:local
+                cc @CompileContext.procedure_module cc @CompileContext.procedure_index local @LocalEntry.id
+                add-compile-token-occurrence
+                let occurrence-index do
+                    cc local @LocalEntry.module local @LocalEntry.name_token local @LocalEntry.declaration_expansion_id
+                    find-compile-cursor-state-for-token
+                    let declaration-state do
+                        declaration-state cc @CompileContext.program occurrence-index semantic-occurrence-at
+                        !SemanticOccurrence.state_index
+                    end
+                    occurrence-index local !LocalEntry.binding_occurrence
+                    cc @CompileContext.program cc @CompileContext.procedure_module cc @CompileContext.procedure_index
+                    local @LocalEntry.id occurrence-index local @LocalEntry.visibility_start_state 0 1 -
+                    add-local-visibility drop
+                end
                 if analysis @ProcedureAnalysis.binding_local_count analysis @ProcedureAnalysis.binding_local_capacity == do
                     analysis grow-analyzed-binding-locals
                 end
@@ -5479,6 +6051,10 @@ proc record-binding-local CompileContext* LocalEntry* -- do
                     local @LocalEntry.name_token binding-local !AnalyzedBindingLocal.name_token
                     local @LocalEntry.id binding-local !AnalyzedBindingLocal.local_id
                     local @LocalEntry.value_type binding-local !AnalyzedBindingLocal.value_type
+                    local @LocalEntry.declaration_expansion_id binding-local !AnalyzedBindingLocal.declaration_expansion_id
+                    local @LocalEntry.binding_occurrence binding-local !AnalyzedBindingLocal.binding_occurrence
+                    local @LocalEntry.visibility_start_state binding-local !AnalyzedBindingLocal.visibility_start_state
+                    0 1 - binding-local !AnalyzedBindingLocal.visibility_end_state
                 analysis @ProcedureAnalysis.binding_local_count 1 + analysis !ProcedureAnalysis.binding_local_count
                     if cc @CompileContext.operation_active cc @CompileContext.operation_binding_active && do
                         cc active-analyzed-operation @AnalyzedOperation.binding_local_count 1 +
@@ -5656,6 +6232,188 @@ proc active-typed-instruction CompileContext* -- TypedInstruction* do
     end
 end
 
+proc record-typed-record-occurrences CompileContext* TypedInstruction* ptr int -- do
+    let cc instruction bytes length do
+        instruction @TypedInstruction.operation
+        let operation do
+            if
+                operation RuntimeOperation.record_new?
+                operation RuntimeOperation.record_alloc? ||
+                operation RuntimeOperation.record_sizeof? ||
+            do
+                bytes length 58 first-index-of-byte
+                let separator do
+                    cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:record_type
+                    instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 1 -
+                    add-compile-token-part-occurrence
+                    let occurrence-index do
+                        cc occurrence-index instruction @TypedInstruction.token_start 0 separator ScopeKind:record_type
+                        instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index
+                        set-compile-occurrence-binding-part
+                    end
+                    cc instruction @TypedInstruction.token_start separator 1 + length separator 1 + - add-compile-intrinsic-part
+                end
+            else
+                bytes length 46 first-index-of-byte
+                let separator do
+                    if separator 1 > do
+                        cc instruction @TypedInstruction.token_start 1 separator 1 - OccurrenceRole:reference SemanticClass:record_type
+                        instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index 0 1 -
+                        add-compile-token-part-occurrence
+                        let occurrence-index do
+                            cc occurrence-index instruction @TypedInstruction.token_start 1 separator 1 - ScopeKind:record_type
+                            instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index
+                            set-compile-occurrence-binding-part
+                        end
+                    end
+                    cc instruction @TypedInstruction.token_start separator 1 + length separator 1 + -
+                    OccurrenceRole:reference SemanticClass:record_field
+                    instruction @TypedInstruction.target_module instruction @TypedInstruction.secondary_index
+                    instruction @TypedInstruction.target_index add-compile-token-part-occurrence drop
+                end
+            end
+        end
+    end
+end
+
+proc record-typed-union-occurrences CompileContext* TypedInstruction* ptr int -- do
+    let cc instruction bytes length do
+        bytes length 58 first-index-of-byte
+        peek separator do
+            if separator 0 < do drop bytes length 46 first-index-of-byte end
+            let separator do
+                cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:union_type
+                instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index 0 1 -
+                add-compile-token-part-occurrence
+                let occurrence-index do
+                    cc occurrence-index instruction @TypedInstruction.token_start 0 separator ScopeKind:union_type
+                    instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index
+                    set-compile-occurrence-binding-part
+                end
+                length separator 1 + -
+                let member-length do
+                    if member-length 0 > bytes length 1 - byte-read 63 == && do member-length 1 - else member-length end
+                    let bounded-length do
+                        cc instruction @TypedInstruction.token_start separator 1 + bounded-length
+                        OccurrenceRole:reference SemanticClass:union_case
+                        instruction @TypedInstruction.target_module instruction @TypedInstruction.secondary_index
+                        instruction @TypedInstruction.target_index add-compile-token-part-occurrence drop
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc record-typed-function-occurrences CompileContext* TypedInstruction* ptr int -- do
+    let cc instruction bytes length do
+        bytes length 58 first-index-of-byte
+        let separator do
+            cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:function_type
+            instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 1 -
+            add-compile-token-part-occurrence
+            let occurrence-index do
+                cc occurrence-index instruction @TypedInstruction.token_start 0 separator ScopeKind:function_type
+                instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index
+                set-compile-occurrence-binding-part
+            end
+            if instruction @TypedInstruction.operation RuntimeOperation.function_reference? do
+                cc instruction @TypedInstruction.token_start separator 1 + 3 add-compile-intrinsic-part
+                separator 5 +
+                let procedure-start do
+                    cc instruction @TypedInstruction.token_start procedure-start length procedure-start -
+                    OccurrenceRole:reference SemanticClass:procedure
+                    instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index 0 1 -
+                    add-compile-token-part-occurrence
+                    let occurrence-index do
+                        cc occurrence-index instruction @TypedInstruction.token_start procedure-start length procedure-start -
+                        ScopeKind:procedure instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index
+                        set-compile-occurrence-binding-part
+                    end
+                end
+            else
+                cc instruction @TypedInstruction.token_start separator 1 + length separator 1 + - add-compile-intrinsic-part
+            end
+        end
+    end
+end
+
+proc record-typed-string-occurrences CompileContext* TypedInstruction* ptr int -- do
+    let cc instruction bytes length do
+        bytes length 46 first-index-of-byte
+        let separator do
+            cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:primitive_type
+            0 ptr cast ModuleContext* cast type-string 0 1 - add-compile-token-part-occurrence drop
+            cc instruction @TypedInstruction.token_start separator 1 + length separator 1 + - add-compile-intrinsic-part
+        end
+    end
+end
+
+proc record-typed-instruction-occurrences CompileContext* TypedInstruction* -- do
+    let cc instruction do
+        instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice
+        let bytes length do
+            instruction @TypedInstruction.operation
+            let operation do
+                if operation RuntimeOperation.local_load? do
+                    cc instruction @TypedInstruction.token_start OccurrenceRole:reference SemanticClass:local
+                    cc @CompileContext.procedure_module cc @CompileContext.procedure_index instruction @TypedInstruction.local_id
+                    add-compile-token-occurrence drop
+                elif operation RuntimeOperation.constant? do
+                    cc instruction @TypedInstruction.token_start OccurrenceRole:reference SemanticClass:constant
+                    instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 1 -
+                    add-compile-token-occurrence
+                    let occurrence-index do
+                        cc occurrence-index instruction @TypedInstruction.token_start ScopeKind:constant
+                        instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index
+                        set-compile-occurrence-binding
+                    end
+                elif operation RuntimeOperation.procedure_call? do
+                    cc instruction @TypedInstruction.token_start OccurrenceRole:reference SemanticClass:procedure
+                    instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 1 -
+                    add-compile-token-occurrence
+                    let occurrence-index do
+                        cc occurrence-index instruction @TypedInstruction.token_start ScopeKind:procedure
+                        instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index
+                        set-compile-occurrence-binding
+                    end
+                elif operation RuntimeOperation.type_literal? do
+                    cc instruction @TypedInstruction.token_start instruction @TypedInstruction.value_type record-compile-type-occurrence
+                elif
+                    operation RuntimeOperation.record_new?
+                    operation RuntimeOperation.record_alloc? ||
+                    operation RuntimeOperation.record_sizeof? ||
+                    operation RuntimeOperation.record_field_read? ||
+                    operation RuntimeOperation.record_field_write? ||
+                do
+                    cc instruction bytes length record-typed-record-occurrences
+                elif
+                    operation RuntimeOperation.union_construct?
+                    operation RuntimeOperation.union_test? ||
+                    operation RuntimeOperation.union_project? ||
+                do
+                    cc instruction bytes length record-typed-union-occurrences
+                elif operation RuntimeOperation.function_call? operation RuntimeOperation.function_reference? || do
+                    cc instruction bytes length record-typed-function-occurrences
+                elif operation RuntimeOperation.string_bytes? operation RuntimeOperation.string_len? || do
+                    cc instruction bytes length record-typed-string-occurrences
+                elif
+                    operation RuntimeOperation.private_intrinsic?
+                    operation RuntimeOperation.cast? ||
+                    operation RuntimeOperation.args? ||
+                    operation RuntimeOperation.print? ||
+                    operation RuntimeOperation.noop? ||
+                    operation RuntimeOperation.pointer_load? ||
+                    operation RuntimeOperation.pointer_store? ||
+                    operation RuntimeOperation.builtins_assert_fail? ||
+                do
+                    cc instruction @TypedInstruction.token_start 0 length add-compile-intrinsic-part
+                end
+            end
+        end
+    end
+end
+
 proc finish-typed-instruction CompileContext* int -- do
     let cc token-end do
         if cc @CompileContext.instruction_active ! do "internal missing typed instruction" fail end
@@ -5671,6 +6429,7 @@ proc finish-typed-instruction CompileContext* int -- do
                 instruction !TypedInstruction.after_type_start
                 cc @CompileContext.type_count instruction !TypedInstruction.after_type_count
                 cc @CompileContext.instruction_minimum_type_count instruction !TypedInstruction.minimum_type_count
+                cc instruction record-typed-instruction-occurrences
                 analysis @ProcedureAnalysis.instruction_count 1 + analysis !ProcedureAnalysis.instruction_count
                 false cc !CompileContext.instruction_active
             end
@@ -6502,6 +7261,9 @@ proc add-local CompileContext* int int -- int do
             value-type local !LocalEntry.value_type
             cc @CompileContext.next_local local !LocalEntry.id
             cc @CompileContext.defining_module local !LocalEntry.module
+            cc @CompileContext.current_expansion_id local !LocalEntry.declaration_expansion_id
+            0 1 - local !LocalEntry.binding_occurrence
+            cc @CompileContext.program @Program.cursor_state_count local !LocalEntry.visibility_start_state
             cc @CompileContext.local_count 1 + cc !CompileContext.local_count
             cc @CompileContext.next_local
             cc @CompileContext.next_local 1 + cc !CompileContext.next_local
@@ -7331,6 +8093,7 @@ proc initialize-module-declarations ModuleContext* -- do
         ctx @ModuleContext.token_count 1 + UnionCaseEntry:sizeof * alloc ctx !ModuleContext.union_cases
         ctx @ModuleContext.token_count 1 + FunctionTypeEntry:sizeof * alloc ctx !ModuleContext.functions
         ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.function_types
+        ctx @ModuleContext.token_count 1 + cell-bytes * alloc ctx !ModuleContext.function_type_tokens
         ctx @ModuleContext.token_count 1 + CTypeEntry:sizeof * alloc ctx !ModuleContext.c_types
         ctx @ModuleContext.token_count 1 + CIncludeEntry:sizeof * alloc ctx !ModuleContext.c_includes
         ctx @ModuleContext.token_count 1 + CSignatureType:sizeof * alloc ctx !ModuleContext.c_signature_types
@@ -7907,12 +8670,279 @@ proc resolve-all-module-scopes Program* -- do
     end
 end
 
-proc create-constant-evaluator ModuleContext* int -- ConstantEvaluator* do
-    let module token do
+proc scope-kind-semantic-class ScopeKind -- SemanticClass do
+    let kind do
+        if kind ScopeKind:procedure == do SemanticClass:procedure
+        elif kind ScopeKind:macro_symbol == do SemanticClass:macro_symbol
+        elif kind ScopeKind:record_type == do SemanticClass:record_type
+        elif kind ScopeKind:union_type == do SemanticClass:union_type
+        elif kind ScopeKind:function_type == do SemanticClass:function_type
+        elif kind ScopeKind:constant == do SemanticClass:constant
+        elif kind ScopeKind:c_type == do SemanticClass:c_type
+        else "internal unknown semantic scope kind" fail SemanticClass:intrinsic end
+    end
+end
+
+proc find-scope-binding-identity-from ModuleContext* ModuleContext* int ScopeKind ModuleContext* int int -- int do
+    let scope name-module name-token kind definition-module definition-index scope-index do
+        if scope-index scope @ModuleContext.scope_count >= do
+            0 1 -
+        else
+            scope scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind kind ==
+                    symbol @ScopeEntry.definition_module ptr cast int cast definition-module ptr cast int cast == &&
+                    symbol @ScopeEntry.definition_index definition-index == &&
+                    scope scope-index name-module name-token scope-name-equals-token &&
+                do
+                    scope-index
+                else
+                    scope name-module name-token kind definition-module definition-index scope-index 1 +
+                    find-scope-binding-identity-from
+                end
+            end
+        end
+    end
+end
+
+proc find-scope-binding-identity-bytes-from ModuleContext* ptr int ScopeKind ModuleContext* int int -- int do
+    let scope bytes length kind definition-module definition-index scope-index do
+        if scope-index scope @ModuleContext.scope_count >= do
+            0 1 -
+        else
+            scope scope-index scope-at
+            let symbol do
+                if
+                    symbol @ScopeEntry.kind kind ==
+                    symbol @ScopeEntry.definition_module ptr cast int cast definition-module ptr cast int cast == &&
+                    symbol @ScopeEntry.definition_index definition-index == &&
+                    scope scope-index bytes length scope-name-equals &&
+                do
+                    scope-index
+                else
+                    scope bytes length kind definition-module definition-index scope-index 1 +
+                    find-scope-binding-identity-bytes-from
+                end
+            end
+        end
+    end
+end
+
+proc set-occurrence-binding-from-span Program* int ModuleContext* int int ScopeKind ModuleContext* int -- do
+    let program occurrence-index source-module start-byte length kind definition-module definition-index do
+        source-module source-module @ModuleContext.source start-byte + length kind definition-module definition-index 0
+        find-scope-binding-identity-bytes-from
+        let scope-index do
+            if scope-index 0 >= do
+                source-module program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_module
+                scope-index program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_scope_index
+            end
+        end
+    end
+end
+
+proc record-import-occurrence ModuleContext* ImportEntry* ScopeEntry* -- do
+    let module entry target-symbol do
+        entry @ImportEntry.alias_token
+        if dup 0 < do drop entry @ImportEntry.name_token end
+        let visible-token do
+            module module visible-token target-symbol @ScopeEntry.kind
+            target-symbol @ScopeEntry.definition_module target-symbol @ScopeEntry.definition_index 0
+            find-scope-binding-identity-from
+            let binding-index do
+                if binding-index 0 >= do
+                    module @ModuleContext.program module entry @ImportEntry.name_token
+                    OccurrenceRole:reference target-symbol @ScopeEntry.kind scope-kind-semantic-class
+                    target-symbol @ScopeEntry.definition_module target-symbol @ScopeEntry.definition_index 0 1 -
+                    add-token-semantic-occurrence
+                    let occurrence-index do
+                        module module @ModuleContext.program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_module
+                        binding-index module @ModuleContext.program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_scope_index
+                    end
+                    if entry @ImportEntry.alias_token 0 >= do
+                        module @ModuleContext.program module entry @ImportEntry.alias_token
+                        OccurrenceRole:import_binding target-symbol @ScopeEntry.kind scope-kind-semantic-class
+                        target-symbol @ScopeEntry.definition_module target-symbol @ScopeEntry.definition_index 0 1 -
+                        add-token-semantic-occurrence
+                        let occurrence-index do
+                            module module @ModuleContext.program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_module
+                            binding-index module @ModuleContext.program occurrence-index semantic-occurrence-at !SemanticOccurrence.binding_scope_index
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc record-import-targets-from ModuleContext* ImportEntry* int -- do
+    let module entry scope-index do
+        entry @ImportEntry.target_module
+        let target do
+            if scope-index target @ModuleContext.scope_count < do
+                target scope-index scope-at
+                let symbol do
+                    if target scope-index module entry @ImportEntry.name_token scope-name-equals-token do
+                        module entry symbol record-import-occurrence
+                    end
+                end
+                module entry scope-index 1 + record-import-targets-from
+            end
+        end
+    end
+end
+
+proc record-module-import-occurrences ModuleContext* -- do
+    let module do
+        0
+        while dup module @ModuleContext.import_count < do
+            dup let import-index do
+                module module import-index import-at 0 record-import-targets-from
+            end
+            1 +
+        end
+        drop
+    end
+end
+
+proc record-module-procedure-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.proc_count < do
+            dup let index do
+                module @ModuleContext.program module module index procedure-at @ProcedureEntry.name_token
+                OccurrenceRole:declaration SemanticClass:procedure module index 0 1 - add-token-semantic-occurrence drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-macro-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.macro_count < do
+            dup let index do
+                module @ModuleContext.program module module index macro-at @MacroEntry.name_token
+                OccurrenceRole:declaration SemanticClass:macro_symbol module index 0 1 - add-token-semantic-occurrence drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-constant-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.constant_count < do
+            dup let index do
+                module @ModuleContext.program module module index constant-at @ConstantEntry.name_token
+                OccurrenceRole:declaration SemanticClass:constant module index 0 1 - add-token-semantic-occurrence drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-record-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.record_count < do
+            dup let record-index do
+                module @ModuleContext.program module module record-index record-type-at @RecordTypeEntry.name_token
+                OccurrenceRole:declaration SemanticClass:record_type module record-index 0 1 - add-token-semantic-occurrence drop
+                0 while dup module record-index record-type-at @RecordTypeEntry.field_count < do
+                    dup let offset do
+                        module record-index record-type-at @RecordTypeEntry.field_start offset +
+                        let field-index do
+                            module @ModuleContext.program module module field-index record-field-at @RecordFieldEntry.name_token
+                            OccurrenceRole:declaration SemanticClass:record_field module record-index field-index
+                            add-token-semantic-occurrence drop
+                        end
+                    end
+                    1 +
+                end drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-union-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.union_count < do
+            dup let union-index do
+                module @ModuleContext.program module module union-index union-type-at @UnionTypeEntry.name_token
+                OccurrenceRole:declaration SemanticClass:union_type module union-index 0 1 - add-token-semantic-occurrence drop
+                0 while dup module union-index union-type-at @UnionTypeEntry.case_count < do
+                    dup let offset do
+                        module union-index union-type-at @UnionTypeEntry.case_start offset +
+                        let case-index do
+                            module @ModuleContext.program module module case-index union-case-at @UnionCaseEntry.name_token
+                            OccurrenceRole:declaration SemanticClass:union_case module union-index case-index
+                            add-token-semantic-occurrence drop
+                        end
+                    end
+                    1 +
+                end drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-function-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.function_count < do
+            dup let index do
+                module @ModuleContext.program module module index function-type-at @FunctionTypeEntry.name_token
+                OccurrenceRole:declaration SemanticClass:function_type module index 0 1 - add-token-semantic-occurrence drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-c-type-declarations ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.c_type_count < do
+            dup let index do
+                module @ModuleContext.program module module index c-type-at @CTypeEntry.name_token
+                OccurrenceRole:declaration SemanticClass:c_type module index 0 1 - add-token-semantic-occurrence drop
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-declaration-occurrences ModuleContext* -- do
+    let module do
+        module record-module-procedure-declarations
+        module record-module-macro-declarations
+        module record-module-constant-declarations
+        module record-module-record-declarations
+        module record-module-union-declarations
+        module record-module-function-declarations
+        module record-module-c-type-declarations
+        module record-module-import-occurrences
+    end
+end
+
+proc record-all-declaration-occurrences Program* -- do
+    peek program do @Program.module_head
+        while dup ptr cast int cast 0 != do
+            dup record-module-declaration-occurrences
+            @ModuleContext.next_module
+        end
+        drop
+    end
+end
+
+proc create-constant-evaluator ModuleContext* int int -- ConstantEvaluator* do
+    let module token constant-index do
     ConstantEvaluator:alloc
     let evaluator do
         module evaluator !ConstantEvaluator.module
         token evaluator !ConstantEvaluator.token
+        constant-index evaluator !ConstantEvaluator.constant_index
+        0 1 - evaluator !ConstantEvaluator.cursor_state
         8
         peek capacity do ConstantValue:sizeof * alloc evaluator !ConstantEvaluator.values
             0 evaluator !ConstantEvaluator.count
@@ -7920,6 +8950,50 @@ proc create-constant-evaluator ModuleContext* int -- ConstantEvaluator* do
             evaluator
         end
     end
+    end
+end
+
+proc constant-cursor-types ConstantEvaluator* -- ptr do
+    let evaluator do
+        evaluator @ConstantEvaluator.count cell-bytes * alloc
+        let types do
+            0 while dup evaluator @ConstantEvaluator.count < do
+                dup let index do
+                    evaluator @ConstantEvaluator.values index constant-value-at @ConstantValue.value_type
+                    types index cell-bytes * field-write
+                end
+                1 +
+            end drop
+            types
+        end
+    end
+end
+
+proc record-constant-cursor-state ConstantEvaluator* ModuleContext* int -- int do
+    let evaluator module token do
+        evaluator constant-cursor-types
+        let types do
+            module @ModuleContext.program CursorOwnerKind:constant module evaluator @ConstantEvaluator.constant_index
+            0 1 - module token module types evaluator @ConstantEvaluator.count add-cursor-state
+            peek state-index do state-index evaluator !ConstantEvaluator.cursor_state end
+        end
+    end
+end
+
+proc add-constant-token-occurrence ConstantEvaluator* ModuleContext* int SemanticClass ModuleContext* int int -- int do
+    let evaluator module token semantic-class identity-module identity-index identity-subindex do
+        module @ModuleContext.program module token OccurrenceRole:reference semantic-class
+        identity-module identity-index identity-subindex add-token-semantic-occurrence
+        let occurrence-index do
+            module @ModuleContext.program occurrence-index semantic-occurrence-at
+            let occurrence do
+                CursorOwnerKind:constant occurrence !SemanticOccurrence.owner_kind
+                module occurrence !SemanticOccurrence.owner_module
+                evaluator @ConstantEvaluator.constant_index occurrence !SemanticOccurrence.owner_index
+                evaluator @ConstantEvaluator.cursor_state occurrence !SemanticOccurrence.state_index
+                occurrence-index
+            end
+        end
     end
 end
 
@@ -8818,7 +9892,7 @@ proc evaluate-constant ModuleContext* int -- do
                 end
             else
                 ConstantState:evaluating module constant-index constant-at !ConstantEntry.state
-                module module constant-index constant-at @ConstantEntry.body_start create-constant-evaluator
+                module module constant-index constant-at @ConstantEntry.body_start constant-index create-constant-evaluator
                 peek evaluator do
                     module
                     module constant-index constant-at @ConstantEntry.body_start
@@ -8894,15 +9968,31 @@ proc evaluate-constant-word ConstantEvaluator* ModuleContext* int -- do
                 type-literal-base primitive-type +
                 let literal-type do
                     evaluator literal-type primitive-type constant-evaluator-push
+                    evaluator module token-index SemanticClass:primitive_type
+                    0 ptr cast ModuleContext* cast primitive-type 0 1 - add-constant-token-occurrence drop
                 end
             elif module token-index "cast" token-equals do
                 evaluator evaluate-constant-cast
+                evaluator module token-index SemanticClass:intrinsic
+                0 ptr cast ModuleContext* cast 0 1 - 0 1 - add-constant-token-occurrence drop
             elif module symbol-index ScopeKind:macro_symbol scope-symbol-has-kind do
                 evaluator "unsupported constant expression word" constant-fail
             elif evaluator module token-index evaluate-constant-intrinsic do
+                evaluator module token-index SemanticClass:intrinsic
+                0 ptr cast ModuleContext* cast 0 1 - 0 1 - add-constant-token-occurrence drop
             elif module module token-index constant-higher-priority-word do
                 evaluator "unsupported constant expression word" constant-fail
             elif module symbol-index ScopeKind:constant scope-symbol-has-kind do
+                evaluator module token-index SemanticClass:constant
+                module symbol-index scope-at @ScopeEntry.definition_module
+                module symbol-index scope-at @ScopeEntry.definition_index 0 1 -
+                add-constant-token-occurrence
+                let occurrence-index do
+                    module module @ModuleContext.program occurrence-index semantic-occurrence-at
+                    !SemanticOccurrence.binding_module
+                    symbol-index module @ModuleContext.program occurrence-index semantic-occurrence-at
+                    !SemanticOccurrence.binding_scope_index
+                end
                 evaluator
                 module symbol-index scope-at @ScopeEntry.definition_module
                 module symbol-index scope-at @ScopeEntry.definition_index
@@ -8919,6 +10009,7 @@ proc evaluate-constant-token ConstantEvaluator* ModuleContext* int -- do
     let evaluator module token-index do
         module evaluator !ConstantEvaluator.module
         token-index evaluator !ConstantEvaluator.token
+        evaluator module token-index record-constant-cursor-state drop
         module token-index token-at @TokenEntry.kind
         let kind do
             if kind TokenKind:int == kind TokenKind:char == || do
@@ -8947,6 +10038,9 @@ proc evaluate-constant-range ConstantEvaluator* ModuleContext* int int -- do
             1 +
         end
         drop
+        if module @ModuleContext.program program-failed ! do
+            evaluator module body-end record-constant-cursor-state drop
+        end
     end
 end
 
@@ -9424,6 +10518,153 @@ proc resolve-all-types Program* -- do
         end
         drop
         if program program-failed ! do program validate-aggregate-value-recursion end
+    end
+end
+
+proc semantic-base-type Program* int -- int do
+    let program value-type do
+        if value-type type-is-typed-pointer do
+            program program value-type type-pointer-base - pointer-type-at @PointerTypeEntry.pointee_type semantic-base-type
+        else
+            value-type
+        end
+    end
+end
+
+proc semantic-type-identity Program* int -- SemanticClass ModuleContext* int int do
+    let program value-type do
+        program value-type semantic-base-type
+        let base-type do
+            program @Program.module_head base-type 0 find-record-type-from
+            let definition-module definition-index found do
+                if found do
+                    SemanticClass:record_type definition-module definition-index 0 1 -
+                else
+                    program @Program.module_head base-type 0 find-union-type-from
+                    let definition-module definition-index found do
+                        if found do
+                            SemanticClass:union_type definition-module definition-index 0 1 -
+                        else
+                            program @Program.module_head base-type 0 find-function-type-from
+                            let definition-module definition-index found do
+                                if found do
+                                    SemanticClass:function_type definition-module definition-index 0 1 -
+                                else
+                                    SemanticClass:primitive_type 0 ptr cast ModuleContext* cast base-type 0 1 -
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc record-resolved-type-occurrence ModuleContext* int int -- do
+    let module token value-type do
+        if token 0 >= do
+            module token type-token-pointer-depth
+            let pointer-depth do
+                module token token-at @TokenEntry.length pointer-depth -
+                let base-length do
+                    module @ModuleContext.program value-type semantic-type-identity
+                    let semantic-class definition-module definition-index definition-subindex do
+                        module @ModuleContext.program module token 0 base-length OccurrenceRole:reference
+                        semantic-class definition-module definition-index definition-subindex
+                        add-token-part-semantic-occurrence
+                        let occurrence-index do
+                            if semantic-class SemanticClass.record_type? do
+                                module @ModuleContext.program occurrence-index module module token token-at @TokenEntry.start
+                                base-length ScopeKind:record_type definition-module definition-index set-occurrence-binding-from-span
+                            elif semantic-class SemanticClass.union_type? do
+                                module @ModuleContext.program occurrence-index module module token token-at @TokenEntry.start
+                                base-length ScopeKind:union_type definition-module definition-index set-occurrence-binding-from-span
+                            elif semantic-class SemanticClass.function_type? do
+                                module @ModuleContext.program occurrence-index module module token token-at @TokenEntry.start
+                                base-length ScopeKind:function_type definition-module definition-index set-occurrence-binding-from-span
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc record-module-procedure-signature-occurrences ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.type_count < do
+            dup let type-index do
+                module type-index c-signature-type-at
+                let signature do
+                    if signature @CSignatureType.token 0 >= do
+                        if signature @CSignatureType.active do
+                            module @ModuleContext.program module signature @CSignatureType.token OccurrenceRole:reference
+                            SemanticClass:c_type signature @CSignatureType.definition_module
+                            signature @CSignatureType.definition_index 0 1 - add-token-semantic-occurrence
+                            let occurrence-index do
+                                module @ModuleContext.program occurrence-index module
+                                module signature @CSignatureType.token token-at @TokenEntry.start
+                                module signature @CSignatureType.token token-at @TokenEntry.length
+                                ScopeKind:c_type signature @CSignatureType.definition_module signature @CSignatureType.definition_index
+                                set-occurrence-binding-from-span
+                            end
+                        else
+                            module signature @CSignatureType.token module type-index type-at record-resolved-type-occurrence
+                        end
+                    end
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-module-member-type-occurrences ModuleContext* -- do
+    let module do
+        0 while dup module @ModuleContext.record_field_count < do
+            dup let field-index do
+                module module field-index record-field-at @RecordFieldEntry.type_token
+                module field-index record-field-at @RecordFieldEntry.field_type record-resolved-type-occurrence
+            end
+            1 +
+        end drop
+        0 while dup module @ModuleContext.union_case_count < do
+            dup let case-index do
+                if module case-index union-case-at @UnionCaseEntry.type_token 0 >= do
+                    module module case-index union-case-at @UnionCaseEntry.type_token
+                    module case-index union-case-at @UnionCaseEntry.payload_type record-resolved-type-occurrence
+                end
+            end
+            1 +
+        end drop
+        0 while dup module @ModuleContext.function_type_count < do
+            dup let type-index do
+                module module type-index function-signature-token-at
+                module type-index function-signature-type-at record-resolved-type-occurrence
+            end
+            1 +
+        end drop
+        0 while dup module @ModuleContext.c_type_count < do
+            dup let c-type-index do
+                module module c-type-index c-type-at @CTypeEntry.frog_type_token
+                module c-type-index c-type-at @CTypeEntry.frog_type record-resolved-type-occurrence
+            end
+            1 +
+        end drop
+    end
+end
+
+proc record-all-type-occurrences Program* -- do
+    peek program do @Program.module_head
+        while dup ptr cast int cast 0 != do
+            peek module do record-module-procedure-signature-occurrences
+                module record-module-member-type-occurrences
+                module @ModuleContext.next_module
+            end
+        end
+        drop
     end
 end
 
@@ -11905,8 +13146,66 @@ proc close-while-block CompileContext* BlockFrame* int -- do
     end
 end
 
+proc close-local-visibility-from CompileContext* int int -- do
+    let cc local-id visibility-index do
+        if visibility-index 0 < do
+            "internal local visibility is missing" fail
+        else
+            cc @CompileContext.program visibility-index local-visibility-at
+            let visibility do
+                if
+                    visibility @LocalVisibility.procedure_module ptr cast int cast
+                    cc @CompileContext.procedure_module ptr cast int cast ==
+                    visibility @LocalVisibility.procedure_index cc @CompileContext.procedure_index == &&
+                    visibility @LocalVisibility.local_id local-id == &&
+                    visibility @LocalVisibility.end_state 0 < &&
+                do
+                    cc @CompileContext.program @Program.cursor_state_count visibility !LocalVisibility.end_state
+                else
+                    cc local-id visibility-index 1 - close-local-visibility-from
+                end
+            end
+        end
+    end
+end
+
+proc close-analyzed-binding-local-from CompileContext* int int -- do
+    let cc local-id binding-index do
+        if binding-index 0 < do
+            "internal analyzed binding local is missing" fail
+        else
+            cc compile-context-analysis binding-index analyzed-binding-local-at
+            let binding-local do
+                if binding-local @AnalyzedBindingLocal.local_id local-id == do
+                    cc @CompileContext.program @Program.cursor_state_count binding-local !AnalyzedBindingLocal.visibility_end_state
+                else
+                    cc local-id binding-index 1 - close-analyzed-binding-local-from
+                end
+            end
+        end
+    end
+end
+
+proc close-block-local-visibilities CompileContext* BlockFrame* -- do
+    let cc block do
+        block @BlockFrame.local_base
+        while dup cc @CompileContext.local_count < do
+            dup let local-index do
+                cc local-index local-address @LocalEntry.id
+                let local-id do
+                    cc local-id cc @CompileContext.program @Program.local_visibility_count 1 - close-local-visibility-from
+                    cc local-id cc compile-context-analysis @ProcedureAnalysis.binding_local_count 1 -
+                    close-analyzed-binding-local-from
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
 proc close-let-block CompileContext* BlockFrame* -- do
     let cc block do
+        if cc @CompileContext.record_operations do cc block close-block-local-visibilities end
         block @BlockFrame.local_base cc !CompileContext.local_count
         cc indent-less
         cc "}" emit-line
@@ -11957,6 +13256,16 @@ proc find-binding-do CompileContext* int String -- int do
             cc @CompileContext.defining_module token-index require-word
             cc token-index 1 + error-message find-binding-do
         end
+    end
+end
+
+proc record-binding-header-cursor-states CompileContext* int int int -- do
+    let cc first-token name-count do-token do
+        0 while dup name-count < do
+            dup let offset do cc first-token offset + record-compile-cursor-state drop end
+            1 +
+        end drop
+        cc do-token record-compile-cursor-state drop
     end
 end
 
@@ -12025,6 +13334,7 @@ proc compile-let CompileContext* int -- int do
                     cc "let requires at least one name" fail-compile-word
                 end
                 if cc @CompileContext.program program-failed ! do
+                    cc let-token 1 + name-count do-token record-binding-header-cursor-states
                     cc let-token begin-typed-instruction
                     cc OperationKind:let_binding set-operation-binding
                     cc let-token 1 + name-count begin-binding-block
@@ -12044,6 +13354,7 @@ proc compile-peek CompileContext* int -- int do
                     cc "peek requires at least one name" fail-compile-word
                 end
                 if cc @CompileContext.program program-failed ! do
+                    cc peek-token 1 + name-count do-token record-binding-header-cursor-states
                     cc peek-token begin-typed-instruction
                     cc OperationKind:peek_binding set-operation-binding
                     cc peek-token 1 + name-count begin-binding-block
@@ -13536,6 +14847,7 @@ end
 
 proc compile-token CompileContext* int -- int do
     let cc token-index do
+        cc token-index record-compile-cursor-state drop
         cc @CompileContext.diagnostic_active
         cc @CompileContext.record_operations
         cc @CompileContext.operation_active ! &&
@@ -13606,6 +14918,8 @@ proc try-compile-constant-add CompileContext* int int -- bool do
                 let fits do
                     if fits do
                         if cc cc-debug-tracing do false else
+                            cc token-index record-constant-add-cursor-states
+                            cc token-index 2 + record-constant-add-occurrence
                             cc @CompileContext.operation_active !
                             let begin-operation do
                             if begin-operation do cc token-index begin-analyzed-operation end
@@ -13705,6 +15019,9 @@ proc compile-body-range CompileContext* int int -- do
             end
         end
         drop
+        if cc @CompileContext.program program-failed ! do
+            cc body-end record-compile-cursor-state drop
+        end
     end
 end
 
@@ -13745,6 +15062,7 @@ proc create-compile-context Program* ModuleContext* int -- CompileContext* do
             false cc !CompileContext.instruction_active
             0 cc !CompileContext.instruction_minimum_type_count
             0 1 - cc !CompileContext.cfg_current_block
+            0 1 - cc !CompileContext.current_cursor_state
             cc
         end
     end
@@ -14108,6 +15426,324 @@ proc analyze-module-procedures Program* ModuleContext* -- do
     end
 end
 
+proc program-owns-module Program* ModuleContext* -- bool do
+    let program module do
+        if module ptr cast int cast 0 == do
+            false
+        else
+            module @ModuleContext.program ptr cast int cast program ptr cast int cast ==
+        end
+    end
+end
+
+proc verify-cursor-owner Program* CursorOwnerKind ModuleContext* int int -- do
+    let program kind module index expansion-id do
+        if kind CursorOwnerKind.none? do
+            if
+                module ptr cast int cast 0 !=
+                index 0 1 - != ||
+                expansion-id 0 1 - != ||
+            do
+                "internal invalid module cursor owner" fail
+            end
+        elif kind CursorOwnerKind.procedure? do
+            if program module program-owns-module ! do "internal invalid procedure cursor module" fail end
+            if index 0 < index module @ModuleContext.proc_count >= || do "internal invalid procedure cursor owner" fail end
+            module index procedure-at @ProcedureEntry.analysis
+            let analysis do
+                if analysis ptr cast int cast 0 == do "internal missing procedure cursor analysis" fail end
+                if expansion-id 0 1 - < expansion-id analysis @ProcedureAnalysis.macro_expansion_count >= || do
+                    "internal invalid procedure cursor expansion" fail
+                end
+            end
+        elif kind CursorOwnerKind.constant? do
+            if program module program-owns-module ! do "internal invalid constant cursor module" fail end
+            if index 0 < index module @ModuleContext.constant_count >= || expansion-id 0 1 - != || do
+                "internal invalid constant cursor owner" fail
+            end
+        else
+            "internal unknown cursor owner kind" fail
+        end
+    end
+end
+
+proc verify-semantic-identity Program* SemanticOccurrence* -- do
+    let program occurrence do
+        occurrence @SemanticOccurrence.semantic_class
+        let semantic-class do
+            occurrence @SemanticOccurrence.identity_module
+            let module do
+                occurrence @SemanticOccurrence.identity_index
+                occurrence @SemanticOccurrence.identity_subindex
+                let index subindex do
+                    if semantic-class SemanticClass.procedure? do
+                        if program module program-owns-module ! do "internal invalid procedure occurrence module" fail end
+                        if index 0 < index module @ModuleContext.proc_count >= || subindex 0 1 - != || do
+                            "internal invalid procedure occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.macro_symbol? do
+                        if program module program-owns-module ! do "internal invalid macro occurrence module" fail end
+                        if index 0 < index module @ModuleContext.macro_count >= || subindex 0 1 - != || do
+                            "internal invalid macro occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.constant? do
+                        if program module program-owns-module ! do "internal invalid constant occurrence module" fail end
+                        if index 0 < index module @ModuleContext.constant_count >= || subindex 0 1 - != || do
+                            "internal invalid constant occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.local? do
+                        if program module program-owns-module ! do "internal invalid local occurrence module" fail end
+                        if index 0 < index module @ModuleContext.proc_count >= || subindex 0 < || do
+                            "internal invalid local occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.record_type? do
+                        if program module program-owns-module ! do "internal invalid record occurrence module" fail end
+                        if index 0 < index module @ModuleContext.record_count >= || subindex 0 1 - != || do
+                            "internal invalid record occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.record_field? do
+                        if program module program-owns-module ! do "internal invalid record field occurrence module" fail end
+                        if index 0 < index module @ModuleContext.record_count >= || do
+                            "internal invalid record field owner identity" fail
+                        end
+                        if
+                            subindex module index record-type-at @RecordTypeEntry.field_start <
+                            subindex module index record-type-at @RecordTypeEntry.field_start module index record-type-at @RecordTypeEntry.field_count + >= ||
+                        do
+                            "internal invalid record field occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.union_type? do
+                        if program module program-owns-module ! do "internal invalid union occurrence module" fail end
+                        if index 0 < index module @ModuleContext.union_count >= || subindex 0 1 - != || do
+                            "internal invalid union occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.union_case? do
+                        if program module program-owns-module ! do "internal invalid union case occurrence module" fail end
+                        if index 0 < index module @ModuleContext.union_count >= || do
+                            "internal invalid union case owner identity" fail
+                        end
+                        if
+                            subindex module index union-type-at @UnionTypeEntry.case_start <
+                            subindex module index union-type-at @UnionTypeEntry.case_start module index union-type-at @UnionTypeEntry.case_count + >= ||
+                        do
+                            "internal invalid union case occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.function_type? do
+                        if program module program-owns-module ! do "internal invalid function occurrence module" fail end
+                        if index 0 < index module @ModuleContext.function_count >= || subindex 0 1 - != || do
+                            "internal invalid function occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.c_type? do
+                        if program module program-owns-module ! do "internal invalid C type occurrence module" fail end
+                        if index 0 < index module @ModuleContext.c_type_count >= || subindex 0 1 - != || do
+                            "internal invalid C type occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.primitive_type? do
+                        if module ptr cast int cast 0 != index 0 <= || subindex 0 1 - != || do
+                            "internal invalid primitive occurrence identity" fail
+                        end
+                    elif semantic-class SemanticClass.intrinsic? do
+                        if module ptr cast int cast 0 != index 0 1 - != || subindex 0 1 - != || do
+                            "internal invalid intrinsic occurrence identity" fail
+                        end
+                    else
+                        "internal unknown semantic occurrence class" fail
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc semantic-class-matches-scope-kind SemanticClass ScopeKind -- bool do
+    let semantic-class kind do
+        semantic-class SemanticClass.procedure? kind ScopeKind:procedure == &&
+        semantic-class SemanticClass.macro_symbol? kind ScopeKind:macro_symbol == && ||
+        semantic-class SemanticClass.constant? kind ScopeKind:constant == && ||
+        semantic-class SemanticClass.record_type? kind ScopeKind:record_type == && ||
+        semantic-class SemanticClass.union_type? kind ScopeKind:union_type == && ||
+        semantic-class SemanticClass.function_type? kind ScopeKind:function_type == && ||
+        semantic-class SemanticClass.c_type? kind ScopeKind:c_type == && ||
+    end
+end
+
+proc verify-occurrence-binding Program* SemanticOccurrence* -- do
+    let program occurrence do
+        occurrence @SemanticOccurrence.binding_module
+        occurrence @SemanticOccurrence.binding_scope_index
+        let module scope-index do
+            if module ptr cast int cast 0 == do
+                if scope-index 0 1 - != do "internal occurrence has a binding index without a module" fail end
+            else
+                if program module program-owns-module ! do "internal invalid occurrence binding module" fail end
+                if scope-index 0 < scope-index module @ModuleContext.scope_count >= || do
+                    "internal invalid occurrence binding" fail
+                end
+                module scope-index scope-at
+                let symbol do
+                    if occurrence @SemanticOccurrence.semantic_class symbol @ScopeEntry.kind semantic-class-matches-scope-kind ! do
+                        "internal occurrence binding kind mismatch" fail
+                    end
+                    if
+                        symbol @ScopeEntry.definition_module ptr cast int cast
+                        occurrence @SemanticOccurrence.identity_module ptr cast int cast !=
+                        symbol @ScopeEntry.definition_index occurrence @SemanticOccurrence.identity_index != ||
+                    do
+                        "internal occurrence binding identity mismatch" fail
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc verify-semantic-occurrence Program* int -- do
+    let program occurrence-index do
+        program occurrence-index semantic-occurrence-at
+        let occurrence do
+            if program occurrence @SemanticOccurrence.source_module program-owns-module ! do
+                "internal semantic occurrence source is invalid" fail
+            end
+            if
+                occurrence @SemanticOccurrence.start_byte 0 <
+                occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.start_byte <= ||
+                occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.source_module @ModuleContext.source_length > ||
+            do
+                "internal semantic occurrence span is invalid" fail
+            end
+            program occurrence @SemanticOccurrence.owner_kind occurrence @SemanticOccurrence.owner_module
+            occurrence @SemanticOccurrence.owner_index occurrence @SemanticOccurrence.expansion_id verify-cursor-owner
+            occurrence @SemanticOccurrence.state_index
+            let state-index do
+                if state-index 0 1 - < state-index program @Program.cursor_state_count >= || do
+                    "internal semantic occurrence state is invalid" fail
+                end
+                if state-index 0 >= do
+                    program state-index cursor-state-at
+                    let state do
+                        if
+                            state @CursorState.owner_module ptr cast int cast occurrence @SemanticOccurrence.owner_module ptr cast int cast !=
+                            state @CursorState.owner_index occurrence @SemanticOccurrence.owner_index != ||
+                            state @CursorState.expansion_id occurrence @SemanticOccurrence.expansion_id != ||
+                            state @CursorState.source_module ptr cast int cast occurrence @SemanticOccurrence.source_module ptr cast int cast != ||
+                        do
+                            "internal semantic occurrence state owner mismatch" fail
+                        end
+                    end
+                end
+            end
+            program occurrence verify-semantic-identity
+            program occurrence verify-occurrence-binding
+        end
+    end
+end
+
+proc verify-cursor-state Program* int -- do
+    let program state-index do
+        program state-index cursor-state-at
+        let state do
+            if state @CursorState.owner_kind CursorOwnerKind.none? do
+                "internal cursor state has no owner" fail
+            end
+            program state @CursorState.owner_kind state @CursorState.owner_module state @CursorState.owner_index
+            state @CursorState.expansion_id verify-cursor-owner
+            if program state @CursorState.source_module program-owns-module ! do
+                "internal cursor state source is invalid" fail
+            end
+            if program state @CursorState.scope_module program-owns-module ! do
+                "internal cursor state scope is invalid" fail
+            end
+            if
+                state @CursorState.token 0 <
+                state @CursorState.token state @CursorState.source_module @ModuleContext.token_count > ||
+                state @CursorState.type_start 0 < ||
+                state @CursorState.type_count 0 < ||
+                state @CursorState.type_start program @Program.cursor_type_count > ||
+                state @CursorState.type_count program @Program.cursor_type_count state @CursorState.type_start - > ||
+            do
+                "internal cursor state storage is invalid" fail
+            end
+        end
+    end
+end
+
+proc verify-local-visibility Program* int -- do
+    let program visibility-index do
+        program visibility-index local-visibility-at
+        let visibility do
+            if program visibility @LocalVisibility.procedure_module program-owns-module ! do
+                "internal local visibility procedure module is invalid" fail
+            end
+            if
+                visibility @LocalVisibility.procedure_index 0 <
+                visibility @LocalVisibility.procedure_index visibility @LocalVisibility.procedure_module @ModuleContext.proc_count >= ||
+                visibility @LocalVisibility.local_id 0 < ||
+                visibility @LocalVisibility.binding_occurrence 0 < ||
+                visibility @LocalVisibility.binding_occurrence program @Program.semantic_occurrence_count >= ||
+                visibility @LocalVisibility.start_state 0 < ||
+                visibility @LocalVisibility.end_state visibility @LocalVisibility.start_state < ||
+                visibility @LocalVisibility.end_state program @Program.cursor_state_count > ||
+            do
+                "internal local visibility storage is invalid" fail
+            end
+            program visibility @LocalVisibility.binding_occurrence semantic-occurrence-at
+            let occurrence do
+                if
+                    occurrence @SemanticOccurrence.semantic_class SemanticClass.local? !
+                    occurrence @SemanticOccurrence.identity_module ptr cast int cast visibility @LocalVisibility.procedure_module ptr cast int cast != ||
+                    occurrence @SemanticOccurrence.identity_index visibility @LocalVisibility.procedure_index != ||
+                    occurrence @SemanticOccurrence.identity_subindex visibility @LocalVisibility.local_id != ||
+                do
+                    "internal local visibility binding mismatch" fail
+                end
+            end
+            if visibility @LocalVisibility.start_state visibility @LocalVisibility.end_state < do
+                program visibility @LocalVisibility.start_state cursor-state-at
+                program visibility @LocalVisibility.end_state 1 - cursor-state-at
+                let first-state last-state do
+                    if
+                        first-state @CursorState.owner_module ptr cast int cast visibility @LocalVisibility.procedure_module ptr cast int cast !=
+                        first-state @CursorState.owner_index visibility @LocalVisibility.procedure_index != ||
+                        last-state @CursorState.owner_module ptr cast int cast visibility @LocalVisibility.procedure_module ptr cast int cast != ||
+                        last-state @CursorState.owner_index visibility @LocalVisibility.procedure_index != ||
+                    do
+                        "internal local visibility owner range mismatch" fail
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc verify-semantic-cursor-data Program* -- do
+    let program do
+        if
+            program @Program.semantic_occurrence_count 0 <
+            program @Program.semantic_occurrence_count program @Program.semantic_occurrence_capacity > ||
+            program @Program.cursor_state_count 0 < ||
+            program @Program.cursor_state_count program @Program.cursor_state_capacity > ||
+            program @Program.cursor_type_count 0 < ||
+            program @Program.cursor_type_count program @Program.cursor_type_capacity > ||
+            program @Program.local_visibility_count 0 < ||
+            program @Program.local_visibility_count program @Program.local_visibility_capacity > ||
+        do
+            "internal semantic cursor table count is invalid" fail
+        end
+        0 while dup program @Program.cursor_state_count < do
+            dup program swap verify-cursor-state
+            1 +
+        end drop
+        0 while dup program @Program.semantic_occurrence_count < do
+            dup program swap verify-semantic-occurrence
+            1 +
+        end drop
+        0 while dup program @Program.local_visibility_count < do
+            dup program swap verify-local-visibility
+            1 +
+        end drop
+    end
+end
+
 proc analyze-all-procedures Program* -- do
     let program do
         if program @Program.phase ProgramPhase.resolved? ! do
@@ -14119,7 +15755,10 @@ proc analyze-all-procedures Program* -- do
             @ModuleContext.next_module
         end
         drop
-        if program program-failed ! do ProgramPhase:analyzed program !Program.phase end
+        if program program-failed ! do
+            program verify-semantic-cursor-data
+            ProgramPhase:analyzed program !Program.phase
+        end
     end
 end
 
@@ -14199,6 +15838,18 @@ proc allocate-program bool bool ptr int -- Program* do
             0 program !Program.source_count
             8 program !Program.source_capacity
             true program !Program.allow_filesystem_sources
+            32 SemanticOccurrence:sizeof * alloc program !Program.semantic_occurrences
+            0 program !Program.semantic_occurrence_count
+            32 program !Program.semantic_occurrence_capacity
+            32 CursorState:sizeof * alloc program !Program.cursor_states
+            0 program !Program.cursor_state_count
+            32 program !Program.cursor_state_capacity
+            64 cell-bytes * alloc program !Program.cursor_types
+            0 program !Program.cursor_type_count
+            64 program !Program.cursor_type_capacity
+            32 LocalVisibility:sizeof * alloc program !Program.local_visibilities
+            0 program !Program.local_visibility_count
+            32 program !Program.local_visibility_capacity
         end
     end
 end
@@ -14256,11 +15907,15 @@ proc resolve-program Program* -- do
             "internal program must be loaded before resolution" fail
         end
         program resolve-all-module-scopes
+        if program program-failed ! do program record-all-declaration-occurrences end
         if program program-failed ! do
             program find-builtins-assert-procedure program !Program.builtins_assert_proc
             program evaluate-all-constants
         end
-        if program program-failed ! do program resolve-all-types end
+        if program program-failed ! do
+            program resolve-all-types
+            if program program-failed ! do program record-all-type-occurrences end
+        end
         if program program-failed ! do ProgramPhase:resolved program !Program.phase end
     end
 end
@@ -14929,6 +16584,541 @@ proc emit-inspect-program Program* bool bool -- do
     end
 end
 
+proc cursor-token-at-byte ModuleContext* int -- int do
+    let module byte do
+        0
+        while
+            peek index do
+                index module @ModuleContext.token_count <
+                if dup do
+                    drop module index token-at
+                    let token do byte token @TokenEntry.start token @TokenEntry.length + >= end
+                end
+            end
+        do
+            1 +
+        end
+    end
+end
+
+proc emit-cursor-owner-kind CursorOwnerKind -- do
+    let kind do
+        if kind CursorOwnerKind.procedure? do "procedure" emit
+        elif kind CursorOwnerKind.constant? do "constant" emit
+        else "module" emit end
+    end
+end
+
+proc emit-occurrence-role OccurrenceRole -- do
+    let role do
+        if role OccurrenceRole.declaration? do "declaration" emit
+        elif role OccurrenceRole.import_binding? do "import_binding" emit
+        else "reference" emit end
+    end
+end
+
+proc emit-semantic-class SemanticClass -- do
+    let semantic-class do
+        if semantic-class SemanticClass.procedure? do "procedure" emit
+        elif semantic-class SemanticClass.macro_symbol? do "macro" emit
+        elif semantic-class SemanticClass.constant? do "constant" emit
+        elif semantic-class SemanticClass.local? do "local" emit
+        elif semantic-class SemanticClass.record_type? do "record_type" emit
+        elif semantic-class SemanticClass.record_field? do "record_field" emit
+        elif semantic-class SemanticClass.union_type? do "union_type" emit
+        elif semantic-class SemanticClass.union_case? do "union_case" emit
+        elif semantic-class SemanticClass.function_type? do "function_type" emit
+        elif semantic-class SemanticClass.c_type? do "c_type" emit
+        elif semantic-class SemanticClass.primitive_type? do "primitive_type" emit
+        else "intrinsic" emit end
+    end
+end
+
+proc cursor-state-matches CursorState* ModuleContext* int -- bool do
+    let state module token do
+        state @CursorState.source_module ptr cast int cast module ptr cast int cast ==
+        state @CursorState.token token == &&
+    end
+end
+
+proc cursor-state-parent-expansion CursorState* -- int do
+    let state do
+        if state @CursorState.expansion_id 0 < state @CursorState.owner_kind CursorOwnerKind.procedure? ! || do
+            0 1 -
+        else
+            state @CursorState.owner_module state @CursorState.owner_index procedure-at @ProcedureEntry.analysis
+            state @CursorState.expansion_id macro-expansion-at @MacroExpansion.parent_expansion_id
+        end
+    end
+end
+
+proc emit-cursor-context Program* int -- do
+    let program state-index do
+        program state-index cursor-state-at
+        let state do
+            "context\t" emit state-index emit-unsigned 9 putc
+            state @CursorState.owner_kind emit-cursor-owner-kind 9 putc
+            state @CursorState.owner_module emit-inspect-module-id 9 putc
+            state @CursorState.owner_index emit-integer 9 putc
+            state @CursorState.expansion_id emit-integer 9 putc
+            state cursor-state-parent-expansion emit-integer 9 putc
+            state @CursorState.scope_module emit-inspect-module-id 9 putc
+            state-index emit-unsigned
+            10 putc
+        end
+    end
+end
+
+proc emit-cursor-contexts Program* ModuleContext* int -- do
+    let program module token do
+        "context\t-1\tmodule\t" emit module emit-inspect-module-id
+        "\t-1\t-1\t-1\t" emit module emit-inspect-module-id "\t-1\n" emit
+        0 while dup program @Program.cursor_state_count < do
+            dup let state-index do
+                if program state-index cursor-state-at module token cursor-state-matches do
+                    program state-index emit-cursor-context
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc semantic-occurrence-at-byte SemanticOccurrence* ModuleContext* int -- bool do
+    let occurrence module byte do
+        occurrence @SemanticOccurrence.source_module ptr cast int cast module ptr cast int cast ==
+        occurrence @SemanticOccurrence.start_byte byte <= &&
+        byte occurrence @SemanticOccurrence.end_byte < &&
+    end
+end
+
+proc emit-cursor-occurrence Program* int -- do
+    let program occurrence-index do
+        program occurrence-index semantic-occurrence-at
+        let occurrence do
+            "occurrence\t" emit occurrence @SemanticOccurrence.state_index emit-integer 9 putc
+            occurrence @SemanticOccurrence.role emit-occurrence-role 9 putc
+            occurrence @SemanticOccurrence.semantic_class emit-semantic-class 9 putc
+            occurrence @SemanticOccurrence.source_module emit-inspect-module-id 9 putc
+            occurrence @SemanticOccurrence.start_byte emit-unsigned 9 putc
+            occurrence @SemanticOccurrence.end_byte emit-unsigned 9 putc
+            occurrence @SemanticOccurrence.identity_module emit-inspect-module-id 9 putc
+            occurrence @SemanticOccurrence.identity_index emit-integer 9 putc
+            occurrence @SemanticOccurrence.identity_subindex emit-integer 9 putc
+            occurrence @SemanticOccurrence.binding_module emit-inspect-module-id 9 putc
+            occurrence @SemanticOccurrence.binding_scope_index emit-integer
+            10 putc
+        end
+    end
+end
+
+proc emit-cursor-occurrences Program* ModuleContext* int -- do
+    let program module byte do
+        0 while dup program @Program.semantic_occurrence_count < do
+            dup let occurrence-index do
+                if program occurrence-index semantic-occurrence-at module byte semantic-occurrence-at-byte do
+                    program occurrence-index emit-cursor-occurrence
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc emit-cursor-stacks Program* ModuleContext* int -- do
+    let program module token do
+        0 while dup program @Program.cursor_state_count < do
+            dup let state-index do
+                program state-index cursor-state-at
+                let state do
+                    if state module token cursor-state-matches do
+                        "stack\t" emit state-index emit-unsigned 9 putc
+                        program program @Program.cursor_types state @CursorState.type_start state @CursorState.type_count
+                        emit-inspect-type-list
+                        10 putc
+                    end
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc semantic-definition-token SemanticClass ModuleContext* int int -- ModuleContext* int bool do
+    let semantic-class module index subindex do
+        if module ptr cast int cast 0 == do
+            module 0 1 - false
+        elif semantic-class SemanticClass.procedure? do
+            module module index procedure-at @ProcedureEntry.name_token true
+        elif semantic-class SemanticClass.macro_symbol? do
+            module module index macro-at @MacroEntry.name_token true
+        elif semantic-class SemanticClass.constant? do
+            module module index constant-at @ConstantEntry.name_token true
+        elif semantic-class SemanticClass.record_type? do
+            module module index record-type-at @RecordTypeEntry.name_token true
+        elif semantic-class SemanticClass.record_field? do
+            module module subindex record-field-at @RecordFieldEntry.name_token true
+        elif semantic-class SemanticClass.union_type? do
+            module module index union-type-at @UnionTypeEntry.name_token true
+        elif semantic-class SemanticClass.union_case? do
+            module module subindex union-case-at @UnionCaseEntry.name_token true
+        elif semantic-class SemanticClass.function_type? do
+            module module index function-type-at @FunctionTypeEntry.name_token true
+        elif semantic-class SemanticClass.c_type? do
+            module module index c-type-at @CTypeEntry.name_token true
+        else
+            module 0 1 - false
+        end
+    end
+end
+
+proc local-visibility-active LocalVisibility* CursorState* int -- bool do
+    let visibility state state-index do
+        state @CursorState.owner_kind CursorOwnerKind.procedure?
+        visibility @LocalVisibility.procedure_module ptr cast int cast
+        state @CursorState.owner_module ptr cast int cast == &&
+        visibility @LocalVisibility.procedure_index state @CursorState.owner_index == &&
+        visibility @LocalVisibility.start_state state-index <= &&
+        state-index visibility @LocalVisibility.end_state < &&
+    end
+end
+
+proc visibility-name-equals-bytes Program* LocalVisibility* ptr int -- bool do
+    let program visibility bytes length do
+        program visibility @LocalVisibility.binding_occurrence semantic-occurrence-at
+        let occurrence do
+            occurrence @SemanticOccurrence.source_module @ModuleContext.source occurrence @SemanticOccurrence.start_byte +
+            occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.start_byte -
+            bytes length bytes-equal
+        end
+    end
+end
+
+proc active-local-name-equals-from Program* CursorState* int ptr int int -- bool do
+    let program state state-index bytes length visibility-index do
+        if visibility-index program @Program.local_visibility_count >= do
+            false
+        else
+            program visibility-index local-visibility-at
+            let visibility do
+                if
+                    visibility state state-index local-visibility-active
+                    program visibility bytes length visibility-name-equals-bytes &&
+                do
+                    true
+                else
+                    program state state-index bytes length visibility-index 1 + active-local-name-equals-from
+                end
+            end
+        end
+    end
+end
+
+proc visibility-is-shadowed-from Program* CursorState* int LocalVisibility* int -- bool do
+    let program state state-index visibility later-index do
+        if later-index program @Program.local_visibility_count >= do
+            false
+        else
+            program later-index local-visibility-at
+            let later do
+                if later state state-index local-visibility-active do
+                    program visibility @LocalVisibility.binding_occurrence semantic-occurrence-at
+                    let occurrence do
+                        program later
+                        occurrence @SemanticOccurrence.source_module @ModuleContext.source occurrence @SemanticOccurrence.start_byte +
+                        occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.start_byte -
+                        visibility-name-equals-bytes
+                    end
+                    if dup do
+                    else drop program state state-index visibility later-index 1 + visibility-is-shadowed-from end
+                else
+                    program state state-index visibility later-index 1 + visibility-is-shadowed-from
+                end
+            end
+        end
+    end
+end
+
+proc emit-visible-local Program* int LocalVisibility* -- do
+    let program state-index visibility do
+        program visibility @LocalVisibility.binding_occurrence semantic-occurrence-at
+        let occurrence do
+            "visible\t" emit state-index emit-integer "\t0\t" emit
+            occurrence @SemanticOccurrence.source_module @ModuleContext.source occurrence @SemanticOccurrence.start_byte +
+            occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.start_byte - emit-inspect-bytes 9 putc
+            SemanticClass:local emit-semantic-class 9 putc
+            visibility @LocalVisibility.procedure_module emit-inspect-module-id 9 putc
+            visibility @LocalVisibility.procedure_index emit-integer 9 putc
+            visibility @LocalVisibility.local_id emit-integer "\t-1\t-1\t" emit
+            occurrence @SemanticOccurrence.source_module emit-inspect-module-id 9 putc
+            occurrence @SemanticOccurrence.start_byte emit-unsigned 9 putc
+            occurrence @SemanticOccurrence.end_byte emit-unsigned
+            10 putc
+        end
+    end
+end
+
+proc emit-visible-locals-from Program* CursorState* int int -- do
+    let program state state-index visibility-index do
+        if visibility-index 0 >= do
+            program visibility-index local-visibility-at
+            let visibility do
+                if
+                    visibility state state-index local-visibility-active
+                    program state state-index visibility visibility-index 1 + visibility-is-shadowed-from ! &&
+                    program state visibility cursor-local-is-preempted ! &&
+                do
+                    program state-index visibility emit-visible-local
+                end
+            end
+            program state state-index visibility-index 1 - emit-visible-locals-from
+        end
+    end
+end
+
+proc cursor-structured-word ModuleContext* int -- bool do
+    let module token do
+        module token "if" token-equals
+        module token "elif" token-equals ||
+        module token "else" token-equals ||
+        module token "while" token-equals ||
+        module token "do" token-equals ||
+        module token "end" token-equals ||
+        module token "let" token-equals ||
+        module token "peek" token-equals ||
+    end
+end
+
+proc cursor-primitive-type-word ModuleContext* int -- bool do
+    let module token do
+        module token constant-primitive-type-literal
+        let value found do
+            found
+            module token "ptr" token-equals ||
+            module token "String" token-equals ||
+        end
+    end
+end
+
+proc cursor-inferred-record-word ModuleContext* int -- bool do
+    let module token do
+        module token token-slice
+        let bytes length do
+            length 2 >=
+            if dup do
+                drop
+                bytes 1 byte-read 46 ==
+                bytes 0 byte-read 64 == bytes 0 byte-read 33 == || &&
+            end
+        end
+    end
+end
+
+proc cursor-module-macro-word ModuleContext* ModuleContext* int -- bool do
+    let scope module token do
+        scope module token token-slice visible-macro-definition
+        let macro-module macro-index found do found end
+    end
+end
+
+proc cursor-nominal-word ModuleContext* ModuleContext* int -- bool do
+    let scope module token do
+        module token token-slice
+        let bytes length do
+            scope bytes length true scope-prefix-is-nominal
+            scope module token constant-qualified-nominal-word ||
+        end
+    end
+end
+
+proc cursor-word-resolves-before-local ModuleContext* ModuleContext* int -- bool do
+    let scope module token do
+        if scope module token cursor-module-macro-word do true
+        elif module token cursor-structured-word do true
+        elif module token token-is-pointer-type do true
+        elif module token cursor-primitive-type-word do true
+        elif scope module token cursor-nominal-word do true
+        elif module token cursor-inferred-record-word do true
+        elif module token "String.bytes" token-equals do true
+        else module token "String.len" token-equals end
+    end
+end
+
+proc cursor-local-is-preempted Program* CursorState* LocalVisibility* -- bool do
+    let program state visibility do
+        program visibility @LocalVisibility.binding_occurrence semantic-occurrence-at
+        let occurrence do
+            occurrence @SemanticOccurrence.source_module occurrence @SemanticOccurrence.start_byte cursor-token-at-byte
+            let token do
+                state @CursorState.scope_module occurrence @SemanticOccurrence.source_module token
+                cursor-word-resolves-before-local
+            end
+        end
+    end
+end
+
+proc emit-visible-scope-symbol Program* int int ModuleContext* int -- do
+    let program context rank binding-module scope-index do
+        binding-module scope-index scope-at
+        let symbol do
+            symbol @ScopeEntry.kind scope-kind-semantic-class
+            let semantic-class do
+                semantic-class symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index 0 1 -
+                semantic-definition-token
+                let declaration-module declaration-token found do
+                    "visible\t" emit context emit-integer 9 putc rank emit-unsigned 9 putc
+                    symbol @ScopeEntry.name_module @ModuleContext.source symbol @ScopeEntry.name_start +
+                    symbol @ScopeEntry.name_length emit-inspect-bytes 9 putc
+                    semantic-class emit-semantic-class 9 putc
+                    symbol @ScopeEntry.definition_module emit-inspect-module-id 9 putc
+                    symbol @ScopeEntry.definition_index emit-integer "\t-1\t" emit
+                    binding-module emit-inspect-module-id 9 putc
+                    scope-index emit-integer 9 putc
+                    if found do declaration-module emit-inspect-module-id else 0 1 - emit-integer end
+                    9 putc
+                    if found do declaration-module declaration-token token-at @TokenEntry.start emit-unsigned else 0 1 - emit-integer end
+                    9 putc
+                    if found do
+                        declaration-module declaration-token token-at
+                        let token do token @TokenEntry.start token @TokenEntry.length + emit-unsigned end
+                    else 0 1 - emit-integer end
+                    10 putc
+                end
+            end
+        end
+    end
+end
+
+proc cursor-scope-kind-resolves-before-local ScopeKind -- bool do
+    let kind do
+        kind ScopeKind.macro_symbol?
+        kind ScopeKind.record_type? ||
+        kind ScopeKind.union_type? ||
+        kind ScopeKind.function_type? ||
+    end
+end
+
+proc cursor-builtin-symbol-visible ModuleContext* ModuleContext* int -- bool do
+    let visible-scope builtins scope-index do
+        builtins scope-index scope-at
+        let symbol do
+            symbol @ScopeEntry.name_module @ModuleContext.source symbol @ScopeEntry.name_start +
+            symbol @ScopeEntry.name_length
+            let bytes length do
+                visible-scope bytes length visible-macro-definition
+                let macro-module macro-index macro-found do
+                    if macro-found do
+                        false
+                    else
+                        visible-scope bytes length 0 find-scope-symbol-from
+                        let visible-index do
+                            if visible-index 0 < do
+                                true
+                            elif
+                                symbol @ScopeEntry.kind ScopeKind:procedure ==
+                                visible-scope visible-index scope-at @ScopeEntry.kind ScopeKind:procedure == &&
+                            do
+                                visible-scope bytes length
+                                symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index
+                                scope-has-procedure-inputs !
+                            else
+                                false
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc cursor-scope-symbol-visible Program* int ModuleContext* int ModuleContext* -- bool do
+    let program state-index scope scope-index visible-scope do
+        scope scope-index scope-at
+        let symbol do
+            if state-index 0 < do false else
+                program program state-index cursor-state-at state-index
+                symbol @ScopeEntry.name_module @ModuleContext.source symbol @ScopeEntry.name_start +
+                symbol @ScopeEntry.name_length 0 active-local-name-equals-from
+            end
+            let hidden-by-local do
+                if hidden-by-local do
+                    if scope ptr cast int cast visible-scope ptr cast int cast == do
+                        symbol @ScopeEntry.kind cursor-scope-kind-resolves-before-local
+                    else
+                        false
+                    end
+                elif scope ptr cast int cast visible-scope ptr cast int cast == do
+                    true
+                else
+                    visible-scope scope scope-index cursor-builtin-symbol-visible
+                end
+            end
+        end
+    end
+end
+
+proc emit-visible-scope Program* int int ModuleContext* ModuleContext* int -- do
+    let program context rank scope visible-scope state-index do
+        0 while dup scope @ModuleContext.scope_count < do
+            dup let scope-index do
+                if program state-index scope scope-index visible-scope cursor-scope-symbol-visible do
+                    program context rank scope scope-index emit-visible-scope-symbol
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc emit-cursor-visible-symbols Program* ModuleContext* int -- do
+    let program module token do
+        program 0 1 - 1 module module 0 1 - emit-visible-scope
+        if module ptr cast int cast program @Program.builtins_module ptr cast int cast != do
+            program 0 1 - 2 program @Program.builtins_module module 0 1 - emit-visible-scope
+        end
+        0 while dup program @Program.cursor_state_count < do
+            dup let state-index do
+                program state-index cursor-state-at
+                let state do
+                    if state module token cursor-state-matches do
+                        program state state-index program @Program.local_visibility_count 1 - emit-visible-locals-from
+                        program state-index 1 state @CursorState.scope_module state @CursorState.scope_module
+                        state-index emit-visible-scope
+                        if
+                            state @CursorState.scope_module ptr cast int cast
+                            program @Program.builtins_module ptr cast int cast !=
+                        do
+                            program state-index 2 program @Program.builtins_module state @CursorState.scope_module
+                            state-index emit-visible-scope
+                        end
+                    end
+                end
+            end
+            1 +
+        end drop
+    end
+end
+
+proc emit-cursor-query Program* ModuleContext* int -- do
+    let program module byte do
+        module byte cursor-token-at-byte
+        let token do
+            "frogc-cursor\t1\n" emit
+            "fields\tquery\tmodule\tbyte\ttoken\n" emit
+            "fields\tcontext\tid\tkind\towner_module\towner_index\texpansion\tparent_expansion\tscope_module\tstate\n" emit
+            "fields\toccurrence\tcontext\trole\tclass\tsource_module\tstart_byte\tend_byte\tidentity_module\tidentity_index\tidentity_subindex\tbinding_module\tbinding_scope_index\n" emit
+            "fields\tvisible\tcontext\trank\tname\tclass\tidentity_module\tidentity_index\tidentity_subindex\tbinding_module\tbinding_scope_index\tdeclaration_module\tdeclaration_start\tdeclaration_end\n" emit
+            "fields\tstack\tcontext\ttypes\n" emit
+            "query\t" emit module emit-inspect-module-id 9 putc byte emit-unsigned 9 putc token emit-unsigned 10 putc
+            program module token emit-cursor-contexts
+            program module byte emit-cursor-occurrences
+            program module token emit-cursor-visible-symbols
+            program module token emit-cursor-stacks
+        end
+    end
+end
+
 proc compile-source ptr int ptr int bool bool ptr int -- do
     let source source-length diagnostic-path diagnostic-path-length debug release standard-library-root standard-library-root-length do
         source source-length diagnostic-path diagnostic-path-length debug release
@@ -15099,6 +17289,39 @@ proc cstring-equals ptr String -- bool do
     end
 end
 
+proc parse-nonnegative-decimal-from ptr int int int -- int bool do
+    let bytes length index value do
+        if index length >= do
+            value true
+        else
+            bytes index byte-read
+            let byte do
+                if byte 48 < byte 57 > || do
+                    0 false
+                else
+                    byte 48 -
+                    let digit do
+                        if value max-int digit - 10 / > do
+                            0 false
+                        else
+                            bytes length index 1 + value 10 * digit + parse-nonnegative-decimal-from
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+proc parse-nonnegative-decimal ptr -- int bool do
+    let bytes do
+        bytes cstring-length
+        let length do
+            if length 0 == do 0 false else bytes length 0 0 parse-nonnegative-decimal-from end
+        end
+    end
+end
+
 proc argv-at ptr int -- ptr do cell-bytes * + ptr* cast @ end
 
 proc copy-cstring ptr int -- ptr do
@@ -15265,6 +17488,8 @@ proc cli-usage -- do
 Commands:
   check [FILE]               analyze Frog source without generating C
   inspect [FILE]             print analyzed Frog operations
+  cursor --byte OFFSET [FILE]
+                             query semantic data at a source byte
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -15533,6 +17758,59 @@ proc inspect-file ptr bool bool bool bool ptr int -- int do
     end
 end
 
+proc cursor-frog-source ptr int ptr int ptr int bool bool ptr int -- int do
+    let source source-length diagnostic-path diagnostic-path-length directory byte debug release standard-library-root standard-library-root-length do
+        if byte source-length > do
+            "cursor byte offset exceeds source length" cli-usage-error
+            2
+        else
+            fork
+            let child do
+                if child 0 < do
+                    "unable to fork compiler" cli-error
+                    1
+                elif child 0 == do
+                    reset-child-signals
+                    if directory chdir 0 != do
+                        "unable to prepare compiler child" cli-error
+                        1 finish-child
+                        1
+                    else
+                        source source-length diagnostic-path diagnostic-path-length debug release
+                        standard-library-root standard-library-root-length analyze-source
+                        let program do
+                            if program program-failed do
+                                program emit-program-diagnostics
+                                1 finish-child
+                                1
+                            else
+                                program program @Program.root_module byte emit-cursor-query
+                                0 finish-child
+                                0
+                            end
+                        end
+                    end
+                else
+                    child wait-for-child
+                end
+            end
+        end
+    end
+end
+
+proc cursor-file ptr int bool bool ptr int -- int do
+    let path byte debug release standard-library-root standard-library-root-length do
+        path read-source-path
+        let source source-length do
+            path parent-path
+            let directory do
+                source source-length path path cstring-length directory byte debug release
+                standard-library-root standard-library-root-length cursor-frog-source
+            end
+        end
+    end
+end
+
 proc parse-inspect-options ptr int int bool bool -- int bool bool do
     let argv argc index include-builtins include-lexemes do
         if index argc >= do
@@ -15681,6 +17959,53 @@ proc inspect-command ptr int int bool bool ptr int -- do
     end
 end
 
+proc cursor-command ptr int int bool bool ptr int -- do
+    let argv argc command-index debug release standard-library-root standard-library-root-length do
+        command-index 1 +
+        let option-index do
+            if option-index argc >= do
+                "cursor requires --byte OFFSET" cli-usage-error
+            end
+            argv option-index argv-at
+            let option do
+                if
+                    argc option-index 1 + ==
+                    option "-h" cstring-equals option "--help" cstring-equals || &&
+                do
+                    "Usage: frogc [--debug] [--release] cursor --byte OFFSET [FILE]\n" emit
+                elif option "--byte" cstring-equals ! do
+                    if option u8* cast @ int cast 45 == do
+                        "unknown cursor option: " option cli-usage-error-value
+                    else
+                        "cursor requires --byte OFFSET" cli-usage-error
+                    end
+                elif option-index 1 + argc >= do
+                    "cursor --byte requires an offset" cli-usage-error
+                else
+                    argv option-index 1 + argv-at
+                    peek offset-argument do parse-nonnegative-decimal
+                        let byte valid do
+                            if valid ! do "invalid cursor byte offset: " offset-argument cli-usage-error-value end
+                            option-index 2 +
+                            let file-index do
+                                if file-index argc >= do
+                                    read-source "<stdin>" String.bytes "<stdin>" String.len "." String.bytes byte debug release
+                                    standard-library-root standard-library-root-length cursor-frog-source exit
+                                elif file-index 1 + argc != do
+                                    "cursor accepts at most one source file" cli-usage-error
+                                else
+                                    argv file-index argv-at byte debug release standard-library-root standard-library-root-length
+                                    cursor-file exit
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 proc parse-build-options ptr int int ptr bool -- ptr ptr bool do
     let argv argc index output should-run do
         if index argc >= do
@@ -15768,6 +18093,8 @@ proc main -- do
                         argv argc command-index debug release standard-library-root standard-library-root-length check-command
                     elif command "inspect" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length inspect-command
+                    elif command "cursor" cstring-equals do
+                        argv argc command-index debug release standard-library-root standard-library-root-length cursor-command
                     elif command "run" cstring-equals do
                         argv argc command-index debug release standard-library-root standard-library-root-length run-command
                     elif command "build" cstring-equals do

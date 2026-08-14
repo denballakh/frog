@@ -2,7 +2,11 @@ from "framework.frog" import (
     FrogTestContext frog-check frog-process-equals
     frog-line-length frog-bytes-contain-line frog-count-lines-starting-with
 )
-from "stdlib/string.frog" import ( bytes-contain bytes-equal bytes-starts-with )
+from "stdlib/libc.frog" import ( free read-file )
+from "stdlib/string.frog" import (
+    ByteBuffer bytes-contain bytes-count bytes-equal bytes-index-of bytes-starts-with
+    byte-buffer-free byte-buffer-new byte-buffer-push
+)
 from "stdlib/subprocess.frog" import (
     CompletedProcess
     subprocess-argv subprocess-arg subprocess-arg-pointer subprocess-argv-free
@@ -142,6 +146,76 @@ proc frog-cli-inspect-lexemes String String String int String FrogTestContext* -
     end
 end
 
+proc frog-cli-append-unsigned int ByteBuffer* -- do
+    let value buffer do
+        if value 10 >= do value 10 / buffer frog-cli-append-unsigned end
+        value 10 % 48 + buffer byte-buffer-push
+    end
+end
+
+proc frog-cli-offset-buffer int -- ByteBuffer* do
+    let offset do
+        24 byte-buffer-new
+        peek buffer do
+            offset buffer frog-cli-append-unsigned
+            0 buffer byte-buffer-push
+        end
+    end
+end
+
+proc frog-cli-cursor-stdin String int FrogTestContext* -- CompletedProcess* do
+    let source offset context do
+        offset frog-cli-offset-buffer
+        let offset-buffer do
+            4 subprocess-argv
+            let arguments do
+                context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+                "cursor" arguments 1 subprocess-arg
+                "--byte" arguments 2 subprocess-arg
+                offset-buffer @ByteBuffer.bytes arguments 3 subprocess-arg-pointer
+                arguments source String.bytes source String.len "" subprocess-run-bytes-in
+                arguments subprocess-argv-free
+                offset-buffer byte-buffer-free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-file String int FrogTestContext* -- CompletedProcess* do
+    let path offset context do
+        offset frog-cli-offset-buffer
+        let offset-buffer do
+            5 subprocess-argv
+            let arguments do
+                context @FrogTestContext.compiler arguments 0 subprocess-arg-pointer
+                "cursor" arguments 1 subprocess-arg
+                "--byte" arguments 2 subprocess-arg
+                offset-buffer @ByteBuffer.bytes arguments 3 subprocess-arg-pointer
+                path arguments 4 subprocess-arg
+                arguments "" subprocess-run
+                arguments subprocess-argv-free
+                offset-buffer byte-buffer-free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-succeeded CompletedProcess* -- bool do
+    let result do
+        result @CompletedProcess.returncode 0 ==
+        result @CompletedProcess.stderr_len 0 == &&
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "frogc-cursor\t1\n" String.bytes "frogc-cursor\t1\n" String.len bytes-starts-with &&
+    end
+end
+
+proc frog-cli-fixture-marker ptr int String -- int do
+    let source source-length marker do
+        source source-length marker String.bytes marker String.len bytes-index-of
+        peek offset do offset 0 >= marker assert end
+    end
+end
+
 proc frog-cli-tsv-field ptr int int -- ptr int bool do
     let line length requested do
         if requested 0 < do
@@ -248,6 +322,186 @@ proc frog-cli-tsv-int ptr int int -- int bool do
         let field field-length found do
             if found do field field-length frog-cli-parse-inspect-int else 0 false end
         end
+    end
+end
+
+proc frog-cli-find-cursor-occurrence-line ptr int String String int -- ptr int bool do
+    let bytes length role semantic-class identity-index do
+        0 0 ptr cast 0 false
+        while
+            peek offset result result-length found do
+                offset length < found ! &&
+            end
+        do
+            let offset result result-length found do
+                bytes offset + length offset - frog-line-length
+                let line-length do
+                    bytes offset + line-length 8 frog-cli-tsv-int
+                    let actual-identity valid-identity do
+                        offset line-length 1 + +
+                        if
+                            bytes offset + line-length 0 "occurrence" frog-cli-tsv-field-equals
+                            bytes offset + line-length 2 role frog-cli-tsv-field-equals &&
+                            bytes offset + line-length 3 semantic-class frog-cli-tsv-field-equals &&
+                            valid-identity &&
+                            actual-identity identity-index == &&
+                        do
+                            bytes offset + line-length true
+                        else
+                            result result-length found
+                        end
+                    end
+                end
+            end
+        end
+        let offset result result-length found do result result-length found end
+    end
+end
+
+proc frog-cli-cursor-occurrence-is CompletedProcess* String String int int int int int -- bool do
+    let result role semantic-class identity-module identity-index identity-subindex binding-module binding-index do
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len role semantic-class identity-index
+        frog-cli-find-cursor-occurrence-line
+        let line line-length found do
+            if found ! do
+                false
+            else
+                line line-length 7 frog-cli-tsv-int
+                line line-length 9 frog-cli-tsv-int
+                line line-length 10 frog-cli-tsv-int
+                line line-length 11 frog-cli-tsv-int
+                let actual-module module-valid actual-subindex subindex-valid actual-binding-module binding-module-valid actual-binding-index binding-index-valid do
+                    module-valid subindex-valid && binding-module-valid && binding-index-valid &&
+                    actual-module identity-module == &&
+                    actual-subindex identity-subindex == &&
+                    actual-binding-module binding-module == &&
+                    actual-binding-index binding-index == &&
+                end
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-local-id CompletedProcess* int -- int bool do
+    let result procedure-index do
+        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+        "reference" "local" procedure-index frog-cli-find-cursor-occurrence-line
+        let line line-length found do
+            if found do line line-length 9 frog-cli-tsv-int else 0 false end
+        end
+    end
+end
+
+proc frog-cli-cursor-query-token CompletedProcess* -- int bool do
+    let result do
+        0 0 false
+        while
+            peek offset token found do
+                offset result @CompletedProcess.stdout_len < found ! &&
+            end
+        do
+            let offset token found do
+                result @CompletedProcess.stdout offset + result @CompletedProcess.stdout_len offset - frog-line-length
+                let line-length do
+                    offset line-length 1 + +
+                    if result @CompletedProcess.stdout offset + line-length 0 "query" frog-cli-tsv-field-equals do
+                        result @CompletedProcess.stdout offset + line-length 3 frog-cli-tsv-int
+                        let actual-token valid do actual-token valid end
+                    else
+                        token found
+                    end
+                end
+            end
+        end
+        let offset token found do token found end
+    end
+end
+
+proc frog-cli-cursor-has-stack CompletedProcess* String -- bool do
+    let result expected do
+        0 false
+        while
+            peek offset found do
+                offset result @CompletedProcess.stdout_len < found ! &&
+            end
+        do
+            let offset found do
+                result @CompletedProcess.stdout offset + result @CompletedProcess.stdout_len offset - frog-line-length
+                let line-length do
+                    offset line-length 1 + +
+                    if
+                        result @CompletedProcess.stdout offset + line-length 0 "stack" frog-cli-tsv-field-equals
+                        result @CompletedProcess.stdout offset + line-length 2 expected frog-cli-tsv-field-equals &&
+                    do
+                        true
+                    else
+                        found
+                    end
+                end
+            end
+        end
+        let offset found do found end
+    end
+end
+
+proc frog-cli-cursor-has-visible-local CompletedProcess* String int -- bool do
+    let result name local-id do
+        0 false
+        while
+            peek offset found do
+                offset result @CompletedProcess.stdout_len < found ! &&
+            end
+        do
+            let offset found do
+                result @CompletedProcess.stdout offset + result @CompletedProcess.stdout_len offset - frog-line-length
+                let line-length do
+                    result @CompletedProcess.stdout offset + line-length 7 frog-cli-tsv-int
+                    let actual-local-id valid-local-id do
+                        offset line-length 1 + +
+                        if
+                            result @CompletedProcess.stdout offset + line-length 0 "visible" frog-cli-tsv-field-equals
+                            result @CompletedProcess.stdout offset + line-length 2 "0" frog-cli-tsv-field-equals &&
+                            result @CompletedProcess.stdout offset + line-length 3 name frog-cli-tsv-field-equals &&
+                            result @CompletedProcess.stdout offset + line-length 4 "local" frog-cli-tsv-field-equals &&
+                            valid-local-id &&
+                            actual-local-id local-id == &&
+                        do
+                            true
+                        else
+                            found
+                        end
+                    end
+                end
+            end
+        end
+        let offset found do found end
+    end
+end
+
+proc frog-cli-count-procedure-contexts-with-parent CompletedProcess* -- int do
+    let result do
+        0 0
+        while peek offset count do offset result @CompletedProcess.stdout_len < end do
+            let offset count do
+                result @CompletedProcess.stdout offset + result @CompletedProcess.stdout_len offset - frog-line-length
+                let line-length do
+                    result @CompletedProcess.stdout offset + line-length 6 frog-cli-tsv-int
+                    let parent valid-parent do
+                        offset line-length 1 + +
+                        if
+                            result @CompletedProcess.stdout offset + line-length 0 "context" frog-cli-tsv-field-equals
+                            result @CompletedProcess.stdout offset + line-length 2 "procedure" frog-cli-tsv-field-equals &&
+                            valid-parent && parent 0 >= &&
+                        do
+                            count 1 +
+                        else
+                            count
+                        end
+                    end
+                end
+            end
+        end
+        let offset count do count end
     end
 end
 
@@ -825,6 +1079,374 @@ proc frog-cli-inspect-bindings FrogTestContext* -- do
     end
 end
 
+proc frog-cli-check-cursor-occurrence String int String String int int int int int String FrogTestContext* -- do
+    let path offset role semantic-class identity-module identity-index identity-subindex binding-module binding-index name context do
+        path offset context frog-cli-cursor-file
+        let result do
+            result frog-cli-cursor-succeeded
+            result @CompletedProcess.stdout result @CompletedProcess.stdout_len "occurrence\t" frog-count-lines-starting-with 1 == &&
+            result role semantic-class identity-module identity-index identity-subindex binding-module binding-index
+            frog-cli-cursor-occurrence-is &&
+            name context frog-check
+            result completed-process-free
+        end
+    end
+end
+
+proc frog-cli-cursor-compound-spans FrogTestContext* -- do
+    let context do
+        "test/cases/cli/cursor_semantics.frog"
+        let path do path String.bytes path String.len read-file
+            let source source-length success do
+                success path assert
+
+                source source-length "proc choose int" frog-cli-fixture-marker 5 +
+                let offset do path offset "declaration" "procedure" 0 0 0 1 - 0 1 - 0 1 -
+                    "cli/cursor-declaration" context frog-cli-check-cursor-occurrence
+                end
+
+                source source-length "@Point.x" frog-cli-fixture-marker
+                let offset do
+                    path offset 1 + "reference" "record_type" 0 0 0 1 - 0 3
+                    "cli/cursor-record-owner" context frog-cli-check-cursor-occurrence
+                    path offset 7 + "reference" "record_field" 0 0 0 0 1 - 0 1 -
+                    "cli/cursor-record-field" context frog-cli-check-cursor-occurrence
+                end
+
+                source source-length "Maybe:some" frog-cli-fixture-marker
+                let offset do
+                    path offset "reference" "union_type" 0 0 0 1 - 0 4
+                    "cli/cursor-union-owner" context frog-cli-check-cursor-occurrence
+                    path offset 6 + "reference" "union_case" 0 0 1 0 1 - 0 1 -
+                    "cli/cursor-union-case" context frog-cli-check-cursor-occurrence
+                end
+
+                source source-length "Mapper:ref:choose" frog-cli-fixture-marker
+                let offset do
+                    path offset "reference" "function_type" 0 0 0 1 - 0 5
+                    "cli/cursor-function-owner" context frog-cli-check-cursor-occurrence
+                    path offset 11 + "reference" "procedure" 0 0 0 1 - 0 6
+                    "cli/cursor-function-procedure" context frog-cli-check-cursor-occurrence
+                end
+
+                source free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-macro-specializations FrogTestContext* -- do
+    let context do
+        "test/cases/cli/cursor_semantics.frog"
+        let path do path String.bytes path String.len read-file
+            let source source-length success do
+                success path assert
+                source source-length "macro dispatch choose" frog-cli-fixture-marker 15 +
+                let offset do
+                    path offset context frog-cli-cursor-file
+                    let result do
+                        result frog-cli-cursor-succeeded
+                        result @CompletedProcess.stdout result @CompletedProcess.stdout_len "occurrence\t" frog-count-lines-starting-with 2 == &&
+                        result "reference" "procedure" 0 0 0 1 - 0 6 frog-cli-cursor-occurrence-is &&
+                        result "reference" "procedure" 0 1 0 1 - 0 7 frog-cli-cursor-occurrence-is &&
+                        result "[int]" frog-cli-cursor-has-stack &&
+                        result "[bool]" frog-cli-cursor-has-stack &&
+                        result frog-cli-count-procedure-contexts-with-parent 2 == &&
+                        "cli/cursor-macro-specializations" context frog-check
+                        result completed-process-free
+                    end
+                end
+
+                source source-length "macro never-used choose" frog-cli-fixture-marker 17 +
+                let offset do
+                    path offset context frog-cli-cursor-file
+                    let result do
+                        result frog-cli-cursor-succeeded
+                        result @CompletedProcess.stdout result @CompletedProcess.stdout_len "occurrence\t" frog-count-lines-starting-with 0 == &&
+                        result @CompletedProcess.stdout result @CompletedProcess.stdout_len "stack\t" frog-count-lines-starting-with 0 == &&
+                        result @CompletedProcess.stdout result @CompletedProcess.stdout_len "context\t" frog-count-lines-starting-with 1 == &&
+                        "cli/cursor-unused-macro" context frog-check
+                        result completed-process-free
+                    end
+                end
+                source free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-locals FrogTestContext* -- do
+    let context do
+        "test/cases/cli/cursor_semantics.frog"
+        let path do path String.bytes path String.len read-file
+            let source source-length success do
+                success path assert
+                source source-length "shadow-name 0 +" frog-cli-fixture-marker
+                path swap context frog-cli-cursor-file
+                source source-length "shadow-name 1 +" frog-cli-fixture-marker
+                path swap context frog-cli-cursor-file
+                let inner-result outer-result do
+                    inner-result 2 frog-cli-cursor-local-id
+                    outer-result 2 frog-cli-cursor-local-id
+                    let inner-id inner-valid outer-id outer-valid do
+                        inner-result frog-cli-cursor-succeeded
+                        outer-result frog-cli-cursor-succeeded &&
+                        inner-valid && outer-valid &&
+                        inner-id outer-id != &&
+                        inner-result "shadow-name" inner-id frog-cli-cursor-has-visible-local &&
+                        outer-result "shadow-name" outer-id frog-cli-cursor-has-visible-local &&
+                        inner-result @CompletedProcess.stdout inner-result @CompletedProcess.stdout_len
+                        "\t0\tshadow-name\tlocal\t" String.bytes "\t0\tshadow-name\tlocal\t" String.len bytes-count 1 == &&
+                        outer-result @CompletedProcess.stdout outer-result @CompletedProcess.stdout_len
+                        "\t0\tshadow-name\tlocal\t" String.bytes "\t0\tshadow-name\tlocal\t" String.len bytes-count 1 == &&
+                        "cli/cursor-local-shadowing" context frog-check
+                    end
+                    inner-result completed-process-free
+                    outer-result completed-process-free
+                end
+                source free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-builtin-shadowing FrogTestContext* -- do
+    let context do
+        "const drop 7 end
+proc shadow -- int do
+    drop
+end
+
+proc main -- do
+    shadow let ignored do end
+end
+"
+        let source do
+            source source String.bytes source String.len "    drop\nend" frog-cli-fixture-marker 4 +
+            context frog-cli-cursor-stdin
+            let result do
+                result frog-cli-cursor-succeeded
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\t1\tdrop\tconstant\t" String.bytes "\t1\tdrop\tconstant\t" String.len bytes-contain &&
+                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                "\t2\tdrop\tmacro\t" String.bytes "\t2\tdrop\tmacro\t" String.len bytes-contain ! &&
+                "cli/cursor-builtin-shadowing" context frog-check
+                result completed-process-free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-builtin-overloads FrogTestContext* -- do
+    let context do
+        "proc + int int -- int do
+    let left right do left end
+end
+
+proc main -- do end
+"
+        let same-source do
+        "proc + String String -- String do
+    let left right do left end
+end
+
+proc main -- do end
+"
+        let distinct-source do
+        "macro + 1 end
+
+proc main -- do end
+"
+        let macro-source do
+            same-source same-source String.len context frog-cli-cursor-stdin
+            distinct-source distinct-source String.len context frog-cli-cursor-stdin
+            macro-source macro-source String.len context frog-cli-cursor-stdin
+            let same-result distinct-result macro-result do
+                same-result @CompletedProcess.stdout same-result @CompletedProcess.stdout_len
+                "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                distinct-result @CompletedProcess.stdout distinct-result @CompletedProcess.stdout_len
+                "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                let same-count distinct-count macro-count do
+                    same-result frog-cli-cursor-succeeded
+                    distinct-result frog-cli-cursor-succeeded &&
+                    macro-result frog-cli-cursor-succeeded &&
+                    same-count 0 > &&
+                    distinct-count same-count 1 + == &&
+                    macro-count 0 == &&
+                    macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                    "\t1\t+\tmacro\t" String.bytes "\t1\t+\tmacro\t" String.len bytes-contain &&
+                    "cli/cursor-builtin-overloads" context frog-check
+                end
+                same-result completed-process-free
+                distinct-result completed-process-free
+                macro-result completed-process-free
+            end
+        end
+        end
+        end
+    end
+end
+
+proc frog-cli-cursor-local-precedence FrogTestContext* -- do
+    let context do
+        "macro m 99 end
+
+proc main -- do
+    1 let m do
+        m drop
+    end
+end
+"
+        let macro-source do
+        "record R
+    x int
+end
+
+proc main -- do
+    1 let R do
+        R drop
+    end
+end
+"
+        let record-source do
+        "proc main -- do
+    1 let int do
+        int drop
+    end
+end
+"
+        let primitive-source do
+            macro-source macro-source String.bytes macro-source String.len "m drop" frog-cli-fixture-marker
+            context frog-cli-cursor-stdin
+            record-source record-source String.bytes record-source String.len "R drop" frog-cli-fixture-marker
+            context frog-cli-cursor-stdin
+            primitive-source primitive-source String.bytes primitive-source String.len "int drop" frog-cli-fixture-marker
+            context frog-cli-cursor-stdin
+            let macro-result record-result primitive-result do
+                macro-result frog-cli-cursor-succeeded
+                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                "\treference\tmacro\t" String.bytes "\treference\tmacro\t" String.len bytes-contain &&
+                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                "\t1\tm\tmacro\t" String.bytes "\t1\tm\tmacro\t" String.len bytes-contain &&
+                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                "\t0\tm\tlocal\t" String.bytes "\t0\tm\tlocal\t" String.len bytes-contain ! &&
+                record-result frog-cli-cursor-succeeded &&
+                record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                "\treference\trecord_type\t" String.bytes "\treference\trecord_type\t" String.len bytes-contain &&
+                record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                "\t1\tR\trecord_type\t" String.bytes "\t1\tR\trecord_type\t" String.len bytes-contain &&
+                record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                "\t0\tR\tlocal\t" String.bytes "\t0\tR\tlocal\t" String.len bytes-contain ! &&
+                primitive-result frog-cli-cursor-succeeded &&
+                primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
+                "\treference\tprimitive_type\t" String.bytes "\treference\tprimitive_type\t" String.len bytes-contain &&
+                primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
+                "\t0\tint\tlocal\t" String.bytes "\t0\tint\tlocal\t" String.len bytes-contain ! &&
+                "cli/cursor-local-precedence" context frog-check
+                macro-result completed-process-free
+                record-result completed-process-free
+                primitive-result completed-process-free
+            end
+        end
+        end
+        end
+    end
+end
+
+proc frog-cli-cursor-import-overloads FrogTestContext* -- do
+    let context do
+        "test/cases/cli/cursor_import/main.frog"
+        let path do path String.bytes path String.len read-file
+            let source source-length success do
+                success path assert
+                source source-length "as advance" frog-cli-fixture-marker 3 +
+                path swap context frog-cli-cursor-file
+                source source-length "1 advance" frog-cli-fixture-marker 2 +
+                path swap context frog-cli-cursor-file
+                source source-length "true advance" frog-cli-fixture-marker 5 +
+                path swap context frog-cli-cursor-file
+                let binding-result int-result bool-result do
+                    binding-result frog-cli-cursor-succeeded
+                    binding-result @CompletedProcess.stdout binding-result @CompletedProcess.stdout_len
+                    "occurrence\t" frog-count-lines-starting-with 2 == &&
+                    binding-result "import_binding" "procedure" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
+                    binding-result "import_binding" "procedure" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
+                    int-result frog-cli-cursor-succeeded &&
+                    int-result "reference" "procedure" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
+                    int-result "[int]" frog-cli-cursor-has-stack &&
+                    bool-result frog-cli-cursor-succeeded &&
+                    bool-result "reference" "procedure" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
+                    bool-result "[bool]" frog-cli-cursor-has-stack &&
+                    "cli/cursor-import-overloads" context frog-check
+                    binding-result completed-process-free
+                    int-result completed-process-free
+                    bool-result completed-process-free
+                end
+                source free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-positions FrogTestContext* -- do
+    let context do
+        "test/cases/cli/cursor_semantics.frog"
+        let path do path String.bytes path String.len read-file
+            let source source-length success do
+                success path assert
+                source source-length "7 Maybe:some" frog-cli-fixture-marker 2 +
+                let token-offset do
+                    path token-offset 1 - context frog-cli-cursor-file
+                    path token-offset context frog-cli-cursor-file
+                    let trivia-result token-result do
+                        trivia-result frog-cli-cursor-query-token
+                        token-result frog-cli-cursor-query-token
+                        let trivia-token trivia-valid token-token token-valid do
+                            trivia-result frog-cli-cursor-succeeded
+                            token-result frog-cli-cursor-succeeded &&
+                            trivia-valid && token-valid &&
+                            trivia-token token-token == &&
+                            trivia-result "[int]" frog-cli-cursor-has-stack &&
+                            token-result "[int]" frog-cli-cursor-has-stack &&
+                            "cli/cursor-trivia-token-selection" context frog-check
+                        end
+                        trivia-result completed-process-free
+                        token-result completed-process-free
+                    end
+                end
+                path source-length context frog-cli-cursor-file
+                let eof-result do
+                    eof-result frog-cli-cursor-succeeded
+                    eof-result @CompletedProcess.stdout eof-result @CompletedProcess.stdout_len
+                    "stack\t" frog-count-lines-starting-with 0 == &&
+                    eof-result @CompletedProcess.stdout eof-result @CompletedProcess.stdout_len
+                    "context\t" frog-count-lines-starting-with 1 == &&
+                    "cli/cursor-eof" context frog-check
+                    eof-result completed-process-free
+                end
+                source free
+            end
+        end
+    end
+end
+
+proc frog-cli-cursor-malformed FrogTestContext* -- do
+    let context do
+        "proc main -- do nope end\n"
+        let source do source source String.bytes source String.len "nope" String.bytes "nope" String.len bytes-index-of
+            context frog-cli-cursor-stdin
+            let result do
+                result "" "<stdin>:1:17:\n  proc main -- do nope end\n                  ^^^^\nerror: unknown word: nope\n" 1
+                frog-process-equals
+                "cli/cursor-malformed" context frog-check
+                result completed-process-free
+            end
+        end
+    end
+end
+
 proc frog-cli-filter-debug-invariant FrogTestContext* -- do
     let context do
         "proc main -- do 1 2 + print end
@@ -873,6 +1495,8 @@ proc run-cli-cases FrogTestContext* -- do
 Commands:
   check [FILE]               analyze Frog source without generating C
   inspect [FILE]             print analyzed Frog operations
+  cursor --byte OFFSET [FILE]
+                             query semantic data at a source byte
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -888,6 +1512,8 @@ Options:
 Commands:
   check [FILE]               analyze Frog source without generating C
   inspect [FILE]             print analyzed Frog operations
+  cursor --byte OFFSET [FILE]
+                             query semantic data at a source byte
   run [-c CODE | FILE]       compile and run Frog source
   build [-o FILE] [-r] FILE  compile Frog source to a binary
 
@@ -907,6 +1533,35 @@ Options:
 
         "inspect" "-h" "Usage: frogc [--debug] [--release] inspect [--builtins] [--lexemes] [FILE]
 " "" 0 "cli/inspect-help" context frog-cli-case-2
+
+        "cursor" "-h" "Usage: frogc [--debug] [--release] cursor --byte OFFSET [FILE]
+" "" 0 "cli/cursor-help" context frog-cli-case-2
+
+        "cursor" "" "frogc: cursor requires --byte OFFSET
+Try `frogc --help`.
+" 2 "cli/cursor-missing-byte" context frog-cli-case-1
+
+        "cursor" "--byte" "" "frogc: cursor --byte requires an offset
+Try `frogc --help`.
+" 2 "cli/cursor-missing-offset" context frog-cli-case-2
+
+        "cursor" "--unknown" "" "frogc: unknown cursor option: --unknown
+Try `frogc --help`.
+" 2 "cli/cursor-unknown-option" context frog-cli-case-2
+
+        "cursor" "--byte" "-1" "" "frogc: invalid cursor byte offset: -1
+Try `frogc --help`.
+" 2 "cli/cursor-invalid-offset" context frog-cli-case-3
+
+        "cursor" "--byte" "0" "first.frog" "second.frog" ""
+        "frogc: cursor accepts at most one source file
+Try `frogc --help`.
+" 2 "cli/cursor-too-many-files" context frog-cli-case-5
+
+        "cursor" "--byte" "9999" "test/cases/cli/cursor_semantics.frog" ""
+        "frogc: cursor byte offset exceeds source length
+Try `frogc --help`.
+" 2 "cli/cursor-offset-out-of-range" context frog-cli-case-4
 
         "proc helper int -- int do 1 + end
 proc main -- do 41 helper drop end
@@ -1122,6 +1777,15 @@ Try `frogc --help`.
         context frog-cli-inspect-builtins-lexemes
         context frog-cli-inspect-bindings
         context frog-cli-inspect-cfg
+        context frog-cli-cursor-compound-spans
+        context frog-cli-cursor-macro-specializations
+        context frog-cli-cursor-locals
+        context frog-cli-cursor-builtin-shadowing
+        context frog-cli-cursor-builtin-overloads
+        context frog-cli-cursor-local-precedence
+        context frog-cli-cursor-import-overloads
+        context frog-cli-cursor-positions
+        context frog-cli-cursor-malformed
 
         "run" "test/cases/cli/missing.frog" ""
         "frogc: unable to read source: test/cases/cli/missing.frog
