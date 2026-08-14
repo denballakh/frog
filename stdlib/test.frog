@@ -56,7 +56,7 @@ end
 proc check-string-equal String String String TestSuite* -- do
     let actual expected name suite do
         actual String.bytes actual String.len
-        expected String.bytes expected String.len
+            expected String.bytes expected String.len
         name suite check-bytes-equal
     end
 end

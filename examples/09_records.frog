@@ -6,7 +6,7 @@ end
 proc squared-distance Point -- int do
     let point do
         point @Point.x dup *
-        point @Point.y dup *
+          point @Point.y dup *
         +
     end
 end

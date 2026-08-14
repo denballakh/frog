@@ -147,7 +147,7 @@ proc ptr-array-pop PtrArray* -- ptr bool do
             let index do
                 array @.items index container-slot-address ptr* cast @
                 index array !.count
-                true
+                  true
             end
         end
     end
@@ -229,14 +229,14 @@ proc string-map-hash ptr int -- int do
     let bytes length do
         0 string-map-hash-initial
         while peek index hash do
-            index length <
-        end
+                index length <
+            end
         do
             let index hash do
                 index 1 +
-                hash string-map-hash-multiplier *
-                bytes index + u8* cast @ int cast +
-                string-map-hash-mask &
+                  hash string-map-hash-multiplier *
+                  bytes index + u8* cast @ int cast +
+                  string-map-hash-mask &
             end
         end
         let index hash do
@@ -280,7 +280,7 @@ end
 proc string-map-bucket-address ptr int StringMap* -- ptr do
     let key length map do
         map @.buckets
-        key length string-map-hash map @.capacity %
+          key length string-map-hash map @.capacity %
         container-slot-address
     end
 end
@@ -289,8 +289,8 @@ proc string-map-find-from ptr int StringMapEntry* -- StringMapEntry* do
     let key length first do
         first false
         while peek current found do
-            current ptr cast container-null? ! found ! &&
-        end
+                current ptr cast container-null? ! found ! &&
+            end
         do
             let current found do
                 current StringMapEntry* cast
@@ -369,7 +369,7 @@ proc string-map-set ptr int ptr StringMap* -- ptr bool do
                     let entry do
                         entry @.value
                         value entry !.value
-                        true
+                          true
                     end
                 end
             end
@@ -386,8 +386,8 @@ proc string-map-remove ptr int StringMap* -- ptr bool do
             let bucket do
                 bucket ptr* cast @ StringMapEntry* cast 0 ptr cast StringMapEntry* cast false
                 while peek current previous found do
-                    current ptr cast container-null? ! found ! &&
-                end
+                        current ptr cast container-null? ! found ! &&
+                    end
                 do
                     let current previous found do
                         current StringMapEntry* cast

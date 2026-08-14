@@ -1,4 +1,4 @@
 
-            proc inc int -- int do 1 + end
-            proc dec int -- int do 1 - end
-            proc add2 int -- int do 2 + end
+proc inc int -- int do 1 + end
+proc dec int -- int do 1 - end
+proc add2 int -- int do 2 + end

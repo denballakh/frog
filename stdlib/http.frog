@@ -148,9 +148,9 @@ proc http-bytes-case-equal ptr int String -- bool do
             do
                 let index equal do
                     index 1 +
-                    equal
-                    bytes index + u8* cast @ int cast http-ascii-lower
-                    expected String.bytes index + u8* cast @ int cast http-ascii-lower == &&
+                      equal
+                        bytes index + u8* cast @ int cast http-ascii-lower
+                      expected String.bytes index + u8* cast @ int cast http-ascii-lower == &&
                 end
             end
             let index equal do equal end
@@ -165,7 +165,7 @@ proc http-token-range? ptr int int -- bool do
         do
             let index valid do
                 index 1 +
-                valid bytes index + u8* cast @ int cast http-token-byte? &&
+                  valid bytes index + u8* cast @ int cast http-token-byte? &&
             end
         end
         let index valid do valid end
@@ -179,7 +179,7 @@ proc http-header-value-range? ptr int int -- bool do
         do
             let index valid do
                 index 1 +
-                valid bytes index + u8* cast @ int cast http-header-value-byte? &&
+                  valid bytes index + u8* cast @ int cast http-header-value-byte? &&
             end
         end
         let index valid do valid end
@@ -193,7 +193,7 @@ proc http-target-range? ptr int -- bool do
         do
             let index valid do
                 index 1 +
-                valid bytes index + u8* cast @ int cast http-target-byte? &&
+                  valid bytes index + u8* cast @ int cast http-target-byte? &&
             end
         end
         let index valid do length 0 > valid && end
@@ -254,7 +254,7 @@ proc http-method-target ptr int String -- ptr int bool do
                 0 ptr cast 0 false
             else
                 bytes prefix String.len +
-                line-end prefix String.len - suffix String.len -
+                  line-end prefix String.len - suffix String.len -
                 let target target-length do
                     if target target-length http-target-range? do
                         target target-length true
@@ -291,8 +291,8 @@ proc http-validate-header ptr int int bool bool -- bool bool bool do
     let bytes start finish has-host has-content-length do
         start
         while peek index do
-            if index finish < do bytes index + u8* cast @ int cast 58 != else false end
-        end
+                if index finish < do bytes index + u8* cast @ int cast 58 != else false end
+            end
         do
             1 +
         end
@@ -306,24 +306,24 @@ proc http-validate-header ptr int int bool bool -- bool bool bool do
             else
                 colon 1 +
                 while peek value-start do
-                    if value-start finish < do
-                        bytes value-start + u8* cast @ int cast http-byte-space-or-tab?
-                    else
-                        false
+                        if value-start finish < do
+                            bytes value-start + u8* cast @ int cast http-byte-space-or-tab?
+                        else
+                            false
+                        end
                     end
-                end
                 do
                     1 +
                 end
                 let value-start do
                     finish
                     while peek value-end do
-                        if value-end value-start > do
-                            bytes value-end 1 - + u8* cast @ int cast http-byte-space-or-tab?
-                        else
-                            false
+                            if value-end value-start > do
+                                bytes value-end 1 - + u8* cast @ int cast http-byte-space-or-tab?
+                            else
+                                false
+                            end
                         end
-                    end
                     do
                         1 -
                     end
@@ -360,8 +360,8 @@ proc http-validate-headers ptr int int -- bool do
     let bytes length start do
         start false false true false
         while peek position has-host has-content-length valid done do
-            done ! valid &&
-        end
+                done ! valid &&
+            end
         do
             let position has-host has-content-length valid done do
                 if position 1 + length >= do
@@ -383,7 +383,7 @@ proc http-validate-headers ptr int int -- bool do
                             bytes position line-end has-host has-content-length http-validate-header
                             let next-host next-content-length header-valid do
                                 line-end 2 +
-                                next-host next-content-length valid header-valid && false
+                                  next-host next-content-length valid header-valid && false
                             end
                         end
                     end
@@ -583,7 +583,7 @@ proc http-serve-connected int HttpHandler -- int do
         let request read-status do
             if read-status http-read-ready == do
                 request @HttpRequest.head
-                request handler HttpHandler:call
+                  request handler HttpHandler:call
                 let head response do
                     request http-request-free
                     descriptor head response http-send-response

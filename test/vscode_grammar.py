@@ -110,6 +110,8 @@ def main() -> None:
     assert special_regex.fullmatch('Mapper:call')
     assert special_regex.fullmatch('String.bytes')
     assert special_regex.fullmatch('String.len')
+    assert special_regex.fullmatch('__intrinsic_add_int')
+    assert special_regex.fullmatch('__intrinsic_assert_fail')
     assert special_regex.fullmatch('?')
     for library_word in ('alloc', 'putc', 'getc', 'eputc', 'exit', 'read-file'):
         assert special_regex.fullmatch(library_word) is None

@@ -7,6 +7,6 @@ end
 
 proc main -- do
     P:alloc Q* cast
-    0 ptr cast Q** cast
+      0 ptr cast Q** cast
     take
 end

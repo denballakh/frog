@@ -1,5 +1,5 @@
 from "helper.frog" import value
 
 const root
-value
+    value
 end

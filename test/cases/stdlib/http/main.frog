@@ -28,7 +28,7 @@ end
 proc request-target-equal HttpRequest* String -- bool do
     let request expected do
         request @HttpRequest.target request @HttpRequest.target_len
-        expected String.bytes expected String.len
+            expected String.bytes expected String.len
         bytes-equal
     end
 end
@@ -128,8 +128,8 @@ proc open-socket-pair -- int int do
     let descriptors do
         descriptors local-socket-pair 0 == assert
         descriptors i32* cast @ int cast
-        descriptors descriptor-byte-offset + i32* cast @ int cast
-        descriptors free
+          descriptors descriptor-byte-offset + i32* cast @ int cast
+          descriptors free
     end
 end
 
@@ -169,7 +169,7 @@ end
 proc response-equal ByteBuffer* String -- bool do
     let response expected do
         response @ByteBuffer.bytes response @ByteBuffer.len
-        expected String.bytes expected String.len
+            expected String.bytes expected String.len
         bytes-equal
     end
 end
@@ -230,7 +230,7 @@ proc response-has-large-body ByteBuffer* -- bool do
                 do
                     let index equal do
                         index 1 +
-                        equal response @ByteBuffer.bytes header String.len + index + u8* cast @ int cast 120 == &&
+                          equal response @ByteBuffer.bytes header String.len + index + u8* cast @ int cast 120 == &&
                     end
                 end
                 let index equal do equal end
@@ -302,34 +302,34 @@ end
 
 proc main -- do
     "GET /frog HTTP/1.1\r\nHost: exam"
-    "ple.test\r\nX-Ignored: yes\r\n\r\n"
-    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
+      "ple.test\r\nX-Ignored: yes\r\n\r\n"
+        "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
     run-request-fragments
 
     "HEAD /frog HTTP/1.1\r\nHost: local\r\n\r\n"
-    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\n"
+      "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\n"
     run-request
 
     "GET /frog HTTP/1.1\r\nHost: local\r\nContent-Length: 0\r\n\r\n"
-    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
+      "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
     run-request
 
     "GET /missing HTTP/1.1\r\nHost: local\r\n\r\n"
-    "HTTP/1.1 404 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+      "HTTP/1.1 404 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
     run-request
 
     "GET /no-content HTTP/1.1\r\nHost: local\r\n\r\n"
-    "HTTP/1.1 204 \r\nConnection: close\r\n\r\n"
+      "HTTP/1.1 204 \r\nConnection: close\r\n\r\n"
     run-request
     "GET /reset-content HTTP/1.1\r\nHost: local\r\n\r\n"
-    "HTTP/1.1 205 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+      "HTTP/1.1 205 \r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
     run-request
     "GET /not-modified HTTP/1.1\r\nHost: local\r\n\r\n"
-    "HTTP/1.1 304 \r\nConnection: close\r\n\r\n"
+      "HTTP/1.1 304 \r\nConnection: close\r\n\r\n"
     run-request
 
     "GET /frog HTTP/1.1\r\nHost: local\r\n\r\nGET /missing HTTP/1.1\r\nHost: local\r\n\r\n"
-    "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
+      "HTTP/1.1 200 \r\nContent-Length: 9\r\nConnection: close\r\n\r\nfrog-body"
     run-request
 
     "GET /frog HTTP/1.1\r\nHost: one\r\nHost: two\r\n\r\n"

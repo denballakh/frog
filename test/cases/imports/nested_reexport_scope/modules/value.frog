@@ -1,6 +1,3 @@
-99 print
-"ignored,comma"
-
 proc helper -- int do
     7
 end

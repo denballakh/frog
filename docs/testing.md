@@ -7,8 +7,24 @@ just test
 ```
 
 This checks Python formatting and types, validates the VS Code grammar,
-checks the compiler bootstrap fixed point, runs the Frog-owned test corpus, and
-checks the remaining host-specific CLI policies.
+checks the compiler bootstrap fixed point and repository-wide Frog formatting,
+runs the Frog-owned test corpus, and checks the remaining host-specific CLI
+policies.
+
+## Repository format check
+
+Run the tracked-source formatting invariant with:
+
+```sh
+just format-check
+```
+
+The check enumerates tracked `*.frog` files with Git's NUL-delimited output.
+Every valid ordinary module must already be byte-identical to `frogc fmt`
+output. Entries in `test/formatter_exclusions.tsv` must remain tracked, unique,
+and sorted. Intentional compiler-error fixtures must still fail formatting with
+empty standard output, so stale exclusions and newly unclassified failures are
+rejected.
 
 ## Frog test corpus
 

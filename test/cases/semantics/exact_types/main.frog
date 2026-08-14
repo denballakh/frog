@@ -23,8 +23,8 @@ proc main -- do
     -1 i8 cast 2 i16 cast 3 i32 cast 4 i64 cast signed print
     1 u8 cast 2 u16 cast 3 u32 cast 4 u64 cast unsigned print
     0 ptr cast i8* cast
-    0 ptr cast i8** cast
-    Local:alloc
-    0 ptr cast Local** cast
+      0 ptr cast i8** cast
+        Local:alloc
+          0 ptr cast Local** cast
     typed-pointers
 end

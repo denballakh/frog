@@ -16,7 +16,7 @@ proc run-regression-cases FrogTestContext* -- do
         "test/cases/imports/one_byte_path/main.frog" "test/cases/imports/one_byte_path" "21\n" "" 0 "" "" "" "imports/one_byte_path" context frog-run-case
         "test/cases/imports/string_module_ids/main.frog" "test/cases/imports/string_module_ids" "PDR\n" "" 0 "" "" "" "imports/string_module_ids" context frog-run-case
         "test/cases/imports/path_length_limit/main.frog" "test/cases/imports/path_length_limit" "33\n" "" 0 "" "" "" "imports/path_length_limit" context frog-run-case
-        "test/cases/imports/ignored_control_flow/main.frog" "test/cases/imports/ignored_control_flow" "44\n" "" 0 "" "" "" "imports/ignored_control_flow" context frog-run-case
+        "test/cases/imports/ignored_control_flow/main.frog" "test/cases/imports/ignored_control_flow" "ignored.frog:1:1:\n  if false do\n  ^^\nerror: unexpected top-level word: if\n" "imports-error/imported_top_level_control_flow" context frog-error-fixture
         "test/cases/imports/utf8_path/main.frog" "test/cases/imports/utf8_path" "55\n" "" 0 "" "" "" "imports/utf8_path" context frog-run-case
         "test/cases/imports/records_alias/main.frog" "test/cases/imports/records_alias" "8\n" "" 0 "" "" "" "imports/records_alias" context frog-run-case
         "test/cases/imports/records_reexport/main.frog" "test/cases/imports/records_reexport" "13\n" "" 0 "" "" "" "imports/records_reexport" context frog-run-case
@@ -68,7 +68,10 @@ proc run-regression-cases FrogTestContext* -- do
         "proc + int int -- int do drop drop 42 end\nconst value 1 2 + end\nproc main -- do end\n" "test/cases/semantics" "frogc: unsupported constant expression word\n" "semantics-error/constant_operator_shadow" context frog-error-source
         "test/cases/semantics/operator_mixed_width/main.frog" "test/cases/semantics/operator_mixed_width" "frogc: +: stack contract mismatch: expected [int int], actual [i8 u8]\n" "semantics-error/operator_mixed_width" context frog-error-fixture
         "test/cases/semantics/operator_int_shift/main.frog" "test/cases/semantics/operator_int_shift" "frogc: <<: stack contract mismatch: expected [int u32], actual [int int]\n" "semantics-error/operator_int_shift" context frog-error-fixture
-        "test/cases/semantics/operator_private_call/main.frog" "test/cases/semantics/operator_private_call" "frogc: unknown word: __intrinsic_add_int\n" "semantics-error/operator_private_call" context frog-error-fixture
+        "test/cases/semantics/operator_private_call/main.frog" "test/cases/semantics/operator_private_call" "42\n" "" 0 "" "" "" "semantics/intrinsic_direct_call" context frog-run-case
+        "test/cases/semantics/intrinsic_assert_fail/main.frog" "test/cases/semantics/intrinsic_assert_fail" "" "intrinsic failure\n" 1 "" "" "" "semantics/intrinsic_assert_fail" context frog-run-case
+        "proc main -- do __intrinsic_missing end\n" "test/cases/semantics" "frogc: unknown word: __intrinsic_missing\n" "semantics-error/intrinsic_unknown" context frog-error-source
+        "proc main -- do \"failure\" builtins-assert-fail end\n" "test/cases/semantics" "frogc: unknown word: builtins-assert-fail\n" "semantics-error/intrinsic_legacy_assert_unknown" context frog-error-source
         "test/cases/semantics/operator_private_proc/main.frog" "test/cases/semantics/operator_private_proc" "frogc: invalid procedure name: __intrinsic_user\n" "semantics-error/operator_private_proc" context frog-error-fixture
         "test/cases/semantics/operator_private_macro/main.frog" "test/cases/semantics/operator_private_macro" "frogc: invalid macro name: __intrinsic_user\n" "semantics-error/operator_private_macro" context frog-error-fixture
         "test/cases/semantics/operator_private_constant/main.frog" "test/cases/semantics/operator_private_constant" "frogc: invalid constant name: __intrinsic_user\n" "semantics-error/operator_private_constant" context frog-error-fixture

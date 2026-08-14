@@ -26,7 +26,7 @@ build/frogc cursor --byte 0 examples/01_simple.frog
 build/frogc run examples/01_simple.frog
 ```
 
-Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
+Every module permits declarations only at the top level. Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs; empty and declaration-only root sources are invalid.
 
 ## Command-line interface
 

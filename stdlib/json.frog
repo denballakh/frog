@@ -17,12 +17,12 @@ from "containers.frog" import (
 
 const json-max-depth 64 end
 const json-int-max
-        1
+    1
+      62 u32 cast
+    <<
+      1
         62 u32 cast
       <<
-          1
-          62 u32 cast
-        <<
         1
       -
     +
@@ -231,12 +231,12 @@ proc json-parser-skip-whitespace JsonParser* -- do
     let parser do
         parser @JsonParser.index
         while peek index do
-            if index parser @JsonParser.len < do
-                parser @JsonParser.bytes index + u8* cast @ int cast json-whitespace?
-            else
-                false
+                if index parser @JsonParser.len < do
+                    parser @JsonParser.bytes index + u8* cast @ int cast json-whitespace?
+                else
+                    false
+                end
             end
-        end
         do
             1 +
         end
@@ -277,8 +277,8 @@ proc json-parser-hex4 JsonParser* -- int bool do
     let parser do
         0 0 true
         while peek count value valid do
-            count 4 < valid &&
-        end
+                count 4 < valid &&
+            end
         do
             let count value valid do
                 if parser json-parser-at-end? do
@@ -454,12 +454,12 @@ proc json-parser-consume-digits JsonParser* -- int do
         let start do
             start
             while peek index do
-                if index parser @JsonParser.len < do
-                    parser @JsonParser.bytes index + u8* cast @ int cast json-digit?
-                else
-                    false
+                    if index parser @JsonParser.len < do
+                        parser @JsonParser.bytes index + u8* cast @ int cast json-digit?
+                    else
+                        false
+                    end
                 end
-            end
             do
                 1 +
             end
@@ -552,8 +552,8 @@ proc json-parser-number JsonParser* -- JsonValue bool do
                 json-parse-failure
             else
                 parser @JsonParser.bytes start +
-                parser @JsonParser.index start -
-                json-text-copy JsonValue:number true
+                  parser @JsonParser.index start -
+                  json-text-copy JsonValue:number true
             end
         end
     end
@@ -843,8 +843,8 @@ proc json-number-int JsonValue -- int bool do
                     else
                         index 0 true
                         while peek current result valid do
-                            current length < valid &&
-                        end
+                                current length < valid &&
+                            end
                         do
                             let current result valid do
                                 bytes current + u8* cast @ int cast
@@ -856,7 +856,7 @@ proc json-number-int JsonValue -- int bool do
                                         let digit do
                                             if negative do
                                                 if result 0 json-int-magnitude-limit - <
-                                                    result 0 json-int-magnitude-limit - ==
+                                                      result 0 json-int-magnitude-limit - ==
                                                     digit json-int-min-last-digit > && ||
                                                 do
                                                     length result false
@@ -865,7 +865,7 @@ proc json-number-int JsonValue -- int bool do
                                                 end
                                             else
                                                 if result json-int-magnitude-limit >
-                                                    result json-int-magnitude-limit ==
+                                                      result json-int-magnitude-limit ==
                                                     digit json-int-max-last-digit > && ||
                                                 do
                                                     length result false
@@ -921,8 +921,8 @@ proc json-object-get-bytes JsonValue ptr int -- JsonValue bool do
             else
                 value JsonValue.object @JsonObject.head json-null-value false
                 while peek current result found do
-                    current ptr cast json-null-pointer? ! found ! &&
-                end
+                        current ptr cast json-null-pointer? ! found ! &&
+                    end
                 do
                     let current result found do
                         current JsonObjectEntry* cast

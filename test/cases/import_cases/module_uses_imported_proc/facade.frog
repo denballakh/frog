@@ -1,4 +1,4 @@
 
-            from "math.frog" import inc
+from "math.frog" import inc
 
-            proc add_two int -- int do inc inc end
+proc add_two int -- int do inc inc end

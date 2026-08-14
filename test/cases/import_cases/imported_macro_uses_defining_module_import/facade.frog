@@ -1,4 +1,4 @@
 
-            from "math.frog" import inc
+from "math.frog" import inc
 
             macro bump inc end

@@ -26,8 +26,12 @@ fmt: _black
 check: typecheck _black-check _vscode-grammar
 
 [group("test")]
-test: check bootstrap-check frog-regressions
+test: check bootstrap-check format-check frog-regressions
     python -m test
+
+[group("test")]
+format-check: frogc-seed
+    python test/format_check.py
 
 [group("test")]
 frog-regressions: frogc-seed

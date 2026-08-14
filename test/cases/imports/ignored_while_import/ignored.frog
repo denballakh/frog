@@ -1,3 +1,5 @@
-while false do
-    from "source.frog" import value
+proc value -- do
+    while false do
+        from "source.frog" import value
+    end
 end

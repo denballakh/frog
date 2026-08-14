@@ -54,6 +54,7 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
   and strings, with failure aggregation and status-based completion.
 - `test/runner.frog` and `test/framework.frog`: Frog-owned test entrypoint and assertions. The manifests in `test/*_cases.frog` cover regressions, inline snippets, imports, CLI behavior, and examples. They compile successful output with strict C11 warnings, link fixture-local helper C where required, run executables, check exact diagnostics/output/status, and enforce selected generated-C properties.
 - `test/__main__.py`: Minimal Python host-policy runner. It supplies bounded process-group supervision, a forced-GCC-failure environment, a symlinked root path, and a slashless compiler invocation; it contains no Frog language cases or implementation.
+- `test/format_check.py` and `test/formatter_exclusions.tsv`: Repository-wide tracked Frog formatting invariant and its explicit invalid-source classification.
 - `test/cases/`: Language, compiler, standard-library, import, and host-policy fixtures used by the test runners.
 - `test/tmp_fs/`: Temporary filesystem tree created and removed by the Python host-policy checks.
 - `ide/vscode/`: Minimal VS Code language grammar for `.frog` files.
@@ -72,6 +73,7 @@ Frog programs use postfix stack operations, explicit stack-effect procedure sign
 - Typecheck with mypy and basedpyright: `just typecheck`
 - Format Python with Black: `just fmt`
 - Run typechecks and check formatting: `just check`
+- Verify tracked Frog files are already canonical or explicitly classified: `just format-check`
 - Run the full test suite, including typechecks and a formatting check first: `just test`
 - Build the checked bootstrap seed: `just frogc-seed`
 - Verify the checked seed, source, and next two generations are byte-identical: `just bootstrap-check`
@@ -102,6 +104,9 @@ Useful direct commands:
 ## Testing Nuances
 
 - `just test` is the expected and recommended full verification command
+- Run `just test` outside syscall-restricting sandboxes. The suite exercises
+  `fork`, local sockets, and `shutdown`; a sandbox may return `EPERM` and cause
+  false failures, notably in the `stdlib/http` regression.
 - `just check` is not a substitute for `just test`; it omits bootstrap, Frog regressions, and host-policy checks.
 - `just test` runs the Frog-owned corpus and then the small Python host-policy runner. Do not run its components concurrently because they share generated build files.
 - Successful Frog cases compile through stdin-to-stdout mode with strict C11 warnings before execution. Cases check exact stdout, stderr, and status; compiler failures ignore partial C on stdout but require the exact diagnostic and status 1.
@@ -110,6 +115,7 @@ Useful direct commands:
 - `test/__main__.py` owns only bounded process-group supervision, generated CLI artifact cleanup, forced-GCC-failure build policy, lexical symlink-root policy, and slashless compiler-path policy. `just frog-regressions` invokes it with the private `--supervise-frog-runner` mode, so the Frog runner and all nested children are terminated together on timeout. Keep Frog source for host-policy checks in `test/cases/host_policy/` rather than embedding it in Python.
 - Python host-policy artifacts live under `test/tmp_fs/`, which is recreated for a run and removed in a `finally` block. CLI `run` reuses ignored `build/frog-run.c` and `build/frog-run.exe` scratch artifacts.
 - `just bootstrap-check` checks only compiler fixed-point equality. The Frog regression runner compiles focused fixtures with strict C11 warnings and checks their output as part of `just frog-regressions` / `just test`.
+- `just format-check` uses NUL-delimited tracked paths. Every valid module, including `stdlib/builtins.frog`, must be byte-identical to formatter output; intentional invalid fixtures are classified in `test/formatter_exclusions.tsv`, and stale exclusions fail the check.
 - `just clean` uses Git's ignore rules within `build/`, `examples/`, and `test/`; tracked fixtures and `compiler/frogc.c` are preserved regardless of filename.
 
 ## CLI Behavior
@@ -148,14 +154,14 @@ not in this maintenance guide.
 - The compiler reads root source bytes from stdin and writes generated C to stdout. Root imports are loaded relative to the compiler process's working directory; nested imports are loaded relative to the importing module's lexical path. Imports beginning exactly with `stdlib/` instead resolve from the standard-library search root derived from the compiler distribution.
 - The supported import syntax is `from "path.frog" import name`, `from "path.frog" import name as alias`, and grouped whitespace-separated imports such as `from "path.frog" import ( x y z )`. Wildcards, commas, and `import "path.frog" as mod` are rejected for now.
 - Other relative import paths, including `./stdlib/...`, are resolved from the directory containing the importing module. Canonicalization is lexical and does not resolve symlinks. A `stdlib/...` import never falls back to an importer-relative file.
-- Imported files contribute procedures, records, unions, function-reference types, and macros. Imported top-level instructions are ignored and only the root module's `main` runs.
+- Imported files contribute procedures, records, unions, function-reference types, and macros. Every module permits declarations only at the top level, and only the root module's `main` runs.
 - Imported names are reexported, so facade modules can import a symbol and expose it to their importers.
 - Macro declarations are collected with whole-module scope before the remaining code is compiled. Macro expansion is module-aware: imported and reexported macros resolve helper words in the module where the macro was defined. Recursive macro expansion is rejected.
 - `stdlib/builtins.frog` is loaded once as a normal module after the root's explicit import graph. Every other module resolves its otherwise-unknown macro and ordinary-procedure words from that module as a final, shadowable fallback; the builtins module does not implicitly import itself.
 - `container-count` and `container-empty?` are structural container macros over the shared `count` field of `PtrArray`, `PtrList`, and `StringMap`; preserve their record-agnostic behavior.
 - Parsed `JsonValue` roots exclusively own every descendant. `json-free` recursively releases a root; scalar byte ranges and array/object children returned by lookup helpers are borrowed and must not be freed separately.
 - `http-serve-connection` owns and closes its connected descriptor; `http-serve-one` borrows its listener. HTTP handlers borrow the request only during the call and transfer an owned copied-body response back to the server.
-- Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources, declaration-only sources without `main`, and root top-level executable instructions are invalid.
+- Every root program must define exactly one `proc main -- do ... end` with no inputs or outputs. Empty sources and declaration-only root sources without `main` are invalid. Top-level executable instructions are invalid in every module.
 - Loading, resolution, and procedure analysis finish before C emission. The
   analyzer retains typed instructions and control-flow graphs; the C backend
   emits procedure bodies from that IR rather than replaying source tokens.
@@ -218,6 +224,7 @@ not in this maintenance guide.
 - The ordinary `read-file` procedure from `stdlib/libc.frog` consumes a UTF-8 path as `ptr int` and produces file bytes, byte length, and a success boolean as `ptr int bool`. On failure it returns zero length and `false`; the returned data pointer must not be dereferenced.
 - `args` has stack effect `-- ptr int` and exposes the generated program's raw C `argv` followed by `argc`, including `argv[0]`; use `ptr* cast @` to load and `ptr* cast !` to store one pointer-sized entry.
 - `alloc`, `putc`, `getc`, `eputc`, and `exit` are ordinary procedures imported from `stdlib/libc.frog`, not language intrinsics.
+- `__intrinsic_*` words are compiler operations callable from procedure bodies in every module. The prefix remains reserved for declarations and import aliases. `__intrinsic_assert_fail` consumes a `String`, writes it with a newline to standard error, and exits with status 1.
 - C interop declarations explicitly request system or local headers, name Frog-visible C types with trusted raw C type names, and bind calls or values. Calls retain fixed Frog arity even for variadic C declarations. Header declarations are authoritative: the compiler synthesizes neither C declarations nor dynamic loading.
 - Shared libc/POSIX declarations live in `stdlib/libc.frog`; compiler and subprocess code import them instead of redeclaring private `cli-*` or `subprocess-*` aliases. Generated C wrappers perform only mechanical native-value/C-ABI conversion; wait/status and child-process policy stay in Frog.
 - `record Name field Type ... end` defines a nominal value type. `Name:new` returns a zero value, `Name:alloc` returns a zeroed `Name*`, and `Name:sizeof` returns the native value size. Getters accept `Name` or `Name*`; setters return a modified `Name` or mutate through `Name*`.
@@ -232,7 +239,7 @@ not in this maintenance guide.
 ## Implementation Conventions And Gotchas
 
 - Keep language semantics and CLI policy in `compiler/frogc.frog`; generated-C runtime adapters should remain narrow ABI primitives rather than command parsers or build-policy implementations.
-- Operators are public overloaded builtins lowered to private `__intrinsic_*` implementation details. Do not expose or invoke private intrinsic names outside compiler lowering; update overload contracts, emitted C/runtime support, bootstrap and regression coverage, user-facing docs, and the VS Code grammar together.
+- Operators are public overloaded builtins lowered to `__intrinsic_*` compiler operations. Intrinsic invocation is module-independent and bypasses builtin shadowing, while declarations and import aliases cannot use the reserved prefix. Update intrinsic contracts, emitted C/runtime support, bootstrap and regression coverage, user-facing docs, and the VS Code grammar together.
 - Name direct compiler-internal pointer-field accessors `@object-field` and `!object-field`, used as `object @object-field` and `value object !object-field`. Keep indexed table operations and computed helpers under descriptive names instead of treating them as direct accessors.
 - Compiler module state is the nominal `ModuleContext` record. Use generated `@ModuleContext.field` / `!ModuleContext.field` operations, keep semantic module values nominal, and confine raw casts to storage boundaries and null/identity checks; do not recreate manual `ctx-*` offset/accessor families.
 - Fixed compiler metadata rows may use nominal records while their table bases remain contiguous raw allocations. Cast once in the row-address helper, size rows with `Type:sizeof`, and use generated typed field operations; `LocalEntry`, `ImportEntry`, `ScopeEntry`, and `BlockFrame` follow this pattern. `ConstantEvaluator` is a nominal record whose `values` field points to a separately grown raw value buffer.

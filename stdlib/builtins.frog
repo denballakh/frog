@@ -12,7 +12,7 @@ proc assert bool String -- do
     let condition message do
         if condition do
         else
-            message builtins-assert-fail
+            message __intrinsic_assert_fail
         end
     end
 end

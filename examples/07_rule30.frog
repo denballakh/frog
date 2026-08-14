@@ -52,7 +52,7 @@ proc step ptr ptr -- do
                     0
                 end
 
-                src i + u8* cast @ int cast
+                  src i + u8* cast @ int cast
 
                 if i 1 + 40 < do
                     src i 1 + + u8* cast @ int cast

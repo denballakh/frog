@@ -28,7 +28,8 @@ const generated-c-check-procedure-symbols 1 5 u32 cast << end
 const generated-c-check-strings 1 6 u32 cast << end
 const generated-c-check-native-scalar-abi 1 7 u32 cast << end
 const generated-c-check-unions-layout 1 8 u32 cast << end
-const generated-c-required-checks 1 9 u32 cast << 1 - end
+const generated-c-check-intrinsics 1 9 u32 cast << end
+const generated-c-required-checks 1 10 u32 cast << 1 - end
 
 proc frog-test-context ptr ptr -- FrogTestContext* do
     let compiler executable do
@@ -99,13 +100,13 @@ proc frog-generated-c-has-no-legacy-stack CompletedProcess* -- bool do
     let result do
         result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         "FrogStack" String.bytes "FrogStack" String.len bytes-contain !
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+          result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         "frog_stack" String.bytes "frog_stack" String.len bytes-contain ! &&
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+          result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         "frog_slots" String.bytes "frog_slots" String.len bytes-contain ! &&
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+          result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         "frog_push" String.bytes "frog_push" String.len bytes-contain ! &&
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+          result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         "frog_pop" String.bytes "frog_pop" String.len bytes-contain ! &&
     end
 end
@@ -156,8 +157,8 @@ proc frog-build-generated CompletedProcess* String FrogTestContext* -- Completed
         helper context frog-gcc-argv
         let arguments do
             arguments
-            compiler-result @CompletedProcess.stdout
-            compiler-result @CompletedProcess.stdout_len
+              compiler-result @CompletedProcess.stdout
+                compiler-result @CompletedProcess.stdout_len
             subprocess-run-bytes
             arguments subprocess-argv-free
         end
@@ -200,9 +201,9 @@ end
 proc frog-process-equals CompletedProcess* String String int -- bool do
     let result expected-stdout expected-stderr expected-status do
         result @CompletedProcess.returncode expected-status ==
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+          result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         expected-stdout String.bytes expected-stdout String.len bytes-equal &&
-        result @CompletedProcess.stderr result @CompletedProcess.stderr_len
+          result @CompletedProcess.stderr result @CompletedProcess.stderr_len
         expected-stderr String.bytes expected-stderr String.len bytes-equal &&
     end
 end
@@ -240,14 +241,14 @@ proc frog-bytes-contain-line ptr int String -- bool do
             let offset found do
                 bytes offset + length offset - frog-line-length
                 let line-length do
-                bytes offset + line-length
-                expected String.bytes expected String.len bytes-equal
-                let equal do
-                    offset line-length 1 + +
-                    let next-offset do
-                        next-offset found equal ||
+                    bytes offset + line-length
+                    expected String.bytes expected String.len bytes-equal
+                    let equal do
+                        offset line-length 1 + +
+                        let next-offset do
+                            next-offset found equal ||
+                        end
                     end
-                end
                 end
             end
         end
@@ -338,8 +339,8 @@ proc frog-check-semantic-c ptr int String FrogTestContext* -- do
             bytes length "frog_c_type_" String.bytes "frog_c_type_" String.len bytes-contain !
             "generated-c/c-ffi no generated C type typedef" context frog-check
             bytes length
-            "intptr_t frog_proc_1_ffi_mix(intptr_t frog_arg_0, bool frog_arg_1, void * frog_arg_2) {\n"
-            "intptr_t frog_proc_1_ffi_mix(intptr_t frog_arg_0, bool frog_arg_1, void * frog_arg_2) {\n  return (intptr_t)(int)(ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(uintptr_t)frog_arg_2));\n}\n"
+                "intptr_t frog_proc_1_ffi_mix(intptr_t frog_arg_0, bool frog_arg_1, void * frog_arg_2) {\n"
+                  "intptr_t frog_proc_1_ffi_mix(intptr_t frog_arg_0, bool frog_arg_1, void * frog_arg_2) {\n  return (intptr_t)(int)(ffi_test_mix((int)frog_arg_0, (int)(frog_arg_1 != 0), (void *)(uintptr_t)frog_arg_2));\n}\n"
             "generated-c/c-ffi raw type wrapper" context frog-check-exact-function
             bytes length "int ffi_test_answer(void);" String.bytes "int ffi_test_answer(void);" String.len bytes-contain !
             "generated-c/c-ffi helper API comes from header" context frog-check
@@ -411,8 +412,8 @@ proc frog-check-semantic-c ptr int String FrogTestContext* -- do
                     "generated-c/optimizer minimum assignments" context frog-check
 
                     function function-length "\n  frog_value_0_1 = 5;\n" String.bytes "\n  frog_value_0_1 = 5;\n" String.len bytes-index-of
-                    function function-length "\n  frog_value_0_1 = 18;\n" String.bytes "\n  frog_value_0_1 = 18;\n" String.len bytes-index-of
-                    function function-length "\n  frog_value_0_1 = 9;\n" String.bytes "\n  frog_value_0_1 = 9;\n" String.len bytes-index-of
+                      function function-length "\n  frog_value_0_1 = 18;\n" String.bytes "\n  frog_value_0_1 = 18;\n" String.len bytes-index-of
+                        function function-length "\n  frog_value_0_1 = 9;\n" String.bytes "\n  frog_value_0_1 = 9;\n" String.len bytes-index-of
                     let five eighteen nine do
                         five 0 >= eighteen 0 >= && nine 0 >= &&
                         five eighteen < eighteen nine < && &&
@@ -478,6 +479,21 @@ proc frog-check-semantic-c ptr int String FrogTestContext* -- do
             bytes length "switch (function_id)" "generated-c/native-scalar function dispatch" context frog-check-contains
             bytes length "frog_proc_2_ref_pair" "generated-c/native-scalar function dispatch target" context frog-check-contains
             generated-c-check-native-scalar-abi context frog-mark-generated-check
+        elif name "semantics/intrinsic_direct_call" string-equal do
+            bytes length "void frog_assert_fail(FrogString message) {" String.bytes "void frog_assert_fail(FrogString message) {" String.len bytes-count 1 ==
+            "generated-c/intrinsics unconditional assert helper" context frog-check
+            generated-c-check-intrinsics context frog-mark-generated-check
+        elif name "semantics/intrinsic_assert_fail" string-equal do
+            bytes length "void frog_proc_0_main(void) {\n" frog-extract-function
+            let function function-length found do
+                found "generated-c/intrinsics main function" context frog-check
+                if found do
+                    function function-length "\n  frog_assert_fail(" String.bytes "\n  frog_assert_fail(" String.len bytes-count 1 ==
+                    "generated-c/intrinsics assert helper call" context frog-check
+                end
+            end
+            bytes length "{ FrogString value = " String.bytes "{ FrogString value = " String.len bytes-contain !
+            "generated-c/intrinsics no inline assert block" context frog-check
         end
     end
 end
@@ -507,7 +523,7 @@ proc frog-string-symbol-valid ptr int -- bool do
                     symbol index + u8* cast @ int cast
                     let byte do
                         index 1 +
-                        valid byte 48 >= byte 57 <= && byte 95 == || &&
+                          valid byte 48 >= byte 57 <= && byte 95 == || &&
                     end
                 end
             end
@@ -529,7 +545,7 @@ proc frog-string-symbol-at ptr int int String -- ptr int bool do
                 else
                     bytes line-start + "static char " String.len
                     "static char " String.bytes "static char " String.len bytes-equal
-                    suffix-index suffix String.len +
+                      suffix-index suffix String.len +
                     let prefix-matches line-end do
                         if line-end length == do
                             true
@@ -597,11 +613,11 @@ proc frog-check-string-c ptr int FrogTestContext* -- do
         bytes length "  intptr_t len;" frog-bytes-contain-line
         "generated-c/strings length field" context frog-check
         bytes length
-        "static const FrogString frog_string_2771466528 = { frog_string_2771466528_bytes, 8 };"
+            "static const FrogString frog_string_2771466528 = { frog_string_2771466528_bytes, 8 };"
         frog-bytes-contain-line
         "generated-c/strings first collision object" context frog-check
         bytes length
-        "static const FrogString frog_string_2771466528_1 = { frog_string_2771466528_1_bytes, 8 };"
+            "static const FrogString frog_string_2771466528_1 = { frog_string_2771466528_1_bytes, 8 };"
         frog-bytes-contain-line
         "generated-c/strings second collision object" context frog-check
 
@@ -712,14 +728,14 @@ proc frog-located-error-equals-legacy CompletedProcess* String -- bool do
                         drop
                         result @CompletedProcess.stderr
                         result @CompletedProcess.stderr_len message-length - error-prefix String.len - +
-                        error-prefix String.len
+                          error-prefix String.len
                         error-prefix String.bytes error-prefix String.len bytes-equal
                     end
                     if dup do
                         drop
                         result @CompletedProcess.stderr
                         result @CompletedProcess.stderr_len message-length - +
-                        message-length
+                          message-length
                         expected String.bytes legacy-prefix String.len + message-length bytes-equal
                     end
                     if dup do
@@ -794,7 +810,7 @@ end
 proc frog-stable-string-symbol FrogTestContext* -- do
     let context do
         "proc main -- do \"stable\" drop end\n" "test/cases/strings" context frog-compile-source
-        "proc main -- do \"unrelated\" drop \"stable\" drop end\n" "test/cases/strings" context frog-compile-source
+          "proc main -- do \"unrelated\" drop \"stable\" drop end\n" "test/cases/strings" context frog-compile-source
         let before after do
             before frog-compiler-succeeded
             "generated-c/stable-symbol before compiler" context frog-check
@@ -802,11 +818,11 @@ proc frog-stable-string-symbol FrogTestContext* -- do
             "generated-c/stable-symbol after compiler" context frog-check
 
             before @CompletedProcess.stdout before @CompletedProcess.stdout_len
-            "_bytes[] = \"stable\";" frog-extract-string-symbol
+                "_bytes[] = \"stable\";" frog-extract-string-symbol
             let before-symbol before-length before-found do
                 before-found "generated-c/stable-symbol before extracted" context frog-check
                 after @CompletedProcess.stdout after @CompletedProcess.stdout_len
-                "_bytes[] = \"stable\";" frog-extract-string-symbol
+                    "_bytes[] = \"stable\";" frog-extract-string-symbol
                 let after-symbol after-length after-found do
                     after-found "generated-c/stable-symbol after extracted" context frog-check
                     if before-found after-found && do
@@ -992,9 +1008,9 @@ proc frog-large-path-error FrogTestContext* -- do
             "test/cases/imports" context frog-compile-bytes
             let result do
                 result
-                "frogc: import path exceeds max-import-path-bytes\n"
-                "imports-error/large_path"
-                context
+                  "frogc: import path exceeds max-import-path-bytes\n"
+                    "imports-error/large_path"
+                      context
                 frog-check-compile-error
                 result completed-process-free
             end

@@ -1,7 +1,5 @@
 from "dep.frog" import imported
 
-99 print
-
 proc local int -- int do
     10 +
 end

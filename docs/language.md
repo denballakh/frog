@@ -15,6 +15,7 @@ FrogLang is a small stack-based, concatenative, statically typed language. Progr
 - [Macros](#macros)
 - [Compile-time constants](#compile-time-constants)
 - [Implicit builtins](#implicit-builtins-module)
+- [Compiler intrinsics](#compiler-intrinsics)
 - [Imports](#imports)
 - [Local bindings](#local-bindings)
 - [Control flow](#control-flow)
@@ -89,10 +90,11 @@ end
 Procedure calls are statically checked against declared stack contracts.
 
 A root program must define exactly one `main` procedure with the contract
-`--`. Empty files, declaration-only root files without `main`, and executable
-instructions at the root level are invalid. Top-level source is limited to
+`--`. Empty files and declaration-only root files without `main` are invalid.
+In every module, top-level source is limited to
 procedure, C interop, constant, record, union, function-reference, macro, and
-import declarations.
+import declarations. Standalone executable instructions at the top level are
+rejected.
 
 ## Records
 
@@ -262,7 +264,7 @@ Constants have whole-module scope, may refer forward to later constants, and are
 
 ## Implicit builtins module
 
-The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) as an ordinary Frog module for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `assert` is an ordinary procedure.
+The compiler loads [`stdlib/builtins.frog`](../stdlib/builtins.frog) from Frog source for every program. Its `dup`, `dup2`, `drop`, `swap`, `swap2`, `rot`, and `assert` definitions are available without an import in every other module. The stack operations are macros; `assert` is an ordinary procedure.
 
 Builtins are fallback definitions. Resolution prefers a user-defined or imported macro, then a type or intrinsic, then a local binding, then a user-defined or imported constant or matching procedure overload, and finally a matching builtins definition. This permits any builtin word to be shadowed. The module may also be imported explicitly, for example with `from "stdlib/builtins.frog" import assert`.
 
@@ -275,6 +277,20 @@ Builtins are fallback definitions. Resolution prefers a user-defined or imported
 - `assert`: `bool String --`; a true condition does nothing. A false condition writes the message followed by a newline to standard error and terminates the program with status 1.
 
 In release mode, calls resolved implicitly to this builtin `assert` consume their operands without invoking the assertion procedure. Operand expressions are still evaluated in source order. User-defined assertions, explicit imports or aliases of the builtin procedure, and function-reference calls retain their normal behavior.
+
+## Compiler intrinsics
+
+Words beginning with `__intrinsic_` are low-level compiler operations. They can
+be called in procedure bodies in any module and are resolved before local,
+constant, procedure, or builtin words. Their names remain reserved: procedures,
+macros, constants, nominal types, C bindings, and import aliases cannot declare
+names with this prefix.
+
+The standard operators use typed intrinsics such as `__intrinsic_add_int` and
+`__intrinsic_load_i8`. Direct calls have the same exact stack contracts as the
+corresponding operations and bypass shadowable builtin procedures.
+`__intrinsic_assert_fail` has stack effect `String --`; it writes the string and
+a newline to standard error, then terminates the program with status 1.
 
 ## Imports
 
@@ -324,7 +340,7 @@ proc main -- do
 end
 ```
 
-Imported top-level code is ignored. Imported files contribute procedure, C call, C value, C type, constant, record, union, function-reference-type, and macro declarations, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `@.value`, `M:some`, `M.some?`, and `F:call`.
+Imported files must contain declarations only at the top level. They contribute procedure, C call, C value, C type, constant, record, union, function-reference-type, and macro declarations, but only the root module's `main` runs. Imported nominal aliases retain the original identity and use the alias in qualified operations, such as `P:alloc`, `@P.value`, `@.value`, `M:some`, `M.some?`, and `F:call`.
 
 Imported macros expand using the scope of the module where the macro was defined, even when reexported. Helper procedures and helper macros referenced by an imported macro are resolved in that defining module, not in the importing file.
 

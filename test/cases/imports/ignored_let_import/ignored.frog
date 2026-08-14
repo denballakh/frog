@@ -1,3 +1,5 @@
-let item do
-    from "source.frog" import value
+proc value -- do
+    let item do
+        from "source.frog" import value
+    end
 end

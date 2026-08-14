@@ -1,4 +1,4 @@
 
-            from "../math.frog" import value as root_value
+from "../math.frog" import value as root_value
 
-            proc value -- int do root_value end
+proc value -- int do root_value end

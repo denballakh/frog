@@ -244,7 +244,7 @@ proc frog-cli-cursor-succeeded CompletedProcess* -- bool do
     let result do
         result @CompletedProcess.returncode 0 ==
         result @CompletedProcess.stderr_len 0 == &&
-        result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+          result @CompletedProcess.stdout result @CompletedProcess.stdout_len
         "frogc-cursor\t1\n" String.bytes "frogc-cursor\t1\n" String.len bytes-starts-with &&
     end
 end
@@ -401,15 +401,15 @@ end
 proc frog-cli-cursor-occurrence-is CompletedProcess* String String int int int int int -- bool do
     let result role semantic-class identity-module identity-index identity-subindex binding-module binding-index do
         result @CompletedProcess.stdout result @CompletedProcess.stdout_len role semantic-class identity-index
-        frog-cli-find-cursor-occurrence-line
+            frog-cli-find-cursor-occurrence-line
         let line line-length found do
             if found ! do
                 false
             else
                 line line-length 7 frog-cli-tsv-int
-                line line-length 9 frog-cli-tsv-int
-                line line-length 10 frog-cli-tsv-int
-                line line-length 11 frog-cli-tsv-int
+                    line line-length 9 frog-cli-tsv-int
+                        line line-length 10 frog-cli-tsv-int
+                            line line-length 11 frog-cli-tsv-int
                 let actual-module module-valid actual-subindex subindex-valid actual-binding-module binding-module-valid actual-binding-index binding-index-valid do
                     module-valid subindex-valid && binding-module-valid && binding-index-valid &&
                     actual-module identity-module == &&
@@ -425,7 +425,7 @@ end
 proc frog-cli-cursor-local-id CompletedProcess* int -- int bool do
     let result procedure-index do
         result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-        "reference" "local" procedure-index frog-cli-find-cursor-occurrence-line
+            "reference" "local" procedure-index frog-cli-find-cursor-occurrence-line
         let line line-length found do
             if found do line line-length 9 frog-cli-tsv-int else 0 false end
         end
@@ -580,13 +580,13 @@ proc frog-cli-inspect-procedure-info ptr int String -- int int int int int bool 
                 0 0 0 0 0 false
             else
                 line line-length 1 frog-cli-tsv-int
-                line line-length 2 frog-cli-tsv-int
-                line line-length 4 frog-cli-tsv-int
-                line line-length 6 frog-cli-tsv-int
-                line line-length 8 frog-cli-tsv-int
+                    line line-length 2 frog-cli-tsv-int
+                        line line-length 4 frog-cli-tsv-int
+                            line line-length 6 frog-cli-tsv-int
+                                line line-length 8 frog-cli-tsv-int
                 let module module-valid procedure procedure-valid operation-count operation-count-valid instruction-count instruction-count-valid block-count block-count-valid do
                     module procedure operation-count instruction-count block-count
-                    module-valid procedure-valid && operation-count-valid && instruction-count-valid && block-count-valid &&
+                              module-valid procedure-valid && operation-count-valid && instruction-count-valid && block-count-valid &&
                 end
             end
         end
@@ -599,8 +599,8 @@ proc frog-cli-inspect-row-ids-match ptr int String int int int -- bool do
             false
         else
             line length 1 frog-cli-tsv-int
-            line length 2 frog-cli-tsv-int
-            line length 3 frog-cli-tsv-int
+                line length 2 frog-cli-tsv-int
+                    line length 3 frog-cli-tsv-int
             let actual-module module-valid actual-procedure procedure-valid actual-index index-valid do
                 module-valid procedure-valid && index-valid &&
                 actual-module module == &&
@@ -667,9 +667,9 @@ end
 proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
     let line length next-instruction procedure-instruction-count block-count do
         line length 6 frog-cli-tsv-int
-        line length 7 frog-cli-tsv-int
-        line length 11 frog-cli-tsv-int
-        line length 12 frog-cli-tsv-int
+            line length 7 frog-cli-tsv-int
+                line length 11 frog-cli-tsv-int
+                    line length 12 frog-cli-tsv-int
         let instruction-start instruction-start-valid block-instruction-count block-instruction-count-valid first-target first-target-valid second-target second-target-valid do
             instruction-start-valid block-instruction-count-valid &&
             first-target-valid && second-target-valid &&
@@ -680,8 +680,8 @@ proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
             block-instruction-count procedure-instruction-count instruction-start - <= &&
             let range-valid do
                 line length 8 "jump" frog-cli-tsv-field-equals
-                line length 8 "branch" frog-cli-tsv-field-equals
-                line length 8 "return" frog-cli-tsv-field-equals
+                  line length 8 "branch" frog-cli-tsv-field-equals
+                    line length 8 "return" frog-cli-tsv-field-equals
                 let jump branch return do
                     if jump do
                         first-target block-count frog-cli-inspect-target-valid
@@ -697,7 +697,7 @@ proc frog-cli-inspect-block-valid ptr int int int int -- int bool do
                     end
                     let terminator-valid do
                         next-instruction block-instruction-count +
-                        range-valid terminator-valid &&
+                          range-valid terminator-valid &&
                     end
                 end
             end
@@ -739,8 +739,8 @@ proc frog-cli-inspect-procedure-base ptr int String int -- int int int bool do
         let module procedure operation-count instruction-count block-count found do
             if found block-count expected-block-count == && do
                 module procedure operation-count
-                bytes length module procedure instruction-count block-count
-                frog-cli-inspect-procedure-generic
+                      bytes length module procedure instruction-count block-count
+                      frog-cli-inspect-procedure-generic
             else
                 module procedure operation-count false
             end
@@ -773,7 +773,7 @@ proc frog-cli-inspect-jump-target ptr int int int int -- int bool do
         bytes length module procedure block-index 11 frog-cli-inspect-block-int
         let target found do
             target found
-            bytes length module procedure block-index "jump" frog-cli-inspect-block-is &&
+              bytes length module procedure block-index "jump" frog-cli-inspect-block-is &&
         end
     end
 end
@@ -781,10 +781,10 @@ end
 proc frog-cli-inspect-branch-targets ptr int int int int -- int int bool do
     let bytes length module procedure block-index do
         bytes length module procedure block-index 11 frog-cli-inspect-block-int
-        bytes length module procedure block-index 12 frog-cli-inspect-block-int
+            bytes length module procedure block-index 12 frog-cli-inspect-block-int
         let first first-found second second-found do
             first second first-found second-found &&
-            bytes length module procedure block-index "branch" frog-cli-inspect-block-is &&
+                bytes length module procedure block-index "branch" frog-cli-inspect-block-is &&
         end
     end
 end
@@ -807,7 +807,7 @@ proc frog-cli-inspect-if-else ptr int -- bool do
             bytes length module procedure 0 frog-cli-inspect-branch-targets
             let then-block else-block branch-valid do
                 bytes length module procedure then-block frog-cli-inspect-jump-target
-                bytes length module procedure else-block frog-cli-inspect-jump-target
+                    bytes length module procedure else-block frog-cli-inspect-jump-target
                 let then-merge then-valid else-merge else-valid do
                     valid branch-valid && then-valid && else-valid &&
                     then-merge else-merge == &&
@@ -850,7 +850,7 @@ proc frog-cli-inspect-empty-arms ptr int -- bool do
             bytes length module procedure 0 frog-cli-inspect-branch-targets
             let then-block else-block branch-valid do
                 bytes length module procedure then-block frog-cli-inspect-jump-target
-                bytes length module procedure else-block frog-cli-inspect-jump-target
+                    bytes length module procedure else-block frog-cli-inspect-jump-target
                 let then-merge then-valid else-merge else-valid do
                     valid branch-valid && then-valid && else-valid &&
                     then-merge else-merge == &&
@@ -874,10 +874,10 @@ proc frog-cli-inspect-elif ptr int -- bool do
             bytes length module procedure 0 frog-cli-inspect-branch-targets
             let first-arm next-condition first-branch-valid do
                 bytes length module procedure first-arm frog-cli-inspect-jump-target
-                bytes length module procedure next-condition frog-cli-inspect-branch-targets
+                    bytes length module procedure next-condition frog-cli-inspect-branch-targets
                 let first-merge first-arm-valid second-arm third-arm second-branch-valid do
                     bytes length module procedure second-arm frog-cli-inspect-jump-target
-                    bytes length module procedure third-arm frog-cli-inspect-jump-target
+                        bytes length module procedure third-arm frog-cli-inspect-jump-target
                     let second-merge second-arm-valid third-merge third-arm-valid do
                         valid first-branch-valid && first-arm-valid && second-branch-valid &&
                         second-arm-valid && third-arm-valid &&
@@ -931,7 +931,7 @@ proc frog-cli-inspect-nested ptr int -- bool do
                     bytes length module procedure inner-condition frog-cli-inspect-branch-targets
                     let then-block else-block inner-valid do
                         bytes length module procedure then-block frog-cli-inspect-jump-target
-                        bytes length module procedure else-block frog-cli-inspect-jump-target
+                            bytes length module procedure else-block frog-cli-inspect-jump-target
                         let then-merge then-valid else-merge else-valid do
                             bytes length module procedure then-merge frog-cli-inspect-jump-target
                             let back-edge merge-valid do
@@ -1001,11 +1001,11 @@ proc frog-cli-inspect-cfg FrogTestContext* -- do
                     result @CompletedProcess.returncode 0 ==
                     result @CompletedProcess.stderr_len 0 == &&
                     bytes length "frogc-inspect\t4\n" String.bytes "frogc-inspect\t4\n" String.len bytes-starts-with &&
-                    bytes length
-                    "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tinstruction_count\texpansion_count\tblock_count"
+                      bytes length
+                          "fields\tprocedure\tmodule\tindex\tname\toperation_count\tbinding_local_count\tinstruction_count\texpansion_count\tblock_count"
                     frog-bytes-contain-line &&
-                    bytes length
-                    "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tinstruction_start\tinstruction_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types"
+                      bytes length
+                          "fields\tblock\tprocedure_module\tprocedure_index\tindex\tsource_module\tstart_token\tinstruction_start\tinstruction_count\tterminator\tterminator_module\tterminator_token\tfirst_target\tsecond_target\tentry_types\texit_types"
                     frog-bytes-contain-line &&
                     bytes length frog-cli-inspect-straight &&
                     bytes length frog-cli-inspect-if-else &&
@@ -1036,8 +1036,8 @@ proc frog-cli-inspect-builtins FrogTestContext* -- do
             let result do
                 result @CompletedProcess.returncode 0 ==
                 result @CompletedProcess.stderr_len 0 == &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.bytes
                 "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.len bytes-contain &&
                 "cli/inspect-builtins" context frog-check
                 result completed-process-free
@@ -1059,15 +1059,15 @@ proc frog-cli-inspect-builtins-lexemes FrogTestContext* -- do
             let result do
                 result @CompletedProcess.returncode 0 ==
                 result @CompletedProcess.stderr_len 0 == &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                 "frogc-inspect\t5\n" String.bytes "frogc-inspect\t5\n" String.len bytes-starts-with &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.bytes
                 "fields\tregion\tmodule\tid\tparent\tkind\tstart_token\tend_token\tstart_byte\tend_byte\n" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                 "region\t2\t0\t-1\tmodule\t" String.bytes "region\t2\t0\t-1\tmodule\t" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.bytes
                 "\tintrinsic\t-1\t-1\t-1\t-1\t-1\t-1\t0\tint\tprivate\tadd\t" String.len bytes-contain &&
                 "cli/inspect-builtins-lexemes" context frog-check
                 result completed-process-free
@@ -1087,29 +1087,29 @@ proc frog-cli-inspect-bindings FrogTestContext* -- do
             let result do
                 result @CompletedProcess.returncode 0 ==
                 result @CompletedProcess.stderr_len 0 == &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "\tpeek_binding\t-1\t-1\t-1\t-1\t-1\t0\t2\tnone\tnone\tnone\t[int,int]\t[int,int]" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "\tpeek_binding\t-1\t-1\t-1\t-1\t-1\t0\t2\tnone\tnone\tnone\t[int,int]\t[int,int]" String.bytes
                 "\tpeek_binding\t-1\t-1\t-1\t-1\t-1\t0\t2\tnone\tnone\tnone\t[int,int]\t[int,int]" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "\tlet_binding\t-1\t-1\t-1\t-1\t-1\t3\t2\tnone\tnone\tnone\t[int,int,int,int]\t[int,int]" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "\tlet_binding\t-1\t-1\t-1\t-1\t-1\t3\t2\tnone\tnone\tnone\t[int,int,int,int]\t[int,int]" String.bytes
                 "\tlet_binding\t-1\t-1\t-1\t-1\t-1\t3\t2\tnone\tnone\tnone\t[int,int,int,int]\t[int,int]" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "\tmacro_call\t0\t0\t-1\t-1\t-1\t-1\t0\tnone\tnone\tnone\t[]\t[]" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "\tmacro_call\t0\t0\t-1\t-1\t-1\t-1\t0\tnone\tnone\tnone\t[]\t[]" String.bytes
                 "\tmacro_call\t0\t0\t-1\t-1\t-1\t-1\t0\tnone\tnone\tnone\t[]\t[]" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\n" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\n" String.bytes
                 "binding_local\t0\t0\t0\t0\t18\tsecond\t0\tint\nbinding_local\t0\t0\t1\t0\t17\tfirst\t1\tint\n" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "binding_local\t0\t0\t3\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t4\t0\t27\tfirst\t4\tint\n" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "binding_local\t0\t0\t3\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t4\t0\t27\tfirst\t4\tint\n" String.bytes
                 "binding_local\t0\t0\t3\t0\t28\tthird\t3\tint\nbinding_local\t0\t0\t4\t0\t27\tfirst\t4\tint\n" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "binding_local\t0\t0\t10\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t11\t0\t42\tleft\t11\tint\n" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "binding_local\t0\t0\t10\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t11\t0\t42\tleft\t11\tint\n" String.bytes
                 "binding_local\t0\t0\t10\t0\t43\tright\t10\tint\nbinding_local\t0\t0\t11\t0\t42\tleft\t11\tint\n" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "procedure\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "procedure\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.bytes
                 "procedure\t0\t1\tsecondary\t4\t2\t4\t1\t1\n" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
-                "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.bytes
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                      "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.bytes
                 "binding_local\t0\t1\t0\t0\t57\tvalue\t0\tint\n" String.len bytes-contain &&
                 "cli/inspect-bindings" context frog-check
                 result completed-process-free
@@ -1125,7 +1125,7 @@ proc frog-cli-check-cursor-occurrence String int String String int int int int i
         let result do
             result frog-cli-cursor-succeeded
             result @CompletedProcess.stdout result @CompletedProcess.stdout_len "occurrence\t" frog-count-lines-starting-with 1 == &&
-            result role semantic-class identity-module identity-index identity-subindex binding-module binding-index
+              result role semantic-class identity-module identity-index identity-subindex binding-module binding-index
             frog-cli-cursor-occurrence-is &&
             name context frog-check
             result completed-process-free
@@ -1223,11 +1223,11 @@ proc frog-cli-cursor-locals FrogTestContext* -- do
                 success path assert
                 source source-length "shadow-name 0 +" frog-cli-fixture-marker
                 path swap context frog-cli-cursor-file
-                source source-length "shadow-name 1 +" frog-cli-fixture-marker
-                path swap context frog-cli-cursor-file
+                  source source-length "shadow-name 1 +" frog-cli-fixture-marker
+                  path swap context frog-cli-cursor-file
                 let inner-result outer-result do
                     inner-result 2 frog-cli-cursor-local-id
-                    outer-result 2 frog-cli-cursor-local-id
+                        outer-result 2 frog-cli-cursor-local-id
                     let inner-id inner-valid outer-id outer-valid do
                         inner-result frog-cli-cursor-succeeded
                         outer-result frog-cli-cursor-succeeded &&
@@ -1235,9 +1235,9 @@ proc frog-cli-cursor-locals FrogTestContext* -- do
                         inner-id outer-id != &&
                         inner-result "shadow-name" inner-id frog-cli-cursor-has-visible-local &&
                         outer-result "shadow-name" outer-id frog-cli-cursor-has-visible-local &&
-                        inner-result @CompletedProcess.stdout inner-result @CompletedProcess.stdout_len
+                          inner-result @CompletedProcess.stdout inner-result @CompletedProcess.stdout_len
                         "\t0\tshadow-name\tlocal\t" String.bytes "\t0\tshadow-name\tlocal\t" String.len bytes-count 1 == &&
-                        outer-result @CompletedProcess.stdout outer-result @CompletedProcess.stdout_len
+                          outer-result @CompletedProcess.stdout outer-result @CompletedProcess.stdout_len
                         "\t0\tshadow-name\tlocal\t" String.bytes "\t0\tshadow-name\tlocal\t" String.len bytes-count 1 == &&
                         "cli/cursor-local-shadowing" context frog-check
                     end
@@ -1266,9 +1266,9 @@ end
             context frog-cli-cursor-stdin
             let result do
                 result frog-cli-cursor-succeeded
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                 "\t1\tdrop\tconstant\t" String.bytes "\t1\tdrop\tconstant\t" String.len bytes-contain &&
-                result @CompletedProcess.stdout result @CompletedProcess.stdout_len
+                  result @CompletedProcess.stdout result @CompletedProcess.stdout_len
                 "\t2\tdrop\tmacro\t" String.bytes "\t2\tdrop\tmacro\t" String.len bytes-contain ! &&
                 "cli/cursor-builtin-shadowing" context frog-check
                 result completed-process-free
@@ -1286,45 +1286,45 @@ end
 proc main -- do end
 "
         let same-source do
-        "proc + String String -- String do
+            "proc + String String -- String do
     let left right do left end
 end
 
 proc main -- do end
 "
-        let distinct-source do
-        "macro + 1 end
+            let distinct-source do
+                "macro + 1 end
 
 proc main -- do end
 "
-        let macro-source do
-            same-source same-source String.len context frog-cli-cursor-stdin
-            distinct-source distinct-source String.len context frog-cli-cursor-stdin
-            macro-source macro-source String.len context frog-cli-cursor-stdin
-            let same-result distinct-result macro-result do
-                same-result @CompletedProcess.stdout same-result @CompletedProcess.stdout_len
-                "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
-                distinct-result @CompletedProcess.stdout distinct-result @CompletedProcess.stdout_len
-                "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
-                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
-                "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
-                let same-count distinct-count macro-count do
-                    same-result frog-cli-cursor-succeeded
-                    distinct-result frog-cli-cursor-succeeded &&
-                    macro-result frog-cli-cursor-succeeded &&
-                    same-count 0 > &&
-                    distinct-count same-count 1 + == &&
-                    macro-count 0 == &&
-                    macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
-                    "\t1\t+\tmacro\t" String.bytes "\t1\t+\tmacro\t" String.len bytes-contain &&
-                    "cli/cursor-builtin-overloads" context frog-check
+                let macro-source do
+                    same-source same-source String.len context frog-cli-cursor-stdin
+                      distinct-source distinct-source String.len context frog-cli-cursor-stdin
+                        macro-source macro-source String.len context frog-cli-cursor-stdin
+                    let same-result distinct-result macro-result do
+                        same-result @CompletedProcess.stdout same-result @CompletedProcess.stdout_len
+                        "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                          distinct-result @CompletedProcess.stdout distinct-result @CompletedProcess.stdout_len
+                          "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                            macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                            "\t2\t+\tprocedure\t" String.bytes "\t2\t+\tprocedure\t" String.len bytes-count
+                        let same-count distinct-count macro-count do
+                            same-result frog-cli-cursor-succeeded
+                            distinct-result frog-cli-cursor-succeeded &&
+                            macro-result frog-cli-cursor-succeeded &&
+                            same-count 0 > &&
+                            distinct-count same-count 1 + == &&
+                            macro-count 0 == &&
+                              macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                            "\t1\t+\tmacro\t" String.bytes "\t1\t+\tmacro\t" String.len bytes-contain &&
+                            "cli/cursor-builtin-overloads" context frog-check
+                        end
+                        same-result completed-process-free
+                        distinct-result completed-process-free
+                        macro-result completed-process-free
+                    end
                 end
-                same-result completed-process-free
-                distinct-result completed-process-free
-                macro-result completed-process-free
             end
-        end
-        end
         end
     end
 end
@@ -1340,7 +1340,7 @@ proc main -- do
 end
 "
         let macro-source do
-        "record R
+            "record R
     x int
 end
 
@@ -1350,47 +1350,47 @@ proc main -- do
     end
 end
 "
-        let record-source do
-        "proc main -- do
+            let record-source do
+                "proc main -- do
     1 let int do
         int drop
     end
 end
 "
-        let primitive-source do
-            macro-source macro-source String.bytes macro-source String.len "m drop" frog-cli-fixture-marker
-            context frog-cli-cursor-stdin
-            record-source record-source String.bytes record-source String.len "R drop" frog-cli-fixture-marker
-            context frog-cli-cursor-stdin
-            primitive-source primitive-source String.bytes primitive-source String.len "int drop" frog-cli-fixture-marker
-            context frog-cli-cursor-stdin
-            let macro-result record-result primitive-result do
-                macro-result frog-cli-cursor-succeeded
-                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
-                "\treference\tmacro\t" String.bytes "\treference\tmacro\t" String.len bytes-contain &&
-                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
-                "\t1\tm\tmacro\t" String.bytes "\t1\tm\tmacro\t" String.len bytes-contain &&
-                macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
-                "\t0\tm\tlocal\t" String.bytes "\t0\tm\tlocal\t" String.len bytes-contain ! &&
-                record-result frog-cli-cursor-succeeded &&
-                record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
-                "\treference\trecord_type\t" String.bytes "\treference\trecord_type\t" String.len bytes-contain &&
-                record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
-                "\t1\tR\trecord_type\t" String.bytes "\t1\tR\trecord_type\t" String.len bytes-contain &&
-                record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
-                "\t0\tR\tlocal\t" String.bytes "\t0\tR\tlocal\t" String.len bytes-contain ! &&
-                primitive-result frog-cli-cursor-succeeded &&
-                primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
-                "\treference\tprimitive_type\t" String.bytes "\treference\tprimitive_type\t" String.len bytes-contain &&
-                primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
-                "\t0\tint\tlocal\t" String.bytes "\t0\tint\tlocal\t" String.len bytes-contain ! &&
-                "cli/cursor-local-precedence" context frog-check
-                macro-result completed-process-free
-                record-result completed-process-free
-                primitive-result completed-process-free
+                let primitive-source do
+                    macro-source macro-source String.bytes macro-source String.len "m drop" frog-cli-fixture-marker
+                    context frog-cli-cursor-stdin
+                      record-source record-source String.bytes record-source String.len "R drop" frog-cli-fixture-marker
+                      context frog-cli-cursor-stdin
+                        primitive-source primitive-source String.bytes primitive-source String.len "int drop" frog-cli-fixture-marker
+                        context frog-cli-cursor-stdin
+                    let macro-result record-result primitive-result do
+                        macro-result frog-cli-cursor-succeeded
+                          macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                        "\treference\tmacro\t" String.bytes "\treference\tmacro\t" String.len bytes-contain &&
+                          macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                        "\t1\tm\tmacro\t" String.bytes "\t1\tm\tmacro\t" String.len bytes-contain &&
+                          macro-result @CompletedProcess.stdout macro-result @CompletedProcess.stdout_len
+                        "\t0\tm\tlocal\t" String.bytes "\t0\tm\tlocal\t" String.len bytes-contain ! &&
+                        record-result frog-cli-cursor-succeeded &&
+                          record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                        "\treference\trecord_type\t" String.bytes "\treference\trecord_type\t" String.len bytes-contain &&
+                          record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                        "\t1\tR\trecord_type\t" String.bytes "\t1\tR\trecord_type\t" String.len bytes-contain &&
+                          record-result @CompletedProcess.stdout record-result @CompletedProcess.stdout_len
+                        "\t0\tR\tlocal\t" String.bytes "\t0\tR\tlocal\t" String.len bytes-contain ! &&
+                        primitive-result frog-cli-cursor-succeeded &&
+                          primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
+                        "\treference\tprimitive_type\t" String.bytes "\treference\tprimitive_type\t" String.len bytes-contain &&
+                          primitive-result @CompletedProcess.stdout primitive-result @CompletedProcess.stdout_len
+                        "\t0\tint\tlocal\t" String.bytes "\t0\tint\tlocal\t" String.len bytes-contain ! &&
+                        "cli/cursor-local-precedence" context frog-check
+                        macro-result completed-process-free
+                        record-result completed-process-free
+                        primitive-result completed-process-free
+                    end
+                end
             end
-        end
-        end
         end
     end
 end
@@ -1403,13 +1403,13 @@ proc frog-cli-cursor-import-overloads FrogTestContext* -- do
                 success path assert
                 source source-length "as advance" frog-cli-fixture-marker 3 +
                 path swap context frog-cli-cursor-file
-                source source-length "1 advance" frog-cli-fixture-marker 2 +
-                path swap context frog-cli-cursor-file
-                source source-length "true advance" frog-cli-fixture-marker 5 +
-                path swap context frog-cli-cursor-file
+                  source source-length "1 advance" frog-cli-fixture-marker 2 +
+                  path swap context frog-cli-cursor-file
+                    source source-length "true advance" frog-cli-fixture-marker 5 +
+                    path swap context frog-cli-cursor-file
                 let binding-result int-result bool-result do
                     binding-result frog-cli-cursor-succeeded
-                    binding-result @CompletedProcess.stdout binding-result @CompletedProcess.stdout_len
+                      binding-result @CompletedProcess.stdout binding-result @CompletedProcess.stdout_len
                     "occurrence\t" frog-count-lines-starting-with 2 == &&
                     binding-result "import_binding" "procedure" 1 0 0 1 - 0 0 frog-cli-cursor-occurrence-is &&
                     binding-result "import_binding" "procedure" 1 1 0 1 - 0 1 frog-cli-cursor-occurrence-is &&
@@ -1439,10 +1439,10 @@ proc frog-cli-cursor-positions FrogTestContext* -- do
                 source source-length "7 Maybe:some" frog-cli-fixture-marker 2 +
                 let token-offset do
                     path token-offset 1 - context frog-cli-cursor-file
-                    path token-offset context frog-cli-cursor-file
+                      path token-offset context frog-cli-cursor-file
                     let trivia-result token-result do
                         trivia-result frog-cli-cursor-query-token
-                        token-result frog-cli-cursor-query-token
+                            token-result frog-cli-cursor-query-token
                         let trivia-token trivia-valid token-token token-valid do
                             trivia-result frog-cli-cursor-succeeded
                             token-result frog-cli-cursor-succeeded &&
@@ -1459,9 +1459,9 @@ proc frog-cli-cursor-positions FrogTestContext* -- do
                 path source-length context frog-cli-cursor-file
                 let eof-result do
                     eof-result frog-cli-cursor-succeeded
-                    eof-result @CompletedProcess.stdout eof-result @CompletedProcess.stdout_len
+                      eof-result @CompletedProcess.stdout eof-result @CompletedProcess.stdout_len
                     "stack\t" frog-count-lines-starting-with 0 == &&
-                    eof-result @CompletedProcess.stdout eof-result @CompletedProcess.stdout_len
+                      eof-result @CompletedProcess.stdout eof-result @CompletedProcess.stdout_len
                     "context\t" frog-count-lines-starting-with 1 == &&
                     "cli/cursor-eof" context frog-check
                     eof-result completed-process-free
@@ -1491,7 +1491,7 @@ proc frog-cli-filter-debug-invariant FrogTestContext* -- do
     let context do
         "proc main -- do 1 2 + print end
 "
-        "frogc: debug: +: before [int int]
+          "frogc: debug: +: before [int int]
 frogc: debug: +: after [int]
 frogc: debug: print: before [int]
 frogc: debug: print: after []
@@ -1505,14 +1505,14 @@ frogc: debug: print: after []
                     context @FrogTestContext.compiler debug-arguments 0 subprocess-arg-pointer
                     "--debug" debug-arguments 1 subprocess-arg
                     normal-arguments source String.bytes source String.len "" subprocess-run-bytes-in
-                    debug-arguments source String.bytes source String.len "" subprocess-run-bytes-in
+                      debug-arguments source String.bytes source String.len "" subprocess-run-bytes-in
                     let normal-result debug-result do
                         normal-result @CompletedProcess.returncode 0 ==
                         normal-result @CompletedProcess.stderr_len 0 == &&
                         debug-result @CompletedProcess.returncode 0 == &&
                         normal-result @CompletedProcess.stdout_len 0 > &&
                         debug-result @CompletedProcess.stdout_len 0 > &&
-                        debug-result @CompletedProcess.stderr debug-result @CompletedProcess.stderr_len
+                          debug-result @CompletedProcess.stderr debug-result @CompletedProcess.stderr_len
                         expected-debug String.bytes expected-debug String.len bytes-equal &&
                         "cli/debug-filter-invariant" context frog-check
                         normal-result completed-process-free
@@ -1607,12 +1607,12 @@ Try `frogc --help`.
 " 2 "cli/cursor-invalid-offset" context frog-cli-case-3
 
         "cursor" "--byte" "0" "first.frog" "second.frog" ""
-        "frogc: cursor accepts at most one source file
+                    "frogc: cursor accepts at most one source file
 Try `frogc --help`.
 " 2 "cli/cursor-too-many-files" context frog-cli-case-5
 
         "cursor" "--byte" "9999" "test/cases/cli/cursor_semantics.frog" ""
-        "frogc: cursor byte offset exceeds source length
+                  "frogc: cursor byte offset exceeds source length
 Try `frogc --help`.
 " 2 "cli/cursor-offset-out-of-range" context frog-cli-case-4
 
@@ -2040,7 +2040,7 @@ end
 " "from \"helper.frog\" import value
 
 const root
-value
+    value
 end
 " "cli/fmt-file-relative-library" context frog-cli-fmt-file
 
@@ -2266,7 +2266,7 @@ Try `frogc --help`.
         context frog-cli-cursor-malformed
 
         "run" "test/cases/cli/missing.frog" ""
-        "frogc: unable to read source: test/cases/cli/missing.frog
+              "frogc: unable to read source: test/cases/cli/missing.frog
 " 1 "cli/run-missing" context frog-cli-case-2
 
         "--unknown" "" "frogc: unknown command: --unknown
