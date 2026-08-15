@@ -62,7 +62,7 @@
     "literals": {
       "patterns": [
         {
-          "match": "'(?:\\\\'|\"|[^'\"\\r\\n])'",
+          "match": "'(?:\\\\(?:[\\\\'\"nrt0]|x[0-9A-Fa-f]{2})|[^\\\\'\\r\\n])'",
           "name": "constant.character.frog"
         },
         {

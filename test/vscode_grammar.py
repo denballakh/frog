@@ -52,16 +52,24 @@ def main() -> None:
 
     character_pattern = character['match']
     assert isinstance(character_pattern, str)
-    assert '"|[^\'"\\r\\n]' in character_pattern
     character_regex = re.compile(character_pattern)
-    assert character_regex.fullmatch("'E'")
-    assert character_regex.fullmatch("'é'")
-    assert character_regex.fullmatch("'\"'")
-    assert character_regex.fullmatch(r"'\'")
-    assert character_regex.fullmatch(r"'\''")
-    assert character_regex.fullmatch("''") is None
-    assert character_regex.fullmatch("'EE'") is None
-    assert character_regex.fullmatch("'\\n'") is None
+    for spelling in (
+        "'E'",
+        "'é'",
+        "'\"'",
+        r"'\\'",
+        r"'\''",
+        r"'\"'",
+        r"'\n'",
+        r"'\r'",
+        r"'\t'",
+        r"'\0'",
+        r"'\x00'",
+        r"'\xAf'",
+    ):
+        assert character_regex.fullmatch(spelling), spelling
+    for spelling in ("''", "'EE'", r"'\'", r"'\a'", r"'\x'", r"'\x0'", r"'\xGG'", r"'\x000'"):
+        assert character_regex.fullmatch(spelling) is None, spelling
 
     operator_pattern = operator['match']
     assert isinstance(operator_pattern, str)

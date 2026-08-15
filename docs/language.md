@@ -56,9 +56,10 @@ Contract mismatch diagnostics show expected and actual types in brackets. Types 
 - `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, and `u64` are distinct static integer types. Integer literals are still `int`, so conversion to or between exact-width types requires `cast`; no implicit integer conversion is performed.
 - A trailing `*` names a typed pointer: `i8*`, `String*`, `Node*`, and `Node**` are valid. Pointer types are structural and canonicalized by their pointee, so repeated spelling and imported aliases of the same nominal type yield the same pointer type. Different pointee types remain distinct. `ptr` is the untyped raw-pointer boundary; casts are available between `ptr` and a typed pointer, but no implicit conversion is performed.
 - `true` and `false` are bool literals.
-- Character literals push integer codepoints.
-- Character literals accept exactly one raw Unicode codepoint. `\'` represents
-  a single quote; a raw backslash remains written as `'\'`.
+- Character literals push one `int` codepoint. They contain exactly one raw
+  Unicode codepoint or one of `\\`, `\'`, `\"`, `\n`, `\r`, `\t`, `\0`, and
+  `\xNN`, where `NN` is exactly two hexadecimal digits. Other escapes and a raw
+  backslash are invalid; write the backslash character as `'\\'`.
 - String literals push a `String` value, a copied descriptor containing a byte pointer and length. `String.bytes` has stack effect `String -- ptr`, and `String.len` has stack effect `String -- int`. String bytes are UTF-8 encoded; `\\`, `\"`, `\n`, `\r`, `\t`, `\0`, and `\xNN` escapes are supported. `\xNN` appends one byte. Double-quoted strings may span physical lines; raw line breaks and indentation inside the quotes are part of the value and are not normalized or stripped.
 - Copying a `String` copies its descriptor, not its bytes. Equal decoded string literals share writable byte storage, so writes through `String.bytes` are visible through every equal literal in the program. The storage has a trailing NUL byte, while `String.len` excludes that terminator and includes embedded NUL bytes.
 - Import paths use string literal bytes decoded as UTF-8. Paths are limited to 1,024 decoded bytes and canonicalized lexically; symlinks are not resolved when determining module identity.

@@ -194,13 +194,13 @@ func main -- do
 end
 " "frogc: expected word token\n" 1 "code/macros/13" context frog-inline-error-raw
 
-        // literals_and_comments (15)
+        // literals_and_comments (22)
         "" "" "" 0 "code/literals_and_comments/01" context frog-inline-run-body
         "'" "frogc: unterminated character literal\n" 1 "code/literals_and_comments/02" context frog-inline-error-body
         "''" "frogc: invalid character literal\n" 1 "code/literals_and_comments/03" context frog-inline-error-body
         "'aa'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/04" context frog-inline-error-body
-        "'\\n'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/05" context frog-inline-error-body
-        "'\\t'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/06" context frog-inline-error-body
+        "'\\n' print" "10\n" "" 0 "code/literals_and_comments/05" context frog-inline-run-body
+        "'\\t' print" "9\n" "" 0 "code/literals_and_comments/06" context frog-inline-run-body
         "'\\'' print" "39\n" "" 0 "code/literals_and_comments/07" context frog-inline-run-body
         "\"" "frogc: unterminated string literal\n" 1 "code/literals_and_comments/08" context frog-inline-error-body
         "\"\" ? drop" "" "" 0 "code/literals_and_comments/09" context frog-inline-run-body
@@ -217,6 +217,13 @@ end
 " "" 0 "code/literals_and_comments/14" context frog-inline-run-body
         "1 // comment
  print" "1\n" "" 0 "code/literals_and_comments/15" context frog-inline-run-body
+        "'\\'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/16" context frog-inline-error-body
+        "'\\a'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/17" context frog-inline-error-body
+        "'\\x'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/18" context frog-inline-error-body
+        "'\\x1'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/19" context frog-inline-error-body
+        "'\\xGG'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/20" context frog-inline-error-body
+        "'\\x1G'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/21" context frog-inline-error-body
+        "'\\x410'" "frogc: invalid character literal\n" 1 "code/literals_and_comments/22" context frog-inline-error-body
 
         // words (2)
         "func" "frogc: expected function name\n" 1 "code/words/01" context frog-inline-error-raw

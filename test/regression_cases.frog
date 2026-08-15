@@ -45,7 +45,7 @@ func run-regression-cases FrogTestContext* -- do
         "test/cases/semantics/integer_bases/main.frog" "test/cases/semantics/integer_bases" "0\n7\n146\n819\n43981\n9223372036854775807\n9223372036854775807\n9223372036854775807\n-7\n7\n0\n0\n-7\n7\n-146\n146\n-819\n43981\n9223372036854775807\n-9223372036854775808\n-9223372036854775808\n-9223372036854775808\n-9223372036854775808\n" "" 0 "" "" "" "semantics/integer_bases" context frog-run-case
         "test/cases/semantics/builtins_shadow/main.frog" "test/cases/semantics/builtins_shadow" "42\n7\n2\n1\n6\n99\n20\n10\n20\n10\n40\n50\n2\n1\n4\n3\n5\n7\n6\n16\n" "" 0 "" "" "" "semantics/builtins_shadow" context frog-run-case
         "test/cases/semantics/macro_shadow/main.frog" "test/cases/semantics/macro_shadow" "11\n21\n31\n" "" 0 "" "" "" "semantics/macro_shadow" context frog-run-case
-        "test/cases/semantics/characters/main.frog" "test/cases/semantics/characters" "65\n233\n8364\n128512\n92\n39\n" "" 0 "" "" "" "semantics/characters" context frog-run-case
+        "test/cases/semantics/characters/main.frog" "test/cases/semantics/characters" "65\n233\n8364\n128512\n92\n39\n34\n10\n13\n9\n0\n65\n127\n175\n" "" 0 "" "" "" "semantics/characters" context frog-run-case
         "test/cases/semantics/args/main.frog" "test/cases/semantics/args" "3\n/\nfrog\npond\n" "" 0 "" "frog" "pond" "semantics/args" context frog-run-case
         "test/cases/semantics/pointer_store/main.frog" "test/cases/semantics/pointer_store" "65\n" "" 0 "" "" "" "semantics/pointer_store" context frog-run-case
         "test/cases/semantics/c_ffi/main.frog" "test/cases/semantics/c_ffi" "42\n42\n9\n711\ntrue\nfalse\n" "" 0 "test/cases/semantics/c_ffi/helper.c" "" "" "semantics/c_ffi" context frog-run-case

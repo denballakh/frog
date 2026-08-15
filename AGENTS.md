@@ -215,9 +215,10 @@ not in this maintenance guide.
 - `elif` is lowered to nested existing IF/ELSE/END instructions; one source `end` closes the whole chain, and the no-`else` path participates in stack-shape checking.
 - `assert` is a shadowable function in the implicit builtins module with stack effect `bool String --`. A false condition writes the message and a newline to standard error, then exits with status 1; a true condition only consumes its inputs. Release mode suppresses only implicit calls to that builtin identity; explicit imports, function references, and shadowing functions retain normal behavior.
 - `NULL` is a shadowable function in the implicit builtins module with stack effect `-- ptr`. Compare pointers explicitly with `NULL ==` or `NULL !=`; `stdlib/libc.frog` does not provide a separate null-pointer predicate.
-- Character literals contain one raw Unicode codepoint; `\'` is the only
-  character escape and represents a single quote. Preserve raw `'\'` as the
-  backslash character and keep other backslash spellings invalid.
+- Character literals produce one `int` codepoint from one raw Unicode codepoint
+  or one of `\\`, `\'`, `\"`, `\n`, `\r`, `\t`, `\0`, and exact two-digit
+  `\xNN`. Other escapes and a raw backslash are invalid; use `'\\'` for the
+  backslash character.
 - Integer literals accept an optional leading `+` or `-` in decimal, binary,
   octal, and hexadecimal forms. They cover the complete signed 64-bit range;
   standalone `+` and `-` remain arithmetic words.

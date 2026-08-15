@@ -218,7 +218,7 @@ func copy-bytes ptr int -- ptr do
         length 1 + alloc
         let result do
             bytes result length bytes-copy
-            0 result length byte-write
+            '\0' result length byte-write
             result
         end
     end
@@ -259,7 +259,7 @@ end
 func fail String -- do
     "frogc: " emit-error
     emit-error
-    10 eputc
+    '\n' eputc
     1 exit
 end
 
@@ -287,9 +287,9 @@ end
 
 func is-space int -- bool do
     peek byte do ' ' ==
-        byte 9 == ||
-        byte 10 == ||
-        byte 13 == ||
+        byte '\t' == ||
+        byte '\n' == ||
+        byte '\r' == ||
     end
 end
 
@@ -803,14 +803,14 @@ end
 
 func source-byte-is-newline ModuleContext* int -- bool do
     let ctx index do
-        if ctx index source-byte 10 == do
+        if ctx index source-byte '\n' == do
             true
-        elif ctx index source-byte 13 != do
+        elif ctx index source-byte '\r' != do
             false
         elif index 1 + ctx @ModuleContext.source_length >= do
             true
         else
-            ctx index 1 + source-byte 10 !=
+            ctx index 1 + source-byte '\n' !=
         end
     end
 end
@@ -837,8 +837,8 @@ func source-line-end ModuleContext* int -- int do
                 offset ctx @ModuleContext.source_length <
                 if dup do
                     drop
-                    ctx offset source-byte 10 !=
-                    ctx offset source-byte 13 != &&
+                    ctx offset source-byte '\n' !=
+                    ctx offset source-byte '\r' != &&
                 end
             end
         do
@@ -880,7 +880,7 @@ func source-display-column-from ModuleContext* int int int -- int do
         start start-column
         while peek index column do index finish < end do
             let index column do
-                if ctx index source-byte 9 == do
+                if ctx index source-byte '\t' == do
                     index 1 + column column tab-display-width +
                 else
                     ctx @ModuleContext.source ctx @ModuleContext.source_length index utf8-sequence-width
@@ -900,7 +900,7 @@ func emit-source-display-from ModuleContext* int int int -- do
         start start-column
         while peek index column do index finish < end do
             let index column do
-                if ctx index source-byte 9 == do
+                if ctx index source-byte '\t' == do
                     column tab-display-width
                     let width do
                         width emit-error-spaces
@@ -1208,7 +1208,7 @@ func emit-diagnostic Diagnostic* -- do
                     else
                         diagnostic @Diagnostic.message diagnostic @Diagnostic.message_length emit-error-bytes
                     end
-                    10 eputc
+                    '\n' eputc
                 end
             end
         end
@@ -1461,7 +1461,7 @@ func lex-string ModuleContext* int int int -- do
                         if byte '"' == do
                             true invalid
                         else
-                            if byte '\' == do
+                            if byte '\\' == do
                                 ctx lex-advance
                                 if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
                                     ctx start ctx @ModuleContext.lex_index start - line "unterminated string escape" fail-span-at
@@ -1505,8 +1505,8 @@ func character-literal-span-length ModuleContext* int -- int do
                 finish ctx @ModuleContext.source_length <
                 if dup do
                     drop
-                    ctx finish source-byte 10 !=
-                    ctx finish source-byte 13 != &&
+                    ctx finish source-byte '\n' !=
+                    ctx finish source-byte '\r' != &&
                     ctx finish source-byte '\'' != &&
                 end
             end
@@ -1531,69 +1531,149 @@ func lex-character ModuleContext* int int int -- do
             ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
             ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
         elif
-            ctx ctx @ModuleContext.lex_index source-byte 10 ==
-            ctx ctx @ModuleContext.lex_index source-byte 13 == ||
+            ctx ctx @ModuleContext.lex_index source-byte '\n' ==
+            ctx ctx @ModuleContext.lex_index source-byte '\r' == ||
         do
             ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
             ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
         else
-            ctx ctx @ModuleContext.lex_index source-byte '\' ==
-            if dup do
-                drop
-                ctx @ModuleContext.lex_index 1 +
-                let escaped-index do
-                    if escaped-index ctx @ModuleContext.source_length >= do
-                        false
-                    elif ctx escaped-index source-byte '\'' != do
-                        false
+            if ctx ctx @ModuleContext.lex_index source-byte '\\' == do
+                ctx @ModuleContext.lex_index
+                let escape-start do
+                    if escape-start 1 + ctx @ModuleContext.source_length >= do
+                        0 0 false
                     else
-                        escaped-index 1 +
-                        let closing-index do
-                            if closing-index ctx @ModuleContext.source_length >= do false
-                            else ctx closing-index source-byte '\'' == end
+                        ctx escape-start 1 + source-byte
+                        let escaped do
+                            if escaped '\\' == do
+                                '\\' 2 true
+                            elif escaped '\'' == do
+                                '\'' 2 true
+                            elif escaped '"' == do
+                                '"' 2 true
+                            elif escaped 'n' == do
+                                '\n' 2 true
+                            elif escaped 'r' == do
+                                '\r' 2 true
+                            elif escaped 't' == do
+                                '\t' 2 true
+                            elif escaped '0' == do
+                                '\0' 2 true
+                            elif escaped 'x' == do
+                                if escape-start 3 + ctx @ModuleContext.source_length >= do
+                                    0 0 false
+                                else
+                                    ctx escape-start 2 + source-byte digit-value
+                                      ctx escape-start 3 + source-byte digit-value
+                                    let high low do
+                                        if high 0 < low 0 < || do
+                                            0 0 false
+                                        else
+                                            high 16 * low + 4 true
+                                        end
+                                    end
+                                end
+                            else
+                                0 0 false
+                            end
                         end
                     end
                 end
-            end
-            let quote-escape do
-                if quote-escape do
-                    ctx 3 lex-advance-count
-                    ctx TokenKind:char start 4 '\'' line column add-token
-                    ctx LexemeKind:token start 4 add-lexeme
-                else
-                    if ctx ctx @ModuleContext.lex_index source-byte '\'' == do
-                        ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
-                        ctx start character-literal-span-length let length do
-                            ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
-                            ctx LexemeKind:token start length add-lexeme
+                let value width valid do
+                    if valid ! do
+                        if
+                            ctx @ModuleContext.lex_index 1 + ctx @ModuleContext.source_length >=
+                            if dup ! do
+                                drop ctx ctx @ModuleContext.lex_index 1 + source-byte-is-newline
+                            end
+                        do
+                            ctx lex-advance
+                            ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
+                            ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+                        else
+                            ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                            ctx start character-literal-span-length let length do
+                                ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                                ctx LexemeKind:token start length add-lexeme
+                            end
                         end
                     else
-                        ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-sequence-width
-                        let width do
-                            if width 0 == do
+                        ctx width lex-advance-count
+                        if
+                            width 2 ==
+                            ctx ctx @ModuleContext.lex_index 1 - source-byte '\'' == &&
+                        do
+                            if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
+                                true
+                            else
+                                ctx ctx @ModuleContext.lex_index source-byte '\'' !=
+                            end
+                        else
+                            false
+                        end
+                        let raw-backslash-spelling do
+                            if raw-backslash-spelling do
+                                ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                                ctx start character-literal-span-length let length do
+                                    ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                                    ctx LexemeKind:token start length add-lexeme
+                                end
+                            elif ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
+                                ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
+                                ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+                            elif ctx ctx @ModuleContext.lex_index source-byte-is-newline do
+                                ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
+                                ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+                            elif ctx ctx @ModuleContext.lex_index source-byte '\'' != do
                                 ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
                                 ctx start character-literal-span-length let length do
                                     ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
                                     ctx LexemeKind:token start length add-lexeme
                                 end
                             else
-                                ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
-                                let value ignored-width do
-                                    ctx width lex-advance-count
-                                    if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
-                                        ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
-                                        ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
-                                    elif ctx ctx @ModuleContext.lex_index source-byte '\'' != do
-                                        ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
-                                        ctx start character-literal-span-length let length do
-                                            ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
-                                            ctx LexemeKind:token start length add-lexeme
-                                        end
-                                    else
-                                        ctx lex-advance
-                                        ctx TokenKind:char start width 2 + value line column add-token
-                                        ctx LexemeKind:token start width 2 + add-lexeme
+                                ctx lex-advance
+                                ctx TokenKind:char start width 2 + value line column add-token
+                                ctx LexemeKind:token start width 2 + add-lexeme
+                            end
+                        end
+                    end
+                end
+            else
+                if ctx ctx @ModuleContext.lex_index source-byte '\'' == do
+                    ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                    ctx start character-literal-span-length let length do
+                        ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                        ctx LexemeKind:token start length add-lexeme
+                    end
+                else
+                    ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-sequence-width
+                    let width do
+                        if width 0 == do
+                            ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                            ctx start character-literal-span-length let length do
+                                ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                                ctx LexemeKind:token start length add-lexeme
+                            end
+                        else
+                            ctx @ModuleContext.source ctx @ModuleContext.source_length ctx @ModuleContext.lex_index utf8-codepoint-at
+                            let value ignored-width do
+                                ctx width lex-advance-count
+                                if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
+                                    ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
+                                    ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+                                elif ctx ctx @ModuleContext.lex_index source-byte-is-newline do
+                                    ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
+                                    ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
+                                elif ctx ctx @ModuleContext.lex_index source-byte '\'' != do
+                                    ctx start ctx start character-literal-span-length line "invalid character literal" fail-span-at
+                                    ctx start character-literal-span-length let length do
+                                        ctx start length + ctx @ModuleContext.lex_index - lex-advance-count
+                                        ctx LexemeKind:token start length add-lexeme
                                     end
+                                else
+                                    ctx lex-advance
+                                    ctx TokenKind:char start width 2 + value line column add-token
+                                    ctx LexemeKind:token start width 2 + add-lexeme
                                 end
                             end
                         end
@@ -1982,7 +2062,7 @@ func validate-c-type-spelling ModuleContext* int -- do
             while dup length < do
                 dup let index do
                     ctx token index decoded-string-byte let byte do
-                        if byte 0 == byte 10 == || byte 13 == || do ctx token "invalid C type spelling" fail-at end
+                        if byte '\0' == byte '\n' == || byte '\r' == || do ctx token "invalid C type spelling" fail-at end
                     end
                 end
                 1 +
@@ -5113,7 +5193,7 @@ func emit-debug-word-stack CompileContext* String -- do
         phase emit-error
         " " emit-error
         cc @CompileContext.program cc @CompileContext.type_stack 0 cc @CompileContext.type_count emit-error-type-array
-        10 eputc
+        '\n' eputc
     end
 end
 
@@ -5434,7 +5514,7 @@ func verify-instruction-unary-replacement FuncAnalysis* TypedInstruction* int in
             "internal typed unary instruction type mismatch: " emit-error
             instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
             ", expected=" emit-error input-type emit-integer-error "/" emit-error output-type emit-integer-error
-            10 eputc 1 exit
+            '\n' eputc 1 exit
         end
     end
 end
@@ -5572,7 +5652,7 @@ func verify-binding-instruction FuncAnalysis* TypedInstruction* bool -- do
                             instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
                             ", local=" emit-error local @AnalyzedBindingLocal.value_type emit-integer-error
                             ", actual=" emit-error actual-type emit-integer-error
-                            10 eputc 1 exit
+                            '\n' eputc 1 exit
                         end
                         drop
                     end
@@ -5655,7 +5735,7 @@ func verify-typed-instruction-storage FuncAnalysis* TypedInstruction* -- do
                     do
                         "internal typed literal result type mismatch: " emit-error
                         instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
-                        10 eputc 1 exit
+                        '\n' eputc 1 exit
                     end
                 end
             elif operation RuntimeOperation.local_load? do
@@ -5979,7 +6059,7 @@ func verify-analyzed-target ModuleContext* int FuncAnalysis* int -- AnalyzedBloc
             "internal analyzed block target out of range: " emit-error
             module @ModuleContext.source module func-index func-at @FuncEntry.name_start +
             module func-index func-at @FuncEntry.name_length emit-error-bytes
-            ", target=" emit-error target emit-integer-error 10 eputc 1 exit
+            ", target=" emit-error target emit-integer-error '\n' eputc 1 exit
         end
         analysis target analyzed-block-at
     end
@@ -6012,7 +6092,7 @@ func verify-analyzed-block-instructions FuncAnalysis* AnalyzedBlock* -- do
                         if analysis previous current instructions-are-adjacent ! do
                             "internal typed instruction stack discontinuity: " emit-error analysis previous emit-instruction-debug
                             " / " emit-error analysis current emit-instruction-debug
-                            10 eputc 1 exit
+                            '\n' eputc 1 exit
                         end
                     end
                 end
@@ -6620,7 +6700,7 @@ func set-typed-instruction CompileContext* RuntimeOperation -- TypedInstruction*
             if instruction @TypedInstruction.operation RuntimeOperation.none? ! do
                 "internal duplicate typed instruction operation: " emit-error
                 instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
-                10 eputc 1 exit
+                '\n' eputc 1 exit
             end
             operation instruction !TypedInstruction.operation
             instruction
@@ -6969,7 +7049,7 @@ func verify-analyzed-branch ModuleContext* int FuncAnalysis* AnalyzedBlock* ptr 
                 let types count do
                     block @AnalyzedBlock.terminator_module @ModuleContext.program types 0 count emit-error-type-array
                 end
-                10 eputc
+                '\n' eputc
                 1 exit
             end
             if analysis first-target exit-types exit-count 1 - block-entry-matches-types ! do
@@ -7500,7 +7580,7 @@ func emit-line CompileContext* String -- do
         if cc @CompileContext.emitting do
             cc emit-indent
             code emit
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -7551,7 +7631,7 @@ end
 func decoded-string-unit ModuleContext* int int -- int int do
     peek ctx token raw-index do raw-string-byte
         let byte do
-            if byte '\' != do
+            if byte '\\' != do
                 byte 1
             else
                 raw-index 1 +
@@ -7566,12 +7646,12 @@ func decoded-string-unit ModuleContext* int int -- int int do
                         0 1
                     else
                         ctx token escape-index raw-string-byte let escaped do
-                            if escaped '\' == do '\' 2
+                            if escaped '\\' == do '\\' 2
                             elif escaped '"' == do '"' 2
-                            elif escaped 'n' == do 10 2
-                            elif escaped 'r' == do 13 2
-                            elif escaped 't' == do 9 2
-                            elif escaped '0' == do 0 2
+                            elif escaped 'n' == do '\n' 2
+                            elif escaped 'r' == do '\r' 2
+                            elif escaped 't' == do '\t' 2
+                            elif escaped '0' == do '\0' 2
                             elif escaped 'x' == do
                                 if escape-index 2 + ctx token raw-string-length >= do
                                     ctx
@@ -11081,20 +11161,20 @@ func emit-c-string-byte int -- do
     let byte do
         if byte '"' == do
             "\\\"" emit
-        elif byte '\' == do
+        elif byte '\\' == do
             "\\\\" emit
-        elif byte 10 == do
+        elif byte '\n' == do
             "\\n" emit
-        elif byte 13 == do
+        elif byte '\r' == do
             "\\r" emit
-        elif byte 9 == do
+        elif byte '\t' == do
             "\\t" emit
         elif byte '?' == do
             "\\?" emit
         elif byte ' ' >= byte '~' <= && do
             byte putc
         else
-            '\' putc
+            '\\' putc
             byte 64 / '0' + putc
             byte 8 / 8 % '0' + putc
             byte 8 % '0' + putc
@@ -11920,7 +12000,7 @@ func emit-slot-as CompileContext* int int -- do
             "frogc: internal missing typed stack slot type " emit-error
             value-type emit-integer-error " at depth " emit-error index emit-integer-error
             " in " emit-error cc @CompileContext.diagnostic_module cc @CompileContext.diagnostic_token token-slice emit-error-bytes
-            10 eputc 1 exit
+            '\n' eputc 1 exit
         end
         "frog_value_" emit index emit-unsigned "_" emit
         if value-type 0 < do "n" emit 0 value-type - emit-unsigned else value-type emit-unsigned end
@@ -12688,7 +12768,7 @@ func compile-cast-intrinsic CompileContext* -- do
                         if target-type source-type == do cc index source-type emit-slot-as
                         elif target-type type-bool == do "(" emit cc index source-type emit-slot-as " != 0)" emit
                         else "(" emit cc @CompileContext.program target-type emit-c-value-type ")" emit cc index source-type emit-slot-as end
-                        ";" emit 10 putc
+                        ";" emit '\n' putc
                     end
                 end
             end
@@ -12708,8 +12788,8 @@ func compile-memory-io-intrinsic CompileContext* int -- bool do
             if cc @CompileContext.emitting do
                 cc @CompileContext.type_count 2 -
                 let argv-index do
-                    cc emit-indent cc argv-index type-ptr emit-slot-as " = (void *)frog_argv;" emit 10 putc
-                    cc emit-indent cc argv-index 1 + type-int emit-slot-as " = (intptr_t)frog_argc;" emit 10 putc
+                    cc emit-indent cc argv-index type-ptr emit-slot-as " = (void *)frog_argv;" emit '\n' putc
+                    cc emit-indent cc argv-index 1 + type-int emit-slot-as " = (intptr_t)frog_argc;" emit '\n' putc
                 end
             end
             true
@@ -12720,12 +12800,12 @@ func compile-memory-io-intrinsic CompileContext* int -- bool do
                 if value-type type-int == do
                     if cc @CompileContext.emitting do
                         cc emit-indent "printf(\"%lld\\n\", (long long)" emit
-                        cc cc @CompileContext.type_count value-type emit-slot-as ");" emit 10 putc
+                        cc cc @CompileContext.type_count value-type emit-slot-as ");" emit '\n' putc
                     end
                 elif value-type type-bool == do
                     if cc @CompileContext.emitting do
                         cc emit-indent "fputs(" emit cc cc @CompileContext.type_count value-type emit-slot-as
-                        " ? \"true\\n\" : \"false\\n\", stdout);" emit 10 putc
+                        " ? \"true\\n\" : \"false\\n\", stdout);" emit '\n' putc
                     end
                 else
                     cc "printing this type is not supported" fail-compile-word
@@ -12754,7 +12834,7 @@ func compile-generic-pointer-load CompileContext* int -- bool do
                     cc @CompileContext.type_count 1 -
                     let index do
                         cc emit-indent "memcpy(&" emit cc index value-type emit-slot-as ", (const void *)" emit
-                        cc index pointer-type emit-slot-as ", sizeof(" emit cc index value-type emit-slot-as "));" emit 10 putc
+                        cc index pointer-type emit-slot-as ", sizeof(" emit cc index value-type emit-slot-as "));" emit '\n' putc
                     end
                 end
                 true
@@ -12778,7 +12858,7 @@ func compile-generic-pointer-store CompileContext* int -- bool do
                         cc @CompileContext.type_count 1 +
                         let pointer-index do
                             cc emit-indent "memcpy((void *)" emit cc pointer-index pointer-type emit-slot-as ", &" emit
-                            cc value-index value-type emit-slot-as ", sizeof(" emit cc value-index value-type emit-slot-as "));" emit 10 putc
+                            cc value-index value-type emit-slot-as ", sizeof(" emit cc value-index value-type emit-slot-as "));" emit '\n' putc
                         end
                     end
                 end
@@ -12817,7 +12897,7 @@ func emit-push-integer CompileContext* int -- do
     let cc value do
         if cc @CompileContext.emitting do
             cc emit-indent
-            cc emit-top-slot " = " emit value emit-integer ";" emit 10 putc
+            cc emit-top-slot " = " emit value emit-integer ";" emit '\n' putc
         end
     end
 end
@@ -12828,7 +12908,7 @@ func emit-push-pooled-string CompileContext* int -- do
             cc emit-indent
             cc emit-top-slot " = " emit
             cc @CompileContext.program string-index emit-string-symbol
-            ";" emit 10 putc
+            ";" emit '\n' putc
         end
     end
 end
@@ -12865,7 +12945,7 @@ func emit-call-result-slots CompileContext* ModuleContext* int int int -- do
                 cc base output-index +
                     module module func-index func-at @FuncEntry.output_start output-index + type-at
                 emit-slot-as " = frog_call_result.value_" emit
-                output-index emit-unsigned ";" emit 10 putc
+                output-index emit-unsigned ";" emit '\n' putc
             end
             1 +
         end
@@ -12880,19 +12960,19 @@ func emit-func-invocation CompileContext* ModuleContext* int int -- do
             if output-count 0 == do
                 cc emit-indent
                 module func-index emit-func-name
-                "(" emit cc module func-index base emit-call-arguments ");" emit 10 putc
+                "(" emit cc module func-index base emit-call-arguments ");" emit '\n' putc
             elif output-count 1 == do
                 cc emit-indent cc base
                     module module func-index func-at @FuncEntry.output_start type-at
                 emit-slot-as " = " emit
                 module func-index emit-func-name
-                "(" emit cc module func-index base emit-call-arguments ");" emit 10 putc
+                "(" emit cc module func-index base emit-call-arguments ");" emit '\n' putc
             else
                 cc emit-indent
                 module @ModuleContext.types module func-index func-at @FuncEntry.output_start cell-bytes * +
                 output-count emit-result-type-name " frog_call_result = " emit
                 module func-index emit-func-name
-                "(" emit cc module func-index base emit-call-arguments ");" emit 10 putc
+                "(" emit cc module func-index base emit-call-arguments ");" emit '\n' putc
                 cc module func-index base output-count emit-call-result-slots
             end
         end
@@ -12906,11 +12986,11 @@ func emit-call CompileContext* ModuleContext* int -- do
             let output-count do
                 cc @CompileContext.type_count output-count -
                 let base do
-                    cc emit-indent "{" emit 10 putc
+                    cc emit-indent "{" emit '\n' putc
                     cc indent-more
                     cc module func-index base emit-func-invocation
                     cc indent-less
-                    cc emit-indent "}" emit 10 putc
+                    cc emit-indent "}" emit '\n' putc
                 end
             end
         end
@@ -12921,7 +13001,7 @@ func emit-local-load CompileContext* int -- do
     let cc local-id do
         if cc @CompileContext.emitting do
             cc emit-indent
-            cc emit-top-slot " = " emit local-id emit-local-name ";" emit 10 putc
+            cc emit-top-slot " = " emit local-id emit-local-name ";" emit '\n' putc
         end
     end
 end
@@ -12931,7 +13011,7 @@ func emit-ir-bind-locals CompileContext* FuncAnalysis* TypedInstruction* -- do
         if instruction @TypedInstruction.binding_local_count 0 <= do
             "internal empty typed binding at " emit-error
             instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-slice emit-error-bytes
-            10 eputc 1 exit
+            '\n' eputc 1 exit
         end
         0
         while dup instruction @TypedInstruction.binding_local_count < do
@@ -12944,8 +13024,8 @@ func emit-ir-bind-locals CompileContext* FuncAnalysis* TypedInstruction* -- do
                         let source-index do
                             cc emit-indent cc @CompileContext.program local @AnalyzedBindingLocal.value_type emit-c-value-type
                             " " emit local @AnalyzedBindingLocal.local_id emit-local-name " = " emit
-                            cc source-index local @AnalyzedBindingLocal.value_type emit-slot-as ";" emit 10 putc
-                            cc emit-indent "(void)" emit local @AnalyzedBindingLocal.local_id emit-local-name ";" emit 10 putc
+                            cc source-index local @AnalyzedBindingLocal.value_type emit-slot-as ";" emit '\n' putc
+                            cc emit-indent "(void)" emit local @AnalyzedBindingLocal.local_id emit-local-name ";" emit '\n' putc
                         end
                     end
                 end
@@ -12966,7 +13046,7 @@ func emit-ir-restore-peek-locals CompileContext* FuncAnalysis* TypedInstruction*
                     analysis instruction @TypedInstruction.binding_local_start reverse-offset + analyzed-binding-local-at
                     let local do
                         cc instruction @TypedInstruction.before_type_count offset + local @AnalyzedBindingLocal.value_type emit-slot-as
-                        " = " emit local @AnalyzedBindingLocal.local_id emit-local-name ";" emit 10 putc
+                        " = " emit local @AnalyzedBindingLocal.local_id emit-local-name ";" emit '\n' putc
                     end
                 end
             end
@@ -13035,7 +13115,7 @@ func emit-ir-cast CompileContext* TypedInstruction* -- do
                 "(" emit cc @CompileContext.program instruction @TypedInstruction.secondary_type emit-c-value-type ")" emit
                 cc index instruction @TypedInstruction.value_type emit-slot-as
             end
-            ";" emit 10 putc
+            ";" emit '\n' putc
         end
     end
 end
@@ -13045,31 +13125,31 @@ func emit-ir-simple-intrinsic CompileContext* TypedInstruction* -- do
         instruction @TypedInstruction.operation let operation do
             if operation RuntimeOperation.args? do
                 instruction @TypedInstruction.before_type_count let index do
-                    cc emit-indent cc index type-ptr emit-slot-as " = (void *)frog_argv;" emit 10 putc
-                    cc emit-indent cc index 1 + type-int emit-slot-as " = (intptr_t)frog_argc;" emit 10 putc
+                    cc emit-indent cc index type-ptr emit-slot-as " = (void *)frog_argv;" emit '\n' putc
+                    cc emit-indent cc index 1 + type-int emit-slot-as " = (intptr_t)frog_argc;" emit '\n' putc
                 end
             elif operation RuntimeOperation.print? do
                 instruction @TypedInstruction.before_type_count 1 - let index do
                     if instruction @TypedInstruction.value_type type-int == do
-                        cc emit-indent "printf(\"%lld\\n\", (long long)" emit cc index type-int emit-slot-as ");" emit 10 putc
+                        cc emit-indent "printf(\"%lld\\n\", (long long)" emit cc index type-int emit-slot-as ");" emit '\n' putc
                     else
-                        cc emit-indent "fputs(" emit cc index type-bool emit-slot-as " ? \"true\\n\" : \"false\\n\", stdout);" emit 10 putc
+                        cc emit-indent "fputs(" emit cc index type-bool emit-slot-as " ? \"true\\n\" : \"false\\n\", stdout);" emit '\n' putc
                     end
                 end
             elif operation RuntimeOperation.string_bytes? do
                 instruction @TypedInstruction.before_type_count 1 - let index do
-                    cc emit-indent cc index type-ptr emit-slot-as " = (void *)" emit cc index type-string emit-slot-as ".bytes;" emit 10 putc
+                    cc emit-indent cc index type-ptr emit-slot-as " = (void *)" emit cc index type-string emit-slot-as ".bytes;" emit '\n' putc
                 end
             elif operation RuntimeOperation.string_len? do
                 instruction @TypedInstruction.before_type_count 1 - let index do
-                    cc emit-indent cc index type-int emit-slot-as " = " emit cc index type-string emit-slot-as ".len;" emit 10 putc
+                    cc emit-indent cc index type-int emit-slot-as " = " emit cc index type-string emit-slot-as ".len;" emit '\n' putc
                 end
             elif operation RuntimeOperation.pointer_load? do cc instruction @TypedInstruction.value_type compile-generic-pointer-load drop
             elif operation RuntimeOperation.pointer_store? do cc instruction @TypedInstruction.value_type compile-generic-pointer-store drop
             elif operation RuntimeOperation.noop? do
             elif operation RuntimeOperation.assert_fail? do
                 instruction @TypedInstruction.before_type_count 1 - let index do
-                    cc emit-indent "frog_assert_fail(" emit cc index type-string emit-slot-as ");" emit 10 putc
+                    cc emit-indent "frog_assert_fail(" emit cc index type-string emit-slot-as ");" emit '\n' putc
                 end
             else "internal unsupported simple typed instruction" fail end
         end
@@ -13151,7 +13231,7 @@ func compile-do CompileContext* int -- do
                             cc @CompileContext.type_count
                             let condition-index do
                                 if cc @CompileContext.emitting do
-                                    cc emit-indent "if (" emit cc condition-index emit-slot " != 0) {" emit 10 putc
+                                    cc emit-indent "if (" emit cc condition-index emit-slot " != 0) {" emit '\n' putc
                                 end
                             end
                             cc indent-more
@@ -13169,7 +13249,7 @@ func compile-do CompileContext* int -- do
                                 cc @CompileContext.type_count
                                 let condition-index do
                                     if cc @CompileContext.emitting do
-                                        cc emit-indent "if (" emit cc condition-index emit-slot " == 0) break;" emit 10 putc
+                                        cc emit-indent "if (" emit cc condition-index emit-slot " == 0) break;" emit '\n' putc
                                     end
                                 end
                             else
@@ -13513,9 +13593,9 @@ func bind-let-names CompileContext* int int -- do
                             cc emit-indent
                             cc @CompileContext.program value-type emit-c-value-type
                             " " emit local-id emit-local-name " = " emit
-                            cc cc @CompileContext.type_count value-type emit-slot-as ";" emit 10 putc
+                            cc cc @CompileContext.type_count value-type emit-slot-as ";" emit '\n' putc
                             cc emit-indent
-                            "(void)" emit local-id emit-local-name ";" emit 10 putc
+                            "(void)" emit local-id emit-local-name ";" emit '\n' putc
                         end
                     end
                 end
@@ -14076,7 +14156,7 @@ func emit-struct-zero-value CompileContext* int -- do
     let cc struct-type do
         if cc @CompileContext.emitting do
             cc emit-indent cc cc @CompileContext.type_count 1 - struct-type emit-slot-as " = (" emit
-            struct-type emit-c-struct-type-name "){ 0 };" emit 10 putc
+            struct-type emit-c-struct-type-name "){ 0 };" emit '\n' putc
         end
     end
 end
@@ -14085,9 +14165,9 @@ func emit-struct-allocation CompileContext* int int -- do
     let cc struct-type pointer-type do
         if cc @CompileContext.emitting do
             cc emit-indent cc cc @CompileContext.type_count 1 - pointer-type emit-slot-as " = frog_alloc(sizeof(" emit
-            struct-type emit-c-struct-type-name "));" emit 10 putc
+            struct-type emit-c-struct-type-name "));" emit '\n' putc
             cc emit-indent "*" emit cc cc @CompileContext.type_count 1 - pointer-type emit-slot-as
-            " = (" emit struct-type emit-c-struct-type-name "){ 0 };" emit 10 putc
+            " = (" emit struct-type emit-c-struct-type-name "){ 0 };" emit '\n' putc
         end
     end
 end
@@ -14096,7 +14176,7 @@ func emit-struct-sizeof CompileContext* int -- do
     let cc struct-type do
         if cc @CompileContext.emitting do
             cc emit-indent cc cc @CompileContext.type_count 1 - type-int emit-slot-as " = (intptr_t)sizeof(" emit
-            struct-type emit-c-struct-type-name ");" emit 10 putc
+            struct-type emit-c-struct-type-name ");" emit '\n' putc
         end
     end
 end
@@ -14159,7 +14239,7 @@ func emit-struct-field-read CompileContext* StructTypeEntry* StructFieldEntry* i
                             cc emit-indent cc index field-type emit-slot-as " = " emit
                             if pointer-receiver do cc index pointer-type emit-slot-as "->" emit
                             else cc index struct-type emit-slot-as "." emit end
-                            field-offset emit-c-struct-field-name ";" emit 10 putc
+                            field-offset emit-c-struct-field-name ";" emit '\n' putc
                         end
                     end
                 end
@@ -14178,7 +14258,7 @@ func emit-struct-pointer-field-write CompileContext* StructTypeEntry* StructFiel
                         let struct-index do
                             cc emit-indent cc struct-index pointer-type emit-slot-as "->" emit
                             field-offset emit-c-struct-field-name " = " emit
-                            cc value-index field-type emit-slot-as ";" emit 10 putc
+                            cc value-index field-type emit-slot-as ";" emit '\n' putc
                         end
                     end
                 end
@@ -14197,10 +14277,10 @@ func emit-struct-value-field-write CompileContext* StructTypeEntry* StructFieldE
                         cc @CompileContext.type_count
                         let source-index do
                             cc emit-indent cc result-index struct-type emit-slot-as " = " emit
-                            cc source-index struct-type emit-slot-as ";" emit 10 putc
+                            cc source-index struct-type emit-slot-as ";" emit '\n' putc
                             cc emit-indent cc result-index struct-type emit-slot-as "." emit
                             field-offset emit-c-struct-field-name " = " emit
-                            cc result-index field-type emit-slot-as ";" emit 10 putc
+                            cc result-index field-type emit-slot-as ";" emit '\n' putc
                         end
                     end
                 end
@@ -14359,7 +14439,7 @@ func emit-enum-constructor CompileContext* int int int -- do
                     cc result-index payload-type emit-slot-as ";" emit
                 end
                 " " emit cc result-index enum-type emit-slot-as " = enum_value; }" emit
-                10 putc
+                '\n' putc
             end
         end
     end
@@ -14374,7 +14454,7 @@ func emit-enum-predicate CompileContext* int int int -- do
                 cc value-index enum-type emit-slot-as "; if (enum_value.tag < 0 || enum_value.tag >= " emit
                 case-count emit-unsigned ") frog_runtime_fail(); " emit
                 cc value-index type-bool emit-slot-as " = enum_value.tag == " emit
-                tag emit-unsigned "; }" emit 10 putc
+                tag emit-unsigned "; }" emit '\n' putc
             end
         end
     end
@@ -14395,7 +14475,7 @@ func emit-enum-projection CompileContext* int int int int -- do
                     "enum_value.payload." emit tag emit-c-enum-case-member-name ";" emit
                 end
                 " }" emit
-                10 putc
+                '\n' putc
             end
         end
     end
@@ -14559,12 +14639,12 @@ func emit-function-dispatch-module CompileContext* ModuleContext* int ModuleCont
                 do
                     cc emit-indent "case " emit
                     func-module func-index func-at @FuncEntry.global_id emit-unsigned
-                    ": {" emit 10 putc
+                    ": {" emit '\n' putc
                     cc indent-more
                     cc func-module func-index base emit-func-invocation
-                    cc emit-indent "break;" emit 10 putc
+                    cc emit-indent "break;" emit '\n' putc
                     cc indent-less
-                    cc emit-indent "}" emit 10 putc
+                    cc emit-indent "}" emit '\n' putc
                 end
             end
             1 +
@@ -14598,16 +14678,16 @@ func emit-function-call CompileContext* ModuleContext* int -- do
                         cc emit-indent "{ Cell function_id = " emit
                         cc base input-count +
                             function-module function-index function-type-at @FunctionTypeEntry.function_type
-                        emit-slot-as ";" emit 10 putc
+                        emit-slot-as ";" emit '\n' putc
                         cc indent-more
-                        cc emit-indent "switch (function_id) {" emit 10 putc
+                        cc emit-indent "switch (function_id) {" emit '\n' putc
                         cc indent-more
                         cc cc @CompileContext.program function-module function-index base emit-function-dispatch-cases
-                        cc emit-indent "default: frog_runtime_fail();" emit 10 putc
+                        cc emit-indent "default: frog_runtime_fail();" emit '\n' putc
                         cc indent-less
-                        cc emit-indent "}" emit 10 putc
+                        cc emit-indent "}" emit '\n' putc
                         cc indent-less
-                        cc emit-indent "}" emit 10 putc
+                        cc emit-indent "}" emit '\n' putc
                     end
                 end
             end
@@ -14728,7 +14808,7 @@ func compile-string-word CompileContext* int -- bool do
             if cc @CompileContext.emitting do
                 cc @CompileContext.type_count 1 - let index do
                     cc emit-indent cc index type-ptr emit-slot-as " = (void *)" emit
-                    cc index type-string emit-slot-as ".bytes;" emit 10 putc
+                    cc index type-string emit-slot-as ".bytes;" emit '\n' putc
                 end
             end
             true
@@ -14740,7 +14820,7 @@ func compile-string-word CompileContext* int -- bool do
             if cc @CompileContext.emitting do
                 cc @CompileContext.type_count 1 - let index do
                     cc emit-indent cc index type-int emit-slot-as " = " emit
-                    cc index type-string emit-slot-as ".len;" emit 10 putc
+                    cc index type-string emit-slot-as ".len;" emit '\n' putc
                 end
             end
             true
@@ -14811,7 +14891,7 @@ func compile-constant-values-from CompileContext* ModuleContext* int int -- do
                             if cc @CompileContext.emitting do
                                 cc emit-indent cc emit-top-slot " = (" emit
                                 cc @CompileContext.program value-type emit-c-value-type ")" emit
-                                payload emit-integer ";" emit 10 putc
+                                payload emit-integer ";" emit '\n' putc
                             end
                         end
                     elif value-type type-string == do
@@ -15086,7 +15166,7 @@ func compile-token CompileContext* int -- int do
                 if begin-operation do cc token-index begin-analyzed-operation end
                 if cc @CompileContext.instruction_active do
                     "internal leaked typed instruction before token: " emit-error
-                    cc @CompileContext.defining_module token-index token-slice emit-error-bytes 10 eputc 1 exit
+                    cc @CompileContext.defining_module token-index token-slice emit-error-bytes '\n' eputc 1 exit
                 end
                 if was-active ! do
                     cc @CompileContext.defining_module cc !CompileContext.diagnostic_module
@@ -15406,7 +15486,7 @@ func emit-func-input-slots CompileContext* ModuleContext* int int -- do
         if input-index ctx func-index func-at @FuncEntry.input_count < do
             cc emit-indent cc input-index
                 ctx ctx func-index func-at @FuncEntry.input_start input-index + type-at
-            emit-slot-as " = frog_arg_" emit input-index emit-unsigned ";" emit 10 putc
+            emit-slot-as " = frog_arg_" emit input-index emit-unsigned ";" emit '\n' putc
             cc ctx func-index input-index 1 + emit-func-input-slots
         end
     end
@@ -15417,8 +15497,8 @@ func emit-func-slot-frame CompileContext* -- do
         while dup cc @CompileContext.stack_slot_count < do
             dup let index do cc index stack-slot-at let slot do
                     cc emit-indent cc @CompileContext.program slot @StackSlotEntry.value_type emit-c-value-type
-                    " " emit cc slot @StackSlotEntry.depth slot @StackSlotEntry.value_type emit-slot-as ";" emit 10 putc
-                    cc emit-indent "(void)&" emit cc slot @StackSlotEntry.depth slot @StackSlotEntry.value_type emit-slot-as ";" emit 10 putc
+                    " " emit cc slot @StackSlotEntry.depth slot @StackSlotEntry.value_type emit-slot-as ";" emit '\n' putc
+                    cc emit-indent "(void)&" emit cc slot @StackSlotEntry.depth slot @StackSlotEntry.value_type emit-slot-as ";" emit '\n' putc
                 end end
             1 +
         end
@@ -15432,7 +15512,7 @@ func emit-func-return-values CompileContext* int -- do
             remaining 1 -
             let output-index do
                 cc emit-indent "frog_result.value_" emit output-index emit-unsigned " = " emit
-                cc output-index cc output-index type-at-depth emit-slot-as ";" emit 10 putc
+                cc output-index cc output-index type-at-depth emit-slot-as ";" emit '\n' putc
                 cc output-index emit-func-return-values
             end
         end
@@ -15446,13 +15526,13 @@ func emit-func-return CompileContext* ModuleContext* int -- do
             if output-count 1 == do
                 cc emit-indent "return " emit cc 0
                     ctx ctx func-index func-at @FuncEntry.output_start type-at
-                emit-slot-as ";" emit 10 putc
+                emit-slot-as ";" emit '\n' putc
             elif output-count 1 > do
                 cc emit-indent
                 ctx @ModuleContext.types ctx func-index func-at @FuncEntry.output_start cell-bytes * +
-                output-count emit-result-type-name " frog_result;" emit 10 putc
+                output-count emit-result-type-name " frog_result;" emit '\n' putc
                 cc output-count emit-func-return-values
-                cc emit-indent "return frog_result;" emit 10 putc
+                cc emit-indent "return frog_result;" emit '\n' putc
             end
         end
     end
@@ -15474,12 +15554,12 @@ func emit-ir-instruction CompileContext* FuncAnalysis* TypedInstruction* -- do
                     if instruction @TypedInstruction.value_type type-string == do
                         cc @CompileContext.program instruction @TypedInstruction.payload emit-string-symbol
                     else instruction @TypedInstruction.payload emit-integer end
-                    ";" emit 10 putc
+                    ";" emit '\n' putc
                 end
             elif operation RuntimeOperation.local_load? do
                 instruction @TypedInstruction.after_type_count 1 - let index do
                     cc emit-indent cc index instruction @TypedInstruction.value_type emit-slot-as " = " emit
-                    instruction @TypedInstruction.local_id emit-local-name ";" emit 10 putc
+                    instruction @TypedInstruction.local_id emit-local-name ";" emit '\n' putc
                 end
             elif operation RuntimeOperation.constant? do
                 cc instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 compile-constant-values-from
@@ -15531,7 +15611,7 @@ func emit-ir-block CompileContext* FuncAnalysis* int -- do
     let cc analysis block-index do
         analysis block-index analyzed-block-at
         let block do
-            if block-index 0 > do "frog_block_" emit block-index emit-unsigned ": ;" emit 10 putc end
+            if block-index 0 > do "frog_block_" emit block-index emit-unsigned ": ;" emit '\n' putc end
             0
             while dup block @AnalyzedBlock.instruction_count < do
                 dup let offset do cc analysis analysis block @AnalyzedBlock.instruction_start offset + typed-instruction-at emit-ir-instruction end
@@ -15542,17 +15622,17 @@ func emit-ir-block CompileContext* FuncAnalysis* int -- do
             block @AnalyzedBlock.terminator_kind
             let terminator do
                 if terminator CFGTerminatorKind.jump? do
-                    cc emit-indent "goto frog_block_" emit block @AnalyzedBlock.first_target emit-unsigned ";" emit 10 putc
+                    cc emit-indent "goto frog_block_" emit block @AnalyzedBlock.first_target emit-unsigned ";" emit '\n' putc
                 elif terminator CFGTerminatorKind.branch? do
                     block @AnalyzedBlock.exit_type_count 1 - let condition-index do
                         cc emit-indent "if (" emit cc condition-index type-bool emit-slot-as ") goto frog_block_" emit
                         block @AnalyzedBlock.first_target emit-unsigned "; else goto frog_block_" emit
-                        block @AnalyzedBlock.second_target emit-unsigned ";" emit 10 putc
+                        block @AnalyzedBlock.second_target emit-unsigned ";" emit '\n' putc
                     end
                 else
                     cc cc @CompileContext.func_module cc @CompileContext.func_index emit-func-return
                     if cc @CompileContext.func_module cc @CompileContext.func_index func-at @FuncEntry.output_count 0 == do
-                        cc emit-indent "return;" emit 10 putc
+                        cc emit-indent "return;" emit '\n' putc
                     end
                 end
             end
@@ -15619,12 +15699,12 @@ func emit-func Program* ModuleContext* int -- do
                     analysis @FuncAnalysis.stack_slots cc !CompileContext.stack_slots
                     analysis @FuncAnalysis.stack_slot_count cc !CompileContext.stack_slot_count
                     analysis @FuncAnalysis.stack_slot_capacity cc !CompileContext.stack_slot_capacity
-                    ctx func-index emit-func-signature " {" emit 10 putc
+                    ctx func-index emit-func-signature " {" emit '\n' putc
                     1 cc !CompileContext.indent
                     cc emit-func-slot-frame
                     cc ctx func-index 0 emit-func-input-slots
                     cc analysis emit-ir-func-body
-                    "}" emit 10 putc
+                    "}" emit '\n' putc
                 end
             end
         end
@@ -16897,7 +16977,7 @@ func formatter-line-content-start ModuleContext* int int -- int do
             if dup do
                 drop
                 dup module swap source-byte
-                let byte do byte ' ' == byte 9 == || end
+                let byte do byte ' ' == byte '\t' == || end
             end
         do
             1 +
@@ -16989,10 +17069,10 @@ func emit-inspect-bytes-with-space-policy ptr int bool -- do
             dup let index do
                 bytes index byte-read
                 let byte do
-                    if byte 9 == do "\\t" emit
-                    elif byte 10 == do "\\n" emit
-                    elif byte 13 == do "\\r" emit
-                    elif byte '\' == do "\\\\" emit
+                    if byte '\t' == do "\\t" emit
+                    elif byte '\n' == do "\\n" emit
+                    elif byte '\r' == do "\\r" emit
+                    elif byte '\\' == do "\\\\" emit
                     elif byte ' ' == escape-spaces && do "<space>" emit
                     elif byte ' ' >= byte '~' <= && do byte putc
                     else
@@ -17052,13 +17132,13 @@ func emit-inspect-lexemes ModuleContext* -- do
             dup let index do
                 module index lexeme-at
                 let lexeme do
-                    "lexeme\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
-                    index emit-unsigned 9 putc
-                    lexeme @LexemeEntry.start emit-unsigned 9 putc
-                    lexeme @LexemeEntry.length emit-unsigned 9 putc
-                    lexeme @LexemeEntry.kind emit-inspect-lexeme-kind 9 putc
+                    "lexeme\t" emit module @ModuleContext.module_id emit-unsigned '\t' putc
+                    index emit-unsigned '\t' putc
+                    lexeme @LexemeEntry.start emit-unsigned '\t' putc
+                    lexeme @LexemeEntry.length emit-unsigned '\t' putc
+                    lexeme @LexemeEntry.kind emit-inspect-lexeme-kind '\t' putc
                     module @ModuleContext.source lexeme @LexemeEntry.start + lexeme @LexemeEntry.length emit-inspect-lexeme-bytes
-                    10 putc
+                    '\n' putc
                 end
             end
             1 +
@@ -17080,15 +17160,15 @@ func emit-inspect-syntax-regions ModuleContext* -- do
             dup let index do
                 module index syntax-region-at
                 let region do
-                    "region\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
-                    index emit-unsigned 9 putc
-                    region @SyntaxRegion.parent emit-integer 9 putc
-                    region @SyntaxRegion.kind emit-inspect-syntax-region-kind 9 putc
-                    region @SyntaxRegion.start_token emit-unsigned 9 putc
-                    region @SyntaxRegion.end_token emit-unsigned 9 putc
-                    region @SyntaxRegion.start_byte emit-unsigned 9 putc
+                    "region\t" emit module @ModuleContext.module_id emit-unsigned '\t' putc
+                    index emit-unsigned '\t' putc
+                    region @SyntaxRegion.parent emit-integer '\t' putc
+                    region @SyntaxRegion.kind emit-inspect-syntax-region-kind '\t' putc
+                    region @SyntaxRegion.start_token emit-unsigned '\t' putc
+                    region @SyntaxRegion.end_token emit-unsigned '\t' putc
+                    region @SyntaxRegion.start_byte emit-unsigned '\t' putc
                     region @SyntaxRegion.end_byte emit-unsigned
-                    10 putc
+                    '\n' putc
                 end
             end
             1 +
@@ -17351,15 +17431,15 @@ func emit-inspect-binding-local Program* ModuleContext* int FuncAnalysis* int --
         analysis index analyzed-binding-local-at
         let local do
             "binding_local\t" emit
-            func-module @ModuleContext.module_id emit-unsigned 9 putc
-            func-index emit-unsigned 9 putc
-            index emit-unsigned 9 putc
-            local @AnalyzedBindingLocal.source_module @ModuleContext.module_id emit-unsigned 9 putc
-            local @AnalyzedBindingLocal.name_token emit-unsigned 9 putc
-            local @AnalyzedBindingLocal.source_module local @AnalyzedBindingLocal.name_token token-slice emit-inspect-bytes 9 putc
-            local @AnalyzedBindingLocal.local_id emit-unsigned 9 putc
+            func-module @ModuleContext.module_id emit-unsigned '\t' putc
+            func-index emit-unsigned '\t' putc
+            index emit-unsigned '\t' putc
+            local @AnalyzedBindingLocal.source_module @ModuleContext.module_id emit-unsigned '\t' putc
+            local @AnalyzedBindingLocal.name_token emit-unsigned '\t' putc
+            local @AnalyzedBindingLocal.source_module local @AnalyzedBindingLocal.name_token token-slice emit-inspect-bytes '\t' putc
+            local @AnalyzedBindingLocal.local_id emit-unsigned '\t' putc
             program local @AnalyzedBindingLocal.value_type emit-inspect-type
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -17379,35 +17459,35 @@ func emit-inspect-operation Program* ModuleContext* int FuncAnalysis* int -- do
             operation @AnalyzedOperation.source_module operation @AnalyzedOperation.token_start token-at
             let token do
                 "operation\t" emit
-                func-module @ModuleContext.module_id emit-unsigned 9 putc
-                func-index emit-unsigned 9 putc
-                operation-index emit-unsigned 9 putc
-                operation @AnalyzedOperation.source_module @ModuleContext.module_id emit-unsigned 9 putc
-                operation @AnalyzedOperation.token_start emit-unsigned 9 putc
-                operation @AnalyzedOperation.token_end emit-unsigned 9 putc
-                token @TokenEntry.start emit-unsigned 9 putc
-                operation operation-end-byte emit-unsigned 9 putc
-                token @TokenEntry.line emit-unsigned 9 putc
-                token @TokenEntry.column emit-unsigned 9 putc
-                operation @AnalyzedOperation.before_type_count emit-unsigned 9 putc
-                operation @AnalyzedOperation.minimum_type_count emit-unsigned 9 putc
-                operation @AnalyzedOperation.after_type_count emit-unsigned 9 putc
-                operation @AnalyzedOperation.before_type_count operation @AnalyzedOperation.minimum_type_count - emit-unsigned 9 putc
-                operation @AnalyzedOperation.after_type_count operation @AnalyzedOperation.minimum_type_count - emit-unsigned 9 putc
-                operation @AnalyzedOperation.kind emit-inspect-operation-kind 9 putc
-                operation @AnalyzedOperation.target_module emit-inspect-module-id 9 putc
-                operation @AnalyzedOperation.target_index emit-integer 9 putc
-                operation @AnalyzedOperation.secondary_module emit-inspect-module-id 9 putc
-                operation @AnalyzedOperation.secondary_index emit-integer 9 putc
-                operation @AnalyzedOperation.local_id emit-integer 9 putc
-                operation @AnalyzedOperation.binding_local_start emit-integer 9 putc
-                operation @AnalyzedOperation.binding_local_count emit-unsigned 9 putc
-                program operation @AnalyzedOperation.value_type emit-inspect-type 9 putc
-                operation @AnalyzedOperation.intrinsic emit-inspect-intrinsic 9 putc
-                operation @AnalyzedOperation.private_operation emit-inspect-private-operation 9 putc
-                program analysis @FuncAnalysis.operation_types operation @AnalyzedOperation.before_type_start operation @AnalyzedOperation.before_type_count emit-inspect-type-list 9 putc
+                func-module @ModuleContext.module_id emit-unsigned '\t' putc
+                func-index emit-unsigned '\t' putc
+                operation-index emit-unsigned '\t' putc
+                operation @AnalyzedOperation.source_module @ModuleContext.module_id emit-unsigned '\t' putc
+                operation @AnalyzedOperation.token_start emit-unsigned '\t' putc
+                operation @AnalyzedOperation.token_end emit-unsigned '\t' putc
+                token @TokenEntry.start emit-unsigned '\t' putc
+                operation operation-end-byte emit-unsigned '\t' putc
+                token @TokenEntry.line emit-unsigned '\t' putc
+                token @TokenEntry.column emit-unsigned '\t' putc
+                operation @AnalyzedOperation.before_type_count emit-unsigned '\t' putc
+                operation @AnalyzedOperation.minimum_type_count emit-unsigned '\t' putc
+                operation @AnalyzedOperation.after_type_count emit-unsigned '\t' putc
+                operation @AnalyzedOperation.before_type_count operation @AnalyzedOperation.minimum_type_count - emit-unsigned '\t' putc
+                operation @AnalyzedOperation.after_type_count operation @AnalyzedOperation.minimum_type_count - emit-unsigned '\t' putc
+                operation @AnalyzedOperation.kind emit-inspect-operation-kind '\t' putc
+                operation @AnalyzedOperation.target_module emit-inspect-module-id '\t' putc
+                operation @AnalyzedOperation.target_index emit-integer '\t' putc
+                operation @AnalyzedOperation.secondary_module emit-inspect-module-id '\t' putc
+                operation @AnalyzedOperation.secondary_index emit-integer '\t' putc
+                operation @AnalyzedOperation.local_id emit-integer '\t' putc
+                operation @AnalyzedOperation.binding_local_start emit-integer '\t' putc
+                operation @AnalyzedOperation.binding_local_count emit-unsigned '\t' putc
+                program operation @AnalyzedOperation.value_type emit-inspect-type '\t' putc
+                operation @AnalyzedOperation.intrinsic emit-inspect-intrinsic '\t' putc
+                operation @AnalyzedOperation.private_operation emit-inspect-private-operation '\t' putc
+                program analysis @FuncAnalysis.operation_types operation @AnalyzedOperation.before_type_start operation @AnalyzedOperation.before_type_count emit-inspect-type-list '\t' putc
                 program analysis @FuncAnalysis.operation_types operation @AnalyzedOperation.after_type_start operation @AnalyzedOperation.after_type_count emit-inspect-type-list
-                10 putc
+                '\n' putc
             end
         end
     end
@@ -17428,35 +17508,35 @@ func emit-inspect-instruction Program* ModuleContext* int FuncAnalysis* int -- d
             instruction @TypedInstruction.source_module instruction @TypedInstruction.token_start token-at
             let token do
                 "instruction\t" emit
-                func-module @ModuleContext.module_id emit-unsigned 9 putc
-                func-index emit-unsigned 9 putc
-                instruction-index emit-unsigned 9 putc
-                instruction @TypedInstruction.source_module @ModuleContext.module_id emit-unsigned 9 putc
-                instruction @TypedInstruction.token_start emit-unsigned 9 putc
-                instruction @TypedInstruction.token_end emit-unsigned 9 putc
-                token @TokenEntry.start emit-unsigned 9 putc
-                instruction instruction-end-byte emit-unsigned 9 putc
-                token @TokenEntry.line emit-unsigned 9 putc
-                token @TokenEntry.column emit-unsigned 9 putc
-                instruction @TypedInstruction.expansion_id emit-integer 9 putc
-                instruction @TypedInstruction.before_type_count emit-unsigned 9 putc
-                instruction @TypedInstruction.minimum_type_count emit-unsigned 9 putc
-                instruction @TypedInstruction.after_type_count emit-unsigned 9 putc
-                instruction @TypedInstruction.operation emit-inspect-runtime-operation 9 putc
-                instruction @TypedInstruction.target_module emit-inspect-module-id 9 putc
-                instruction @TypedInstruction.target_index emit-integer 9 putc
-                instruction @TypedInstruction.secondary_module emit-inspect-module-id 9 putc
-                instruction @TypedInstruction.secondary_index emit-integer 9 putc
-                instruction @TypedInstruction.local_id emit-integer 9 putc
-                instruction @TypedInstruction.binding_local_start emit-integer 9 putc
-                instruction @TypedInstruction.binding_local_count emit-unsigned 9 putc
-                program instruction @TypedInstruction.value_type emit-inspect-type 9 putc
-                program instruction @TypedInstruction.secondary_type emit-inspect-type 9 putc
-                instruction @TypedInstruction.payload emit-integer 9 putc
-                instruction @TypedInstruction.private_operation emit-inspect-private-operation 9 putc
-                program analysis @FuncAnalysis.operation_types instruction @TypedInstruction.before_type_start instruction @TypedInstruction.before_type_count emit-inspect-type-list 9 putc
+                func-module @ModuleContext.module_id emit-unsigned '\t' putc
+                func-index emit-unsigned '\t' putc
+                instruction-index emit-unsigned '\t' putc
+                instruction @TypedInstruction.source_module @ModuleContext.module_id emit-unsigned '\t' putc
+                instruction @TypedInstruction.token_start emit-unsigned '\t' putc
+                instruction @TypedInstruction.token_end emit-unsigned '\t' putc
+                token @TokenEntry.start emit-unsigned '\t' putc
+                instruction instruction-end-byte emit-unsigned '\t' putc
+                token @TokenEntry.line emit-unsigned '\t' putc
+                token @TokenEntry.column emit-unsigned '\t' putc
+                instruction @TypedInstruction.expansion_id emit-integer '\t' putc
+                instruction @TypedInstruction.before_type_count emit-unsigned '\t' putc
+                instruction @TypedInstruction.minimum_type_count emit-unsigned '\t' putc
+                instruction @TypedInstruction.after_type_count emit-unsigned '\t' putc
+                instruction @TypedInstruction.operation emit-inspect-runtime-operation '\t' putc
+                instruction @TypedInstruction.target_module emit-inspect-module-id '\t' putc
+                instruction @TypedInstruction.target_index emit-integer '\t' putc
+                instruction @TypedInstruction.secondary_module emit-inspect-module-id '\t' putc
+                instruction @TypedInstruction.secondary_index emit-integer '\t' putc
+                instruction @TypedInstruction.local_id emit-integer '\t' putc
+                instruction @TypedInstruction.binding_local_start emit-integer '\t' putc
+                instruction @TypedInstruction.binding_local_count emit-unsigned '\t' putc
+                program instruction @TypedInstruction.value_type emit-inspect-type '\t' putc
+                program instruction @TypedInstruction.secondary_type emit-inspect-type '\t' putc
+                instruction @TypedInstruction.payload emit-integer '\t' putc
+                instruction @TypedInstruction.private_operation emit-inspect-private-operation '\t' putc
+                program analysis @FuncAnalysis.operation_types instruction @TypedInstruction.before_type_start instruction @TypedInstruction.before_type_count emit-inspect-type-list '\t' putc
                 program analysis @FuncAnalysis.operation_types instruction @TypedInstruction.after_type_start instruction @TypedInstruction.after_type_count emit-inspect-type-list
-                10 putc
+                '\n' putc
             end
         end
     end
@@ -17467,22 +17547,22 @@ func emit-inspect-macro-expansion Program* ModuleContext* int FuncAnalysis* int 
         analysis expansion-id macro-expansion-at
         let expansion do
             "expansion\t" emit
-            func-module @ModuleContext.module_id emit-unsigned 9 putc
-            func-index emit-unsigned 9 putc
-            expansion-id emit-unsigned 9 putc
-            expansion @MacroExpansion.parent_expansion_id emit-integer 9 putc
-            expansion @MacroExpansion.invocation_module @ModuleContext.module_id emit-unsigned 9 putc
-            expansion @MacroExpansion.invocation_token emit-unsigned 9 putc
-            expansion @MacroExpansion.macro_module @ModuleContext.module_id emit-unsigned 9 putc
-            expansion @MacroExpansion.macro_index emit-unsigned 9 putc
-            expansion @MacroExpansion.instruction_start emit-unsigned 9 putc
-            expansion @MacroExpansion.instruction_count emit-unsigned 9 putc
-            expansion @MacroExpansion.before_type_count emit-unsigned 9 putc
-            expansion @MacroExpansion.minimum_type_count emit-unsigned 9 putc
-            expansion @MacroExpansion.after_type_count emit-unsigned 9 putc
-            program analysis @FuncAnalysis.operation_types expansion @MacroExpansion.before_type_start expansion @MacroExpansion.before_type_count emit-inspect-type-list 9 putc
+            func-module @ModuleContext.module_id emit-unsigned '\t' putc
+            func-index emit-unsigned '\t' putc
+            expansion-id emit-unsigned '\t' putc
+            expansion @MacroExpansion.parent_expansion_id emit-integer '\t' putc
+            expansion @MacroExpansion.invocation_module @ModuleContext.module_id emit-unsigned '\t' putc
+            expansion @MacroExpansion.invocation_token emit-unsigned '\t' putc
+            expansion @MacroExpansion.macro_module @ModuleContext.module_id emit-unsigned '\t' putc
+            expansion @MacroExpansion.macro_index emit-unsigned '\t' putc
+            expansion @MacroExpansion.instruction_start emit-unsigned '\t' putc
+            expansion @MacroExpansion.instruction_count emit-unsigned '\t' putc
+            expansion @MacroExpansion.before_type_count emit-unsigned '\t' putc
+            expansion @MacroExpansion.minimum_type_count emit-unsigned '\t' putc
+            expansion @MacroExpansion.after_type_count emit-unsigned '\t' putc
+            program analysis @FuncAnalysis.operation_types expansion @MacroExpansion.before_type_start expansion @MacroExpansion.before_type_count emit-inspect-type-list '\t' putc
             program analysis @FuncAnalysis.operation_types expansion @MacroExpansion.after_type_start expansion @MacroExpansion.after_type_count emit-inspect-type-list
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -17492,21 +17572,21 @@ func emit-inspect-block Program* ModuleContext* int FuncAnalysis* int -- do
         analysis block-index analyzed-block-at
         let block do
             "block\t" emit
-            func-module @ModuleContext.module_id emit-unsigned 9 putc
-            func-index emit-unsigned 9 putc
-            block-index emit-unsigned 9 putc
-            block @AnalyzedBlock.source_module @ModuleContext.module_id emit-unsigned 9 putc
-            block @AnalyzedBlock.token_start emit-unsigned 9 putc
-            block @AnalyzedBlock.instruction_start emit-unsigned 9 putc
-            block @AnalyzedBlock.instruction_count emit-unsigned 9 putc
-            block @AnalyzedBlock.terminator_kind emit-inspect-cfg-terminator 9 putc
-            block @AnalyzedBlock.terminator_module @ModuleContext.module_id emit-unsigned 9 putc
-            block @AnalyzedBlock.terminator_token emit-unsigned 9 putc
-            block @AnalyzedBlock.first_target emit-integer 9 putc
-            block @AnalyzedBlock.second_target emit-integer 9 putc
-            program analysis @FuncAnalysis.operation_types block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count emit-inspect-type-list 9 putc
+            func-module @ModuleContext.module_id emit-unsigned '\t' putc
+            func-index emit-unsigned '\t' putc
+            block-index emit-unsigned '\t' putc
+            block @AnalyzedBlock.source_module @ModuleContext.module_id emit-unsigned '\t' putc
+            block @AnalyzedBlock.token_start emit-unsigned '\t' putc
+            block @AnalyzedBlock.instruction_start emit-unsigned '\t' putc
+            block @AnalyzedBlock.instruction_count emit-unsigned '\t' putc
+            block @AnalyzedBlock.terminator_kind emit-inspect-cfg-terminator '\t' putc
+            block @AnalyzedBlock.terminator_module @ModuleContext.module_id emit-unsigned '\t' putc
+            block @AnalyzedBlock.terminator_token emit-unsigned '\t' putc
+            block @AnalyzedBlock.first_target emit-integer '\t' putc
+            block @AnalyzedBlock.second_target emit-integer '\t' putc
+            program analysis @FuncAnalysis.operation_types block @AnalyzedBlock.entry_type_start block @AnalyzedBlock.entry_type_count emit-inspect-type-list '\t' putc
             program analysis @FuncAnalysis.operation_types block @AnalyzedBlock.exit_type_start block @AnalyzedBlock.exit_type_count emit-inspect-type-list
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -17518,14 +17598,14 @@ func emit-inspect-func Program* ModuleContext* int -- do
             if func-entry @FuncEntry.c_binding CBinding:none == do
                 func-entry @FuncEntry.analysis
                 let analysis do
-                    "func\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
-                    func-index emit-unsigned 9 putc
+                    "func\t" emit module @ModuleContext.module_id emit-unsigned '\t' putc
+                    func-index emit-unsigned '\t' putc
                     module @ModuleContext.source func-entry @FuncEntry.name_start + func-entry @FuncEntry.name_length emit-inspect-bytes
-                    9 putc analysis @FuncAnalysis.operation_count emit-unsigned
-                    9 putc analysis @FuncAnalysis.binding_local_count emit-unsigned
-                    9 putc analysis @FuncAnalysis.instruction_count emit-unsigned
-                    9 putc analysis @FuncAnalysis.macro_expansion_count emit-unsigned
-                    9 putc analysis @FuncAnalysis.cfg_block_count emit-unsigned 10 putc
+                    '\t' putc analysis @FuncAnalysis.operation_count emit-unsigned
+                    '\t' putc analysis @FuncAnalysis.binding_local_count emit-unsigned
+                    '\t' putc analysis @FuncAnalysis.instruction_count emit-unsigned
+                    '\t' putc analysis @FuncAnalysis.macro_expansion_count emit-unsigned
+                    '\t' putc analysis @FuncAnalysis.cfg_block_count emit-unsigned '\n' putc
                     0
                     while dup analysis @FuncAnalysis.operation_count < do
                         dup let operation-index do
@@ -17590,11 +17670,11 @@ func emit-inspect-program Program* bool bool -- do
         program @Program.module_head
         while dup ptr cast int cast 0 != do
             let module do
-                "module\t" emit module @ModuleContext.module_id emit-unsigned 9 putc
-                if module @ModuleContext.is_root do 1 else 0 end emit-unsigned 9 putc
-                if module ptr cast int cast program @Program.builtins_module ptr cast int cast == do 1 else 0 end emit-unsigned 9 putc
+                "module\t" emit module @ModuleContext.module_id emit-unsigned '\t' putc
+                if module @ModuleContext.is_root do 1 else 0 end emit-unsigned '\t' putc
+                if module ptr cast int cast program @Program.builtins_module ptr cast int cast == do 1 else 0 end emit-unsigned '\t' putc
                 program module emit-inspect-module-path
-                10 putc
+                '\n' putc
                 if
                     include-lexemes
                     include-builtins module ptr cast int cast program @Program.builtins_module ptr cast int cast != || &&
@@ -17694,15 +17774,15 @@ func emit-cursor-context Program* int -- do
     let program state-index do
         program state-index cursor-state-at
         let state do
-            "context\t" emit state-index emit-unsigned 9 putc
-            state @CursorState.owner_kind emit-cursor-owner-kind 9 putc
-            state @CursorState.owner_module emit-inspect-module-id 9 putc
-            state @CursorState.owner_index emit-integer 9 putc
-            state @CursorState.expansion_id emit-integer 9 putc
-            state cursor-state-parent-expansion emit-integer 9 putc
-            state @CursorState.scope_module emit-inspect-module-id 9 putc
+            "context\t" emit state-index emit-unsigned '\t' putc
+            state @CursorState.owner_kind emit-cursor-owner-kind '\t' putc
+            state @CursorState.owner_module emit-inspect-module-id '\t' putc
+            state @CursorState.owner_index emit-integer '\t' putc
+            state @CursorState.expansion_id emit-integer '\t' putc
+            state cursor-state-parent-expansion emit-integer '\t' putc
+            state @CursorState.scope_module emit-inspect-module-id '\t' putc
             state-index emit-unsigned
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -17734,18 +17814,18 @@ func emit-cursor-occurrence Program* int -- do
     let program occurrence-index do
         program occurrence-index semantic-occurrence-at
         let occurrence do
-            "occurrence\t" emit occurrence @SemanticOccurrence.state_index emit-integer 9 putc
-            occurrence @SemanticOccurrence.role emit-occurrence-role 9 putc
-            occurrence @SemanticOccurrence.semantic_class emit-semantic-class 9 putc
-            occurrence @SemanticOccurrence.source_module emit-inspect-module-id 9 putc
-            occurrence @SemanticOccurrence.start_byte emit-unsigned 9 putc
-            occurrence @SemanticOccurrence.end_byte emit-unsigned 9 putc
-            occurrence @SemanticOccurrence.identity_module emit-inspect-module-id 9 putc
-            occurrence @SemanticOccurrence.identity_index emit-integer 9 putc
-            occurrence @SemanticOccurrence.identity_subindex emit-integer 9 putc
-            occurrence @SemanticOccurrence.binding_module emit-inspect-module-id 9 putc
+            "occurrence\t" emit occurrence @SemanticOccurrence.state_index emit-integer '\t' putc
+            occurrence @SemanticOccurrence.role emit-occurrence-role '\t' putc
+            occurrence @SemanticOccurrence.semantic_class emit-semantic-class '\t' putc
+            occurrence @SemanticOccurrence.source_module emit-inspect-module-id '\t' putc
+            occurrence @SemanticOccurrence.start_byte emit-unsigned '\t' putc
+            occurrence @SemanticOccurrence.end_byte emit-unsigned '\t' putc
+            occurrence @SemanticOccurrence.identity_module emit-inspect-module-id '\t' putc
+            occurrence @SemanticOccurrence.identity_index emit-integer '\t' putc
+            occurrence @SemanticOccurrence.identity_subindex emit-integer '\t' putc
+            occurrence @SemanticOccurrence.binding_module emit-inspect-module-id '\t' putc
             occurrence @SemanticOccurrence.binding_scope_index emit-integer
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -17770,10 +17850,10 @@ func emit-cursor-stacks Program* ModuleContext* int -- do
                 program state-index cursor-state-at
                 let state do
                     if state module token cursor-state-matches do
-                        "stack\t" emit state-index emit-unsigned 9 putc
+                        "stack\t" emit state-index emit-unsigned '\t' putc
                         program program @Program.cursor_types state @CursorState.type_start state @CursorState.type_count
                         emit-inspect-type-list
-                        10 putc
+                        '\n' putc
                     end
                 end
             end
@@ -17883,15 +17963,15 @@ func emit-visible-local Program* int LocalVisibility* -- do
         let occurrence do
             "visible\t" emit state-index emit-integer "\t0\t" emit
             occurrence @SemanticOccurrence.source_module @ModuleContext.source occurrence @SemanticOccurrence.start_byte +
-            occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.start_byte - emit-inspect-bytes 9 putc
-            SemanticClass:local emit-semantic-class 9 putc
-            visibility @LocalVisibility.func_module emit-inspect-module-id 9 putc
-            visibility @LocalVisibility.func_index emit-integer 9 putc
+            occurrence @SemanticOccurrence.end_byte occurrence @SemanticOccurrence.start_byte - emit-inspect-bytes '\t' putc
+            SemanticClass:local emit-semantic-class '\t' putc
+            visibility @LocalVisibility.func_module emit-inspect-module-id '\t' putc
+            visibility @LocalVisibility.func_index emit-integer '\t' putc
             visibility @LocalVisibility.local_id emit-integer "\t-1\t-1\t" emit
-            occurrence @SemanticOccurrence.source_module emit-inspect-module-id 9 putc
-            occurrence @SemanticOccurrence.start_byte emit-unsigned 9 putc
+            occurrence @SemanticOccurrence.source_module emit-inspect-module-id '\t' putc
+            occurrence @SemanticOccurrence.start_byte emit-unsigned '\t' putc
             occurrence @SemanticOccurrence.end_byte emit-unsigned
-            10 putc
+            '\n' putc
         end
     end
 end
@@ -18004,23 +18084,23 @@ func emit-visible-scope-symbol Program* int int ModuleContext* int -- do
                 semantic-class symbol @ScopeEntry.definition_module symbol @ScopeEntry.definition_index 0 1 -
                     semantic-definition-token
                 let declaration-module declaration-token found do
-                    "visible\t" emit context emit-integer 9 putc rank emit-unsigned 9 putc
+                    "visible\t" emit context emit-integer '\t' putc rank emit-unsigned '\t' putc
                     symbol @ScopeEntry.name_module @ModuleContext.source symbol @ScopeEntry.name_start +
-                    symbol @ScopeEntry.name_length emit-inspect-bytes 9 putc
-                    semantic-class emit-semantic-class 9 putc
-                    symbol @ScopeEntry.definition_module emit-inspect-module-id 9 putc
+                    symbol @ScopeEntry.name_length emit-inspect-bytes '\t' putc
+                    semantic-class emit-semantic-class '\t' putc
+                    symbol @ScopeEntry.definition_module emit-inspect-module-id '\t' putc
                     symbol @ScopeEntry.definition_index emit-integer "\t-1\t" emit
-                    binding-module emit-inspect-module-id 9 putc
-                    scope-index emit-integer 9 putc
+                    binding-module emit-inspect-module-id '\t' putc
+                    scope-index emit-integer '\t' putc
                     if found do declaration-module emit-inspect-module-id else 0 1 - emit-integer end
-                    9 putc
+                    '\t' putc
                     if found do declaration-module declaration-token token-at @TokenEntry.start emit-unsigned else 0 1 - emit-integer end
-                    9 putc
+                    '\t' putc
                     if found do
                         declaration-module declaration-token token-at
                         let token do token @TokenEntry.start token @TokenEntry.length + emit-unsigned end
                     else 0 1 - emit-integer end
-                    10 putc
+                    '\n' putc
                 end
             end
         end
@@ -18148,7 +18228,7 @@ func emit-cursor-query Program* ModuleContext* int -- do
             "fields\toccurrence\tcontext\trole\tclass\tsource_module\tstart_byte\tend_byte\tidentity_module\tidentity_index\tidentity_subindex\tbinding_module\tbinding_scope_index\n" emit
             "fields\tvisible\tcontext\trank\tname\tclass\tidentity_module\tidentity_index\tidentity_subindex\tbinding_module\tbinding_scope_index\tdeclaration_module\tdeclaration_start\tdeclaration_end\n" emit
             "fields\tstack\tcontext\ttypes\n" emit
-            "query\t" emit module emit-inspect-module-id 9 putc byte emit-unsigned 9 putc token emit-unsigned 10 putc
+            "query\t" emit module emit-inspect-module-id '\t' putc byte emit-unsigned '\t' putc token emit-unsigned '\n' putc
             program module token emit-cursor-contexts
             program module byte emit-cursor-occurrences
             program module token emit-cursor-visible-symbols
@@ -18414,7 +18494,7 @@ func compiler-distribution-root ptr -- ptr int do
                                         absolute-executable cwd-length append-path-separator
                                         let executable-start do
                                             executable absolute-executable executable-start + executable-length bytes-copy
-                                            0 absolute-executable executable-start executable-length + byte-write
+                                            '\0' absolute-executable executable-start executable-length + byte-write
                                             absolute-executable distribution-root-from-absolute-executable
                                         end
                                     end
@@ -18442,7 +18522,7 @@ func replace-path-suffix ptr String -- ptr do
                         let result do
                             path result prefix-length bytes-copy
                             suffix String.bytes result prefix-length + suffix-length bytes-copy
-                            0 result prefix-length suffix-length + byte-write
+                            '\0' result prefix-length suffix-length + byte-write
                             result
                         end
                     end
@@ -18470,7 +18550,7 @@ func cli-error String -- do
     let message do
         "frogc: " emit-error
         message emit-error
-        10 eputc
+        '\n' eputc
     end
 end
 
@@ -18480,7 +18560,7 @@ func cli-error-path String ptr -- do
         message emit-error
         ": " emit-error
         path path cstring-length emit-error-bytes
-        10 eputc
+        '\n' eputc
     end
 end
 
@@ -18495,7 +18575,7 @@ func cli-usage-error-value String ptr -- do
         "frogc: " emit-error
         message emit-error
         value value cstring-length emit-error-bytes
-        10 eputc
+        '\n' eputc
         "Try `frogc --help`.\n" emit-error
         2 exit
     end
@@ -18636,7 +18716,7 @@ func run-executable ptr -- int do
                     executable arguments execv drop
                     "unable to run " emit-error
                     executable executable cstring-length emit-error-bytes
-                    10 eputc
+                    '\n' eputc
                     127 finish-child
                     127
                 else

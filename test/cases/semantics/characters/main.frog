@@ -1,8 +1,18 @@
+const escaped-newline '\n' end
+
 func main -- do
     'A' print
     'é' print
     '€' print
     '😀' print
-    '\' print
+    '\\' print
     '\'' print
+    '\"' print
+    escaped-newline print
+    '\r' print
+    '\t' print
+    '\0' print
+    '\x41' print
+    '\x7f' print
+    '\xAf' print
 end
