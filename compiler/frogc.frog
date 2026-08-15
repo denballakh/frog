@@ -268,7 +268,7 @@ func emit-unsigned int -- do
         if value 10 >= do
             value 10 / emit-unsigned
         end
-        value 10 % 48 + putc
+        value 10 % '0' + putc
     end
 end
 
@@ -277,7 +277,7 @@ func emit-integer int -- do
         if value min-int == do
             "INT64_MIN" emit
         elif value 0 < do
-            45 putc
+            '-' putc
             0 value - emit-unsigned
         else
             value emit-unsigned
@@ -286,7 +286,7 @@ func emit-integer int -- do
 end
 
 func is-space int -- bool do
-    peek byte do 32 ==
+    peek byte do ' ' ==
         byte 9 == ||
         byte 10 == ||
         byte 13 == ||
@@ -294,18 +294,18 @@ func is-space int -- bool do
 end
 
 func is-digit int -- bool do
-    peek byte do 48 >= byte 57 <= &&
+    peek byte do '0' >= byte '9' <= &&
     end
 end
 
 func is-ascii-letter int -- bool do
-    peek byte do 65 >= byte 90 <= &&
-        byte 97 >= byte 122 <= && ||
+    peek byte do 'A' >= byte 'Z' <= &&
+        byte 'a' >= byte 'z' <= && ||
     end
 end
 
 func is-c-identifier-start int -- bool do
-    peek byte do is-ascii-letter byte 95 == ||
+    peek byte do is-ascii-letter byte '_' == ||
     end
 end
 
@@ -317,11 +317,11 @@ end
 func digit-value int -- int do
     let byte do
         if byte is-digit do
-            byte 48 -
-        elif byte 65 >= byte 70 <= && do
-            byte 65 - 10 +
-        elif byte 97 >= byte 102 <= && do
-            byte 97 - 10 +
+            byte '0' -
+        elif byte 'A' >= byte 'F' <= && do
+            byte 'A' - 10 +
+        elif byte 'a' >= byte 'f' <= && do
+            byte 'a' - 10 +
         else
             0 1 -
         end
@@ -729,7 +729,7 @@ func type-token-pointer-depth-from ModuleContext* int int -- int do
         elif
             ctx @ModuleContext.source ctx token-index token-at @TokenEntry.start +
             ctx token-index token-at @TokenEntry.length depth 1 + - byte-read
-            42 ==
+            '*' ==
         do
             ctx token-index depth 1 + type-token-pointer-depth-from
         else
@@ -746,7 +746,7 @@ func type-token-base-has-star-from ModuleContext* int int int -- bool do
             false
         elif
             ctx @ModuleContext.source ctx token-index token-at @TokenEntry.start +
-            index byte-read 42 ==
+            index byte-read '*' ==
         do
             true
         else
@@ -864,11 +864,11 @@ func source-line-number ModuleContext* int -- int do
 end
 
 func emit-error-spaces int -- do
-    let count do 0 while dup count < do 32 eputc 1 + end drop end
+    let count do 0 while dup count < do ' ' eputc 1 + end drop end
 end
 
 func emit-error-carets int -- do
-    let count do 0 while dup count < do 94 eputc 1 + end drop end
+    let count do 0 while dup count < do '^' eputc 1 + end drop end
 end
 
 func tab-display-width int -- int do
@@ -1017,14 +1017,14 @@ end
 func append-unsigned-buffer int ByteBuffer* -- do
     let value buffer do
         if value 10 >= do value 10 / buffer append-unsigned-buffer end
-        value 10 % 48 + buffer byte-buffer-push
+        value 10 % '0' + buffer byte-buffer-push
     end
 end
 
 func append-integer-buffer int ByteBuffer* -- do
     let value buffer do
         if value min-int == do "INT64_MIN" buffer byte-buffer-append-string
-        elif value 0 < do 45 buffer byte-buffer-push 0 value - buffer append-unsigned-buffer
+        elif value 0 < do '-' buffer byte-buffer-push 0 value - buffer append-unsigned-buffer
         else value buffer append-unsigned-buffer end
     end
 end
@@ -1033,7 +1033,7 @@ func append-type-module-prefix ModuleContext* ByteBuffer* -- do
     let module buffer do
         if module @ModuleContext.canonical_path_length 0 > do
             module @ModuleContext.canonical_path module @ModuleContext.canonical_path_length buffer byte-buffer-append-bytes
-            58 buffer byte-buffer-push
+            ':' buffer byte-buffer-push
         end
     end
 end
@@ -1114,7 +1114,7 @@ func append-type-name-buffer Program* int ByteBuffer* -- do
         elif value-type type-none == do "none" buffer byte-buffer-append-string
         elif value-type type-is-typed-pointer do
             program program value-type type-pointer-base - pointer-type-at @PointerTypeEntry.pointee_type buffer append-type-name-buffer
-            42 buffer byte-buffer-push
+            '*' buffer byte-buffer-push
         else
             if program @Program.module_head value-type buffer append-nominal-type-name ! do "unknown" buffer byte-buffer-append-string end
         end
@@ -1125,7 +1125,7 @@ func append-type-array-items Program* ptr int int ByteBuffer* -- do
     let program values start count buffer do
         0 while dup count < do
             dup let index do
-                if index 0 > do 32 buffer byte-buffer-push end
+                if index 0 > do ' ' buffer byte-buffer-push end
                 program values start index + cell-bytes * field-read buffer append-type-name-buffer
             end
             1 +
@@ -1135,9 +1135,9 @@ end
 
 func append-type-array Program* ptr int int ByteBuffer* -- do
     let program values start count buffer do
-        91 buffer byte-buffer-push
+        '[' buffer byte-buffer-push
         program values start count buffer append-type-array-items
-        93 buffer byte-buffer-push
+        ']' buffer byte-buffer-push
     end
 end
 
@@ -1227,14 +1227,14 @@ end
 func emit-unsigned-error int -- do
     let value do
         if value 10 >= do value 10 / emit-unsigned-error end
-        value 10 % 48 + eputc
+        value 10 % '0' + eputc
     end
 end
 
 func emit-integer-error int -- do
     let value do
         if value min-int == do "INT64_MIN" emit-error
-        elif value 0 < do 45 eputc 0 value - emit-unsigned-error
+        elif value 0 < do '-' eputc 0 value - emit-unsigned-error
         else value emit-unsigned-error end
     end
 end
@@ -1328,14 +1328,14 @@ end
 
 func integer-literal-base ptr int int -- int do
     let source start length do
-        if length 2 >= source start byte-read 48 == && do
+        if length 2 >= source start byte-read '0' == && do
             source start 1 + byte-read
             let prefix do
-                if prefix 98 == do
+                if prefix 'b' == do
                     2
-                elif prefix 111 == do
+                elif prefix 'o' == do
                     8
-                elif prefix 120 == do
+                elif prefix 'x' == do
                     16
                 else
                     0
@@ -1395,15 +1395,15 @@ func classify-word ModuleContext* int int int -- TokenKind int do
             else
                 if
                     length 1 >
-                      source start byte-read 43 ==
-                    source start byte-read 45 == || &&
+                      source start byte-read '+' ==
+                    source start byte-read '-' == || &&
                 do
                     1
                 else
                     0
                 end
                 let sign-length do
-                    sign-length 1 == source start byte-read 45 == &&
+                    sign-length 1 == source start byte-read '-' == &&
                     let negative do
                         start sign-length + length sign-length -
                         let literal-start literal-length do
@@ -1461,7 +1461,7 @@ func lex-string ModuleContext* int int int -- do
                         if byte '"' == do
                             true invalid
                         else
-                            if byte 92 == do
+                            if byte '\' == do
                                 ctx lex-advance
                                 if ctx @ModuleContext.lex_index ctx @ModuleContext.source_length >= do
                                     ctx start ctx @ModuleContext.lex_index start - line "unterminated string escape" fail-span-at
@@ -1537,7 +1537,7 @@ func lex-character ModuleContext* int int int -- do
             ctx start ctx @ModuleContext.lex_index start - line "unterminated character literal" fail-span-at
             ctx LexemeKind:token start ctx @ModuleContext.lex_index start - add-lexeme
         else
-            ctx ctx @ModuleContext.lex_index source-byte 92 ==
+            ctx ctx @ModuleContext.lex_index source-byte '\' ==
             if dup do
                 drop
                 ctx @ModuleContext.lex_index 1 +
@@ -1948,10 +1948,10 @@ end
 
 func valid-c-include-byte int -- bool do
     let byte do
-        byte 65 >= byte 90 <= &&
-        byte 97 >= byte 122 <= && ||
-        byte 48 >= byte 57 <= && ||
-        byte 95 == || byte 46 == || byte 47 == || byte 43 == || byte 45 == ||
+        byte 'A' >= byte 'Z' <= &&
+        byte 'a' >= byte 'z' <= && ||
+        byte '0' >= byte '9' <= && ||
+        byte '_' == || byte '.' == || byte '/' == || byte '+' == || byte '-' == ||
     end
 end
 
@@ -3454,7 +3454,7 @@ func require-import-name ModuleContext* int -- do
         if ctx token "*" token-equals do
             ctx token "wildcard imports are not supported" fail-at
         end
-        if ctx token 44 token-contains-byte do
+        if ctx token ',' token-contains-byte do
             ctx token "commas are not valid in import lists" fail-at
         end
         if
@@ -3580,7 +3580,7 @@ func scan-one-import ModuleContext* int -- int do
                                                             ctx @ModuleContext.token_count
                                                         else
                                                             if ctx list-token ")" token-equals ! do
-                                                                if ctx list-token 44 token-contains-byte do ctx list-token "commas are not valid in import lists" fail-at end
+                                                                if ctx list-token ',' token-contains-byte do ctx list-token "commas are not valid in import lists" fail-at end
                                                                 ctx list-token "expected ) after import list" fail-at
                                                             end
                                                             list-token 1 +
@@ -6416,7 +6416,7 @@ func record-typed-struct-occurrences CompileContext* TypedInstruction* ptr int -
                 operation RuntimeOperation.struct_alloc? ||
                 operation RuntimeOperation.struct_sizeof? ||
             do
-                bytes length 58 first-index-of-byte
+                bytes length ':' first-index-of-byte
                 let separator do
                     cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:struct_type
                                 instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 1 -
@@ -6429,7 +6429,7 @@ func record-typed-struct-occurrences CompileContext* TypedInstruction* ptr int -
                     cc instruction @TypedInstruction.token_start separator 1 + length separator 1 + - add-compile-intrinsic-part
                 end
             else
-                bytes length 46 first-index-of-byte
+                bytes length '.' first-index-of-byte
                 let separator do
                     if separator 1 > do
                         cc instruction @TypedInstruction.token_start 1 separator 1 - OccurrenceRole:reference SemanticClass:struct_type
@@ -6453,9 +6453,9 @@ end
 
 func record-typed-enum-occurrences CompileContext* TypedInstruction* ptr int -- do
     let cc instruction bytes length do
-        bytes length 58 first-index-of-byte
+        bytes length ':' first-index-of-byte
         peek separator do
-            if separator 0 < do drop bytes length 46 first-index-of-byte end
+            if separator 0 < do drop bytes length '.' first-index-of-byte end
             let separator do
                 cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:enum_type
                             instruction @TypedInstruction.secondary_module instruction @TypedInstruction.secondary_index 0 1 -
@@ -6467,7 +6467,7 @@ func record-typed-enum-occurrences CompileContext* TypedInstruction* ptr int -- 
                 end
                 length separator 1 + -
                 let member-length do
-                    if member-length 0 > bytes length 1 - byte-read 63 == && do member-length 1 - else member-length end
+                    if member-length 0 > bytes length 1 - byte-read '?' == && do member-length 1 - else member-length end
                     let bounded-length do
                         cc instruction @TypedInstruction.token_start separator 1 + bounded-length
                                 OccurrenceRole:reference SemanticClass:enum_case
@@ -6482,7 +6482,7 @@ end
 
 func record-typed-function-occurrences CompileContext* TypedInstruction* ptr int -- do
     let cc instruction bytes length do
-        bytes length 58 first-index-of-byte
+        bytes length ':' first-index-of-byte
         let separator do
             cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:function_type
                         instruction @TypedInstruction.target_module instruction @TypedInstruction.target_index 0 1 -
@@ -6515,7 +6515,7 @@ end
 
 func record-typed-string-occurrences CompileContext* TypedInstruction* ptr int -- do
     let cc instruction bytes length do
-        bytes length 46 first-index-of-byte
+        bytes length '.' first-index-of-byte
         let separator do
             cc instruction @TypedInstruction.token_start 0 separator OccurrenceRole:reference SemanticClass:primitive_type
             0 ptr cast ModuleContext* cast type-string 0 1 - add-compile-token-part-occurrence drop
@@ -7551,7 +7551,7 @@ end
 func decoded-string-unit ModuleContext* int int -- int int do
     peek ctx token raw-index do raw-string-byte
         let byte do
-            if byte 92 != do
+            if byte '\' != do
                 byte 1
             else
                 raw-index 1 +
@@ -7566,13 +7566,13 @@ func decoded-string-unit ModuleContext* int int -- int int do
                         0 1
                     else
                         ctx token escape-index raw-string-byte let escaped do
-                            if escaped 92 == do 92 2
+                            if escaped '\' == do '\' 2
                             elif escaped '"' == do '"' 2
-                            elif escaped 110 == do 10 2
-                            elif escaped 114 == do 13 2
-                            elif escaped 116 == do 9 2
-                            elif escaped 48 == do 0 2
-                            elif escaped 120 == do
+                            elif escaped 'n' == do 10 2
+                            elif escaped 'r' == do 13 2
+                            elif escaped 't' == do 9 2
+                            elif escaped '0' == do 0 2
+                            elif escaped 'x' == do
                                 if escape-index 2 + ctx token raw-string-length >= do
                                     ctx
                                       ctx token token-at @TokenEntry.start raw-index +
@@ -7998,7 +7998,7 @@ end
 func skip-path-separators ptr int int -- int do
     let bytes length index do
         if index length < do
-            if bytes index byte-read 47 == do
+            if bytes index byte-read '/' == do
                 bytes length index 1 + skip-path-separators
             else
                 index
@@ -8012,7 +8012,7 @@ end
 func find-path-component-end ptr int int -- int do
     let bytes length index do
         if index length < do
-            if bytes index byte-read 47 != do
+            if bytes index byte-read '/' != do
                 bytes length index 1 + find-path-component-end
             else
                 index
@@ -8086,8 +8086,8 @@ end
 func append-path-separator ptr int -- int do
     let output index do
         if index 0 > do
-            if output index 1 - byte-read 47 != do
-                47 output index byte-write
+            if output index 1 - byte-read '/' != do
+                '/' output index byte-write
                 index 1 +
             else
                 index
@@ -8126,12 +8126,12 @@ func import-directory-length ModuleContext* ptr int -- int do
     let ctx bytes length do
         if ctx @ModuleContext.is_root length 0 == || do
             0
-        elif bytes 0 byte-read 47 == do
+        elif bytes 0 byte-read '/' == do
             0
         else
             ctx @ModuleContext.canonical_path
               ctx @ModuleContext.canonical_path_length
-            47 last-index-of-byte
+            '/' last-index-of-byte
             let slash do
                 if slash 0 < do 0
                 elif slash 0 == do 1
@@ -8209,7 +8209,7 @@ func normalize-path ModuleContext* int ptr int -- ptr int do
         length 1 + PathComponent:sizeof * alloc
         let components do
             if length 0 > do
-                bytes 0 byte-read 47 ==
+                bytes 0 byte-read '/' ==
             else
                 false
             end
@@ -8220,14 +8220,14 @@ func normalize-path ModuleContext* int ptr int -- ptr int do
                     let output do
                         if count 0 == do
                             if absolute do
-                                47 output 0 byte-write
+                                '/' output 0 byte-write
                             else
-                                46 output 0 byte-write
+                                '.' output 0 byte-write
                             end
                             output 1
                         else
                             if absolute do
-                                47 output 0 byte-write
+                                '/' output 0 byte-write
                                 1
                             else
                                 0
@@ -10046,17 +10046,17 @@ end
 func constant-qualified-nominal-word ModuleContext* ModuleContext* int -- bool do
     let scope module token-index do
         module token-index token-slice
-        peek bytes length do 58 first-index-of-byte
+        peek bytes length do ':' first-index-of-byte
             let colon do
                 if colon 0 > colon 1 + length < && do
                     scope bytes colon true scope-prefix-is-nominal
                 else
-                    bytes length 46 first-index-of-byte
+                    bytes length '.' first-index-of-byte
                     let dot do
                         if dot 0 > dot 1 + length < && do
                             if
-                                bytes 0 byte-read 64 ==
-                                bytes 0 byte-read 33 == ||
+                                bytes 0 byte-read '@' ==
+                                bytes 0 byte-read '!' == ||
                             do
                                 if dot 1 <= do
                                     false
@@ -11081,7 +11081,7 @@ func emit-c-string-byte int -- do
     let byte do
         if byte '"' == do
             "\\\"" emit
-        elif byte 92 == do
+        elif byte '\' == do
             "\\\\" emit
         elif byte 10 == do
             "\\n" emit
@@ -11089,15 +11089,15 @@ func emit-c-string-byte int -- do
             "\\r" emit
         elif byte 9 == do
             "\\t" emit
-        elif byte 63 == do
+        elif byte '?' == do
             "\\?" emit
-        elif byte 32 >= byte 126 <= && do
+        elif byte ' ' >= byte '~' <= && do
             byte putc
         else
-            92 putc
-            byte 64 / 48 + putc
-            byte 8 / 8 % 48 + putc
-            byte 8 % 48 + putc
+            '\' putc
+            byte 64 / '0' + putc
+            byte 8 / 8 % '0' + putc
+            byte 8 % '0' + putc
         end
     end
 end
@@ -11856,9 +11856,9 @@ end
 func emit-uppercase-hex-digit int -- do
     let digit do
         if digit 10 < do
-            digit 48 +
+            digit '0' +
         else
-            digit 10 - 65 +
+            digit 10 - 'A' +
         end
         putc
     end
@@ -11902,7 +11902,7 @@ func emit-func-name ModuleContext* int -- do
     let ctx func-index do
         "frog_func_" emit
         ctx func-index func-at @FuncEntry.global_id emit-unsigned
-        95 putc
+        '_' putc
         ctx @ModuleContext.source ctx func-index func-at @FuncEntry.name_start +
           ctx func-index func-at @FuncEntry.name_length
         emit-func-source-name
@@ -11910,7 +11910,7 @@ func emit-func-name ModuleContext* int -- do
 end
 
 func emit-local-name int -- do
-    108 putc
+    'l' putc
     emit-unsigned
 end
 
@@ -12155,14 +12155,14 @@ end
 
 func append-function-call-suffix Program* ModuleContext* int ByteBuffer* -- do
     let program module function-index buffer do
-        91 buffer byte-buffer-push
+        '[' buffer byte-buffer-push
         program module @ModuleContext.function_types
             module function-index function-type-at @FunctionTypeEntry.input_start
               module function-index function-type-at @FunctionTypeEntry.input_count
         buffer append-type-array-items
-        if module function-index function-type-at @FunctionTypeEntry.input_count 0 > do 32 buffer byte-buffer-push end
+        if module function-index function-type-at @FunctionTypeEntry.input_count 0 > do ' ' buffer byte-buffer-push end
         program module function-index function-type-at @FunctionTypeEntry.function_type buffer append-type-name-buffer
-        93 buffer byte-buffer-push
+        ']' buffer byte-buffer-push
     end
 end
 
@@ -14310,12 +14310,12 @@ func compile-struct-word CompileContext* int -- bool do
     let cc token-index do
         cc @CompileContext.defining_module token-index token-slice
         let bytes length do
-            if length 2 >= bytes 0 byte-read 64 == && bytes 1 byte-read 46 == && do
+            if length 2 >= bytes 0 byte-read '@' == && bytes 1 byte-read '.' == && do
                 cc bytes length false compile-inferred-struct-field
-            elif length 2 >= bytes 0 byte-read 33 == && bytes 1 byte-read 46 == && do
+            elif length 2 >= bytes 0 byte-read '!' == && bytes 1 byte-read '.' == && do
                 cc bytes length true compile-inferred-struct-field
             else
-                bytes length 58 first-index-of-byte
+                bytes length ':' first-index-of-byte
                 let colon do
                     if colon 0 >= do
                         cc bytes length colon compile-struct-special
@@ -14324,14 +14324,14 @@ func compile-struct-word CompileContext* int -- bool do
                             length 0 >
                             if dup do
                                 drop
-                                bytes 0 byte-read 64 ==
-                                bytes 0 byte-read 33 == ||
+                                bytes 0 byte-read '@' ==
+                                bytes 0 byte-read '!' == ||
                             end
                         do
-                            bytes length 46 first-index-of-byte
+                            bytes length '.' first-index-of-byte
                             let dot do
                                 if dot 0 >= do
-                                    cc bytes length dot bytes 0 byte-read 33 == compile-struct-field
+                                    cc bytes length dot bytes 0 byte-read '!' == compile-struct-field
                                 else
                                     false
                                 end
@@ -14461,7 +14461,7 @@ func compile-enum-instance CompileContext* ptr int int -- bool do
                 else
                     separator 1 +
                     let case-start do
-                        bytes length 1 - byte-read 63 ==
+                        bytes length 1 - byte-read '?' ==
                         let predicate do
                             length case-start -
                             if predicate do 1 - end
@@ -14528,12 +14528,12 @@ end
 func compile-enum-word CompileContext* int -- bool do
     let cc token-index do
         cc @CompileContext.defining_module token-index token-slice
-        peek bytes length do 58 first-index-of-byte
+        peek bytes length do ':' first-index-of-byte
             let colon do
                 if colon 0 >= do
                     cc bytes length colon compile-enum-constructor
                 else
-                    bytes length 46 first-index-of-byte
+                    bytes length '.' first-index-of-byte
                     let dot do
                         if dot 0 >= do
                             cc bytes length dot compile-enum-instance
@@ -14706,7 +14706,7 @@ end
 func compile-function-word CompileContext* int -- bool do
     let cc token-index do
         cc @CompileContext.defining_module token-index token-slice
-        peek bytes length do 58 first-index-of-byte
+        peek bytes length do ':' first-index-of-byte
             let colon do
                 if colon 0 >= do
                     cc bytes length colon compile-function-operation
@@ -16897,7 +16897,7 @@ func formatter-line-content-start ModuleContext* int int -- int do
             if dup do
                 drop
                 dup module swap source-byte
-                let byte do byte 32 == byte 9 == || end
+                let byte do byte ' ' == byte 9 == || end
             end
         do
             1 +
@@ -16939,7 +16939,7 @@ end
 
 func formatter-emit-spaces int -- do
     let count do
-        0 while dup count < do 32 putc 1 + end drop
+        0 while dup count < do ' ' putc 1 + end drop
     end
 end
 
@@ -16992,9 +16992,9 @@ func emit-inspect-bytes-with-space-policy ptr int bool -- do
                     if byte 9 == do "\\t" emit
                     elif byte 10 == do "\\n" emit
                     elif byte 13 == do "\\r" emit
-                    elif byte 92 == do "\\\\" emit
-                    elif byte 32 == escape-spaces && do "<space>" emit
-                    elif byte 32 >= byte 126 <= && do byte putc
+                    elif byte '\' == do "\\\\" emit
+                    elif byte ' ' == escape-spaces && do "<space>" emit
+                    elif byte ' ' >= byte '~' <= && do byte putc
                     else
                         "\\x" emit
                         byte 16 / emit-uppercase-hex-digit
@@ -17023,7 +17023,7 @@ func emit-inspect-module-path Program* ModuleContext* -- do
                 if
                     module @ModuleContext.canonical_path program @Program.standard_library_root_length
                     program @Program.standard_library_root program @Program.standard_library_root_length bytes-equal
-                    module @ModuleContext.canonical_path program @Program.standard_library_root_length byte-read 47 == &&
+                    module @ModuleContext.canonical_path program @Program.standard_library_root_length byte-read '/' == &&
                 do
                     module @ModuleContext.canonical_path program @Program.standard_library_root_length 1 + +
                       module @ModuleContext.canonical_path_length program @Program.standard_library_root_length 1 + -
@@ -17945,8 +17945,8 @@ func cursor-inferred-struct-word ModuleContext* int -- bool do
             length 2 >=
             if dup do
                 drop
-                bytes 1 byte-read 46 ==
-                bytes 0 byte-read 64 == bytes 0 byte-read 33 == || &&
+                bytes 1 byte-read '.' ==
+                bytes 0 byte-read '@' == bytes 0 byte-read '!' == || &&
             end
         end
     end
@@ -18317,10 +18317,10 @@ func parse-nonnegative-decimal-from ptr int int int -- int bool do
         else
             bytes index byte-read
             let byte do
-                if byte 48 < byte 57 > || do
+                if byte '0' < byte '9' > || do
                     0 false
                 else
-                    byte 48 -
+                    byte '0' -
                     let digit do
                         if value max-int digit - 10 / > do
                             0 false
@@ -18368,7 +18368,7 @@ end
 func parent-path ptr -- ptr do
     peek path do cstring-length
         let length do
-            path length 47 last-index-of-byte
+            path length '/' last-index-of-byte
             let slash do
                 if slash 0 < do
                     "." String.bytes
@@ -18394,11 +18394,11 @@ func compiler-distribution-root ptr -- ptr int do
             if executable-length max-import-path-bytes > do
                 NULL 0
             else
-                executable executable-length 47 last-index-of-byte
+                executable executable-length '/' last-index-of-byte
                 let slash do
                     if slash 0 < do
                         NULL 0
-                    elif executable 0 byte-read 47 == do
+                    elif executable 0 byte-read '/' == do
                         executable distribution-root-from-absolute-executable
                     else
                         max-import-path-bytes 1 + alloc
@@ -18434,8 +18434,8 @@ func replace-path-suffix ptr String -- ptr do
         let suffix-length do
             path cstring-length
             let path-length do
-                path path-length 47 last-index-of-byte 1 +
-                  path path-length 46 last-index-of-byte
+                path path-length '/' last-index-of-byte 1 +
+                  path path-length '.' last-index-of-byte
                 let base dot do
                     if dot base > do dot else path-length end
                     peek prefix-length do suffix-length + 1 + alloc
@@ -18972,7 +18972,7 @@ func run-command ptr int int bool bool ptr int -- do
                           code cstring-length "<command>" String.bytes "<command>" String.len "." String.bytes debug release
                         standard-library-root standard-library-root-length run-source exit
                     end
-                elif argument u8* cast @ int cast 45 == do
+                elif argument u8* cast @ int cast '-' == do
                     "unknown run option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "run accepts exactly one source file" cli-usage-error
@@ -18999,7 +18999,7 @@ func check-command ptr int int bool bool ptr int -- do
                     argument "-h" cstring-equals argument "--help" cstring-equals || &&
                 do
                     "Usage: frogc [--debug] [--release] check [FILE]\n" emit
-                elif argument u8* cast @ int cast 45 == do
+                elif argument u8* cast @ int cast '-' == do
                     "unknown check option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "check accepts at most one source file" cli-usage-error
@@ -19026,7 +19026,7 @@ func fmt-command ptr int int bool bool ptr int -- do
                     argument "-h" cstring-equals argument "--help" cstring-equals || &&
                 do
                     "Usage: frogc [--debug] [--release] fmt [FILE]\n" emit
-                elif argument u8* cast @ int cast 45 == do
+                elif argument u8* cast @ int cast '-' == do
                     "unknown fmt option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "fmt accepts at most one source file" cli-usage-error
@@ -19053,7 +19053,7 @@ func inspect-command ptr int int bool bool ptr int -- do
                     argument "-h" cstring-equals argument "--help" cstring-equals || &&
                 do
                     "Usage: frogc [--debug] [--release] inspect [--builtins] [--lexemes] [FILE]\n" emit
-                elif argument u8* cast @ int cast 45 == do
+                elif argument u8* cast @ int cast '-' == do
                     "unknown inspect option: " argument cli-usage-error-value
                 elif argc argument-index 1 + != do
                     "inspect accepts at most one source file" cli-usage-error
@@ -19081,7 +19081,7 @@ func cursor-command ptr int int bool bool ptr int -- do
                 do
                     "Usage: frogc [--debug] [--release] cursor --byte OFFSET [FILE]\n" emit
                 elif option "--byte" cstring-equals ! do
-                    if option u8* cast @ int cast 45 == do
+                    if option u8* cast @ int cast '-' == do
                         "unknown cursor option: " option cli-usage-error-value
                     else
                         "cursor requires --byte OFFSET" cli-usage-error
@@ -19121,7 +19121,7 @@ func parse-build-options ptr int int ptr bool -- ptr ptr bool do
         else
             argv index argv-at
             let argument do
-                if argument u8* cast @ int cast 45 == do
+                if argument u8* cast @ int cast '-' == do
                     if
                         argument "-h" cstring-equals
                         argument "--help" cstring-equals ||

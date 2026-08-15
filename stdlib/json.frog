@@ -202,7 +202,7 @@ end
 
 func json-whitespace? int -- bool do
     let byte do
-        byte 0x20 ==
+        byte ' ' ==
         byte 0x09 == ||
         byte 0x0a == ||
         byte 0x0d == ||
@@ -210,7 +210,7 @@ func json-whitespace? int -- bool do
 end
 
 func json-digit? int -- bool do
-    let byte do byte 48 >= byte 57 <= && end
+    let byte do byte '0' >= byte '9' <= && end
 end
 
 func json-parser-at-end? JsonParser* -- bool do
@@ -261,12 +261,12 @@ end
 
 func json-hex-value int -- int bool do
     let byte do
-        if byte 48 >= byte 57 <= && do
-            byte 48 - true
-        elif byte 65 >= byte 70 <= && do
-            byte 65 - 10 + true
-        elif byte 97 >= byte 102 <= && do
-            byte 97 - 10 + true
+        if byte '0' >= byte '9' <= && do
+            byte '0' - true
+        elif byte 'A' >= byte 'F' <= && do
+            byte 'A' - 10 + true
+        elif byte 'a' >= byte 'f' <= && do
+            byte 'a' - 10 + true
         else
             0 false
         end
@@ -330,21 +330,21 @@ func json-parser-string-escape JsonParser* ByteBuffer* -- bool do
             let escape do
                 if escape '"' == do
                     '"' buffer byte-buffer-push true
-                elif escape 92 == do
-                    92 buffer byte-buffer-push true
-                elif escape 47 == do
-                    47 buffer byte-buffer-push true
-                elif escape 98 == do
+                elif escape '\' == do
+                    '\' buffer byte-buffer-push true
+                elif escape '/' == do
+                    '/' buffer byte-buffer-push true
+                elif escape 'b' == do
                     8 buffer byte-buffer-push true
-                elif escape 102 == do
+                elif escape 'f' == do
                     12 buffer byte-buffer-push true
-                elif escape 110 == do
+                elif escape 'n' == do
                     10 buffer byte-buffer-push true
-                elif escape 114 == do
+                elif escape 'r' == do
                     13 buffer byte-buffer-push true
-                elif escape 116 == do
+                elif escape 't' == do
                     9 buffer byte-buffer-push true
-                elif escape 117 == do
+                elif escape 'u' == do
                     parser json-parser-hex4
                     let first first-valid do
                         if first-valid ! do
@@ -352,9 +352,9 @@ func json-parser-string-escape JsonParser* ByteBuffer* -- bool do
                         elif first 0xd800 >= first 0xdbff <= && do
                             if parser @JsonParser.len parser @JsonParser.index - 2 < do
                                 false
-                            elif parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast 92 != do
+                            elif parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast '\' != do
                                 false
-                            elif parser @JsonParser.bytes parser @JsonParser.index 1 + + u8* cast @ int cast 117 != do
+                            elif parser @JsonParser.bytes parser @JsonParser.index 1 + + u8* cast @ int cast 'u' != do
                                 false
                             else
                                 parser @JsonParser.index 2 + parser !JsonParser.index
@@ -411,14 +411,14 @@ func json-parser-string-text JsonParser* -- JsonText* bool do
                                 if byte '"' == do
                                     parser @JsonParser.index 1 + parser !JsonParser.index
                                     true true
-                                elif byte 92 == do
+                                elif byte '\' == do
                                     parser @JsonParser.index 1 + parser !JsonParser.index
                                     if parser buffer json-parser-string-escape do
                                         false true
                                     else
                                         true false
                                     end
-                                elif byte 0x20 < do
+                                elif byte ' ' < do
                                     true false
                                 else
                                     parser @JsonParser.index 1 + parser !JsonParser.index
@@ -478,14 +478,14 @@ func json-parser-number-integer JsonParser* -- bool do
         else
             parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast
             let byte do
-                if byte 48 == do
+                if byte '0' == do
                     parser @JsonParser.index 1 + parser !JsonParser.index
                     if parser json-parser-at-end? do
                         true
                     else
                         parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast json-digit? !
                     end
-                elif byte 49 >= byte 57 <= && do
+                elif byte '1' >= byte '9' <= && do
                     parser json-parser-consume-digits drop
                     true
                 else
@@ -500,7 +500,7 @@ func json-parser-number-fraction JsonParser* -- bool do
     let parser do
         if parser json-parser-at-end? do
             true
-        elif parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast 46 != do
+        elif parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast '.' != do
             true
         else
             parser @JsonParser.index 1 + parser !JsonParser.index
@@ -516,14 +516,14 @@ func json-parser-number-exponent JsonParser* -- bool do
         else
             parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast
             let byte do
-                if byte 101 != byte 69 != && do
+                if byte 'e' != byte 'E' != && do
                     true
                 else
                     parser @JsonParser.index 1 + parser !JsonParser.index
                     if parser json-parser-at-end? ! do
                         parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast
                         let sign do
-                            if sign 43 == sign 45 == || do
+                            if sign '+' == sign '-' == || do
                                 parser @JsonParser.index 1 + parser !JsonParser.index
                             end
                         end
@@ -540,7 +540,7 @@ func json-parser-number JsonParser* -- JsonValue bool do
         parser @JsonParser.index
         let start do
             if parser json-parser-at-end? ! do
-                if parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast 45 == do
+                if parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast '-' == do
                     parser @JsonParser.index 1 + parser !JsonParser.index
                 end
             end
@@ -566,19 +566,19 @@ func json-parser-value JsonParser* int -- JsonValue bool do
         else
             parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast
             let byte do
-                if byte 110 == do
+                if byte 'n' == do
                     if parser "null" json-parser-consume do
                         JsonValue:null true
                     else
                         json-parse-failure
                     end
-                elif byte 116 == do
+                elif byte 't' == do
                     if parser "true" json-parser-consume do
                         true JsonValue:boolean true
                     else
                         json-parse-failure
                     end
-                elif byte 102 == do
+                elif byte 'f' == do
                     if parser "false" json-parser-consume do
                         false JsonValue:boolean true
                     else
@@ -589,19 +589,19 @@ func json-parser-value JsonParser* int -- JsonValue bool do
                     let text valid do
                         if valid do text JsonValue:string true else json-parse-failure end
                     end
-                elif byte 91 == do
+                elif byte '[' == do
                     if depth json-max-depth >= do
                         json-parse-failure
                     else
                         parser depth 1 + json-parser-array
                     end
-                elif byte 123 == do
+                elif byte '{' == do
                     if depth json-max-depth >= do
                         json-parse-failure
                     else
                         parser depth 1 + json-parser-object
                     end
-                elif byte 45 == byte json-digit? || do
+                elif byte '-' == byte json-digit? || do
                     parser json-parser-number
                 else
                     json-parse-failure
@@ -617,7 +617,7 @@ func json-parser-array JsonParser* int -- JsonValue bool do
         parser json-parser-skip-whitespace
         4 ptr-array-new
         let values do
-            if parser 93 json-parser-next-is do
+            if parser ']' json-parser-next-is do
                 parser @JsonParser.index 1 + parser !JsonParser.index
                 JsonArray:alloc
                 let array do
@@ -639,11 +639,11 @@ func json-parser-array JsonParser* int -- JsonValue bool do
                                 else
                                     parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast
                                     let delimiter do
-                                        if delimiter 44 == do
+                                        if delimiter ',' == do
                                             parser @JsonParser.index 1 + parser !JsonParser.index
                                             parser json-parser-skip-whitespace
                                             false true
-                                        elif delimiter 93 == do
+                                        elif delimiter ']' == do
                                             parser @JsonParser.index 1 + parser !JsonParser.index
                                             true true
                                         else
@@ -681,7 +681,7 @@ func json-parser-object JsonParser* int -- JsonValue bool do
         JsonObject:alloc
         let object do
             0 ptr cast JsonObjectEntry* cast object !JsonObject.head
-            if parser 125 json-parser-next-is do
+            if parser '}' json-parser-next-is do
                 parser @JsonParser.index 1 + parser !JsonParser.index
                 object JsonValue:object true
             else
@@ -698,7 +698,7 @@ func json-parser-object JsonParser* int -- JsonValue bool do
                                 if parser json-parser-at-end? do
                                     key json-text-free
                                     true false
-                                elif parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast 58 != do
+                                elif parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast ':' != do
                                     key json-text-free
                                     true false
                                 else
@@ -723,11 +723,11 @@ func json-parser-object JsonParser* int -- JsonValue bool do
                                             else
                                                 parser @JsonParser.bytes parser @JsonParser.index + u8* cast @ int cast
                                                 let delimiter do
-                                                    if delimiter 44 == do
+                                                    if delimiter ',' == do
                                                         parser @JsonParser.index 1 + parser !JsonParser.index
                                                         parser json-parser-skip-whitespace
                                                         false true
-                                                    elif delimiter 125 == do
+                                                    elif delimiter '}' == do
                                                         parser @JsonParser.index 1 + parser !JsonParser.index
                                                         true true
                                                     else
@@ -830,7 +830,7 @@ func json-number-int JsonValue -- int bool do
         else
             0 false
             let index negative do
-                if bytes u8* cast @ int cast 45 == do
+                if bytes u8* cast @ int cast '-' == do
                     1 true
                 else
                     index negative
@@ -838,7 +838,7 @@ func json-number-int JsonValue -- int bool do
                 let index negative do
                     if index length >= do
                         0 false
-                    elif bytes index + u8* cast @ int cast 48 == index 1 + length < && do
+                    elif bytes index + u8* cast @ int cast '0' == index 1 + length < && do
                         0 false
                     else
                         index 0 true
@@ -852,7 +852,7 @@ func json-number-int JsonValue -- int bool do
                                     if byte json-digit? ! do
                                         length result false
                                     else
-                                        byte 48 -
+                                        byte '0' -
                                         let digit do
                                             if negative do
                                                 if result 0 json-int-magnitude-limit - <
